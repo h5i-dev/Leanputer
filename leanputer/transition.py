@@ -27,9 +27,9 @@ def state_words(builder, layout):
     return {name: tuple(builder.inputs[layout.slices[name]]) for name, _ in layout.fields}
 
 
-def compile_addresses(layout):
+def compile_addresses(layout, optimized=True):
     cfg, width = layout.config, layout.config.word_bits
-    first = Builder(layout.names)
+    first = Builder(layout.names, optimized)
     r = state_words(first, layout)
     outputs = []
     for name in ('x', 'y', 'r', 'scan'):
@@ -38,20 +38,23 @@ def compile_addresses(layout):
     outputs.extend(r['decl'][:cfg.constants.bit_length()-1])
     address1 = first.compile(outputs)
     names1 = port_names(width, PORTS[:6])
-    second = Builder(layout.names + names1)
+    second = Builder(layout.names + names1, optimized)
     r = state_words(second, layout)
     v_start = len(layout.names) + 3*width  # hx/v
     index = tuple(second.inputs[v_start:v_start+width])
-    before = second.sub(r['ctx'], second.const(1, width))[0]
-    index = second.sub(before, index)[0]
+    if optimized:
+        index = second.sub(r['ctx'], index, borrow_in=True)[0]
+    else:
+        before = second.sub(r['ctx'], second.const(1, width))[0]
+        index = second.sub(before, index)[0]
     outputs = list(index[:cfg.context.bit_length()-1])
     outputs += list(second.inputs[v_start:v_start+cfg.constants.bit_length()-1])
     return address1, second.compile(outputs)
 
 
-def compile_initializer(layout):
+def compile_initializer(layout, optimized=True):
     """Seal proof inputs against forged control, fuel, and mutable memory."""
-    g = Builder(layout.names)
+    g = Builder(layout.names, optimized)
     words = state_words(g, layout)
     outputs = []
     for name, width in layout.fields:
@@ -64,10 +67,11 @@ def compile_initializer(layout):
 
 
 class RuleCompiler:
-    def __init__(self, layout):
+    def __init__(self, layout, optimized=True):
         self.layout, self.cfg = layout, layout.config
         self.width = self.cfg.word_bits
-        self.g = Builder(layout.names + port_names(self.width, PORTS))
+        self.optimized = optimized
+        self.g = Builder(layout.names + port_names(self.width, PORTS), optimized)
         self.c = self.g.c
         self.old = state_words(self.g, layout)
         self.r = {name: self.old[name] for name in self.old if '/' not in name}
@@ -105,9 +109,9 @@ class RuleCompiler:
     def vec(self, value, width=None):
         return self.g.const(int(value), width or self.width) if isinstance(value, int) else value
 
-    def AND(self, *bits): return self.c.AND(*bits)
-    def OR(self, *bits): return self.c.OR(*bits)
-    def NOT(self, bit): return self.c.NOT(bit)
+    def AND(self, *bits): return self.g.AND(*bits)
+    def OR(self, *bits): return self.g.OR(*bits)
+    def NOT(self, bit): return self.g.NOT(bit)
     def eq(self, x, y): return self.g.eq(self.vec(x), self.vec(y))
     def lt(self, x, y): return self.g.lt(self.vec(x), self.vec(y))
     def add(self, x, y): return self.g.add(self.vec(x), self.vec(y))
@@ -390,6 +394,15 @@ class RuleCompiler:
             if not choices:
                 continue
             fields = {'heap': HEAP_FIELDS, 'stack': FRAME_FIELDS, 'context': ('type',)}[bank]
+            if self.optimized:
+                address = choices[0][1]
+                if any(candidate != address for _, candidate, _ in choices):
+                    raise ValueError('write factoring requires one address per bank')
+                enabled = self.OR(*(condition for condition, _, _ in choices))
+                values = [tuple(self.OR(*(self.AND(condition, payload[field][bit])
+                                         for condition, _, payload in choices))
+                                for bit in range(self.width)) for field in range(len(fields))]
+                choices = [(enabled, address, values)]
             for row in range(getattr(self.cfg, bank)):
                 conditions = [self.AND(condition, self.eq(address, row)) for condition, address, _ in choices]
                 for field_index, field in enumerate(fields):
@@ -400,6 +413,9 @@ class RuleCompiler:
             choices = self.choices[name]
             if not choices:
                 outputs.extend(self.old[name]); continue
+            if self.optimized and len(choices) == 1:
+                condition, value = choices[0]
+                outputs.extend(self.g.mux(condition, value, self.old[name])); continue
             keep = self.NOT(self.OR(*(condition for condition, _ in choices)))
             for i, old in enumerate(self.old[name]):
                 outputs.append(self.OR(self.AND(keep, old),
@@ -408,17 +424,18 @@ class RuleCompiler:
 
 
 class SharedChecker(nn.Module):
-    def __init__(self, config=MachineConfig()):
+    def __init__(self, config=MachineConfig(), optimized=True):
         super().__init__()
         self.config = config
+        self.optimized = optimized
         self.layout = StateLayout(config)
-        self.initializer = compile_initializer(self.layout)
-        self.address1, self.address2 = compile_addresses(self.layout)
+        self.initializer = compile_initializer(self.layout, optimized)
+        self.address1, self.address2 = compile_addresses(self.layout, optimized)
         self.heap_read = AddressedRead(config.heap)
         self.stack_read = AddressedRead(config.stack)
         self.context_read = AddressedRead(config.context)
         self.constant_read = AddressedRead(config.constants)
-        self.transition = RuleCompiler(self.layout).finish()
+        self.transition = RuleCompiler(self.layout, optimized).finish()
         self.requires_grad_(False)
 
     def bank(self, state, name):
@@ -444,5 +461,5 @@ class SharedChecker(nn.Module):
             return self.transition(torch.cat([state] + reads, dim=1))
 
 
-def compile_machine(config=MachineConfig()):
-    return SharedChecker(config).eval()
+def compile_machine(config=MachineConfig(), optimized=True):
+    return SharedChecker(config, optimized).eval()

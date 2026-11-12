@@ -22,6 +22,7 @@ def main(argv=None):
     parser.add_argument('--report', type=Path, help='write machine-readable report')
     parser.add_argument('--device', choices=['cpu', 'cuda'], default='cpu')
     parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--reference-lowering', action='store_true', help='unoptimized lowering for semantic/architecture ablation')
     args = parser.parse_args(argv)
     torch.set_num_threads(1)
     try:
@@ -31,10 +32,12 @@ def main(argv=None):
             raise ValueError('CUDA unavailable')
         start = time.perf_counter()
         if args.load:
+            if args.reference_lowering:
+                raise ValueError('artifact specifies lowering; omit --reference-lowering with --load')
             model = load_machine(args.load)
         else:
             config = MachineConfig(**json.loads(args.config.read_text())) if args.config else MachineConfig()
-            model = compile_machine(config)
+            model = compile_machine(config, optimized=not args.reference_lowering)
         model = model.to(args.device).eval()
         if args.device == 'cuda':
             torch.cuda.synchronize()

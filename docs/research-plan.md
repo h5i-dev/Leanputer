@@ -73,3 +73,10 @@ type needs 617 steps and therefore legitimately exhausts a 512-step checker;
 resource outcomes must remain separate in evaluation. Next architecture work
 will measure/factor memory writes and parallelize address arithmetic, preserving
 exact traces; then run the broader corpus/fuzz/scaling program.
+
+Optimized lowering validation: full suite 48 tests passed in 69.667s. Same
+49-phase semantics and state ABI, with reference lowering retained. At 128
+cells, constant folding, parallel borrow/carry, liveness and bank-write factoring
+reduce shared stages 92 -> 41 and buffer bytes 8,882,256 -> 2,101,556. These
+static reductions are measured; end-to-end performance still needs controlled
+corpus evaluation and CPU/GPU/reference comparisons.

@@ -24,7 +24,7 @@ def compiler_fingerprint():
 def save_machine(model, path):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(dict(format=ARTIFACT_FORMAT, compiler=compiler_fingerprint(), config=asdict(model.config),
+    torch.save(dict(format=ARTIFACT_FORMAT, compiler=compiler_fingerprint(), config=asdict(model.config), optimized=model.optimized,
                     state_dict={name: tensor.cpu() for name, tensor in model.state_dict().items()}), path)
 
 
@@ -34,7 +34,10 @@ def load_machine(path):
         raise ValueError('unsupported shared-machine artifact format')
     if artifact.get('compiler') != compiler_fingerprint():
         raise ValueError('artifact compiler fingerprint mismatch; recompile this checkpoint')
-    model = compile_machine(MachineConfig(**artifact['config']))
+    optimized = artifact.get('optimized', True)
+    if type(optimized) is not bool:
+        raise ValueError('artifact lowering flag must be Boolean')
+    model = compile_machine(MachineConfig(**artifact['config']), optimized=optimized)
     expected, actual = model.state_dict(), artifact.get('state_dict')
     if not isinstance(actual, dict) or actual.keys() != expected.keys():
         raise ValueError('shared-machine artifact tensor keys mismatch')

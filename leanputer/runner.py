@@ -36,7 +36,7 @@ def model_statistics(model):
     weight_bytes = sum((b.indices().numel()*b.indices().element_size()+b.values().numel()*b.values().element_size())
                        if b.is_sparse else b.numel()*b.element_size() for b in buffers)
     depths = {name: len(getattr(model, name).layers) for name in ('initializer', 'address1', 'address2', 'transition')}
-    return dict(config=asdict(model.config), state_bits=model.layout.width,
+    return dict(config=asdict(model.config), lowering='optimized' if model.optimized else 'reference', state_bits=model.layout.width,
                 shared_ffn_depths=depths, attention_stages_per_step=2,
                 shared_stages_per_step=depths['address1']+depths['address2']+depths['transition']+2,
                 weight_bytes=weight_bytes,
@@ -75,6 +75,11 @@ def check_batch(model, documents):
     for index, document in enumerate(documents):
         name = document.get('name', str(index)) if isinstance(document, dict) else str(index)
         record = dict(name=name)
+        if (isinstance(document, dict) and document.get('format') == DOCUMENT_FORMAT
+                and document.get('status') == 'UNSUPPORTED'):
+            record.update(status='UNSUPPORTED', reason=document.get('reason', 'unsupported preparation input'))
+            records.append(record)
+            continue
         try:
             term, claim, declarations = parse_document(document)
             state = prepare(model.config, term, claim, declarations)

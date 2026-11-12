@@ -43,3 +43,39 @@ class SharedSubstrateTests(unittest.TestCase):
         for cells in (0, 1, 3, 31):
             with self.assertRaises(ValueError):
                 AddressedRead(cells)
+
+class LoweringEquivalenceTests(unittest.TestCase):
+    def test_borrow_and_reference_equivalence_exhaustive(self):
+        values = list(itertools.product(range(16), repeat=2))
+        bits = torch.tensor([[float(bool(v & (1 << i))) for v in pair for i in range(4)] for pair in values])
+        for initial in (False, True):
+            results = []
+            for optimized in (False, True):
+                b = Builder([f'x/{i}' for i in range(8)], optimized=optimized)
+                subtraction, borrow = b.sub(tuple(b.inputs[:4]), tuple(b.inputs[4:]), borrow_in=initial)
+                results.append(b.compile(list(subtraction)+[borrow])(bits))
+            self.assertTrue(torch.equal(*results))
+            for (a, c), row in zip(values, results[0].tolist()):
+                self.assertEqual(sum(int(v) << i for i, v in enumerate(row[:4])), (a-c-int(initial)) % 16)
+                self.assertEqual(row[4], int(a < c+int(initial)))
+
+    def test_seeded_wider_arithmetic_and_liveness(self):
+        rng = __import__('random').Random(67419)
+        width = 12
+        values = [(rng.randrange(1 << width), rng.randrange(1 << width)) for _ in range(256)]
+        bits = torch.tensor([[float(bool(v & (1 << i))) for v in pair for i in range(width)] for pair in values])
+        outputs = []
+        for optimized in (False, True):
+            b = Builder([f'x/{i}' for i in range(2*width)], optimized)
+            a, c = tuple(b.inputs[:width]), tuple(b.inputs[width:])
+            difference, borrow = b.sub(a, c)
+            result = list(b.add(a, c))+list(difference)+[borrow, b.lt(a, c), b.eq(a, c)]
+            outputs.append(b.compile(result)(bits))
+        self.assertTrue(torch.equal(*outputs))
+        b = Builder(['x'])
+        dead = b.inputs[0]
+        for _ in range(50):
+            dead = b.c.NOT(dead)
+        module = b.compile([b.inputs[0]])
+        self.assertEqual(len(module.layers), 0)
+        self.assertEqual(module(torch.tensor([[0.], [1.]])).tolist(), [[0.], [1.]])

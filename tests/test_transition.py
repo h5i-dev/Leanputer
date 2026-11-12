@@ -10,6 +10,7 @@ from leanputer.dependent import Declaration, Oracle
 from leanputer.machine_spec import MachineConfig, Op, Outcome, SpecMachine, prepare
 from leanputer.transition import compile_machine
 from leanputer.dependent_examples import conversion_cases
+from leanputer.runner import model_statistics
 
 
 torch.set_num_threads(1)
@@ -90,6 +91,17 @@ class WeightedTransitionTests(unittest.TestCase):
         inputs.append(low_fuel)
         specs, _, _ = self.compare_traces(inputs)
         self.assertEqual([spec.state['regs']['status'] for spec in specs], [Outcome.REJECT]*5+[Outcome.RESOURCE])
+
+    def test_reference_lowering_matches_optimized_traces(self):
+        reference = compile_machine(self.config, optimized=False)
+        cases = self.cases()[2:3]+self.cases()[-2:]
+        inputs = [prepare(self.config, term, claim, env) for term, claim, env in cases]
+        self.compare_traces(inputs, reference)
+        self.compare_traces(inputs, self.model)
+        original, optimized = model_statistics(reference), model_statistics(self.model)
+        self.assertEqual(original['state_bits'], optimized['state_bits'])
+        self.assertLess(optimized['weight_bytes'], original['weight_bytes'])
+        self.assertLess(optimized['shared_stages_per_step'], original['shared_stages_per_step'])
 
     @unittest.skipUnless(torch.cuda.is_available(), 'CUDA unavailable')
     def test_cuda_full_trace_agreement(self):

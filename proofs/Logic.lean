@@ -63,3 +63,10 @@ theorem and_count (s n : Nat) (bounded : s ≤ n) :
 #print axioms or_count
 #print axioms and_count
 end Leanputer
+
+namespace Leanputer
+theorem factor_shared_mask (mask left right : Bool) :
+    ((mask && left) || (mask && right)) = (mask && (left || right)) := by
+  cases mask <;> cases left <;> cases right <;> decide
+#print axioms factor_shared_mask
+end Leanputer

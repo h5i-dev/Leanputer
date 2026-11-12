@@ -34,14 +34,28 @@ class LogicLayer(nn.Module):
 
 class CompiledLogic(nn.Module):
     """Internal Boolean-domain module; caller establishes shape/binary inputs."""
-    def __init__(self, circuit, outputs):
+    def __init__(self, circuit, outputs, prune=True):
         super().__init__()
         self.input_width = len(circuit.inputs)
-        self.width = len(circuit.depth)
+        gates = circuit.gates
+        depths = circuit.depth
+        if prune:
+            needed = set(outputs)
+            live = []
+            for dest, op, args in reversed(gates):
+                if dest in needed:
+                    live.append((dest, op, args)); needed.update(args)
+            gates = list(reversed(live))
+            mapping = {i: i for i in range(self.input_width)}
+            mapping.update({gate[0]: self.input_width+i for i, gate in enumerate(gates)})
+            depths = [0]*self.input_width+[circuit.depth[dest] for dest, _, _ in gates]
+            gates = [(mapping[dest], op, tuple(mapping[a] for a in args)) for dest, op, args in gates]
+            outputs = [mapping[o] for o in outputs]
+        self.width = self.input_width+len(gates)
         self.register_buffer('output_ids', torch.tensor(outputs, dtype=torch.long, device='cpu'))
-        grouped = [[] for _ in range(max(circuit.depth, default=0))]
-        for gate in circuit.gates:
-            grouped[circuit.depth[gate[0]]-1].append(gate)
+        grouped = [[] for _ in range(max(depths, default=0))]
+        for gate in gates:
+            grouped[depths[gate[0]]-1].append(gate)
         self.layers = nn.ModuleList([LogicLayer(self.width, gates) for gates in grouped])
         self.requires_grad_(False)
 
