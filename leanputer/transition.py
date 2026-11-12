@@ -49,6 +49,20 @@ def compile_addresses(layout):
     return address1, second.compile(outputs)
 
 
+def compile_initializer(layout):
+    """Seal proof inputs against forged control, fuel, and mutable memory."""
+    g = Builder(layout.names)
+    words = state_words(g, layout)
+    outputs = []
+    for name, width in layout.fields:
+        if name.startswith(('heap/', 'constants/')) or name in ('free', 'decl_count', 'term', 'claim'):
+            outputs.extend(words[name])
+        else:
+            value = layout.config.fuel if name == 'fuel' else 1 if name == 'scan' else 0
+            outputs.extend(g.const(value, width))
+    return g.compile(outputs)
+
+
 class RuleCompiler:
     def __init__(self, layout):
         self.layout, self.cfg = layout, layout.config
@@ -341,6 +355,7 @@ class SharedChecker(nn.Module):
         super().__init__()
         self.config = config
         self.layout = StateLayout(config)
+        self.initializer = compile_initializer(self.layout)
         self.address1, self.address2 = compile_addresses(self.layout)
         self.heap_read = AddressedRead(config.heap)
         self.stack_read = AddressedRead(config.stack)

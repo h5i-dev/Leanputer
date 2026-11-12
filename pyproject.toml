@@ -12,6 +12,11 @@ dependencies = ["torch>=2.6"]
 
 [project.scripts]
 leanputer = "leanputer.__main__:main"
+leanputer-research = "leanputer.research:main"
+leanputer-export = "leanputer.preparation:main"
 
 [tool.setuptools.packages.find]
 include = ["leanputer*"]
+
+[tool.setuptools.data-files]
+"share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean"]

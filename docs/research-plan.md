@@ -55,3 +55,12 @@ delta, capture-avoiding shift/substitution and resource/invalid inputs. Five
 limited integer/Boolean lemmas compile in Lean without axioms. Full suite is
 being run before committing; a public canonical runner, Lean ingestion,
 conversion coverage, corpus and systematic evaluation are still required.
+
+Checkpoint 2 progress: public fixed-budget runner and weighted initialization
+prevent forged terminal/control/mutable-state inputs. Elaborated Lean Export
+traversal retains beta/delta work and complete supported dependencies. Six
+source judgments and four post-export mutations agree across weighted,
+operational, recursive and actual Lean kernel checks; sampled nanoda replay also
+agrees. Batch JSON reports, compiler-fingerprinted artifacts and CLI are tested.
+Current gaps: eta/proof irrelevance/opaque constants, larger real corpus, fuzz
+minimization, systematic scaling measurements and broader formal invariants.

@@ -1,0 +1,14 @@
+[
+  {"name":"LeanputerCorpus.poly_id","levels":[0]},
+  {"name":"LeanputerCorpus.poly_id","levels":[1]},
+  {"name":"LeanputerCorpus.imp_id","levels":[]},
+  {"name":"LeanputerCorpus.dependent_id","levels":[1,1]},
+  {"name":"LeanputerCorpus.dependent_apply","levels":[1,0]},
+  {"name":"LeanputerCorpus.beta_type","levels":[]},
+  {"name":"LeanputerCorpus.delta_type","levels":[]},
+  {"name":"LeanputerCorpus.use_library_id","levels":[1]},
+  {"name":"LeanputerCorpus.forall_id","levels":[1]},
+  {"name":"LeanputerCorpus.forall_imp","levels":[1]},
+  {"name":"LeanputerCorpus.dependent_proof","levels":[1,1]},
+  {"name":"LeanputerCorpus.unsupported_nat","levels":[]}
+]
