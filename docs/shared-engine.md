@@ -1,0 +1,70 @@
+# Shared dependent transition engine (checkpoint 1)
+
+The baseline circuit is preserved in `checker.py`. `transition.py` is a separate
+implementation of the explicit machine in `machine_spec.py`, with a separately
+structured recursive oracle in `dependent.py`. The compiler takes configuration
+only, never a proof or its expected answer.
+
+State has an immutable postorder DAG for syntax, a declaration environment, an
+explicit context stack, continuation frames, control/result registers, heap
+allocation pointer, fuel, and absorbing outcomes. Variable indices are de Bruijn
+indices. Context lookup lifts a stored type by index+1. Shift and substitution
+traverse syntax using continuation frames and allocate new nodes. Beta WHNF
+substitutes an argument into a lambda body; transparent constants delta-unfold.
+Conversion compares WHNFs recursively. Lambda, Pi, application, and declaration
+checks have dedicated semantic phases; there is no general CPU instruction set.
+
+Ground universe typing uses Sort u : Sort (u+1) and Lean's numeric imax rule:
+Pi has level zero when its codomain is in Prop, otherwise the maximum domain and
+codomain levels. Universe overflow is a resource outcome. This checkpoint has
+no symbolic universe equations, eta conversion, proof-irrelevance shortcut,
+inductives or recursors. Tests of these rules do not establish correspondence
+with all Lean terms, and a restricted-calculus rejection need not be a Lean
+rejection.
+
+Each semantic step applies exactly the same module objects and weight tensors:
+
+1. Compiled Boolean FFNs produce addresses for current expression, second
+   expression, result, validation cursor, return continuation, and declaration.
+2. Softmax attention reads their memory tokens using fixed positional keys.
+3. Compiled FFNs produce context and constant addresses from the first reads.
+4. Addressed attention reads context/constant memory.
+5. Compiled FFNs implement guarded semantic transitions, masked memory writes,
+   return-stack changes, fuel accounting, and absorbing outcomes.
+
+A binary address query is projected by fixed diagonal weights 256 and bias
+-128, with positional keys encoded as +/-1 bits. A matching token beats every
+other token by at least 256. Float32 max-subtracted softmax underflows the
+nonmatches to zero on tested CPU/CUDA backends, giving an exact read of Boolean
+payloads. This is a numerical domain assumption and is not exact softmax
+selection over the reals. Address capacities are powers of two. Semantic guards
+reject invalid pointer domains before interpreting read results. Unused read
+ports can read a harmless cell; all branches are masked in compiled logic.
+
+Attention therefore performs actual addressing; it is not the baseline's
+singleton identity attention. Memory writes and semantic updates are Boolean
+FFNs. Fixed Python loops/slices in `forward` wire modules together; they do not
+infer types, perform substitution, choose semantic operations, or update state
+outside module outputs. Shape/Boolean validation and syntax preparation remain
+outside the weights. A proof-checking runner must initialize control and mutable
+memory canonically; arbitrary intermediate machine states are not proof inputs.
+
+The compact smoke configuration (heap=32, stack/context=8, constants=4, fuel=256)
+compiled in 0.230s to 1,281 state bits and 75,860 sparse nonzeros. Address FFNs
+have depths 18 and 24; transition FFNs have depth 36, plus two sequential
+attention stages: 80 shared stages per semantic step. One exact 50-step trace
+ran in 0.291s on CPU. These are development samples, not benchmark results.
+The shared stack is not a claim of fewer than eleven layers, and repeated
+execution can cost substantially more than the baseline's single unrolling.
+
+Tests compare every state bit at every step for eight positive dependent,
+conversion-required, environment and capture cases, plus malformed/negative
+and resource cases. All 32 operational phases are covered. CPU/CUDA traces
+match the independent operational specification; terminal states absorb further
+steps; buffer storage identities remain fixed across execution. The recursive
+oracle separately checks expected judgments and seeded generated terms.
+
+`proofs/Logic.lean` proves binary integer-domain NOT/AND/OR formulas, masked
+writes, and the absorbing-state pattern without axioms. These are limited core
+lemmas. They do not verify arbitrary fan-in compilation, the transition machine,
+PyTorch float32 arithmetic, attention underflow, or typing soundness.
