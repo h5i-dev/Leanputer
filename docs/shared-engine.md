@@ -68,3 +68,17 @@ oracle separately checks expected judgments and seeded generated terms.
 writes, and the absorbing-state pattern without axioms. These are limited core
 lemmas. They do not verify arbitrary fan-in compilation, the transition machine,
 PyTorch float32 arithmetic, attention underflow, or typing soundness.
+
+Conversion extension (after 268573a): the machine now has 49 phases. Structural
+comparison under Pi/Lam extends/restores context. Failed comparison invokes
+inferred-type proof irrelevance and then typed function eta expansion. Eta lifts
+the neutral function and allocates its application to a fresh de Bruijn variable
+inside the weighted machine. Opaque constants have checked values and a separate
+kind that prevents delta unfolding. Recursive, operational, weighted, actual
+Lean and nanoda checks agree on eta/irrelevance positives and wrong-eta,
+different-proposition and forbidden opaque-delta negatives. These tests do not
+constitute a formal proof of conversion soundness.
+
+Two additional Lean lemmas prove OR and bounded AND arithmetic for arbitrary
+integer counts. Their standard Lean axioms are propext and Quot.sound; there is
+no sorryAx. Float32 realization and the full checker remain unverified.

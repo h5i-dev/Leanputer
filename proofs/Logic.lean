@@ -34,3 +34,32 @@ theorem terminal_absorbs {α : Type} (step : α → α) (state : α) :
 #print axioms masked_write
 #print axioms terminal_absorbs
 end Leanputer
+
+namespace Leanputer
+-- N-ary gate arithmetic over the supported bounded integer domain. Floating
+-- point execution of these integer formulas is a separate numerical argument.
+theorem or_count (n : Nat) :
+    relu ((n : Int)) - relu ((n : Int) - 1) = (if n = 0 then 0 else 1) := by
+  by_cases h : n = 0
+  · subst n; decide
+  · have nonneg : (0 : Int) ≤ (n : Int) := by omega
+    have previous : (0 : Int) ≤ (n : Int) - 1 := by omega
+    rw [if_neg h]
+    unfold relu
+    rw [Int.max_eq_right nonneg, Int.max_eq_right previous]
+    omega
+
+theorem and_count (s n : Nat) (bounded : s ≤ n) :
+    relu ((s : Int) + 1 - (n : Int)) = (if s = n then 1 else 0) := by
+  by_cases h : s = n
+  · rw [if_pos h]
+    have value : (s : Int) + 1 - (n : Int) = 1 := by omega
+    rw [value]
+    decide
+  · rw [if_neg h]
+    have nonpos : (s : Int) + 1 - (n : Int) ≤ 0 := by omega
+    exact Int.max_eq_left nonpos
+
+#print axioms or_count
+#print axioms and_count
+end Leanputer

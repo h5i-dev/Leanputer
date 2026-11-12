@@ -9,11 +9,11 @@ conversion, and state updates. The same weights are reused at every step.
 
 The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
-and acyclic axiom/transparent-definition dependencies. Numeric universes use
-Lean's impredicative Prop rule. Current conversion is beta/delta structural
-conversion. Symbolic universe constraints, eta, proof irrelevance, opaque
-dependencies, inductives, recursors, quotient rules, lets and projections are
-not yet supported. A restricted-calculus rejection need not be a Lean rejection.
+and acyclic axiom/definition/opaque dependencies. Numeric universes use
+Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
+Opaque dependency values are checked while their opacity is preserved. Symbolic
+universe constraints, inductives, recursors, quotient rules, lets and projections
+are not yet supported. The supported ground fragment is still experimental.
 The tool does not claim a complete Lean kernel, formal soundness verification,
 or conference-level results from the current test count.
 
@@ -128,7 +128,8 @@ over real-number softmax and is not a backend-independent proof. Autocast is
 disabled and dtype-cast weights are rejected. Input parsing, external exporting,
 compiler implementation, runtime/backend arithmetic and hardware remain trusted.
 
-`proofs/Logic.lean` proves limited binary integer-domain gate, masked-write and
-absorbing-state lemmas without axioms. It does not verify the complete circuit
+`proofs/Logic.lean` proves binary integer-domain gates, masked writes and absorbing
+states without axioms. It also proves bounded n-ary gate arithmetic using Lean
+standard axioms (`propext`, `Quot.sound`), with no admitted lemmas. It does not verify the complete circuit
 compiler, attention implementation or typing machine. Full-state differential
 traces, seeded tests and external replay provide evidence, not formal soundness.

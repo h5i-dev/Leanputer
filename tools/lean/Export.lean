@@ -60,11 +60,11 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
   let some info := env.find? name | throw s!"unknown constant {name}"
   if info.isUnsafe || info.isPartial then throw s!"unsupported unsafe/partial declaration {name}"
   if info.levelParams.length != levels.length then throw s!"universe arity mismatch for {name}"
-  let value? ← match info with
-    | .axiomInfo _ => pure none
-    | .defnInfo value => pure (some value.value)
-    | .thmInfo _ => throw s!"unsupported opaque theorem dependency {name}"
-    | .opaqueInfo _ => throw s!"unsupported opaque dependency {name}"
+  let (value?, isOpaque) ← match info with
+    | .axiomInfo _ => pure (none, false)
+    | .defnInfo value => pure (some value.value, false)
+    | .thmInfo value => pure (some value.value, true)
+    | .opaqueInfo value => pure (some value.value, true)
     | _ => throw s!"unsupported inductive/constructor/recursor/quotient dependency {name}"
   modify fun state => { state with visiting := state.visiting.insert specialized }
   let instantiate := fun expr => expr.instantiateLevelParams info.levelParams (levels.map numericLevel)
@@ -72,7 +72,7 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
   let value ← match value? with
     | none => pure Json.null
     | some expr => encodeExpr env (instantiate expr)
-  let declaration := Json.mkObj [("name", text specialized), ("type", type), ("value", value)]
+  let declaration := Json.mkObj [("name", text specialized), ("type", type), ("value", value), ("opaque", toJson isOpaque)]
   modify fun state => { state with
     declarations := state.declarations.push declaration
     complete := state.complete.insert specialized

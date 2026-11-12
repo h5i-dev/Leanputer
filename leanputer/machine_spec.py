@@ -66,6 +66,23 @@ class Op(IntEnum):
     C_CHILD = 29
     RET = 30
     ENV_EQ = 31
+    FALLBACK = 32
+    C_AFTER_CHILD = 33
+    F_TYPE = 34
+    F_TYPE_WHNF = 35
+    F_SORT = 36
+    F_SORT_WHNF = 37
+    F_Y = 38
+    F_PROOF_RESULT = 39
+    ETA = 40
+    E_TYPE = 41
+    E_TYPE_WHNF = 42
+    E_DOMAIN = 43
+    E_SHIFT = 44
+    E_VAR = 45
+    E_BUILD = 46
+    E_MAKE_APP = 47
+    E_COMPARE = 48
 
 
 @dataclass(frozen=True)
@@ -132,7 +149,7 @@ def prepare(config, term, claim, declarations=()):
     for d in declarations:
         ty = visit(d.type)
         value = visit(d.value) if d.value is not None else 0
-        constants.append([int(d.value is not None), ty, value])
+        constants.append([2 if d.opaque else int(d.value is not None), ty, value])
     term_id, claim_id = visit(term), visit(claim)
     regs = {name: 0 for name in REGISTERS}
     regs.update(free=len(heap), scan=1, decl_count=len(constants), term=term_id,
@@ -201,11 +218,13 @@ class SpecMachine:
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
-                  Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT):
+                  Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
+                  Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE):
             pointers.append(x)
-        if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP, Op.C_RIGHT):
+        if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
+                  Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF):
             pointers.append(result)
-        if op == Op.CONV:
+        if op in (Op.CONV, Op.FALLBACK, Op.ETA):
             pointers.append(y)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
@@ -232,7 +251,7 @@ class SpecMachine:
                 self.call(Op.INFER, r['claim'], continuation=(Op.ROOT_TYPE,))
             else:
                 kind, ty, value = s['constants'][r['decl']]
-                if kind not in (0, 1) or not 0 < ty < r['free'] or (kind and not 0 < value < r['free']):
+                if kind not in (0, 1, 2) or not 0 < ty < r['free'] or (kind and not 0 < value < r['free']):
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
                 else:
                     self.call(Op.INFER, ty, continuation=(Op.TYPE, ty, value, kind))
@@ -329,7 +348,7 @@ class SpecMachine:
             elif tag == Tag.CONST:
                 if v >= r['decl']:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
-                elif s['constants'][v][0]:
+                elif s['constants'][v][0] == 1:
                     self.tail(Op.WHNF, s['constants'][v][2])
                 else:
                     self.ret(x)
@@ -394,18 +413,99 @@ class SpecMachine:
             if x == result:
                 self.ret(1)
             elif tx != ty:
-                self.ret(0)
+                self.tail(Op.FALLBACK, x, result)
             elif tx in (Tag.VAR, Tag.SORT, Tag.CONST):
-                self.ret(int(vx == vy))
+                if vx == vy:
+                    self.ret(1)
+                else:
+                    self.tail(Op.FALLBACK, x, result)
             elif tx in (Tag.PI, Tag.LAM, Tag.APP):
-                self.call(Op.CONV, ax, ay, continuation=(Op.C_CHILD, bx, by))
+                self.call(Op.CONV, ax, ay, continuation=(Op.C_CHILD, x, result, bx, by))
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
         elif op == Op.C_CHILD:
-            if result:
-                self.tail(Op.CONV, x, y)
+            if not result:
+                self.tail(Op.FALLBACK, x, y)
             else:
+                tag, domain, _, _ = self.node(x)
+                binder = tag in (Tag.PI, Tag.LAM)
+                if binder and r['ctx'] >= cfg.context:
+                    self.stop(Outcome.RESOURCE, Reason.CONTEXT)
+                else:
+                    if binder:
+                        s['context'][r['ctx']][0] = domain
+                    self.call(Op.CONV, z, w, continuation=(Op.C_AFTER_CHILD, x, y),
+                              context=r['ctx']+int(binder))
+        elif op == Op.C_AFTER_CHILD:
+            if result:
+                self.ret(1)
+            else:
+                self.tail(Op.FALLBACK, x, y)
+        elif op == Op.FALLBACK:
+            if self.node(x)[0] in (Tag.SORT, Tag.PI) or self.node(y)[0] in (Tag.SORT, Tag.PI):
                 self.ret(0)
+            else:
+                self.call(Op.INFER, x, continuation=(Op.F_TYPE, x, y))
+        elif op == Op.F_TYPE:
+            self.call(Op.WHNF, result, continuation=(Op.F_TYPE_WHNF, x, y))
+        elif op == Op.F_TYPE_WHNF:
+            if self.node(result)[0] == Tag.SORT:
+                self.ret(0)
+            else:
+                self.call(Op.INFER, result, continuation=(Op.F_SORT, x, y, result))
+        elif op == Op.F_SORT:
+            self.call(Op.WHNF, result, continuation=(Op.F_SORT_WHNF, x, y, z))
+        elif op == Op.F_SORT_WHNF:
+            tag, _, _, v = self.node(result)
+            if tag != Tag.SORT:
+                self.stop(Outcome.REJECT, Reason.EXPECT_SORT)
+            elif v == 0:
+                self.call(Op.INFER, y, continuation=(Op.F_Y, x, y, z))
+            else:
+                self.tail(Op.ETA, x, y)
+        elif op == Op.F_Y:
+            self.call(Op.CONV, z, result, continuation=(Op.F_PROOF_RESULT, x, y))
+        elif op == Op.F_PROOF_RESULT:
+            if result:
+                self.ret(1)
+            else:
+                self.tail(Op.ETA, x, y)
+        elif op == Op.ETA:
+            left_lam, right_lam = self.node(x)[0] == Tag.LAM, self.node(y)[0] == Tag.LAM
+            if left_lam == right_lam:
+                self.ret(0)
+            elif left_lam:
+                self.call(Op.INFER, y, continuation=(Op.E_TYPE, x, y))
+            else:
+                self.call(Op.INFER, x, continuation=(Op.E_TYPE, y, x))
+        elif op == Op.E_TYPE:
+            self.call(Op.WHNF, result, continuation=(Op.E_TYPE_WHNF, x, y))
+        elif op == Op.E_TYPE_WHNF:
+            if self.node(result)[0] != Tag.PI:
+                self.ret(0)
+            else:
+                self.call(Op.CONV, self.node(x)[1], self.node(result)[1], continuation=(Op.E_DOMAIN, x, y))
+        elif op == Op.E_DOMAIN:
+            if not result:
+                self.ret(0)
+            else:
+                self.call(Op.SHIFT, y, 0, 1, continuation=(Op.E_SHIFT, x))
+        elif op == Op.E_SHIFT:
+            self.call(Op.E_VAR, 0, continuation=(Op.E_BUILD, x, result))
+        elif op == Op.E_VAR:
+            self.allocate(Tag.VAR, v=0)
+        elif op == Op.E_BUILD:
+            self.call(Op.E_MAKE_APP, y, result, continuation=(Op.E_COMPARE, x))
+        elif op == Op.E_MAKE_APP:
+            self.allocate(Tag.APP, x, y)
+        elif op == Op.E_COMPARE:
+            if r['ctx'] >= cfg.context:
+                self.stop(Outcome.RESOURCE, Reason.CONTEXT)
+            else:
+                _, domain, body, _ = self.node(x)
+                s['context'][r['ctx']][0] = domain
+                self.tail(Op.CONV, body, result)
+                r['ctx'] += 1
         else:
             self.stop(Outcome.REJECT, Reason.INTERNAL)
         return s

@@ -25,7 +25,7 @@ def parse_document(document):
         raise ValueError('environment must be an ordered declaration array')
     declarations = []
     for declaration in environment:
-        if not isinstance(declaration, dict) or set(declaration)-{'name', 'type', 'value'}:
+        if not isinstance(declaration, dict) or set(declaration)-{'name', 'type', 'value', 'opaque'}:
             raise ValueError('malformed environment declaration')
         declarations.append(Declaration(**declaration))
     return parse_expr(document['term']), parse_expr(document['claim']), declarations

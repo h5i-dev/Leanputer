@@ -64,19 +64,23 @@ class NanodaExport:
         self.records.append(dict(ie=index, **payload))
         return index
 
-    def declaration(self, name, ty, value):
+    def declaration(self, name, ty, value, opaque=False):
         name_id, type_id = self.name(name), self.expression(ty)
         if value is None:
             self.records.append({'axiom':dict(name=name_id, levelParams=[], type=type_id, isUnsafe=False)})
         else:
             value_id = self.expression(value)
-            self.records.append({'def':dict(name=name_id, levelParams=[], type=type_id,
-                                           value=value_id, hints='abbrev', safety='safe', all=[name_id])})
+            if opaque:
+                self.records.append({'opaque':dict(name=name_id, levelParams=[], type=type_id,
+                                                  value=value_id, isUnsafe=False, all=[name_id])})
+            else:
+                self.records.append({'def':dict(name=name_id, levelParams=[], type=type_id,
+                                               value=value_id, hints='abbrev', safety='safe', all=[name_id])})
 
     def document(self, document):
         term, claim, declarations = parse_document(document)
         for declaration in declarations:
-            self.declaration(declaration.name, declaration.type, declaration.value)
+            self.declaration(declaration.name, declaration.type, declaration.value, declaration.opaque)
         target = 'leanputer_replay_target'
         while target in {d.name for d in declarations}:
             target += '_'

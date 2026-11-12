@@ -30,6 +30,8 @@ def declaration (json : Json) : Except String Lean.Declaration := do
   if value == Json.null then
     return .axiomDecl {name, levelParams := [], type, isUnsafe := false}
   let body ← expression value
+  if (json.getObjValAs? Bool "opaque").toOption.getD false then
+    return .opaqueDecl {name, levelParams := [], type, value := body, isUnsafe := false}
   return .defnDecl {
     name := name
     levelParams := []

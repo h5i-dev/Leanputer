@@ -64,3 +64,12 @@ operational, recursive and actual Lean kernel checks; sampled nanoda replay also
 agrees. Batch JSON reports, compiler-fingerprinted artifacts and CLI are tested.
 Current gaps: eta/proof irrelevance/opaque constants, larger real corpus, fuzz
 minimization, systematic scaling measurements and broader formal invariants.
+
+Conversion extension: 49 phases now implement contextual Pi/Lam comparison,
+proof irrelevance via inferred proposition typing, and typed eta expansion with
+weighted lifting/allocation. Opaque bodies are checked and remain opaque. New
+positive/negative cases agree with actual Lean and nanoda. A real elaborated eta
+type needs 617 steps and therefore legitimately exhausts a 512-step checker;
+resource outcomes must remain separate in evaluation. Next architecture work
+will measure/factor memory writes and parallelize address arithmetic, preserving
+exact traces; then run the broader corpus/fuzz/scaling program.

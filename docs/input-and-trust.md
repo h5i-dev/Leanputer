@@ -20,7 +20,8 @@ index zero denotes the innermost binder. Domain annotations and claimed types
 are untrusted syntax, checked by the weighted machine. Binder names and
 implicit/explicit binder information do not affect kernel typing here.
 
-Environment records have `name`, `type`, and `value` (null for an explicit axiom).
+Environment records have `name`, `type`, and `value` (null for an explicit axiom), and optional Boolean `opaque`.
+Opaque values are checked but never delta-unfolded.
 Dependencies must precede their users. Every declared type is checked to have a
 sort; every definition value is independently inferred and compared with its
 declared type. Future/self constant references fail. All assumptions are
@@ -32,7 +33,7 @@ ConstantInfo. It retains applications and lambda terms requiring conversion;
 it does not call inferType, whnf, isDefEq, or any checker to label the result.
 Numeric level expressions are evaluated after syntactic universe parameter
 instantiation. Unresolved levels, lets, projections, literals, metavariables,
-inductive/constructor/recursor/quotient declarations and opaque dependencies are
+inductive/constructor/recursor/quotient declarations are
 explicitly unsupported. Unsupported exporter records are report entries, never
 accepted judgments. Metadata nodes are erased because they have no typing role.
 
@@ -71,4 +72,5 @@ forward time and CUDA peak allocated bytes. Model data includes all capacities,
 shared FFN/attention stages, buffer bytes/nonzeros and trainable parameter count.
 These are measurements, not soundness certificates. `RESOURCE` is incomplete;
 `UNSUPPORTED` is outside the current syntax/conversion scope; `REJECT` concerns
-the currently implemented calculus and can differ from full Lean conversion.
+the implemented ground calculus; complete correspondence with Lean remains a
+validation target rather than a formally verified result.

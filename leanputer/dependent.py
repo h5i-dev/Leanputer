@@ -52,6 +52,7 @@ class Declaration:
     name: str
     type: tuple
     value: object = None
+    opaque: bool = False
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name:
@@ -59,6 +60,8 @@ class Declaration:
         object.__setattr__(self, 'type', parse_expr(self.type))
         if self.value is not None:
             object.__setattr__(self, 'value', parse_expr(self.value))
+        if type(self.opaque) is not bool or (self.opaque and self.value is None):
+            raise ValueError('opaque declarations require a value')
 
 
 class Oracle:
@@ -109,7 +112,7 @@ class Oracle:
             declaration = self.environment.get(term[1])
             if declaration is None:
                 raise Rejected('unknown constant')
-            return self.whnf(declaration.value) if declaration.value is not None else term
+            return self.whnf(declaration.value) if declaration.value is not None and not declaration.opaque else term
         if term[0] == 'app':
             fn = self.whnf(term[1])
             if fn[0] == 'lam':
@@ -117,14 +120,31 @@ class Oracle:
             return ('app', fn, term[2])
         return term
 
-    def convert(self, left, right):
+    def convert(self, left, right, context=()):
         self.tick()
         left, right = self.whnf(left), self.whnf(right)
         if left == right:
             return True
-        if left[0] != right[0] or left[0] in ('var', 'sort', 'const'):
+        if left[0] == right[0] and left[0] in ('pi', 'lam', 'app'):
+            if self.convert(left[1], right[1], context):
+                extended = context + (left[1],) if left[0] in ('pi', 'lam') else context
+                if self.convert(left[2], right[2], extended):
+                    return True
+        # Sort and Pi expressions cannot be proof terms or eta-expanded values.
+        if left[0] in ('sort', 'pi') or right[0] in ('sort', 'pi'):
             return False
-        return self.convert(left[1], right[1]) and self.convert(left[2], right[2])
+        left_type = self.whnf(self.infer(left, context))
+        if left_type[0] != 'sort':
+            classifier = self.whnf(self.infer(left_type, context))
+            if classifier == ('sort', 0) and self.convert(left_type, self.infer(right, context), context):
+                return True
+        if (left[0] == 'lam') != (right[0] == 'lam'):
+            lam, neutral = (left, right) if left[0] == 'lam' else (right, left)
+            fn_type = self.whnf(self.infer(neutral, context))
+            if fn_type[0] == 'pi' and self.convert(lam[1], fn_type[1], context):
+                applied = ('app', self.shift(neutral, 1), ('var', 0))
+                return self.convert(lam[2], applied, context + (lam[1],))
+        return False
 
     def infer(self, term, context=()):
         self.tick()
@@ -152,7 +172,7 @@ class Oracle:
             # Lean imax on ground numeric levels: impredicative Prop.
             return ('sort', 0 if body_sort[1] == 0 else max(domain_sort[1], body_sort[1]))
         fn_type = self.whnf(self.infer(term[1], context))
-        if fn_type[0] != 'pi' or not self.convert(self.infer(term[2], context), fn_type[1]):
+        if fn_type[0] != 'pi' or not self.convert(self.infer(term[2], context), fn_type[1], context):
             raise Rejected('application type mismatch')
         return self.substitute(fn_type[2], term[2])
 

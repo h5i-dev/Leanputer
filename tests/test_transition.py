@@ -9,6 +9,7 @@ import torch
 from leanputer.dependent import Declaration, Oracle
 from leanputer.machine_spec import MachineConfig, Op, Outcome, SpecMachine, prepare
 from leanputer.transition import compile_machine
+from leanputer.dependent_examples import conversion_cases
 
 
 torch.set_num_threads(1)
@@ -21,7 +22,7 @@ POLY_TYPE = ('pi', S1, ('pi', V0, V1))
 class WeightedTransitionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.config = MachineConfig(heap=64, stack=16, context=8, constants=4, fuel=512)
+        cls.config = MachineConfig(heap=64, stack=16, context=8, constants=8, fuel=512)
         cls.model = compile_machine(cls.config)
 
     def compare_traces(self, inputs, model=None):
@@ -67,7 +68,7 @@ class WeightedTransitionTests(unittest.TestCase):
             (('app', ('app', ('const', 'id'), ('const', 'A')), ('const', 'x')), ('const', 'A'), environment),
             (('lam', S1, ('app', POLY_ID, V0)), POLY_TYPE, ()),
             (('lam', ('pi', S0, S0), V0), ('pi', ('pi', S0, S0), ('pi', S0, S0)), ()),
-        ]
+        ] + [(term, claim, env) for _, term, claim, env, good in conversion_cases()[:2] if good]
 
     def test_full_state_traces_and_weight_sharing(self):
         inputs = [prepare(self.config, term, claim, declarations) for term, claim, declarations in self.cases()]
@@ -93,7 +94,7 @@ class WeightedTransitionTests(unittest.TestCase):
     @unittest.skipUnless(torch.cuda.is_available(), 'CUDA unavailable')
     def test_cuda_full_trace_agreement(self):
         gpu = compile_machine(self.config).cuda()
-        cases = self.cases()[2:5]
+        cases = self.cases()[2:5]+self.cases()[-2:]
         inputs = [prepare(self.config, term, claim, env) for term, claim, env in cases]
         specs, _, _ = self.compare_traces(inputs, gpu)
         self.assertTrue(all(spec.state['regs']['status'] == Outcome.ACCEPT for spec in specs))

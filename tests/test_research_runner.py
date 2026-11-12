@@ -43,7 +43,7 @@ class ResearchRunnerTests(unittest.TestCase):
         result = check_batch(self.model, [IDENTITY, wrong, unsupported, malformed, resource])
         self.assertEqual([r['status'] for r in result['results']], ['ACCEPT', 'REJECT', 'UNSUPPORTED', 'MALFORMED', 'RESOURCE'])
         self.assertEqual(result['runtime']['applied_steps'], 65)
-        self.assertEqual(result['results'][0]['semantic_steps'], 50)
+        self.assertEqual(result['results'][0]['semantic_steps'], 52)
         self.assertEqual(result['model']['trainable_parameters'], 0)
 
     def test_versioned_artifacts_and_cli(self):

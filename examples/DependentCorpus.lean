@@ -32,6 +32,12 @@ theorem dependent_proof (A : Sort u) (B : A → Sort v)
     (P : (a : A) → B a → Prop) (f : (a : A) → B a)
     (h : (a : A) → (b : B a) → P a b) (a : A) : P a (f a) := h a (f a)
 
+theorem eta_type (A B : Type) (F : (A → B) → Prop) (f : A → B)
+    (h : F f) : F (fun a => f a) := h
+theorem proof_irrelevance_type (P : Prop) (p q : P) (F : P → Prop)
+    (h : F p) : F q := h
+theorem use_opaque_proof (P : Prop) (p : P) : P := imp_id P p
+
 -- An explicitly unsupported inductive/recursor dependency.
 theorem unsupported_nat (n : Nat) : n = n := rfl
 end LeanputerCorpus
