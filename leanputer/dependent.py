@@ -158,11 +158,13 @@ class Oracle:
                 if name=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
                     return self.whnf(arguments[3],context)
                 if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
-                count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6}.get(name)
+                count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6}.get(name)
                 if count and len(arguments)==count:
                     major=self.whnf(arguments[-1],context);ctor=major;fields=[]
                     while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
                     if ctor[0]=='builtin':
+                        if name in ('Quot.ind','Quot.lift') and ctor[1]=='Quot.mk' and len(fields)==3:
+                            return self.whnf(apps(arguments[3],fields[2]),context)
                         if name in ('And.rec','Iff.rec') and ctor[1]==name.split('.')[0]+'.intro' and len(fields)==4:
                             return self.whnf(apps(arguments[3],*fields[2:]),context)
                         if name=='Nonempty.rec' and ctor[1]=='Nonempty.intro' and len(fields)==2:

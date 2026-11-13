@@ -240,3 +240,15 @@ explicitassumptions. Model802.35M BF16params/H3072/70layers,318.306s for
 3074forwards at512heap. Full native857coverage stillunmeasured. Nextfixed
 quotientprimitives are chosen to unlock funext-dependent closures; no broader
 differential campaign or renewed layout tuning is planned now.
+
+
+Fixed Quot/Mk/Ind/Lift now share the existing 81-phase recursor framework.
+Ground universe order is checked against actual Lean aliases, including
+Quot.lift.{0,1}/{1,0}. Targeted weighted tests reject invalid respectfulness,
+neutral-quotient reduction and large Ind elimination. Thirteen of 23 current
+Quot-first blockers now syntax-export; no new native mathlib acceptance claim
+for this slice. Full funext dependency closure planning takes ~41k transitions
+and ~6.5k nodes for two source theorems, exceeding current small native smoke
+budgets. Keep those resource costs visible. Next constructive Decidable slice
+uses its two constructors and dependent data recursor, chosen from 109 original
+first blockers; broad verification/evaluation remains deferred.

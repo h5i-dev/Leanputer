@@ -188,3 +188,22 @@ field order, Or branch choice, the Prop elimination boundary and opaque majors.
 General recursive, indexed, mutual or user inductive definitions remain outside
 this fixed catalog. The nanoda intrinsic adapter is still deferred; no new
 nanoda evidence is claimed for these constructs.
+
+
+## Fixed quotient primitives
+
+`Quot`, `Quot.mk` and `Quot.ind` each carry one carrier universe.
+`Quot.lift` carries **carrier universe, result universe**, in that order.
+Their fixed kernel typing schemas are built inside weights. Lift checks its
+function and the full relation-respectfulness proof before accepting an
+application. Ind's motive lands in Prop. Both reductions normalize the major,
+require a matching Quot.mk, and apply the minor/function to its representative.
+Opaque or neutral quotients do not trigger representative selection.
+
+`Quot.sound` is a genuine Lean axiom. It is exported as an ordinary explicit
+environment axiom with its entire type checked, and is listed in assumptions
+where used. It is not synthesized as a replacement for unavailable bodies.
+Lean replay adds the kernel's actual quotDecl for the four quotient primitives;
+that declaration does not add Quot.sound. Higher Setoid/Quotient structures
+remain unsupported until implemented separately. Broad native/nanoda quotient
+correspondence validation is still deferred.

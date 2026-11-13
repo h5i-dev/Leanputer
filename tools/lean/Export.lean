@@ -62,12 +62,13 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
       return jsonArray [text "builtin",text name.toString]
     if (name == ``False.rec || name == ``True.rec || name == ``And.rec || name == ``Iff.rec ||
         name == ``Nonempty || name == ``Nonempty.intro || name == ``Nonempty.rec ||
-        name == ``Exists || name == ``Exists.intro || name == ``Exists.rec) && values.length == 1 then
+        name == ``Exists || name == ``Exists.intro || name == ``Exists.rec ||
+        name == ``Quot || name == ``Quot.mk || name == ``Quot.ind) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
-    if name == ``Eq.rec && values.length == 2 then
-      return jsonArray [text "builtin",text "Eq.rec",toJson values[0]!,toJson values[1]!]
+    if (name == ``Eq.rec || name == ``Quot.lift) && values.length == 2 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
   | .mdata _ inner => encodeExpr env inner

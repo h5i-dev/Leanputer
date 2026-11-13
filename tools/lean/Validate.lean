@@ -38,9 +38,14 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Exists" then return .const ``Exists [level]
       if name == "Exists.intro" then return .const ``Exists.intro [level]
       if name == "Exists.rec" then return .const ``Exists.rec [level]
+      if name == "Quot" then return .const ``Quot [level]
+      if name == "Quot.mk" then return .const ``Quot.mk [level]
+      if name == "Quot.ind" then return .const ``Quot.ind [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
+    if name == "Quot.lift" && fields.size == 4 then
+      return .const ``Quot.lift [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Eq.rec" && fields.size == 4 then
       return .const ``Eq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     throw "unsupported replay logical primitive"
@@ -114,6 +119,7 @@ def main (args : List String) : IO UInt32 := do
       ctors := ctors ++ [{name := ctor, type := constructor.type}]
     let primitive : Lean.Declaration := .inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false
     basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => "Lean rejected primitive basis"))
+  basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} .quotDecl).mapError (fun _ => "Lean rejected quotient basis"))
   let mut records : Array Json := #[]
   for line in (← IO.FS.readFile input).splitOn "\n" do
     if line.isEmpty then continue

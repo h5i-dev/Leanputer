@@ -536,8 +536,9 @@ class SpecMachine:
         elif op==Op.REC_SELECT:
             ctor=self.node(result)[3] if result and self.node(result)[0]==Tag.BUILTIN else -1
             if ctor not in REC_CONSTRUCTORS[y]:self.ret(0)
-            elif y==16:self.tail(Op.REC_APPLY,self.node(x)[2],z)
+            elif y in (16,26):self.tail(Op.REC_APPLY,self.node(x)[2],z)
             elif y in (12,13,19):self.tail(Op.REC_FIELDS,w,self.node(x)[2],z)
+            elif y==27:self.tail(Op.REC_PICK,self.node(x)[1],z)
             elif ctor==22:self.tail(Op.REC_APPLY,self.node(x)[2],z)
             else:self.tail(Op.REC_PICK,self.node(x)[1],z)
         elif op==Op.REC_FIELDS:

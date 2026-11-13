@@ -7,6 +7,7 @@ import time
 
 from .runner import parse_document
 from .preparation import lean_tool
+from .dependent import Unsupported
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,10 +56,12 @@ class NanodaExport:
         elif tag == 'sort': payload = {'sort':self.level(term[1])}
         elif tag == 'const': payload = {'const':dict(name=self.name(term[1]), us=[])}
         elif tag == 'app': payload = {'app':dict(fn=self.expression(term[1]), arg=self.expression(term[2]))}
-        else:
+        elif tag in ('pi','lam'):
             domain, body = self.expression(term[1]), self.expression(term[2])
             payload = {'lam' if tag == 'lam' else 'forallE':
                        dict(name=self.name('_binder'), type=domain, body=body, binderInfo='default')}
+        else:
+            raise Unsupported('nanoda syntax adapter does not implement '+tag)
         index = len(self.expressions)
         self.expressions[term] = index
         self.records.append(dict(ie=index, **payload))
@@ -92,7 +95,10 @@ def nanoda_replay(document, directory, binary):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     export, config = directory/'nanoda.ndjson', directory/'nanoda-config.json'
-    export.write_text(NanodaExport().document(document))
+    try:
+        export.write_text(NanodaExport().document(document))
+    except Unsupported as error:
+        return dict(status='UNSUPPORTED',reason=str(error),seconds=0.,exit_code=None)
     assumptions = [d['name'] for d in document.get('environment', []) if d.get('value') is None]
     config.write_text(json.dumps(dict(export_file_path=str(export), permitted_axioms=assumptions,
                                      print_success_message=True, print_axioms=False)))

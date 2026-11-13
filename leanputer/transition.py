@@ -406,8 +406,9 @@ class RuleCompiler:
         for head,constructors in REC_CONSTRUCTORS.items():
             match=self.AND(phase,self.eq(y,head),self.tag(hr,Tag.BUILTIN),self.OR(*(self.eq(hr['v'],ctor)for ctor in constructors)))
             matches.append(match)
-            if head==16:self.tail(match,Op.REC_APPLY,hx['b'],z)
+            if head in (16,26):self.tail(match,Op.REC_APPLY,hx['b'],z)
             elif head in (12,13,19):self.tail(match,Op.REC_FIELDS,w,hx['b'],z)
+            elif head==27:self.tail(match,Op.REC_PICK,hx['a'],z)
             else:
                 right=self.eq(hr['v'],22)
                 self.tail(self.AND(match,right),Op.REC_APPLY,hx['b'],z)

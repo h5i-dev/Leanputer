@@ -9,13 +9,15 @@ from functools import reduce
 
 PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8,'True':9,'True.intro':10,
                    'True.rec':11,'And.rec':12,'Iff.rec':13,'Nonempty':14,'Nonempty.intro':15,'Nonempty.rec':16,
-                   'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23}
+                   'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23,
+                   'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
-                       'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1}
+                       'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1,
+                       'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2}
 PROJECTION_FAMILIES = {'Iff':0,'And':2}
-REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6}
-REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22)}
-REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6}
+REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,)}
+REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3}
 
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
@@ -35,6 +37,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name in ('Quot','Quot.mk','Quot.ind','Quot.lift'):return _quotient_type(expression)
     if name in ('True.rec','And.rec','Iff.rec','Nonempty','Nonempty.intro','Nonempty.rec','Exists','Exists.intro','Exists.rec','Or','Or.inl','Or.inr','Or.rec'):
         return _positive_type(expression)
     if name in ('Eq','Eq.refl','Eq.rec'):
@@ -108,6 +111,31 @@ def _positive_type(expression):
     if name==family+'.intro':return _close_schema(wrap(fields(ty)))
     minor=fields(apps(motive,ctor))
     return _close_schema(wrap(bind('motive',bind('motive_arg',ty,sort),bind('minor',minor,bind('major',ty,apps(motive,major))))))
+
+
+def _quotient_type(expression):
+    """Fixed kernel quotient rules; Quot.sound remains an explicit axiom in Γ."""
+    name=expression[1];u=expression[2]
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,relation,beta,fn,motive,major=map(v,('alpha','relation','beta','fn','motive','major'))
+    relation_type=bind('rel_left',alpha,bind('rel_right',alpha,('sort',0)))
+    quotient=apps(('builtin','Quot',u),alpha,relation)
+    mk=lambda witness:apps(('builtin','Quot.mk',u),alpha,relation,witness)
+    wrap=lambda tail:bind('alpha',('sort',u),bind('relation',relation_type,tail))
+    if name=='Quot':tree=wrap(('sort',u))
+    elif name=='Quot.mk':tree=wrap(bind('witness',alpha,quotient))
+    elif name=='Quot.ind':
+        tree=wrap(bind('motive',bind('motive_arg',quotient,('sort',0)),
+             bind('minor',bind('witness',alpha,apps(motive,mk(v('witness')))),bind('major',quotient,apps(motive,major)))))
+    else:
+        result_level=expression[3]
+        equality=apps(('builtin','Eq',result_level),beta,apps(fn,v('left')),apps(fn,v('right')))
+        respect=bind('left',alpha,bind('right',alpha,bind('equivalent',apps(relation,v('left'),v('right')),equality)))
+        tree=wrap(bind('beta',('sort',result_level),bind('fn',bind('fn_arg',alpha,beta),
+                  bind('respect',respect,bind('major',quotient,beta)))))
+    return _close_schema(tree)
 
 
 def type_schema(expression):

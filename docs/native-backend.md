@@ -240,3 +240,35 @@ hidden3072/70layers,peak CUDA1,720,345,088bytes/host1,710,448,640bytes.
 This feature-superset development batch differs from the earlier downsizing
 comparison and is not a matched speedup claim. Evidence and exact inputs:
 benchmarks/native/positive-{smoke.json,input.jsonl,config.json}.
+
+
+## Quotient primitive slice
+
+The fixed Quot, Quot.mk, Quot.ind and Quot.lift rules reuse the 81-phase native
+framework. Lift's carrier/result universe order is checked with actual Lean
+aliases at {0,1}/{1,0}. Lift applications check relation respectfulness before
+constructor reduction; Ind's motive remains Prop-valued. Neutral quotients
+stay neutral. Quot.sound remains a genuine explicit axiom dependency, with its
+type checked and its assumption reported. No primitive certificate is supplied
+by input preparation.
+
+Targeted weighted/Lean cases agree on constructor reduction and three required
+rejections: invalid respectfulness, neutral quotient data reduction, and large
+Ind elimination. Five actual closed types plus five relative cases pass the
+weighted smoke. New syntax export covers13of23current quotient-first blockers;
+the larger funext closures require about41ksemantic transitions and6.5knodes
+in planning. Those are not native acceptances. The small native smoke covers
+quotient semantics independently of that much larger resource budget; broad
+coverage/throughput validation is still deferred.
+
+Quotient stock GPU smoke passed7A3R with exact expected steps:five closed
+quotient types, lift/ind constructor iota, three forbidden shortcuts. Model
+619,554,538BF16parameters/1,239,109,076weightbytes/H3072/54layers at
+heap256/stack32/context16/constants8/fuel1536,40boot+1538forwards127.681s,
+compile12.530s,CUDApeak1,317,785,600bytes/host1,705,603,072bytes. This is a
+new semantic development batch with a different capacity from the512-cell
+positive checkpoint; no matched speedup claim. Evidence under benchmarks/native/
+quotient-{smoke.json,input.jsonl,config.json}. No new real-mathlib native
+acceptance is claimed for this slice because its dependency closures exceed
+current small budgets. The nanoda adapter now explicitly returns UNSUPPORTED
+for unimplemented syntax, rather than treating every unknown tag as Pi.
