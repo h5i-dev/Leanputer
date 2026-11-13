@@ -1,0 +1,83 @@
+[
+  {
+    "name": "LeanputerLaws.sgFamily0@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "free": 9,
+    "oracle": "ACCEPT",
+    "gamma": 0
+  },
+  {
+    "name": "LeanputerLaws.addSgFamily1@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "free": 9,
+    "oracle": "ACCEPT",
+    "gamma": 0
+  },
+  {
+    "name": "LeanputerLaws.cmFamily0@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "free": 9,
+    "oracle": "ACCEPT",
+    "gamma": 0
+  },
+  {
+    "name": "LeanputerLaws.addCmFamily1@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "free": 9,
+    "oracle": "ACCEPT",
+    "gamma": 0
+  },
+  {
+    "name": "LeanputerLaws.sgRec10@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 9628,
+    "free": 1428,
+    "oracle": "ACCEPT",
+    "gamma": 4
+  },
+  {
+    "name": "LeanputerLaws.addCmRec01@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 6214,
+    "free": 895,
+    "oracle": "ACCEPT",
+    "gamma": 4
+  },
+  {
+    "name": "LeanputerLaws.parent@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 623,
+    "free": 95,
+    "oracle": "ACCEPT",
+    "gamma": 1
+  },
+  {
+    "name": "LeanputerLaws.assoc@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 15555,
+    "free": 2335,
+    "oracle": "ACCEPT",
+    "gamma": 6
+  },
+  {
+    "name": "LeanputerLaws.eta@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 20696,
+    "free": 3213,
+    "oracle": "ACCEPT",
+    "gamma": 7
+  }
+]

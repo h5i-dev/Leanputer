@@ -12,7 +12,7 @@ from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, MachineConfig, Op, Outcome,
 from .memory import AddressedRead, AddressedWrite
 from .state_layout import StateLayout, RegisterLayout
 from .dependent import Tag
-from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES,REC_ARITIES,REC_CONSTRUCTORS,REC_MAJOR_ARITIES,ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,PROJECTION_COUNT
+from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES,REC_ARITIES,REC_CONSTRUCTORS,REC_MAJOR_ARITIES,ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,PROJECTION_COUNT
 
 
 PORTS = [('hx', HEAP_FIELDS), ('hy', HEAP_FIELDS), ('hr', HEAP_FIELDS), ('hs', HEAP_FIELDS),
@@ -102,14 +102,14 @@ class RuleCompiler:
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                    Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
                    Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC,
-                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT)
+                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT, Op.LAW_FIELD_TYPE, Op.LAW_SECOND)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
-                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE, Op.I_ONE_CTOR, Op.I_ONE_FIELD, Op.N_SUCC_VALUE, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR)
+                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE, Op.I_ONE_CTOR, Op.I_ONE_FIELD, Op.N_SUCC_VALUE, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR, Op.LAW_FIELD_TYPE)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                                            Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT)),
+                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT, Op.LAW_SECOND)),
                              (self.r['z'],(Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
@@ -242,7 +242,7 @@ class RuleCompiler:
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,self.add(y,1),z,w) if position+1<len(schema) else None
                 self.allocate(self.AND(op,valid,self.eq(primitive,code),self.eq(y,position)),tag,
-                              self.g.fit([bit for level in a[:3] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,a) if binary else resolve(a),self.g.fit([bit for level in a[3:] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,b) if binary else resolve(b),
+                              self.g.fit([bit for level in a[:3] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,a) if binary or tag==Tag.PROJ else resolve(a),self.g.fit([bit for level in a[3:] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,b) if binary else resolve(b),
                               resolve(v),resume=resume)
         # Environment and root-check orchestration.
         op = self.mode(Op.ENV)
@@ -311,16 +311,24 @@ class RuleCompiler:
         self.stop(self.AND(op, self.NOT(legal)), Outcome.REJECT, Reason.SYNTAX)
         self.call(self.mode(Op.I_PROJ),Op.WHNF,result,continuation=(Op.I_PROJ_TYPE,x))
         op=self.mode(Op.I_PROJ_TYPE);app=self.tag(hr,Tag.APP)
-        one=self.OR(*(self.eq(hx['v'],record['projection'])for record in ONE_FIELD_RECORDS.values()))
+        one=self.OR(*(self.eq(hx['v'],record['projection'])for record in ONE_FIELD_RECORDS.values()),*(self.OR(self.eq(hx['v'],record['projection']),self.eq(hx['v'],record['projection']+1))for record in LAW_RECORDS.values()))
         self.stop(self.AND(op,self.NOT(one),self.NOT(app)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
         self.tail(self.AND(op,self.NOT(one),app),Op.I_PROJ_FAMILY,hr['a'],x,hr['b'])
         for record in ONE_FIELD_RECORDS.values():
             self.call(self.AND(op,self.eq(hx['v'],record['projection'])),Op.I_RECORD_PARAMS,result,x,record.get('parameters',1),continuation=(Op.I_ONE_FIELD,))
+        for record in LAW_RECORDS.values():
+            match=self.OR(self.eq(hx['v'],record['projection']),self.eq(hx['v'],record['projection']+1))
+            self.call(self.AND(op,match),Op.I_RECORD_PARAMS,result,x,1,continuation=(Op.LAW_FIELD_TYPE,x))
         op=self.mode(Op.I_RECORD_PARAMS);more=self.NOT(self.eq(z,0));app=self.tag(hx,Tag.APP)
         self.stop(self.AND(op,more,self.NOT(app)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
         self.call(self.AND(op,more,app),Op.I_RECORD_PARAMS,hx['a'],y,self.sub(z,1),continuation=(Op.I_ONE_CTOR,hx['b']))
         for record in ONE_FIELD_RECORDS.values():
             match=self.AND(op,self.NOT(more),self.eq(self.hy['v'],record['projection']))
+            good=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],record['code']))
+            self.stop(self.AND(match,self.NOT(good)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            self.tail(self.AND(match,good),Op.BUILTIN_TYPE,record['code']+1,0,r['free'],hx['a'])
+        for record in LAW_RECORDS.values():
+            match=self.AND(op,self.NOT(more),self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1)))
             good=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],record['code']))
             self.stop(self.AND(match,self.NOT(good)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
             self.tail(self.AND(match,good),Op.BUILTIN_TYPE,record['code']+1,0,r['free'],hx['a'])
@@ -333,6 +341,15 @@ class RuleCompiler:
         op=self.mode(Op.I_ONE_FIELD);pi=self.tag(hr,Tag.PI)
         self.stop(self.AND(op,self.NOT(pi)),Outcome.REJECT,Reason.SYNTAX)
         self.ret(self.AND(op,pi),hr['a'])
+        op=self.mode(Op.LAW_FIELD_TYPE);pi=self.tag(hr,Tag.PI)
+        self.stop(self.AND(op,self.NOT(pi)),Outcome.REJECT,Reason.SYNTAX)
+        for record in LAW_RECORDS.values():
+            first=self.eq(hx['v'],record['projection']);second=self.eq(hx['v'],record['projection']+1)
+            self.ret(self.AND(op,pi,first),hr['a'])
+            self.allocate(self.AND(op,pi,second),Tag.PROJ,hx['a'],v=record['projection'],resume=(Op.LAW_SECOND,result,r['free']))
+        op=self.mode(Op.LAW_SECOND);pi=self.tag(hx,Tag.PI)
+        self.stop(self.AND(op,self.NOT(pi)),Outcome.REJECT,Reason.SYNTAX)
+        self.call(self.AND(op,pi),Op.SUBST,hx['b'],y,continuation=(Op.I_ONE_FIELD,))
         op=self.mode(Op.I_PROJ_HEAD);iff=self.lt(self.hy['v'],2);index=self.hy['v'][0];subtype=self.OR(self.eq(self.hy['v'],4),self.eq(self.hy['v'],5))
         pair=self.OR(*(self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))for record in TWO_FIELD_RECORDS.values()))
         expected=self.mux(subtype,32,self.mux(iff,2,4))
@@ -406,6 +423,9 @@ class RuleCompiler:
         for record in TWO_FIELD_RECORDS.values():
             match=self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))
             ctor=self.mux(match,record['code']+1,ctor)
+        for record in LAW_RECORDS.values():
+            match=self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))
+            ctor=self.mux(match,record['code']+1,ctor);peel=self.mux(match,1,peel)
         for record in ONE_FIELD_RECORDS.values():
             match=self.eq(self.hy['v'],record['projection'])
             ctor=self.mux(match,record['code']+1,ctor)
@@ -415,12 +435,12 @@ class RuleCompiler:
         op=self.mode(Op.PROJ_HEAD);more=self.NOT(self.eq(y,0));app=self.tag(hx,Tag.APP)
         self.tail(self.AND(op,more,app),Op.PROJ_HEAD,hx['a'],self.sub(y,1),z)
         self.ret(self.AND(op,more,self.NOT(app)),0)
-        polymorphic=self.OR(self.eq(z,33),*(self.eq(z,record['code']+1)for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())))
+        polymorphic=self.OR(self.eq(z,33),*(self.eq(z,record['code']+1)for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())))
         matches=self.AND(self.tag(hx,Tag.BUILTIN),self.OR(self.eq(hx['a'],0),polymorphic),self.eq(hx['v'],z))
         self.ret(self.AND(op,self.NOT(more)),self.mux(matches,1,0))
         op=self.mode(Op.PROJ_SELECT);good=self.NOT(self.eq(result,0))
         second=self.OR(self.lt(5,hx['v']),hx['v'][0])
-        for record in TWO_FIELD_RECORDS.values():
+        for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values()):
             match=self.OR(self.eq(hx['v'],record['projection']),self.eq(hx['v'],record['projection']+1))
             second=self.OR(self.AND(match,self.eq(hx['v'],record['projection']+1)),self.AND(self.NOT(match),second))
         self.tail(self.AND(op,good),Op.WHNF,self.mux(second,w,z))
@@ -436,8 +456,8 @@ class RuleCompiler:
             if head==8:self.call(complete,Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             elif head==11:self.tail(complete,Op.WHNF,hr['b'])
             elif head==34:self.tail(complete,Op.S_REC_LEFT,hr['b'],y)
-            elif head in {record['code']+2 for record in TWO_FIELD_RECORDS.values()}:
-                projection=next(record['projection']for record in TWO_FIELD_RECORDS.values()if record['code']+2==head)
+            elif head in {record['code']+2 for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())}:
+                projection=next(record['projection']for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())if record['code']+2==head)
                 self.tail(complete,Op.S_REC_LEFT,hr['b'],y,projection)
             elif head==37:self.call(complete,Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             elif head==66:self.call(complete,Op.N_SUCC,y,continuation=(Op.EQ_RESULT,x,result,y))
@@ -670,7 +690,7 @@ class RuleCompiler:
         self.tail(self.AND(phase,self.NOT(app)),Op.S_HEAD,x,y,z,w)
         phase=self.mode(Op.S_HEAD);subtype=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],32))
         two=[subtype]
-        for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values()):
+        for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values()):
             if not record.get('data',True):continue
             match=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],record['code']));two.append(match)
             self.call(self.AND(phase,match),Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,record['projection']))

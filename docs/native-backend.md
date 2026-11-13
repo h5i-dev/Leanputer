@@ -624,3 +624,42 @@ current probes: bounded128 gives28753/3028; an unbounded ideal gives23876/1755.
 These are reference experiments, not compiled implementations, speedups or
 additional native proof results. They do not establish correctness for a new
 algorithm; the production checker remains the tested eager transition program.
+
+The next fixed slice is inherited law records: Semigroup, AddSemigroup,
+CommMagma and AddCommMagma (107 intrinsics, 116 phases). Each stores a Mul/Add
+parent and its dependent associativity/commutativity proof. Fixed schema
+projection recipes are relocated in weighted type construction. Projection
+inference instantiates the carrier and the actual stored parent before selecting
+the law domain. Typed eta compares exact record types and data parents, using
+proof irrelevance for the law. The two-field recursor works with neutral data
+majors. Ordinary HMul/HAdd aliases and instance definitions stay in checked Γ.
+
+The focused reference weighted smoke passes two constructors and two required
+rejections in 99.209s. Nine source fixtures and seven of eight relative cases
+agree with actual Lean. The remaining distinct-neutral record comparison is
+an explicit incompleteness: Lean rejects, while projection-congruence/eta
+recursion reaches RESOURCE(STACK) in the operational engine and a recursion limit
+in the recursive oracle. It is never counted as a proof or semantic rejection.
+Actual Lean replay for these mathlib classes requires `--module
+Mathlib.Algebra.Group.Defs` inside the pinned `lake env`; it kernel-adds genuine
+inductive declarations and checks their definition dependencies, with no axiom
+fallback. Init-only replay explicitly marks a missing class basis unsupported.
+
+Same 857-source syntax refresh: 473 EXPORTED, 384 UNSUPPORTED in 11.414s; this is
+22 new syntax candidates, not 22 new native proofs. All rows are retained with
+NOT_RUN_IN_THIS_REFRESH and unknown dependency metadata null. The focused stock
+CUDA run passes 20 cases: 15 ACCEPT, four REJECT and one RESOURCE(STACK).
+Outcomes, reasons, semantic steps and allocated heap nodes match the operational
+specification. Both new actual getter proofs, CommMagma.mul_comm@[1] and
+AddCommMagma.add_comm@[1], accept in 5,022 steps with five checked dependencies,
+no axioms and 742 allocated nodes each. Existing Eq, PUnit and heterogeneous
+recursor cases retain their results. Heap 1024, stack 32, context 16, constants 8,
+universe 4 and fuel 5056 give 93 boot tokens plus 5,058 stock forwards.
+
+The generated model has 2,480,332,110 BF16 parameters, 4,960,664,220 weight bytes,
+hidden size 6400, 104 layers and FFN width 1024. Compilation takes 49.779s and
+fixed forward 783.575s, with CUDA forward peak 5,330,549,760 bytes and process
+host peak RSS 1,805,070,336 bytes. This single development run overlaps CPU
+checks and is not a controlled speed comparison or end-to-end throughput result.
+See benchmarks/native/laws-{input.jsonl,config.json,smoke.json,protocol.json};
+large tensors remain on scratch. Broad native/differential validation is deferred.

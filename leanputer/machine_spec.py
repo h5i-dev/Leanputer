@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES, ONE_FIELD_RECORDS, TWO_FIELD_RECORDS, PROJECTION_COUNT
+from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES, ONE_FIELD_RECORDS, TWO_FIELD_RECORDS, LAW_RECORDS, PROJECTION_COUNT
 
 
 class Outcome(IntEnum):
@@ -151,6 +151,8 @@ class Op(IntEnum):
     P_UNIT_MAJOR = 111
     S_PAIR_FIELD = 112
     S_PAIR_NEXT = 113
+    LAW_FIELD_TYPE = 114
+    LAW_SECOND = 115
 
 
 @dataclass(frozen=True)
@@ -333,6 +335,9 @@ class SpecMachine:
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR) or (op==Op.ETA and z):pointers.append(z)
         if op in (Op.S_PAIR_FIELD,Op.S_PAIR_NEXT):pointers.extend((x,y))
+        if op in (Op.LAW_FIELD_TYPE,Op.LAW_SECOND):pointers.append(x)
+        if op==Op.LAW_FIELD_TYPE:pointers.append(result)
+        if op==Op.LAW_SECOND:pointers.append(y)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -379,7 +384,7 @@ class SpecMachine:
                         if value[0]=='max':return max(resolve(part)for part in value[1:])
                         raise ValueError('unknown fixed universe expression')
                     return u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else (w>>(2*cfg.universe_bits))&((1<<cfg.universe_bits)-1) if value==-6 else (x>>cfg.primitive_bits)&((1<<cfg.universe_bits)-1) if value==-8 else value
-                encoded_a=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a[:3])) if tag==Tag.BUILTIN else z+a if binary else resolve(a)
+                encoded_a=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a[:3])) if tag==Tag.BUILTIN else z+a if binary or tag==Tag.PROJ else resolve(a)
                 encoded_b=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a[3:])) if tag==Tag.BUILTIN else z+b if binary else resolve(b)
                 self.allocate(tag,encoded_a,encoded_b,resolve(v),resume)
         elif op == Op.ENV:
@@ -454,12 +459,16 @@ class SpecMachine:
             tag,a,b,_=self.node(result)
             projection=self.node(x)[3]
             record=next((record for record in ONE_FIELD_RECORDS.values()if record['projection']==projection),None)
-            if record:self.call(Op.I_RECORD_PARAMS,result,x,record.get('parameters',1),continuation=(Op.I_ONE_FIELD,))
+            law=next((record for record in LAW_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+            if law:self.call(Op.I_RECORD_PARAMS,result,x,1,continuation=(Op.LAW_FIELD_TYPE,x))
+            elif record:self.call(Op.I_RECORD_PARAMS,result,x,record.get('parameters',1),continuation=(Op.I_ONE_FIELD,))
             elif tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
             else: self.tail(Op.I_PROJ_FAMILY,a,x,b)
         elif op==Op.I_RECORD_PARAMS:
             tag,a,b,v=self.node(x)
-            record=next(record for record in ONE_FIELD_RECORDS.values()if record['projection']==self.node(y)[3])
+            projection=self.node(y)[3]
+            record=next((record for record in ONE_FIELD_RECORDS.values()if record['projection']==projection),None)
+            if record is None:record=next(record for record in LAW_RECORDS.values()if record['projection']<=projection<record['projection']+2)
             if z:
                 if tag!=Tag.APP:self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
                 else:self.call(Op.I_RECORD_PARAMS,a,y,z-1,continuation=(Op.I_ONE_CTOR,b))
@@ -475,6 +484,14 @@ class SpecMachine:
         elif op==Op.I_ONE_FIELD:
             if self.node(result)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.SYNTAX)
             else:self.ret(self.node(result)[1])
+        elif op==Op.LAW_FIELD_TYPE:
+            projection=self.node(x)[3];record=next(record for record in LAW_RECORDS.values()if record['projection']<=projection<record['projection']+2)
+            if self.node(result)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            elif projection==record['projection']:self.ret(self.node(result)[1])
+            else:self.allocate(Tag.PROJ,self.node(x)[1],v=record['projection'],resume=(Op.LAW_SECOND,result,r['free']))
+        elif op==Op.LAW_SECOND:
+            if self.node(x)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            else:self.call(Op.SUBST,self.node(x)[2],y,continuation=(Op.I_ONE_FIELD,))
         elif op==Op.I_PROJ_HEAD:
             tag,a,_,v=self.node(x); projection=self.node(y)[3]
             pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
@@ -568,19 +585,20 @@ class SpecMachine:
                 projection=self.node(y)[3]
                 record=next((record for record in ONE_FIELD_RECORDS.values() if record['projection']==projection),None)
                 pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
-                ctor=record['code']+1 if record else pair['code']+1 if pair else 3 if projection<2 else 5 if projection<4 else 33
-                self.call(Op.PROJ_HEAD,a,record.get('parameters',1)-1 if record else 2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
+                law=next((record for record in LAW_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+                ctor=record['code']+1 if record else (pair or law)['code']+1 if pair or law else 3 if projection<2 else 5 if projection<4 else 33
+                self.call(Op.PROJ_HEAD,a,record.get('parameters',1)-1 if record else 1 if law else 2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
             else: self.neutral_projection(y,z)
         elif op==Op.PROJ_HEAD:
             tag,a,_,v=self.node(x)
             if y:
                 if tag==Tag.APP: self.tail(Op.PROJ_HEAD,a,y-1,z)
                 else: self.ret(0)
-            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33 or z in {record['code']+1 for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())}) and v==z))
+            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33 or z in {record['code']+1 for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())}) and v==z))
         elif op==Op.PROJ_SELECT:
             if result:
                 projection=self.node(x)[3]
-                pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+                pair=next((record for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())if record['projection']<=projection<record['projection']+2),None)
                 second=projection==pair['projection']+1 if pair else projection>=6 or projection%2
                 self.tail(Op.WHNF,w if second else z)
             else: self.neutral_projection(x,y)
@@ -596,8 +614,8 @@ class SpecMachine:
                 elif head==8:self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
                 elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
-                elif head in {record['code']+2 for record in TWO_FIELD_RECORDS.values()}:
-                    projection=next(record['projection']for record in TWO_FIELD_RECORDS.values()if record['code']+2==head)
+                elif head in {record['code']+2 for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())}:
+                    projection=next(record['projection']for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())if record['code']+2==head)
                     self.tail(Op.S_REC_LEFT,self.node(result)[2],y,projection)
                 elif head==37:self.call(Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==66:self.call(Op.N_SUCC,y,continuation=(Op.EQ_RESULT,x,result,y))
@@ -866,7 +884,7 @@ class SpecMachine:
             else:self.tail(Op.S_HEAD,x,y,z,w)
         elif op==Op.S_HEAD:
             record=next((record for record in ONE_FIELD_RECORDS.values() if record['code']==self.node(x)[3] and record['data']),None)
-            pair=next((record for record in TWO_FIELD_RECORDS.values()if record['code']==self.node(x)[3]),None)
+            pair=next((record for record in list(TWO_FIELD_RECORDS.values())+list(LAW_RECORDS.values())if record['code']==self.node(x)[3]),None)
             if self.node(x)[0]!=Tag.BUILTIN or (not record and not pair and self.node(x)[3]!=32):self.ret(0)
             else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,(record or pair)['projection']if record or pair else 4))
         elif op==Op.S_RIGHT_TYPE:

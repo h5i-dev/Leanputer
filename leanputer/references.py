@@ -13,13 +13,15 @@ from .dependent import Unsupported
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def lean_replay(documents, directory, lean='lean'):
+def lean_replay(documents, directory, lean='lean', module=None):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     source, result = directory/'lean-replay-input.jsonl', directory/'lean-replay-results.json'
     source.write_text(''.join(json.dumps(document)+'\n' for document in documents))
     start = time.perf_counter()
     command = [str(lean), '--run', str(lean_tool('Validate.lean')), str(source), str(result)]
+    if module is not None:
+        command += ['--module', module]
     completed = subprocess.run(command, capture_output=True, text=True, timeout=300)
     (directory/'lean-replay.log').write_text(completed.stdout+completed.stderr)
     if completed.returncode:

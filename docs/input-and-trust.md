@@ -364,3 +364,32 @@ Field inference instantiates all three parameters and preserves the result type.
 Typed data eta checks the exact family/type before comparing fields; a swapped
 argument, wrong result carrier or changed fourth universe rejects in targeted
 Lean/native checks. These remain fixed declarations, not generic user records.
+
+The fixed inherited law-record slice covers Semigroup/AddSemigroup and
+CommMagma/AddCommMagma. Each has one Type-valued carrier parameter and two
+stored fields: a Mul/Add parent and a dependent associativity/commutativity
+proof. Their family and constructor have one numeric universe parameter, their
+recursor has two. The compiler schema expresses operations through the parent's
+projection; this is definitionally equal to Lean's ordinary HMul/HAdd aliases.
+Those aliases and instance definitions still appear as checked input dependencies.
+
+Law projection inference constructs the fixed constructor type, substitutes the
+actual carrier, then substitutes the projection of the actual stored parent.
+The syntax encoder never supplies an inferred field type. A proof about a
+left-projection operation cannot construct a record whose operation is right
+projection. Typed record eta compares exact record types and their data parents;
+the remaining law fields inhabit Prop and use definitional proof irrelevance.
+The fixed two-field recursor applies its minor to both stored projections,
+including a neutral major. This does not admit arbitrary user structures.
+
+Conversion remains incomplete within resource budgets. Comparing two distinct
+neutral law records currently cycles between projection congruence and typed
+record eta until STACK exhaustion. The targeted negative is rejected by actual
+Lean but reported as RESOURCE by this bounded engine. The recursive evaluation
+oracle also reaches its recursion limit. No acceptance or semantic rejection is
+claimed for that case; broad numerical/semantic correspondence remains pending.
+
+Evaluation can select the actual mathlib replay basis with `--lean --lean-module
+Mathlib.Algebra.Group.Defs`, invoked inside the pinned checkout's `lake env`.
+The Python `lean_replay(..., module=...)` adapter exposes the same option.
+This only changes the independent offline reference, never model inference.

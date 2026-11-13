@@ -1,0 +1,66 @@
+[
+  {
+    "name": "law-semigroup-left",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1068,
+    "free": 137,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "law-comm-constant",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 813,
+    "free": 107,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "law-wrong-dependent-proof",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2320,
+    "free": 344,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "law-parent-data-differs",
+    "status": "RESOURCE",
+    "reason": "STACK",
+    "steps": 2697,
+    "free": 196,
+    "oracle": "RESOURCE"
+  },
+  {
+    "name": "law-neutral-eta",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4853,
+    "free": 567,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "law-family-guard",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 121,
+    "free": 20,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "law-neutral-recursor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4336,
+    "free": 456,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "law-projection-dependent-claim",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2958,
+    "free": 545,
+    "oracle": "REJECT"
+  }
+]

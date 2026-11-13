@@ -8,6 +8,8 @@ namespace LeanputerReplay
 
 def numericLevel (n : Nat) : Level := Nat.rec .zero (fun _ level => .succ level) n
 
+def lawFamilies : List Name := ["Semigroup", "AddSemigroup", "CommMagma", "AddCommMagma"].map String.toName
+
 partial def expression (json : Json) : Except String Expr := do
   let fields ← json.getArr?
   if fields.isEmpty then throw "empty replay expression"
@@ -89,6 +91,10 @@ partial def expression (json : Json) : Except String Expr := do
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?),numericLevel (← fields[4]!.getNat?)]
     if (name == "HAdd.rec" || name == "HMul.rec") && fields.size == 6 then
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?),numericLevel (← fields[4]!.getNat?),numericLevel (← fields[5]!.getNat?)]
+    if lawFamilies.any (fun family => name.toName == family || name.toName == Name.str family "mk") && fields.size == 3 then
+      return .const name.toName [numericLevel (← fields[2]!.getNat?)]
+    if lawFamilies.any (fun family => name.toName == Name.str family "rec") && fields.size == 4 then
+      return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "HEq.rec" && fields.size == 4 then
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Option.rec" && fields.size == 4 then
@@ -107,6 +113,8 @@ partial def expression (json : Json) : Except String Expr := do
     let index ← fields[2]!.getNat?
     let inner ← expression fields[3]!
     if index < 2 && (family == "Iff" || family == "And" || family == "Subtype" || family == "PProd" || family == "Prod") then
+      return .proj family.toName index inner
+    if index < 2 && lawFamilies.contains family.toName then
       return .proj family.toName index inner
     if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton" || family == "Zero" || family == "One" || family == "OfNat" || family == "LT" || family == "LE" || family == "Membership" || family == "HAdd" || family == "HMul") then
       return .proj family.toName index inner
@@ -143,14 +151,25 @@ def declaration (json : Json) : Except String Lean.Declaration := do
     safety := .safe
   }
 
+def checkBasis (base : Lean.Kernel.Environment) (expr : Expr) : Except String Unit := do
+  for name in expr.getUsedConstants do
+    if lawFamilies.any (fun family => name == family || name == Name.str family "mk" || name == Name.str family "rec") then
+      if (base.find? name).isNone then
+        throw "UNSUPPORTED: missing mathlib replay basis; pass --module Mathlib.Algebra.Group.Defs inside lake env"
+
 def replay (base : Lean.Kernel.Environment) (json : Json) : Except String Unit := do
   let mut env := base
   let entries := (json.getObjValAs? (Array Json) "environment").toOption.getD #[]
   for entry in entries do
+    for key in ["type", "value"] do
+      let value ← entry.getObjVal? key
+      if value != Json.null then checkBasis base (← expression value)
     let decl ← declaration entry
     env ← (Lean.Kernel.Environment.addDecl env {} decl).mapError (fun _ => "Lean kernel rejected environment declaration")
   let type ← expression (← json.getObjVal? "claim")
   let value ← expression (← json.getObjVal? "term")
+  checkBasis base type
+  checkBasis base value
   let mut target := "leanputer_replay_target"
   while entries.any (fun entry => (entry.getObjValAs? String "name").toOption == some target) do
     target := target ++ "_"
@@ -161,11 +180,27 @@ def replay (base : Lean.Kernel.Environment) (json : Json) : Except String Unit :
   return ()
 end LeanputerReplay
 
+partial def ensureDefinition (standard : Environment) (base : Lean.Kernel.Environment)
+    (skip name : Name) : Except String Lean.Kernel.Environment := do
+  if name == skip || (base.find? name).isSome then return base
+  let some info := standard.find? name | throw s!"missing actual basis dependency {name}"
+  let (type, value, declaration) ← match info with
+    | .defnInfo definition => pure (definition.type, definition.value, Lean.Declaration.defnDecl definition)
+    | .thmInfo theoremInfo => pure (theoremInfo.type, theoremInfo.value, Lean.Declaration.thmDecl theoremInfo)
+    | _ => throw s!"unsupported actual basis dependency {name}; no axiom fallback"
+  let mut result := base
+  for dependency in type.getUsedConstants ++ value.getUsedConstants do
+    result ← ensureDefinition standard result skip dependency
+  (Lean.Kernel.Environment.addDecl result {} declaration).mapError (fun _ => s!"Lean rejected actual basis dependency {name}")
+
 def main (args : List String) : IO UInt32 := do
-  let [input, output] := args | throw (IO.userError "usage: lean --run tools/lean/Validate.lean corpus.jsonl results.json")
+  let (input, output, imported) ← match args with
+    | [input, output] => pure (input, output, `Init)
+    | [input, output, "--module", module] => pure (input, output, module.toName)
+    | _ => throw (IO.userError "usage: lean --run Validate.lean input output [--module Module]")
   let environment ← mkEmptyEnvironment
   initSearchPath (← findSysroot)
-  let standard ← importModules #[{module := `Init}] {}
+  let standard ← importModules #[{module := imported}] {}
   let mut basis := environment.toKernelEnv
   for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton, ``Zero, ``One, ``Nat, ``OfNat, ``PUnit, ``LT, ``LE, ``PProd, ``Prod, ``Membership, ``HAdd, ``HMul] do
     if name == ``Decidable then
@@ -182,6 +217,17 @@ def main (args : List String) : IO UInt32 := do
     let primitive : Lean.Declaration := .inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false
     basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => s!"Lean rejected primitive basis {name}"))
   basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} .quotDecl).mapError (fun _ => "Lean rejected quotient basis"))
+  for name in LeanputerReplay.lawFamilies do
+    let some (.inductInfo info) := standard.find? name | continue
+    for dependency in info.type.getUsedConstants do
+      basis ← IO.ofExcept (ensureDefinition standard basis name dependency)
+    let mut ctors : List Lean.Constructor := []
+    for ctor in info.ctors do
+      let some constructor := standard.find? ctor | throw (IO.userError "missing actual constructor")
+      for dependency in constructor.type.getUsedConstants do
+        basis ← IO.ofExcept (ensureDefinition standard basis name dependency)
+      ctors := ctors ++ [{name := ctor, type := constructor.type}]
+    basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false)).mapError (fun _ => s!"Lean rejected actual law-record basis {name}"))
   let mut records : Array Json := #[]
   for line in (← IO.FS.readFile input).splitOn "\n" do
     if line.isEmpty then continue
@@ -192,7 +238,7 @@ def main (args : List String) : IO UInt32 := do
       continue
     let result := match LeanputerReplay.replay basis json with
       | .ok () => Json.mkObj [("name", toJson name), ("status", toJson ("ACCEPT" : String))]
-      | .error message => Json.mkObj [("name", toJson name), ("status", toJson ("REJECT" : String)), ("reason", toJson message)]
+      | .error message => Json.mkObj [("name", toJson name), ("status", toJson (if message.startsWith "UNSUPPORTED:" then "UNSUPPORTED" else "REJECT")), ("reason", toJson message)]
     records := records.push result
   IO.FS.writeFile output ((Json.arr records).pretty ++ "\n")
   return 0

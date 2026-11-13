@@ -44,8 +44,13 @@ including four recursor universes and the retained numeric boundary. Their
 16dependency source closures plan at30ksteps/4.3knodes, so a new arithmetic
 source acceptance still needs a specific resource fix. Primitive-type caching,
 transform caching and a naive lazy prototype did not justify production changes.
-General
-multi-field/inherited records remain a separate admission problem.
+The completed targeted slice adds four fixed inherited law records: Semigroup,
+AddSemigroup, CommMagma and AddCommMagma. Their second field depends on the
+actual stored Mul/Add parent. It must be instantiated inside the weighted
+checker, and wrong-operation proofs must fail. Neutral recursors and typed eta
+retain the proof/data distinction. Full input dependency closures remain checked;
+ordinary operation aliases are definitions, not additional trusted intrinsics.
+General multi-field/inherited records remain a separate admission problem.
 
 Native speed is an unresolved research limit. Minimum required efficiency work
 must retain stock forward/cache, the numerical domain, syntax boundary, feature
@@ -60,3 +65,10 @@ Add targeted trace and adversarial checks for new compiler/runtime boundaries.
 Historical reference-backend results do not validate all later native features.
 Whole-checker formal verification and base-LLM/full-Demo-A integration remain
 separate deliverables.
+
+Law-record native20case confirmation now passes15A4R1STACKresource, including
+CommMagma.mul_comm and AddCommMagma.add_comm with fullGamma5/noaxioms each.
+The next implementation is four cancellation Prop classes with two uniform
+parameters(carrier andactualoperationinstance), fixed injectivity proof fields
+and constructor-only singleton-Prop data elimination. The isolated119intrinsic
+prototype passes minimalweighted checks; nativeconfirmation is stillpending.

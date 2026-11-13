@@ -134,7 +134,7 @@ class Oracle:
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
 
     def whnf(self, term, context=()):
-        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS
+        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
         self.tick()
         if term==('builtin','Nat.zero'):return ('nat',0)
         if term[0]=='let':
@@ -147,11 +147,11 @@ class Oracle:
         if term[0]=='proj':
             base=self.whnf(term[3],context); head=base; arguments=[]
             while head[0]=='app': arguments.insert(0,head[2]);head=head[1]
-            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS
+            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
             record=ONE_FIELD_RECORDS.get(term[1])
-            constructor=term[1]+('.'+record['constructor'] if record else '.mk' if term[1]=='Subtype' or term[1]in TWO_FIELD_RECORDS else '.intro')
-            if head[0]=='builtin' and head[1]==constructor and len(arguments)==(record.get('parameters',1)+1 if record else 4):
-                return self.whnf(arguments[-1 if record else 2+term[2]],context)
+            constructor=term[1]+('.'+record['constructor'] if record else '.mk' if term[1]=='Subtype' or term[1]in TWO_FIELD_RECORDS or term[1]in LAW_RECORDS else '.intro')
+            if head[0]=='builtin' and head[1]==constructor and len(arguments)==(record.get('parameters',1)+1 if record else 3 if term[1]in LAW_RECORDS else 4):
+                return self.whnf(arguments[-1 if record else (1 if term[1]in LAW_RECORDS else 2)+term[2]],context)
             return ('proj',term[1],term[2],base)
         if term[0] == 'app':
             fn = self.whnf(term[1],context)
@@ -193,7 +193,10 @@ class Oracle:
                 if (name=='Subtype.rec' or name.split('.')[0]in TWO_FIELD_RECORDS) and name.endswith('.rec') and len(arguments)==5:
                     family=name.split('.')[0]
                     return self.whnf(apps(arguments[3],('proj',family,0,arguments[4]),('proj',family,1,arguments[4])),context)
-                from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS
+                if name.split('.')[0]in LAW_RECORDS and name.endswith('.rec')and len(arguments)==4:
+                    family=name.split('.')[0]
+                    return self.whnf(apps(arguments[2],('proj',family,0,arguments[3]),('proj',family,1,arguments[3])),context)
+                from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
                 record=ONE_FIELD_RECORDS.get(name.split('.')[0])
                 parameters=record.get('parameters',1)if record else 0
                 if record and name.endswith('.rec') and len(arguments)==parameters+3:
@@ -248,12 +251,12 @@ class Oracle:
         if head[0]=='builtin' and head[1]=='Subtype' and len(arguments)==2:
             if self.convert(left_type,self.infer(right,context),context):
                 return self.convert(('proj','Subtype',0,left),('proj','Subtype',0,right),context)
-        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS
+        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
         if left_type[0]=='builtin' and left_type[1]=='PUnit' and left_type[2]>0:
             return self.convert(left_type,self.infer(right,context),context)
-        if head[0]=='builtin' and head[1]in TWO_FIELD_RECORDS and len(arguments)==2:
+        if head[0]=='builtin' and ((head[1]in TWO_FIELD_RECORDS and len(arguments)==2)or(head[1]in LAW_RECORDS and len(arguments)==1)):
             if self.convert(left_type,self.infer(right,context),context):
-                return all(self.convert(('proj',head[1],index,left),('proj',head[1],index,right),context)for index in range(2))
+                return all(self.convert(('proj',head[1],index,left),('proj',head[1],index,right),context)for index in range(1 if head[1]in LAW_RECORDS else 2))
         record=ONE_FIELD_RECORDS.get(head[1]) if head[0]=='builtin' else None
         if record and record['data'] and len(arguments)==record.get('parameters',1) and self.convert(left_type,self.infer(right,context),context):
             return self.convert(('proj',head[1],0,left),('proj',head[1],0,right),context)
@@ -280,7 +283,15 @@ class Oracle:
             return primitive_type(term)
         if tag=='proj':
             inferred=self.whnf(self.infer(term[3],context),context)
-            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,primitive_type
+            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_type
+            if term[1]in LAW_RECORDS:
+                head=inferred;parameters=[]
+                while head[0]=='app':parameters.insert(0,head[2]);head=head[1]
+                if head[0]!='builtin' or head[1]!=term[1] or len(parameters)!=1:raise Rejected('projection family mismatch')
+                constructor=primitive_type(('builtin',term[1]+'.mk')+head[2:])
+                constructor=self.substitute(constructor[2],parameters[0])
+                if term[2]:constructor=self.substitute(constructor[2],('proj',term[1],0,term[3]))
+                return constructor[1]
             if term[1]in TWO_FIELD_RECORDS:
                 head=inferred;parameters=[]
                 while head[0]=='app':parameters.insert(0,head[2]);head=head[1]

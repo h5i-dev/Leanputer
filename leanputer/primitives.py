@@ -56,6 +56,18 @@ TWO_FIELD_RECORDS = {
     'PProd':dict(code=80, projection=15, type_carrier=False),
     'Prod':dict(code=83, projection=17, type_carrier=True),
 }
+LAW_RECORDS = {
+    'Semigroup':dict(code=95,projection=22,parent='Mul',law='associative'),
+    'AddSemigroup':dict(code=98,projection=24,parent='Add',law='associative'),
+    'CommMagma':dict(code=101,projection=26,parent='Mul',law='commutative'),
+    'AddCommMagma':dict(code=104,projection=28,parent='Add',law='commutative'),
+}
+for _family,_record in LAW_RECORDS.items():
+    for _offset,_name in enumerate((_family,_family+'.mk',_family+'.rec')):
+        PRIMITIVE_CODES[_name]=_record['code']+_offset
+        PRIMITIVE_UNIVERSES[_name]=2 if _offset==2 else 1
+    PROJECTION_FAMILIES[_family]=_record['projection']
+    REC_ARITIES[_record['code']+2]=4
 for _family,_record in TWO_FIELD_RECORDS.items():
     for _offset,_name in enumerate((_family,_family+'.mk',_family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
@@ -80,6 +92,7 @@ def _close_schema(term,names=()):
     if term[0]=='named': return ('var',len(names)-1-names.index(term[1]))
     if term[0]=='bind': return ('pi',_close_schema(term[2],names),_close_schema(term[3],names+(term[1],)))
     if term[0]=='app': return ('app',_close_schema(term[1],names),_close_schema(term[2],names))
+    if term[0]=='proj':return ('proj',term[1],term[2],_close_schema(term[3],names))
     return term
 
 
@@ -89,6 +102,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.split('.')[0]in LAW_RECORDS:return _law_record_type(expression)
     if name.split('.')[0] in TWO_FIELD_RECORDS:return _pair_type(expression)
     if name.startswith('PUnit'):return _unit_type(expression)
     if name in ('Nat','Nat.zero','Nat.succ','Nat.rec'):return _natural_type(expression)
@@ -383,6 +397,33 @@ def _heterogeneous_type(expression):
     return _close_schema(bind('alpha',('sort',sorts[0]),bind('beta',('sort',sorts[1]),bind('gamma',('sort',sorts[2]),tail))))
 
 
+def _law_record_type(expression):
+    name=expression[1];family=name.split('.')[0];record=LAW_RECORDS[family]
+    carrier=expression[3]if name.endswith('.rec')else expression[2]
+    level=carrier+1 if carrier>=0 else ('succ',carrier)
+    variable=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,parent,law,motive,major=map(variable,('alpha','parent','law','motive','major'))
+    operator=('proj',record['parent'],0,parent)
+    operation=lambda a,b:apps(operator,a,b)
+    eq=lambda a,b:apps(('builtin','Eq',level),alpha,a,b)
+    a,b,c=map(variable,('left','middle','right'))
+    property_type=bind('left',alpha,bind('middle',alpha,
+        bind('right',alpha,eq(operation(operation(a,b),c),operation(a,operation(b,c))))
+        if record['law']=='associative'else eq(operation(a,b),operation(b,a))))
+    parent_type=apps(('builtin',record['parent'],carrier),alpha)
+    record_type=apps(('builtin',family,carrier),alpha)
+    if name==family:tail=('sort',level)
+    elif name.endswith('.mk'):tail=bind('parent',parent_type,bind('law',property_type,record_type))
+    else:
+        ctor=apps(('builtin',family+'.mk',carrier),alpha,parent,law)
+        minor=bind('parent',parent_type,bind('law',property_type,apps(motive,ctor)))
+        tail=bind('motive',bind('major',record_type,('sort',expression[2])),
+             bind('minor',minor,bind('major',record_type,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',level),tail))
+
+
 def _natural_type(expression):
     name=expression[1];natural=('builtin','Nat')
     if name=='Nat':return ('sort',1)
@@ -423,6 +464,8 @@ def type_schema(expression):
         elif tag=='builtin':
             code,value=7,primitive_code(term)
             a=tuple(term[2:]);b=0
+        elif tag=='proj':
+            code,a,b,value=8,visit(term[3]),0,PROJECTION_FAMILIES[term[1]]+term[2]
         else: code,value={'var':1,'sort':2}[tag],term[1]
         pointer=len(rows);rows.append((code,a,b,value));cache[term]=pointer
         return pointer

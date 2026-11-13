@@ -47,7 +47,8 @@ def provenance():
 
 
 def evaluate(documents, config, device, directory, batch_size=16, optimized=True,
-             with_lean=False, nanoda=None, traces=0, minimize_budget=25, execution='eager', memory_update='logic', repeats=1, events=False):
+             with_lean=False, nanoda=None, traces=0, minimize_budget=25, execution='eager', memory_update='logic', repeats=1, events=False,
+             lean_module=None):
     if repeats < 0 or traces < 0:
         raise ValueError('nonnegative repeat and trace counts required')
     directory = Path(directory); directory.mkdir(parents=True, exist_ok=True)
@@ -86,7 +87,7 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
             mismatches.append(dict(index=index, name=actual['name'], model=actual['status'], recursive=expected.get('recursive')))
     lean_results, lean_seconds = None, None
     if with_lean:
-        lean_results, lean_seconds = lean_replay(documents, directory/'lean')
+        lean_results, lean_seconds = lean_replay(documents, directory/'lean', module=lean_module)
         for index, (actual, expected) in enumerate(zip(weighted, lean_results)):
             if actual['status'] in ('ACCEPT', 'REJECT') and expected['status'] != actual['status']:
                 mismatches.append(dict(index=index, name=actual['name'], model=actual['status'], lean=expected['status']))
@@ -138,7 +139,7 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
                 if actual != reference.get('recursive'):
                     return True
                 if 'lean' in mismatch:
-                    replay, _ = lean_replay([candidate], directory/'minimization-replay')
+                    replay, _ = lean_replay([candidate], directory/'minimization-replay', module=lean_module)
                     return replay[0]['status'] != actual
                 if 'nanoda' in mismatch:
                     return nanoda_replay(candidate, directory/'minimization-nanoda', nanoda)['status'] != actual
@@ -190,6 +191,7 @@ def main(argv=None):
     parser.add_argument('--limit', type=int)
     parser.add_argument('--reference-lowering', action='store_true')
     parser.add_argument('--lean', action='store_true')
+    parser.add_argument('--lean-module', help='actual Lean replay basis module; invoke inside its lake env')
     parser.add_argument('--nanoda', type=Path)
     parser.add_argument('--traces', type=int, default=0)
     parser.add_argument('--execution', choices=['eager', 'cuda_graph'], default='eager')
@@ -203,7 +205,8 @@ def main(argv=None):
     config = MachineConfig(**json.loads(args.config.read_text())) if args.config else MachineConfig()
     result = evaluate(documents, config, args.device, args.output, args.batch_size,
                       not args.reference_lowering, args.lean, args.nanoda, args.traces, execution=args.execution,
-                      memory_update=args.memory_update, repeats=args.repeats, events=args.progress_events)
+                      memory_update=args.memory_update, repeats=args.repeats, events=args.progress_events,
+                      lean_module=args.lean_module)
     print(json.dumps({key:result[key] for key in ('documents', 'counts', 'forward_seconds', 'mismatches')}))
     return int(bool(result['mismatches']))
 

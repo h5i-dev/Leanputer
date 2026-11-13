@@ -1,0 +1,41 @@
+{
+  "format": "leanputer.targeted-feature-protocol.v1",
+  "feature": "Fixed inherited law records: Semigroup/AddSemigroup/CommMagma/AddCommMagma",
+  "compiled_base": "d3eeb46",
+  "compiled_with_uncommitted_feature": true,
+  "source_sha256": {
+    "leanputer/primitives.py": "9690f8c793cab3e1afa448f5bb7c5e142213a4989204b7f1a53a7544653b1ac6",
+    "leanputer/dependent.py": "74b2cd43350d9468e815faefde8bdc3fee2cea6fc6adbf17c5f906b0271954e0",
+    "leanputer/machine_spec.py": "b687b2c54477fc5fd4e31889bc4d057b9c6fea3082194f7d2bcfb7cccbbdbaa1",
+    "leanputer/transition.py": "fc49e7f76ee8b9d54c3d4c5c1e0146efcefe93f60e8dbd2ee974358fb604bf7d",
+    "leanputer/native_machine.py": "db48247210a7f7afe72c0be81b19861c1288663c85b2a4da16926af753a61a2d",
+    "leanputer/native.py": "a4fd6647c6f10824283ab144f21973244d8156a889191d644fccacd5f891baef",
+    "leanputer/native_vendor/qwenputer/emit.py": "fa23bef6d7b195919c3868a565f1b8571676e200e790c431e2c092122276b7b5",
+    "leanputer/native_vendor/qwenputer/ir.py": "80531615df1bd7aa2de9193b153033978150c2fbb8594a53b1af80fca38bf3ee",
+    "tools/lean/Export.lean": "234ec9a8a4341d4e7998dcfc20f8961c811249b9e5e8ac3ab954d4c37cef1732",
+    "tools/lean/Validate.lean": "691514b31786d3dffaff57e3c0e6afad36209e901d2b3bd86fc6ce13465e72cd"
+  },
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean": "4.31.0",
+  "torch": "2.8.0+cu128",
+  "transformers": "5.19.0",
+  "device": "NVIDIA A10G",
+  "dtype": "bfloat16",
+  "stock_forward_and_cache": true,
+  "custom_runtime_or_external_checker_at_inference": false,
+  "source_population": 857,
+  "syntax_exported": 473,
+  "syntax_unsupported": 384,
+  "full_population_native": "NOT_RUN",
+  "broad_differentials": "DEFERRED",
+  "targeted_native_cases": 20,
+  "new_actual_source_candidates": [
+    "CommMagma.mul_comm@[1]",
+    "AddCommMagma.add_comm@[1]"
+  ],
+  "dependency_policy": "Complete supported closure; all Gamma types/values checked; no axioms in either new real source.",
+  "known_incompleteness": "Distinct neutral law-record comparison: actual Lean REJECT, operational RESOURCE(STACK), recursive oracle RecursionError; never counted as acceptance or semantic rejection.",
+  "timing_scope": "Single development run. Compile timer excludes imports; forward timer includes syntax boot forward and fixed fuel+2 stock forwards plus final decode, excludes host parsing/boot materialization. No end-to-end cold or repeated steady measurement for this feature; overlapping CPU development means no controlled performance comparison.",
+  "command": "python -m leanputer.native_machine --input benchmarks/native/laws-input.jsonl --config benchmarks/native/laws-config.json --device cuda --batch-size 20 --report /mnt/scratch/laws-report.json",
+  "reference_replay": "Inside pinned mathlib lake env: lean --run tools/lean/Validate.lean INPUT OUTPUT --module Mathlib.Algebra.Group.Defs"
+}

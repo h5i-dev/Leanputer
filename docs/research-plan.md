@@ -11,11 +11,11 @@ Research quality and formal soundness remain goals, not established labels.
 | Dependent calculus | Ground sorts/Prop, Pi/Lam/App/let, capture avoidance, beta/delta/zeta, typed eta and proof irrelevance; all environment types/values checked |
 | Native compilation | Stock RMSNorm/SwiGLU/GDN/forward/cache; generated BF16 weights, tested bounded binary domain; broad numerical correspondence still pending |
 | Layout | Earlier matched downsizing4.021B→668.6M; newer full74-primitive Eq batch1.356B→1.221B, same capacities/fuel/results, GPUforward159.093→158.515s (no demonstrated speedup) |
-| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat, OfNat, PUnit, LT/LE, PProd/Prod, Membership and HAdd/HMul records; selected targeted native checks |
+| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat, OfNat, PUnit, LT/LE, PProd/Prod, Membership and HAdd/HMul records; Semigroup/AddSemigroup and CommMagma/AddCommMagma inherited law records with targeted native checks |
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest95-primitive/114phase syntax refresh451EXPORTED406UNSUPPORTED; not451proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest107-primitive/116phase syntax refresh473EXPORTED384UNSUPPORTED; not473proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -344,3 +344,13 @@ against4930planned steps/three checked dependencies, not an acceptance yet.
 Next assess a reusable fixed one-field record slice (Inhabited, Subsingleton,
 Mul/Add), preserving typed data eta versus Prop constructor-only elimination.
 No arbitrary user inductive admission or unchecked dependency assumptions.
+
+Inherited law-record checkpoint:107 intrinsics,116 phases. Native20cases pass
+15A4R1STACKresource; two new real commutativity getters accept5022steps/Gamma5/
+noaxioms each. Size2.480B BF16parameters/4.961GBweights, fixedforward783.575s,
+compile49.779s at1024heap/f5056. Distinctneutral records remain an explicit
+conversion-cycle incompleteness, never an acceptance. Same857syntax snapshot
+473EXPORTED384UNSUPPORTED is separate from targeted native acceptance. Continue
+to four operation-parameterized cancellation Prop classes (40first blockers),
+whose isolated prototype and minimal weighted/Lean checks already pass. Require
+stock native confirmation of four small real getters before claiming that slice.

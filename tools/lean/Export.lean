@@ -80,6 +80,10 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!,toJson values[2]!]
     if (name == ``HAdd.rec || name == ``HMul.rec) && values.length == 4 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!,toJson values[2]!,toJson values[3]!]
+    if (name == "Semigroup".toName || name == "Semigroup.mk".toName || name == "AddSemigroup".toName || name == "AddSemigroup.mk".toName || name == "CommMagma".toName || name == "CommMagma.mk".toName || name == "AddCommMagma".toName || name == "AddCommMagma.mk".toName) && values.length == 1 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!]
+    if (name == "Semigroup.rec".toName || name == "AddSemigroup.rec".toName || name == "CommMagma.rec".toName || name == "AddCommMagma.rec".toName) && values.length == 2 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
   | .mdata _ inner => encodeExpr env inner
@@ -89,6 +93,8 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
     if (name == ``Iff || name == ``And || name == ``Subtype || name == ``PProd || name == ``Prod) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     if (name == ``Inhabited || name == ``Mul || name == ``Add || name == ``Subsingleton || name == ``Zero || name == ``One || name == ``OfNat || name == ``LT || name == ``LE || name == ``Membership || name == ``HAdd || name == ``HMul) && index == 0 then
+      return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
+    if (name == "Semigroup".toName || name == "AddSemigroup".toName || name == "CommMagma".toName || name == "AddCommMagma".toName) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     throw s!"unsupported structure projection {name}.{index}"
   | .lit (.natVal value) => return jsonArray [text "nat",toJson value]

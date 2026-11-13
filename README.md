@@ -31,6 +31,10 @@ dependent field typing. Zero and One use the same fixed data-record path.
 LT and LE add relation-valued fields, preserving typed data eta and family checks.
 Membership retains both carrier types and its container-first relation field.
 HAdd and HMul retain three carrier types and four recursor universe parameters.
+Semigroup/AddSemigroup and CommMagma/AddCommMagma retain a Mul/Add parent and
+its dependent associativity/commutativity proof. Projection typing substitutes
+the actual parent; typed eta compares the data parent and uses proof irrelevance
+for the law field. These are four fixed schemas, not general structure support.
 PProd and Prod add two-field records with typed eta and dependent recursors;
 [ground-universe tuples](docs/ground-universes.md) retain all three recursor levels.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
@@ -168,9 +172,10 @@ tracks acceptance criteria and remaining work. The original 126-layer STLC
 unrolling remains available for comparison through `python -m leanputer` and is
 documented in [the baseline notes](docs/stlc-baseline.md).
 
-The optimized shared engine uses 43 logical stages per semantic step with
-`--memory-update attention_delta`: two dependent attention read rounds, compiled
-register-control FFNs, and attention-addressed gated rank-one writes. The default
+With `--memory-update attention_delta`, the shared reference engine combines
+two dependent attention read rounds, compiled register-control FFNs, and
+attention-addressed gated rank-one writes. Stage depth depends on the compiled
+fragment and capacities and is reported in model statistics. The default
 `logic` backend retains Boolean masked writes for comparison. CUDA graph replay
 (`--execution cuda_graph --device cuda`) reuses the same forward operations and
 fixed schedule; it does not move semantic work into the host loop.
@@ -200,7 +205,7 @@ traces, seeded tests and external replay provide evidence, not formal soundness.
 
 
 The current complete syntax refresh retains all 857 selected public theorems:
-408 export and 449 remain unsupported. EXPORTED is not proof acceptance; a
+473 export and 384 remain unsupported. EXPORTED is not proof acceptance; a
 new full-population native check has not been run. The [complete syntax
 outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
 assumptions, input sizes and every unsupported row. Monoid is the largest current

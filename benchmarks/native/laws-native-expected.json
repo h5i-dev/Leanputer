@@ -1,0 +1,192 @@
+[
+  {
+    "name": "law-semigroup-left",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1068,
+    "allocated_heap_nodes": 136,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-comm-constant",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 813,
+    "allocated_heap_nodes": 106,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-wrong-dependent-proof",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2320,
+    "allocated_heap_nodes": 343,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-parent-data-differs",
+    "status": "RESOURCE",
+    "reason": "STACK",
+    "steps": 2697,
+    "allocated_heap_nodes": 195,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-neutral-eta",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4853,
+    "allocated_heap_nodes": 566,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-family-guard",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 121,
+    "allocated_heap_nodes": 19,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-neutral-recursor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4336,
+    "allocated_heap_nodes": 455,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "law-projection-dependent-claim",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2958,
+    "allocated_heap_nodes": 544,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerLaws.sgFamily0@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "allocated_heap_nodes": 8,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerLaws.addSgFamily1@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "allocated_heap_nodes": 8,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerLaws.cmFamily0@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "allocated_heap_nodes": 8,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerLaws.addCmFamily1@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 55,
+    "allocated_heap_nodes": 8,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerLaws.parent@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 623,
+    "allocated_heap_nodes": 94,
+    "environment_declarations": 1,
+    "assumptions": []
+  },
+  {
+    "name": "AddCommMagma.add_comm@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5022,
+    "allocated_heap_nodes": 742,
+    "environment_declarations": 5,
+    "assumptions": []
+  },
+  {
+    "name": "CommMagma.mul_comm@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5022,
+    "allocated_heap_nodes": 742,
+    "environment_declarations": 5,
+    "assumptions": []
+  },
+  {
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1213,
+    "allocated_heap_nodes": 163,
+    "environment_declarations": 2,
+    "assumptions": []
+  },
+  {
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1241,
+    "allocated_heap_nodes": 122,
+    "environment_declarations": 5,
+    "assumptions": [
+      "A",
+      "a",
+      "q",
+      "P",
+      "h"
+    ]
+  },
+  {
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 383,
+    "allocated_heap_nodes": 45,
+    "environment_declarations": 3,
+    "assumptions": [
+      "A",
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "LeanputerUnits.data_eta@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 291,
+    "allocated_heap_nodes": 34,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerHeterogeneous.hMulRec1201@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1494,
+    "allocated_heap_nodes": 173,
+    "environment_declarations": 0,
+    "assumptions": []
+  }
+]

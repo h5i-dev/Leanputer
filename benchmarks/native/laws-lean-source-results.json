@@ -1,0 +1,9 @@
+[{"status": "ACCEPT", "name": "LeanputerLaws.sgFamily0@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.addSgFamily1@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.cmFamily0@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.addCmFamily1@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.sgRec10@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.addCmRec01@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.parent@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.assoc@[]"},
+ {"status": "ACCEPT", "name": "LeanputerLaws.eta@[]"}]
