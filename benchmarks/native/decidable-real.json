@@ -1,0 +1,141 @@
+{
+  "format": "leanputer.native-report.v1",
+  "results": [
+    {
+      "name": "Decidable.or_not_of_imp@[]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 5390
+    }
+  ],
+  "counts": {
+    "ACCEPT": 1
+  },
+  "config": {
+    "heap": 1024,
+    "stack": 32,
+    "context": 16,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 5504
+  },
+  "batches": [
+    {
+      "forward_seconds": 798.6898329399992,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 3652,
+        "persistent_channels": 434,
+        "subtract_handovers": 15326,
+        "head_clears": 736,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 101,
+          "dims": 19715,
+          "heads": 36,
+          "ffn_units": 20379,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "primitive_basis": [
+        "False",
+        "False.rec",
+        "Iff",
+        "Iff.intro",
+        "And",
+        "And.intro",
+        "Eq",
+        "Eq.refl",
+        "Eq.rec",
+        "True",
+        "True.intro",
+        "True.rec",
+        "And.rec",
+        "Iff.rec",
+        "Nonempty",
+        "Nonempty.intro",
+        "Nonempty.rec",
+        "Exists",
+        "Exists.intro",
+        "Exists.rec",
+        "Or",
+        "Or.inl",
+        "Or.inr",
+        "Or.rec",
+        "Quot",
+        "Quot.mk",
+        "Quot.ind",
+        "Quot.lift",
+        "Decidable",
+        "Decidable.isFalse",
+        "Decidable.isTrue",
+        "Decidable.rec"
+      ],
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 1459725898,
+      "weight_bytes": 2919451796,
+      "cuda_peak_allocated_bytes": 2947642368,
+      "host_process_peak_rss_bytes": 1738149888,
+      "hidden_size": 3840,
+      "native_layers": 102,
+      "boot_tokens": 120,
+      "applied_steps": 5506,
+      "input_positions": [
+        0
+      ]
+    }
+  ],
+  "parameters": 1459725898,
+  "weight_bytes": 2919451796,
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec",
+    "True",
+    "True.intro",
+    "True.rec",
+    "And.rec",
+    "Iff.rec",
+    "Nonempty",
+    "Nonempty.intro",
+    "Nonempty.rec",
+    "Exists",
+    "Exists.intro",
+    "Exists.rec",
+    "Or",
+    "Or.inl",
+    "Or.inr",
+    "Or.rec",
+    "Quot",
+    "Quot.mk",
+    "Quot.ind",
+    "Quot.lift",
+    "Decidable",
+    "Decidable.isFalse",
+    "Decidable.isTrue",
+    "Decidable.rec"
+  ],
+  "validation_scope": "Experimental native backend; broad differential validation pending",
+  "compile_seconds": 22.10874707699986,
+  "device": "cuda",
+  "hidden_size": 3840,
+  "native_layers": 102,
+  "intermediate_size": 1024,
+  "measurement_scope": "Single targeted development check; no repeated throughput estimate",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "syntax_reexport": {
+    "selected_current_decidable_first_blockers": 133,
+    "exported_candidates": 29,
+    "new_native_real_mathlib_proofs": 1
+  },
+  "feature_boundary": "Decidable32intrinsics81phases; Subtype work excluded"
+}

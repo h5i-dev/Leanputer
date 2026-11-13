@@ -410,7 +410,7 @@ class RuleCompiler:
             elif head in (12,13,19):self.tail(match,Op.REC_FIELDS,w,hx['b'],z)
             elif head==27:self.tail(match,Op.REC_PICK,hx['a'],z)
             else:
-                right=self.eq(hr['v'],22)
+                right=self.eq(hr['v'],30 if head==31 else 22)
                 self.tail(self.AND(match,right),Op.REC_APPLY,hx['b'],z)
                 self.tail(self.AND(match,self.NOT(right)),Op.REC_PICK,hx['a'],z)
         self.ret(self.AND(phase,self.NOT(self.OR(*matches))),0)

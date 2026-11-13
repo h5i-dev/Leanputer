@@ -22,6 +22,9 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Or.inl" then return .const ``Or.inl []
       if name == "Or.inr" then return .const ``Or.inr []
       if name == "Or.rec" then return .const ``Or.rec []
+      if name == "Decidable" then return .const ``Decidable []
+      if name == "Decidable.isFalse" then return .const ``Decidable.isFalse []
+      if name == "Decidable.isTrue" then return .const ``Decidable.isTrue []
       if name == "Iff" then return .const ``Iff []
       if name == "Iff.intro" then return .const ``Iff.intro []
       if name == "And" then return .const ``And []
@@ -41,6 +44,7 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Quot" then return .const ``Quot [level]
       if name == "Quot.mk" then return .const ``Quot.mk [level]
       if name == "Quot.ind" then return .const ``Quot.ind [level]
+      if name == "Decidable.rec" then return .const ``Decidable.rec [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -111,14 +115,17 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable] do
+    if name == ``Decidable then
+      let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
+      basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))
     let some (.inductInfo info) := standard.find? name | throw (IO.userError "missing standard primitive")
     let mut ctors : List Lean.Constructor := []
     for ctor in info.ctors do
       let some constructor := standard.find? ctor | throw (IO.userError "missing standard constructor")
       ctors := ctors ++ [{name := ctor, type := constructor.type}]
     let primitive : Lean.Declaration := .inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false
-    basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => "Lean rejected primitive basis"))
+    basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => s!"Lean rejected primitive basis {name}"))
   basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} .quotDecl).mapError (fun _ => "Lean rejected quotient basis"))
   let mut records : Array Json := #[]
   for line in (← IO.FS.readFile input).splitOn "\n" do

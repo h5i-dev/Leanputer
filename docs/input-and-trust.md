@@ -207,3 +207,18 @@ Lean replay adds the kernel's actual quotDecl for the four quotient primitives;
 that declaration does not add Quot.sound. Higher Setoid/Quotient structures
 remain unsupported until implemented separately. Broad native/nanoda quotient
 correspondence validation is still deferred.
+
+
+## Fixed Decidable data
+
+Decidable is a fixed family Prop → Type, with isFalse carrying p → False and
+isTrue carrying p. Its dependent recursor has one result universe, two minors
+in false/true order, and may return Sort u. The major must normalize to the
+matching constructor before branch selection. Neutral decision values stay
+neutral; they are data, not proof-irrelevant evidence. Both branches and two
+negative cases are targeted in native execution.
+
+Lean replay includes the actual closed Not definition before reconstructing
+the standard Decidable inductive declaration, whose isFalse type refers to Not.
+The weighted rule expands that definition as p → False. Neither side introduces
+an axiom for negation, and ordinary exported Not dependencies remain checked.

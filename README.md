@@ -17,7 +17,8 @@ dependent Pi, annotated Lam, App, checked acyclic dependencies and let
 expressions. Fixed kernel primitives provide False and its eliminator, Iff/And
 constructors, projections and dependent recursors; True/True.intro/True.rec;
 Nonempty, Exists and Or with their fixed constructors and recursors; and
-Eq/refl/dependent Eq.rec. Fixed Quot/Mk/Ind/Lift rules include checked
+Eq/refl/dependent Eq.rec. Decidable provides its two constructors and dependent
+data recursor. Fixed Quot/Mk/Ind/Lift rules include checked
 relation respectfulness for lifting.
 Numeric universes use Lean's impredicative Prop rule. Conversion includes
 beta/delta/zeta, function eta and definitional proof irrelevance. Opaque values

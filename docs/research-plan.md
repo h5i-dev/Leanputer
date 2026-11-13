@@ -252,3 +252,14 @@ and ~6.5k nodes for two source theorems, exceeding current small native smoke
 budgets. Keep those resource costs visible. Next constructive Decidable slice
 uses its two constructors and dependent data recursor, chosen from 109 original
 first blockers; broad verification/evaluation remains deferred.
+
+
+Decidable family/isFalse/isTrue/dependent recursor now uses the same 81-phase
+native framework. Two data branches and neutral/bad-evidence rejection pass
+native stock forward at heap256/fuel1536. Actual Lean replay required its closed
+Not definition when rebuilding the standard inductive type; this is checked,
+not an axiom. Of133current Decidable-first blockers,29syntax-export. One real
+source Decidable.or_not_of_imp is running at heap1024/fuel5504 against a5390step
+plan; no broad theorem replay. The earlier ~41kfunext closures remain outside
+this targeted budget. Next subtype projections/constructor semantics are under
+assessment from the remaining blockers, with current feature work preserved.

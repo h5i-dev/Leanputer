@@ -10,14 +10,15 @@ from functools import reduce
 PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8,'True':9,'True.intro':10,
                    'True.rec':11,'And.rec':12,'Iff.rec':13,'Nonempty':14,'Nonempty.intro':15,'Nonempty.rec':16,
                    'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23,
-                   'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27}
+                   'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27,
+                   'Decidable':28,'Decidable.isFalse':29,'Decidable.isTrue':30,'Decidable.rec':31}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
                        'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1,
-                       'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2}
+                       'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2,'Decidable.rec':1}
 PROJECTION_FAMILIES = {'Iff':0,'And':2}
-REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6}
-REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,)}
-REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5}
+REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,),31:(29,30)}
+REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3,31:2}
 
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
@@ -37,6 +38,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.startswith('Decidable'):return _decidable_type(expression)
     if name in ('Quot','Quot.mk','Quot.ind','Quot.lift'):return _quotient_type(expression)
     if name in ('True.rec','And.rec','Iff.rec','Nonempty','Nonempty.intro','Nonempty.rec','Exists','Exists.intro','Exists.rec','Or','Or.inl','Or.inr','Or.rec'):
         return _positive_type(expression)
@@ -135,6 +137,24 @@ def _quotient_type(expression):
         respect=bind('left',alpha,bind('right',alpha,bind('equivalent',apps(relation,v('left'),v('right')),equality)))
         tree=wrap(bind('beta',('sort',result_level),bind('fn',bind('fn_arg',alpha,beta),
                   bind('respect',respect,bind('major',quotient,beta)))))
+    return _close_schema(tree)
+
+
+def _decidable_type(expression):
+    name=expression[1];sort=('sort',0)
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    p,motive,major=map(v,('p','motive','major'))
+    decidable=apps(('builtin','Decidable'),p)
+    negative=bind('neg_arg',p,('builtin','False'))
+    if name=='Decidable':return ('pi',sort,('sort',1))
+    if name in ('Decidable.isFalse','Decidable.isTrue'):
+        return _close_schema(bind('p',sort,bind('evidence',negative if name.endswith('isFalse') else p,decidable)))
+    false_minor=bind('negative',negative,apps(motive,apps(('builtin','Decidable.isFalse'),p,v('negative'))))
+    true_minor=bind('positive',p,apps(motive,apps(('builtin','Decidable.isTrue'),p,v('positive'))))
+    tree=bind('p',sort,bind('motive',bind('motive_arg',decidable,('sort',expression[2])),
+         bind('minor_false',false_minor,bind('minor_true',true_minor,bind('major',decidable,apps(motive,major))))))
     return _close_schema(tree)
 
 

@@ -539,7 +539,7 @@ class SpecMachine:
             elif y in (16,26):self.tail(Op.REC_APPLY,self.node(x)[2],z)
             elif y in (12,13,19):self.tail(Op.REC_FIELDS,w,self.node(x)[2],z)
             elif y==27:self.tail(Op.REC_PICK,self.node(x)[1],z)
-            elif ctor==22:self.tail(Op.REC_APPLY,self.node(x)[2],z)
+            elif ctor==22 or (y==31 and ctor==30):self.tail(Op.REC_APPLY,self.node(x)[2],z)
             else:self.tail(Op.REC_PICK,self.node(x)[1],z)
         elif op==Op.REC_FIELDS:
             self.allocate(Tag.APP,y,self.node(x)[2],resume=(Op.REC_APPLY,r['free'],z))

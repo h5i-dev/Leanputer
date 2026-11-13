@@ -272,3 +272,22 @@ quotient-{smoke.json,input.jsonl,config.json}. No new real-mathlib native
 acceptance is claimed for this slice because its dependency closures exceed
 current small budgets. The nanoda adapter now explicitly returns UNSUPPORTED
 for unimplemented syntax, rather than treating every unknown tag as Pi.
+
+
+## Decidable checkpoint
+
+Fixed Decidable/isFalse/isTrue/rec uses the same81semantic phases. A small
+stock-native four-case smoke accepts true/false data branches and rejects a
+neutral branch shortcut and invalid constructor evidence. The256-cell model
+still has619,554,538BF16parameters/H3072/54layers;1538forwards take121.700s.
+
+The newly supported actual mathlib Decidable.or_not_of_imp@[] accepts in5,390
+semantic steps with four checked dependencies and no axiom assumptions. The
+larger matched budget is heap1024/stack32/context16/constants8/fuel5504:
+120boot records+5506forwards,798.690s forward,22.109s compile,1,459,725,898BF16
+parameters/2,919,451,796weightbytes/H3840/102layers; peak CUDA2,947,642,368bytes,
+host1,738,149,888bytes. This is one development observation, not efficient
+throughput or a size/speed comparison with a smaller configuration. Only114
+fuel steps beyond planned checking work were provisioned. Of133Decidable-first
+blockers29now syntax-export; one new source was checked natively. Exact reports,
+inputs and configs are under benchmarks/native/decidable-{small,real}*.
