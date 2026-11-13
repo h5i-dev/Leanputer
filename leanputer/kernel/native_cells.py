@@ -48,6 +48,7 @@ class CellTag(IntEnum):
     MOTIVE_TELESCOPE = 174       # Derived (indexLocalVector,majorLocalRecord,recSymbol).
     BLOCK_FLAGS = 175            # Derived raw-domain (recursive,reflexive,0).
     OPENED_RECURSIVE_PREFIX = 176 # Derived (familySig,prefixLocalVector,indexVec).
+    MINOR_INFO = 177             # Derived (checkedCtorPending,minorLocalRecord,nfields).
 
 
 class VectorKind(IntEnum):

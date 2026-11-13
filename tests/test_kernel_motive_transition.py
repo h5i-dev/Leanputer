@@ -27,9 +27,11 @@ class MotiveTransitionTest(unittest.TestCase):
                     r=state['regs']
                     if r['task']==spec.Task.BUILD_MOTIVES and r['mode']==spec.Mode.WALK:prefix=deepcopy(state)
                     actual=circuit.step(state);self.assertEqual(actual,machine.step(),(doc['name'],step));state=actual
+                    rr=state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_MOTIVES:break
                     if state['regs']['status']:break
                 r=state['regs'];self.assertIsNotNone(prefix)
-                self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+                self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
                 self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
                 end=r['header_parameter_end'];self.assertEqual(state['context'][:end],prefix['context'][:end])
                 block=decls[-1];self.assertEqual(r['ctx'],end+len(block.families))
@@ -68,7 +70,6 @@ class MotiveTransitionTest(unittest.TestCase):
                             rename[state['heap'][state['heap'][record][1]][1]]=expected
                         self.assertTrue(representation_equal(a,normalized(state['heap'][major][2],rename),major_type))
                         self.assertTrue(representation_equal(a,normalized(state['heap'][motive][2],parameter_rename),expected_type))
-                self.assertEqual(circuit.step(state),state)
 
     def test_existing_zero_base_roundtrip_uses_same_fold(self):
         cfg=spec.MachineConfig(heap=128,stack=16,context=8,constants=2,fuel=512,word_bits=8)

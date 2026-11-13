@@ -1,29 +1,33 @@
 """Lower generic private constructor declarations and source vector ordinals."""
 from .native_cells import CellTag,VectorKind
-from .traversal_machine import Mode,Task,Outcome,Reason,CALL_DECLARE_CTOR_LOOKUP
+from .traversal_machine import Mode,Task,Outcome,Reason,CALL_DECLARE_CTOR_LOOKUP,CALL_DECLARE_CTOR_ORDER
 
-PRIVATE_PHASES=(CALL_DECLARE_CTOR_LOOKUP,)
+PRIVATE_PHASES=(CALL_DECLARE_CTOR_LOOKUP,CALL_DECLARE_CTOR_ORDER)
 
 
 def emit_rules(c):
     r,n,f=c.r,c.read['node'],c.read['frame'];a,b=n['a'],n['b'];top=c.sub(r['sp'],1)
     found=c.AND(c.mode(Mode.RETURN),c.NOT(c.eq(r['sp'],0)),c.eq(f['phase'],CALL_DECLARE_CTOR_LOOKUP))
     c.stop(c.AND(found,c.eq(r['r'],0)),Outcome.INVALID,Reason.SYNTAX)
-    c.emit(c.AND(found,c.NOT(c.eq(r['r'],0))),task=Task.DECLARE_CONSTRUCTORS,mode=Mode.DECL_CTOR_PENDING,x=r['r'])
+    c.emit(c.AND(found,c.NOT(c.eq(r['r'],0))),task=Task.DECLARE_CONSTRUCTORS,mode=Mode.DECL_CTOR_PENDING,x=r['r'],decl_ctor_pending=r['r'])
+    ordered=c.AND(c.mode(Mode.RETURN),c.NOT(c.eq(r['sp'],0)),c.eq(f['phase'],CALL_DECLARE_CTOR_ORDER))
+    c.emit(ordered,core_constructors=r['r'],sp=top,task=Task.DECLARE_CONSTRUCTORS);c.ret(ordered,r['typing_head'])
     active=c.task(Task.DECLARE_CONSTRUCTORS);at=lambda m:c.AND(active,c.mode(m))
-    def family_done(guard,new_head=None):
+    def family_done(guard,order_head=None):
         more=c.lt(1,r['decl_ctor_families'])
         c.emit(guard,decl_ctor_families=c.sub(r['decl_ctor_families'],1))
         c.emit(c.AND(guard,more),mode=Mode.DECL_CTOR_NAME,x=r['decl_ctor_name_next'])
-        c.emit(c.AND(guard,c.NOT(more)),sp=top)
-        c.ret(c.AND(guard,c.NOT(more)),r['typing_head'] if new_head is None else new_head)
+        last=c.AND(guard,c.NOT(more))
+        c.write('stack',last,top,(CALL_DECLARE_CTOR_ORDER,0,0,Task.DECLARE_CONSTRUCTORS,0,0))
+        c.emit(last,task=Task.REVERSE_LIST,mode=Mode.WALK,x=r['decl_ctor_order_rev'] if order_head is None else order_head,
+            reverse_length=r['core_ctor_declared'])
     init=at(Mode.WALK);valid=c.AND(c.NOT(c.eq(r['typing_active'],0)),c.NOT(c.eq(r['core_rec_names'],0)),c.NOT(c.eq(r['header_seen'],0)))
     c.stop(c.AND(init,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
     room=c.lt(r['sp'],c.cfg.stack)
     c.stop(c.AND(init,valid,c.NOT(room)),Outcome.RESOURCE,Reason.STACK)
     init=c.AND(init,valid,room)
     c.write('stack',init,r['sp'],(CALL_DECLARE_CTOR_LOOKUP,0,0,Task.DECLARE_CONSTRUCTORS,0,0))
-    c.emit(init,sp=c.add(r['sp'],1),mode=Mode.DECL_CTOR_NAME,x=r['core_rec_names'],decl_ctor_families=r['header_seen'],core_ctor_declared=0)
+    c.emit(init,sp=c.add(r['sp'],1),mode=Mode.DECL_CTOR_NAME,x=r['core_rec_names'],decl_ctor_families=r['header_seen'],core_ctor_declared=0,decl_ctor_order_rev=0)
     name=at(Mode.DECL_CTOR_NAME);shape=c.eq(c.mux(c.eq(n['c'],0),0,1),c.mux(c.lt(1,r['decl_ctor_families']),1,0))
     c.stop(c.AND(name,c.NOT(shape)),Outcome.INVALID,Reason.SYNTAX)
     c.emit(c.AND(name,shape),decl_ctor_family=a,decl_ctor_name_next=n['c'],mode=Mode.DECL_CTOR_FAMILY_SIGNATURE,x=a)
@@ -50,7 +54,7 @@ def emit_rules(c):
     c.stop(c.AND(analysis,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
     c.emit(c.AND(analysis,valid),decl_ctor_fields=b,mode=Mode.DECL_CTOR_STORE_INFO)
     store=at(Mode.DECL_CTOR_STORE_INFO)
-    wide=c.g.add(c.g.fit(r['free'],c.width+1),c.g.const(4,c.width+1));room=c.NOT(c.g.lt(c.g.const(c.cfg.heap,c.width+1),wide))
+    wide=c.g.add(c.g.fit(r['free'],c.width+1),c.g.const(5,c.width+1));room=c.NOT(c.g.lt(c.g.const(c.cfg.heap,c.width+1),wide))
     c.stop(c.AND(store,c.NOT(room)),Outcome.RESOURCE,Reason.HEAP)
     store=c.AND(store,room)
     c.write('heap',store,r['free'],(CellTag.CHECKED_CONSTRUCTOR,r['decl_ctor_family'],r['decl_ctor_fields'],r['decl_ctor_ordinal']))
@@ -61,9 +65,12 @@ def emit_rules(c):
     signature=at(Mode.DECL_CTOR_STORE_SIGNATURE)
     c.write('heap',signature,r['free'],(CellTag.CHECKED_SIGNATURE,r['decl_ctor_symbol'],r['decl_ctor_type'],r['decl_ctor_scheme']))
     c.emit(signature,free=c.add(r['free'],1),decl_ctor_signature=r['free'],mode=Mode.DECL_CTOR_LINK)
-    link=at(Mode.DECL_CTOR_LINK);more=c.lt(1,r['decl_ctor_remaining'])
+    link=at(Mode.DECL_CTOR_LINK)
     c.write('heap',link,r['free'],(CellTag.VECTOR_CELL,r['decl_ctor_signature'],r['typing_head'],0))
     c.emit(link,free=c.add(r['free'],1),typing_head=r['free'],core_ctor_declared=c.add(r['core_ctor_declared'],1),
-        decl_ctor_remaining=c.sub(r['decl_ctor_remaining'],1),decl_ctor_ordinal=c.add(r['decl_ctor_ordinal'],1))
-    c.emit(c.AND(link,more),mode=Mode.DECL_CTOR_CELL,x=r['decl_ctor_next'])
-    family_done(c.AND(link,c.NOT(more)),r['free'])
+        decl_ctor_remaining=c.sub(r['decl_ctor_remaining'],1),decl_ctor_ordinal=c.add(r['decl_ctor_ordinal'],1),mode=Mode.DECL_CTOR_ORDER)
+    order=at(Mode.DECL_CTOR_ORDER);more=c.NOT(c.eq(r['decl_ctor_remaining'],0))
+    c.write('heap',order,r['free'],(CellTag.VECTOR_CELL,r['decl_ctor_pending'],r['decl_ctor_order_rev'],0))
+    c.emit(order,free=c.add(r['free'],1),decl_ctor_order_rev=r['free'])
+    c.emit(c.AND(order,more),mode=Mode.DECL_CTOR_CELL,x=r['decl_ctor_next'])
+    family_done(c.AND(order,c.NOT(more)),r['free'])

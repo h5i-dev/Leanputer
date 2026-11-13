@@ -5,15 +5,17 @@ Pending metadata cannot be declared until all core typing/name checks pass.
 Nothing is published into committed Γ by this operation.
 """
 from .native_cells import CellTag,VectorKind
-from .traversal_machine import Mode,Task,Outcome,Reason,CALL_DECLARE_CTOR_LOOKUP
+from .traversal_machine import Mode,Task,Outcome,Reason,CALL_DECLARE_CTOR_LOOKUP,CALL_DECLARE_CTOR_ORDER
 
-PRIVATE_PHASES=(CALL_DECLARE_CTOR_LOOKUP,)
+PRIVATE_PHASES=(CALL_DECLARE_CTOR_LOOKUP,CALL_DECLARE_CTOR_ORDER)
 
 
 def resume(machine,frame,stop,ret,alloc):
     r=machine.state['regs']
-    if not r['r']:stop(Outcome.INVALID,Reason.SYNTAX)
-    else:r.update(task=Task.DECLARE_CONSTRUCTORS,mode=Mode.DECL_CTOR_PENDING,x=r['r'])
+    if frame[0]==CALL_DECLARE_CTOR_ORDER:
+        r.update(core_constructors=r['r'],sp=r['sp']-1,task=Task.DECLARE_CONSTRUCTORS);ret(r['typing_head'])
+    elif not r['r']:stop(Outcome.INVALID,Reason.SYNTAX)
+    else:r.update(task=Task.DECLARE_CONSTRUCTORS,mode=Mode.DECL_CTOR_PENDING,x=r['r'],decl_ctor_pending=r['r'])
 
 
 def step(machine,tag,a,b,c,stop,ret,alloc):
@@ -23,14 +25,16 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         more=r['decl_ctor_families']>1
         r['decl_ctor_families']-=1
         if more:r.update(mode=Mode.DECL_CTOR_NAME,x=r['decl_ctor_name_next'])
-        else:r['sp']-=1;ret(r['typing_head'])
+        else:
+            s['stack'][r['sp']-1]=[CALL_DECLARE_CTOR_ORDER,0,0,Task.DECLARE_CONSTRUCTORS,0,0]
+            r.update(task=Task.REVERSE_LIST,mode=Mode.WALK,x=r['decl_ctor_order_rev'],reverse_length=r['core_ctor_declared'])
     mode=r['mode']
     if mode==Mode.WALK:
         if not r['typing_active'] or not r['core_rec_names'] or not r['header_seen']:stop(Outcome.INVALID,Reason.SYNTAX)
         elif r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
         else:
             s['stack'][r['sp']]=[CALL_DECLARE_CTOR_LOOKUP,0,0,Task.DECLARE_CONSTRUCTORS,0,0]
-            r.update(sp=r['sp']+1,mode=Mode.DECL_CTOR_NAME,x=r['core_rec_names'],decl_ctor_families=r['header_seen'],core_ctor_declared=0)
+            r.update(sp=r['sp']+1,mode=Mode.DECL_CTOR_NAME,x=r['core_rec_names'],decl_ctor_families=r['header_seen'],core_ctor_declared=0,decl_ctor_order_rev=0)
     elif mode==Mode.DECL_CTOR_NAME:
         if bool(c)!=(r['decl_ctor_families']>1):stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(decl_ctor_family=a,decl_ctor_name_next=c,mode=Mode.DECL_CTOR_FAMILY_SIGNATURE,x=a)
@@ -57,7 +61,7 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         if a!=r['decl_ctor_family']:stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(decl_ctor_fields=b,mode=Mode.DECL_CTOR_STORE_INFO)
     elif mode==Mode.DECL_CTOR_STORE_INFO:
-        if r['free']+4>cfg.heap:stop(Outcome.RESOURCE,Reason.HEAP)
+        if r['free']+5>cfg.heap:stop(Outcome.RESOURCE,Reason.HEAP)
         else:
             ref=r['free'];s['heap'][ref]=[CellTag.CHECKED_CONSTRUCTOR,r['decl_ctor_family'],r['decl_ctor_fields'],r['decl_ctor_ordinal']]
             r.update(free=ref+1,decl_ctor_info=ref,mode=Mode.DECL_CTOR_STORE_SCHEME)
@@ -69,9 +73,12 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         r.update(free=ref+1,decl_ctor_signature=ref,mode=Mode.DECL_CTOR_LINK)
     elif mode==Mode.DECL_CTOR_LINK:
         ref=r['free'];s['heap'][ref]=[CellTag.VECTOR_CELL,r['decl_ctor_signature'],r['typing_head'],0]
-        more=r['decl_ctor_remaining']>1
         r.update(free=ref+1,typing_head=ref,core_ctor_declared=r['core_ctor_declared']+1,
-            decl_ctor_remaining=r['decl_ctor_remaining']-1,decl_ctor_ordinal=r['decl_ctor_ordinal']+1)
+            decl_ctor_remaining=r['decl_ctor_remaining']-1,decl_ctor_ordinal=r['decl_ctor_ordinal']+1,mode=Mode.DECL_CTOR_ORDER)
+    elif mode==Mode.DECL_CTOR_ORDER:
+        ref=r['free'];s['heap'][ref]=[CellTag.VECTOR_CELL,r['decl_ctor_pending'],r['decl_ctor_order_rev'],0]
+        r.update(free=ref+1,decl_ctor_order_rev=ref)
+        more=r['decl_ctor_remaining']>0
         if more:r.update(mode=Mode.DECL_CTOR_CELL,x=r['decl_ctor_next'])
         else:family_done()
     else:stop(Outcome.INVALID,Reason.SYNTAX)

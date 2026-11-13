@@ -218,6 +218,9 @@ now may these constructor types enter the PRIVATE typing head. Committed Γ and
 raw input cursor stay unchanged until all generation/restoration is complete.
 Result arguments/typed field snapshots remain in pending analysis for the
 recursor builder; none are input-derived checking answers.
+The SAME declaration traversal now also accumulates a source-ordered immutable
+vector of those checked pending analyses, shared by minor/rule passes. Later
+passes do not repeat the raw-family/name/constructor-vector discovery traversal.
 
 Elimination/K follows `inductive.cpp:475–570` in the pinned source. The complete
 decision first uses necessarily-nonzero on the result universe; otherwise mutual
@@ -290,3 +293,18 @@ and arbitrarily bounded dependent prefixes/indices follow the same loops.
 Abstraction and reverse instantiation share the context-to-scratch traversal;
 snapshots use one reusable immutable context-window operation. No descriptor,
 opened domain or substituted index is supplied as an input checking answer.
+
+The all-constructor minor pass follows the second loop of `mk_rec_infos`. Read
+checked constructors in original order and restore their derived field Locals
+after the persistent parameters/motives/earlier-minors scope. Build the result
+as the owning motive applied to the validated return indices and the constructor
+applied to shared parameters/fields. Traverse every field descriptor; for each
+recursive one reopen its complete functional prefix, apply its family motive to
+the substituted indices and `field xs`, and Pi-fold that prefix to form an IH.
+Append all IH Locals **after all fields**, then Pi-fold fields/IHs to the minor
+type. Allocate the minor Local in the persistent scope and collect output177
+`(checkedConstructorAnalysis,minorLocalRecord,fieldCount)` in declaration order.
+The shared motive lookup uses checked family identity, and shared Expr-list
+application drops the validated parameter prefix before applying return indices.
+No constructor/family name, field-count schema or supplied minor type controls
+the algorithm. Recursor types/rules still need the following passes.

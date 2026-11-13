@@ -30,6 +30,10 @@ class DeclareConstructorsTest(unittest.TestCase):
         self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
         self.assertEqual((r['decl'],r['raw_index'],r['env_head'],r['core_ctor_declared']),(0,0,0,2))
         packed=SimpleNamespace(heap=state['heap']);cursor=r['typing_head'];seen={}
+        ordered=vector(packed,r['core_constructors'],VectorKind.REFERENCES)
+        self.assertEqual([state['heap'][pending][1] for pending in ordered],
+            [ctor.symbol for ctor in decls[0].families[0].constructors])
+        self.assertTrue(all(state['heap'][pending][0]==CellTag.PENDING_CONSTRUCTOR for pending in ordered))
         while cursor!=r['header_head']:
             tag,sig,cursor,_=state['heap'][cursor];self.assertEqual(tag,CellTag.VECTOR_CELL)
             tag,symbol,type_ref,scheme=state['heap'][sig];self.assertEqual(tag,CellTag.CHECKED_SIGNATURE)
