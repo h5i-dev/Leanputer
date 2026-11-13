@@ -32,7 +32,7 @@ mathlib coverage/throughput fraction is asserted (source denominator remains857)
 | Host process peak RSS bytes | 1,800,151,040 |
 
 Early halt observes model halt bits every8steps and performs one stock completion
-flush. Timing includes this batched forward run; it is not steady-state theorem
+flush. CPU development/IR checks ran concurrently. Timing includes this batched forward run; it is not an isolated or steady-state theorem
 throughput. Transformers used its correct PyTorch fallback kernels for missing
 causal-conv1d/FLA extensions. This report changes semantic work relative to older
 core reports; it is not a matched performance comparison. Weights fit the A10G

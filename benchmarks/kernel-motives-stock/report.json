@@ -1130,5 +1130,6 @@
   "operation_group": "typed-inductive-motives",
   "full_kernel_native_support": false,
   "tested_commit": "72cd7a0",
-  "command": "PYTHONPATH=/root/Leanputer /mnt/scratch/leanputer-native-venv/bin/python -u tools/kernel_core_smoke.py --device cuda --report /mnt/scratch/leanputer-runs/general-motives-stock/report.json"
+  "command": "PYTHONPATH=/root/Leanputer /mnt/scratch/leanputer-native-venv/bin/python -u tools/kernel_core_smoke.py --device cuda --report /mnt/scratch/leanputer-runs/general-motives-stock/report.json",
+  "timing_context": "Concurrent CPU development/IR checks; exploratory stock smoke, not an isolated throughput benchmark."
 }
