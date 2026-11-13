@@ -1,6 +1,6 @@
-"""Fixed positive logical primitives; never unchecked user-environment axioms.
+"""Fixed kernel families; never unchecked user-environment axioms.
 
-Only the named propositions/constructors below are intrinsic. Their closed
+Only the named families/constructors below are intrinsic. Their closed
 schemas are checker rules compiled into weights. General datatype declarations
 and recursors outside this catalog remain unsupported.
 """
@@ -25,6 +25,25 @@ REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5,37:7,41:4,4
 REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,),31:(29,30)}
 REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3,31:2}
 
+# Fixed nonrecursive records, not admission of arbitrary input declarations.
+ONE_FIELD_RECORDS = {
+    'Inhabited':dict(code=46, projection=6, constructor='mk', field='value', data=True, type_carrier=False),
+    'Mul':dict(code=49, projection=7, constructor='mk', field='binary', data=True, type_carrier=True),
+    'Add':dict(code=52, projection=8, constructor='mk', field='binary', data=True, type_carrier=True),
+    'Subsingleton':dict(code=55, projection=9, constructor='intro', field='equality', data=False, type_carrier=False),
+}
+for _family, _record in ONE_FIELD_RECORDS.items():
+    for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
+        PRIMITIVE_CODES[_name]=_record['code']+_offset
+        PRIMITIVE_UNIVERSES[_name]=2 if _offset==2 else 1
+    PROJECTION_FAMILIES[_family]=_record['projection']
+    REC_ARITIES[_record['code']+2]=4
+    if not _record['data']:
+        REC_CONSTRUCTORS[_record['code']+2]=(_record['code']+1,)
+        REC_MAJOR_ARITIES[_record['code']+2]=2
+PROJECTION_ARITIES={family:1 if family in ONE_FIELD_RECORDS else 2 for family in PROJECTION_FAMILIES}
+PROJECTION_COUNT=max(PROJECTION_FAMILIES[family]+count for family,count in PROJECTION_ARITIES.items())
+
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
 
@@ -43,6 +62,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.split('.')[0] in ONE_FIELD_RECORDS:return _one_record_type(expression)
     if name.startswith('Option'):return _option_type(expression)
     if name.startswith('Bool'):return _bool_type(expression)
     if name.startswith('HEq'):return _heq_type(expression)
@@ -241,12 +261,36 @@ def _option_type(expression):
     return _close_schema(bind('alpha',('sort',carrier_sort),tail))
 
 
+def _one_record_type(expression):
+    name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
+    carrier=expression[3] if name.endswith('.rec') else expression[2]
+    carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,motive,major,field=map(v,('alpha','motive','major','field'))
+    record_type=apps(('builtin',family,carrier),alpha)
+    if record['field']=='value':field_type=alpha
+    elif record['field']=='binary':field_type=bind('left',alpha,bind('right',alpha,alpha))
+    else:field_type=bind('left',alpha,bind('right',alpha,apps(('builtin','Eq',carrier),alpha,v('left'),v('right'))))
+    if name==family:
+        level=carrier_sort if record['type_carrier'] else (max(1,carrier) if carrier>=0 else -3) if record['data'] else 0
+        tail=('sort',level)
+    elif not name.endswith('.rec'):tail=bind('field',field_type,record_type)
+    else:
+        ctor=apps(('builtin',family+'.'+record['constructor'],carrier),alpha,field)
+        tail=bind('motive',bind('motive_arg',record_type,('sort',expression[2])),
+             bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record_type,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',carrier_sort),tail))
+
+
 def type_schema(expression):
     """Compile a FIXED primitive type into a relative postorder DAG recipe.
 
     This runs on kernel rule schemas at weight compilation, never on an input
     proof or an inferred type. Negative scalar markers denote the fixed schema
-    universe parameters; input universes are always nonnegative.
+    universe parameters: -1/-2 are the levels, -3 is max(1, first), and
+    -4/-5 are their successors. Input universes are always nonnegative.
     """
     rows,cache = [],{}
     def visit(term):

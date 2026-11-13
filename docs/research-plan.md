@@ -1,43 +1,54 @@
 # Research tool work plan
 
-Baseline: commit 0fd6b5e. Research quality is an evaluation target, not a claim.
-The baseline STLC circuit remains a comparison implementation.
+The primary runtime is a standalone, compiler-generated stock
+Qwen3_5ForCausalLM with native GatedDeltaNet cache and identity hidden feedback.
+No pretrained backbone, custom forward, CPU emulator or inference-time external
+checker is used. The sparse circuit/attention-RAM engine remains a reference.
+Research quality and formal soundness remain goals, not established labels.
 
-| Slice | Measurable acceptance criterion | State |
-| --- | --- | --- |
-| Shared execution substrate | Fixed FFNs, actual attention reads/writes, exhaustive bounded-address checks, exact CPU/CUDA, shared weights | Implemented/tested; backend numerical assumptions remain |
-| Dependent operational specification | Explicit heap/context/continuations, dependent lambda-Pi, capture avoidance, beta/delta/eta/proof irrelevance, ground Prop/universe rules and bounds | Implemented; expanded to60phases with proposition structures |
-| Compiled semantic transitions | Every phase matched by fixed weights, no host semantic work, adversarial/resource traces | Implemented/tested, no complete formal proof |
-| Real Lean input | Elaborated Expr, complete supported dependency closure, explicit unsupported, independent actual kernel replay | Implemented, quoted-name and unavailable-body boundary tests |
-| Corpus and evaluation | Real/generated/mutated/fuzz cases, reproducible reports, CPU/CUDA, trace mismatch minimization | Harness implemented; larger controlled runs in progress |
-| Mathlib coverage and speed | Pinned prefilter population, all rows retained, source/instance distinction, closure and cold/steady costs | 857-name population measured: 4 accepted/853 unsupported at large budget; repeated timings pending |
-| Scaling and trust | A10G/CPU measurements vs baseline/reference, memory/depth/steps/time, trust table/core lemmas | Core lemmas and tests implemented; controlled scaling in progress |
-| Research release | Schemas, artifact compatibility, batch CLI/CI, exact reproducibility and explicit gaps | Usable checkpoint; research requirements still incomplete |
-
-Each validated coherent slice is committed and pushed, followed immediately by
-implementation of the next slice. Tests alone do not establish soundness.
-
-Current architecture: syntax heap and mutable continuation/context banks,
-binary-address attention queries with fixed positional keys, saturated float32
-softmax, compiled Boolean register-control FFNs, and optional gated rank-one
-attention writes. The same modules are reused each step. This trades the
-baseline's many distinct layers for sequential execution. Report all logical
-stages and applied/semantic steps; no claim of fewer than eleven layers.
-
-Current measured gaps and next acceptance criteria:
-
-| Gap | Evidence / next checkpoint |
+| Slice | Current evidence / remaining work |
 | --- | --- |
-| Inductives/constructors/recursors/quotients | 853/857 selected mathlib theorems unsupported; first failures dominated by these dependencies. Add a reviewed declaration/eliminator specification and invalid-declaration cases before advertising support. Never replace them by unchecked axioms. |
-| Symbolic universes | Only one ground instance/name tested; no universal theorem coverage claim. Symbolic level equivalence/constraints need separate semantics. |
-| Fresh allocation / fixed fuel overhead | Largest accepted instance takes 12,332 steps and 1,620 allocations; the batch runs 16,385 steps for every item. Investigate syntax interning/reusable conversion work without host semantic assistance. |
-| Controlled evidence | Run real-population repeat timings and mixed corpus, preserve complete denominator and negative results. Add capacity/batch/device ablation with raw samples and peak memory. |
-| Formal assurance | Limited gate/mask/absorption lemmas exist; compiler, attention floating behavior and dependent typing soundness remain unproved. Tests are differential evidence. |
-| Qwen integration | Not implemented; standalone checker correctness/coverage/performance take priority. No base weights needed. |
+| Dependent calculus | Ground sorts/Prop, Pi/Lam/App/let, capture avoidance, beta/delta/zeta, typed eta and proof irrelevance; all environment types/values checked |
+| Native compilation | Stock RMSNorm/SwiGLU/GDN/forward/cache; generated BF16 weights, tested bounded binary domain; broad numerical correspondence still pending |
+| Layout | Matched downsizing completed:4.021B→668.6Mparameters, same capacities/fuel/outcomes; GPUforward372.825→315.196s, far from efficient |
+| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool and Option; selected targeted native checks |
+| One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
+| Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest103phase syntax refresh404EXPORTED453UNSUPPORTED; not404proofs. Complete native population NOT_RUN |
+| Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
+| Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
-See [mathlib evaluation](mathlib-evaluation.md) for pins, exact reproduction,
-source population, supported theorem names, budget tradeoff and trust boundary.
-Historical checkpoint notes below record development, not current pending states.
+The one-field native checkpoint passed all12cases9A3R, matching planned steps,
+including actual Function.injective_of_subsingleton(2643steps/three checked
+dependencies/noaxioms). The independent Option source Function.IsPartialInv.eq
+also accepted4930steps/three checked dependencies/noaxioms. These are selected
+source judgments, not a new full-population coverage fraction. Preserve exact
+input/config/model measurements; full native checking of857rows is unrun.
+
+Next choose a coherent construct slice from the remaining first blockers:
+Monoid/AddMonoid require multiple-field/inherited records; several Mul/Add
+closures now expose cancellation-property classes. General recursive/indexed
+inductives and Nat need separate rules. Fixed catalog support is not arbitrary
+input declaration admission. Symbolic universes remain unsupported.
+
+Stock fallback latency and eager allocation/environment rechecking are material
+limits: an individual small native source proof can take minutes. After a safe
+feature checkpoint, any required efficiency work must preserve stock architecture,
+full semantics, capacities and trust boundaries, with a matched small comparison.
+Do not replace checking with cached host answers or erase dependencies. The
+completed layout campaign is documented separately; avoid indefinite tuning.
+
+A full proof-coverage fraction requires one frozen native compiler/configuration
+and outcomes for all857rows, retaining unsupported/resource categories and
+cold/steady boundaries. Syntax export counts and independent spec plans cannot
+satisfy that criterion. Schedule that broader validation only after the user's
+feature-first phase; do not rerun large campaigns after every feature.
+
+Formal typing/compiler/floating-point soundness is not proved. Limited gate and
+mask lemmas and differential traces are evidence only. Integration with a base
+LLM and full Demo A remain separate, last/optional work.
+
+The notes below are historical checkpoint records, not current pending states.
 
 Primary provenance (accessed 2026-11-12):
 

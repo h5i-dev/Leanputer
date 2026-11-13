@@ -252,3 +252,32 @@ heterogeneous equality does not make distinct carriers or values definitionally
 equal. The same typed-normalization premise as Eq applies. Per-head arity bounds
 protect partial-spine metadata. The controller has98phases; this remains a fixed
 bounded fragment, not general inductive checking or formal soundness verification.
+
+## Bool and Option data
+
+Bool uses two nullary constructors and a dependent recursor with a result
+universe. A normalized constructor selects its minor; a neutral Bool stays
+neutral, even with identical branches. Option adds a type parameter and
+zero/one-field constructors. Option.{u} expects Type u, represented as numeric
+Sort(u+1); its recursor universes are result then carrier. Successor levels are
+computed inside weighted primitive-schema construction. Using a Prop as that
+Type carrier or a wrong some-field rejects. Neither type receives data eta.
+
+## Fixed one-field record slice (provisional)
+
+The catalog contains Inhabited, Mul, Add and Subsingleton, each with its actual
+constructor and dependent recursor. Their projection index is exactly zero.
+Inhabited accepts Sort u and lands in Sort(max 1 u); Mul/Add take and return
+Type u; Subsingleton takes Sort u and returns Prop. Its field is a proof of
+forall a b, Eq a b, which does not change definitional equality of those data.
+
+Projection inference identifies the matching family and instantiates its fixed
+constructor schema with the actual carrier by weighted substitution. The field
+type is the resulting binder domain. This handles dependent binding without
+an input field-type certificate or host type inference. Constructor reduction
+checks the actual family/constructor spine. Typed data eta first checks the
+same record type on both sides, then compares their projections. Data recursors
+may expand a neutral Inhabited/Mul/Add through that field. Subsingleton is Prop
+and retains constructor-only data reduction, matching the targeted actual Lean
+boundary. General user record/inductive admission remains unsupported. Current
+validation is targeted and provisional; the whole checker is not formally proved.

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES
+from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES, ONE_FIELD_RECORDS, PROJECTION_COUNT
 
 
 class Outcome(IntEnum):
@@ -136,6 +136,9 @@ class Op(IntEnum):
     H_VALUE = 97
     B_PICK = 98
     O_SPINE = 99
+    I_ONE_CTOR = 100
+    I_ONE_FIELD = 101
+    ONE_REC = 102
 
 
 @dataclass(frozen=True)
@@ -296,15 +299,15 @@ class SpecMachine:
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE):
+                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
-        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE):pointers.append(result)
+        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE,Op.I_ONE_CTOR,Op.I_ONE_FIELD):pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
                   Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE):
+                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC):
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
@@ -318,7 +321,7 @@ class SpecMachine:
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
                 elif tag == Tag.PROJ:
-                    valid &= 0<a<i and b==0 and v<6
+                    valid &= 0<a<i and b==0 and v<PROJECTION_COUNT
                 elif tag == Tag.LET:
                     valid &= all(0<child<i for child in (a,b,v))
                 elif tag == Tag.BUILTIN:
@@ -419,8 +422,20 @@ class SpecMachine:
             else: self.tail(Op.I_PROJ_FAMILY,a,x,b)
         elif op==Op.I_PROJ_FAMILY:
             tag,a,b,_=self.node(x)
-            if tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            projection=self.node(y)[3]
+            if projection>=6:
+                record=next(record for record in ONE_FIELD_RECORDS.values() if record['projection']==projection)
+                if tag!=Tag.BUILTIN or self.node(x)[3]!=record['code']:
+                    self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+                else:self.call(Op.BUILTIN_TYPE,record['code']+1,0,r['free'],a,continuation=(Op.I_ONE_CTOR,z))
+            elif tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
             else: self.tail(Op.I_PROJ_HEAD,a,y,b,z)
+        elif op==Op.I_ONE_CTOR:
+            if self.node(result)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            else:self.call(Op.SUBST,self.node(result)[2],x,continuation=(Op.I_ONE_FIELD,))
+        elif op==Op.I_ONE_FIELD:
+            if self.node(result)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            else:self.ret(self.node(result)[1])
         elif op==Op.I_PROJ_HEAD:
             tag,a,_,v=self.node(x); projection=self.node(y)[3]
             expected=2 if projection<2 else 4 if projection<4 else 32
@@ -509,17 +524,18 @@ class SpecMachine:
             tag,a,b,_=self.node(x)
             if tag==Tag.APP:
                 projection=self.node(y)[3]
-                ctor=3 if projection<2 else 5 if projection<4 else 33
-                self.call(Op.PROJ_HEAD,a,2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
+                record=next((record for record in ONE_FIELD_RECORDS.values() if record['projection']==projection),None)
+                ctor=record['code']+1 if record else 3 if projection<2 else 5 if projection<4 else 33
+                self.call(Op.PROJ_HEAD,a,0 if record else 2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
             else: self.neutral_projection(y,z)
         elif op==Op.PROJ_HEAD:
             tag,a,_,v=self.node(x)
             if y:
                 if tag==Tag.APP: self.tail(Op.PROJ_HEAD,a,y-1,z)
                 else: self.ret(0)
-            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33) and v==z))
+            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33 or z in {record['code']+1 for record in ONE_FIELD_RECORDS.values()}) and v==z))
         elif op==Op.PROJ_SELECT:
-            if result: self.tail(Op.WHNF,w if self.node(x)[3]%2 else z)
+            if result: self.tail(Op.WHNF,w if self.node(x)[3]>=6 or self.node(x)[3]%2 else z)
             else: self.neutral_projection(x,y)
         elif op == Op.W_APP:
             tag, _, body, _ = self.node(result)
@@ -534,6 +550,9 @@ class SpecMachine:
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
                 elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
                 elif head==37:self.call(Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
+                elif head in {record['code']+2 for record in ONE_FIELD_RECORDS.values() if record['data']}:
+                    projection=next(record['projection'] for record in ONE_FIELD_RECORDS.values() if record['code']+2==head)
+                    self.tail(Op.ONE_REC,self.node(result)[2],y,projection)
                 else:
                     self.call(Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
             elif result == self.node(x)[1]:
@@ -595,7 +614,8 @@ class SpecMachine:
                 if ctor==44:self.tail(Op.REC_APPLY,self.node(x)[2],z)
                 else:self.ret(0)
             elif ctor not in REC_CONSTRUCTORS[y]:self.ret(0)
-            elif y in (16,26):self.tail(Op.REC_APPLY,self.node(x)[2],z)
+            elif y in (16,26) or y in {record['code']+2 for record in ONE_FIELD_RECORDS.values()}:
+                self.tail(Op.REC_APPLY,self.node(x)[2],z)
             elif y in (12,13,19):self.tail(Op.REC_FIELDS,w,self.node(x)[2],z)
             elif y==27:self.tail(Op.REC_PICK,self.node(x)[1],z)
             elif ctor==22 or (y==31 and ctor==30):self.tail(Op.REC_APPLY,self.node(x)[2],z)
@@ -608,6 +628,8 @@ class SpecMachine:
             self.allocate(Tag.APP,x,y,resume=(Op.W_BETA,))
         elif op==Op.S_REC_LEFT:
             self.allocate(Tag.PROJ,y,v=4,resume=(Op.S_REC_RIGHT,x,y,r['free']))
+        elif op==Op.ONE_REC:
+            self.allocate(Tag.PROJ,y,v=z,resume=(Op.REC_APPLY,x,r['free']))
         elif op==Op.S_REC_RIGHT:
             self.allocate(Tag.PROJ,y,v=5,resume=(Op.S_REC_APPLY,x,z,r['free']))
         elif op==Op.S_REC_APPLY:
@@ -751,19 +773,22 @@ class SpecMachine:
                 self.call(Op.INFER, y, continuation=(Op.E_TYPE, x, y))
             else:
                 self.call(Op.INFER, x, continuation=(Op.E_TYPE, y, x))
+        elif op==Op.S_FN and self.node(x)[0]==Tag.BUILTIN and self.node(x)[3] in {record['code'] for record in ONE_FIELD_RECORDS.values() if record['data']}:
+            projection=next(record['projection'] for record in ONE_FIELD_RECORDS.values() if record['code']==self.node(x)[3])
+            self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,projection))
         elif op in (Op.S_TYPE,Op.S_FN):
             if self.node(x)[0]!=Tag.APP:self.ret(0)
             else:self.tail(Op.S_FN if op==Op.S_TYPE else Op.S_HEAD,self.node(x)[1],y,z,w)
         elif op==Op.S_HEAD:
             if self.node(x)[0]!=Tag.BUILTIN or self.node(x)[3]!=32:self.ret(0)
-            else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w))
+            else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,4))
         elif op==Op.S_RIGHT_TYPE:
-            self.call(Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y))
+            self.call(Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y,w))
         elif op==Op.S_SAME_TYPE:
             if not result:self.ret(0)
-            else:self.allocate(Tag.PROJ,x,v=4,resume=(Op.S_RIGHT_VAL,y,r['free']))
+            else:self.allocate(Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
         elif op==Op.S_RIGHT_VAL:
-            self.allocate(Tag.PROJ,x,v=4,resume=(Op.CONV,y,r['free']))
+            self.allocate(Tag.PROJ,x,v=z,resume=(Op.CONV,y,r['free']))
         elif op == Op.E_TYPE:
             self.call(Op.WHNF, result, continuation=(Op.E_TYPE_WHNF, x, y))
         elif op == Op.E_TYPE_WHNF:

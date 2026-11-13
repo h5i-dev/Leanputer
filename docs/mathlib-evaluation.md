@@ -186,3 +186,12 @@ the current-fragment files; historical hashes/outcomes remain in Git history.
 Use --syntax-report Option100phasefixedfragment for that feature boundary.
 This is still a syntax-only update with every checking_status NOT_RUN, not a
 new native proof-coverage fraction.
+
+The subsequent fixed one-field-record syntax snapshot retains404EXPORTED and
+453UNSUPPORTED of the same857selected ground instances, export9.222302s.
+Inhabited/Mul/Add/Subsingleton remove38of96previous first blockers. Newly
+revealed blockers are retained, including cancellation classes and Nat.
+All current-fragment rows still have checking_status NOT_RUN_IN_THIS_REFRESH;
+targeted source native checks are separate evidence. These exports include
+large classical dependency closures beyond small native budgets. No declaration
+was dropped or replaced by an unchecked environment assumption.

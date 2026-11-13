@@ -54,6 +54,14 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Option" then return .const ``Option [level]
       if name == "Option.none" then return .const ``Option.none [level]
       if name == "Option.some" then return .const ``Option.some [level]
+      if name == "Inhabited" then return .const ``Inhabited [level]
+      if name == "Inhabited.mk" then return .const ``Inhabited.mk [level]
+      if name == "Mul" then return .const ``Mul [level]
+      if name == "Mul.mk" then return .const ``Mul.mk [level]
+      if name == "Add" then return .const ``Add [level]
+      if name == "Add.mk" then return .const ``Add.mk [level]
+      if name == "Subsingleton" then return .const ``Subsingleton [level]
+      if name == "Subsingleton.intro" then return .const ``Subsingleton.intro [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -63,6 +71,8 @@ partial def expression (json : Json) : Except String Expr := do
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Option.rec" && fields.size == 4 then
       return .const ``Option.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
+    if fields.size == 4 && (name == "Inhabited.rec" || name == "Mul.rec" || name == "Add.rec" || name == "Subsingleton.rec") then
+      return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Subtype.rec" && fields.size == 4 then
       return .const ``Subtype.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Quot.lift" && fields.size == 4 then
@@ -75,6 +85,8 @@ partial def expression (json : Json) : Except String Expr := do
     let index ← fields[2]!.getNat?
     let inner ← expression fields[3]!
     if index < 2 && (family == "Iff" || family == "And" || family == "Subtype") then
+      return .proj family.toName index inner
+    if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton") then
       return .proj family.toName index inner
     throw "unsupported replay projection"
   if tag == "let" && fields.size == 4 then
@@ -132,7 +144,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))

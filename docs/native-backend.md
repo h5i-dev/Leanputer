@@ -369,3 +369,38 @@ focused CPU record validation overlapped part of it. It is one new verified
 source ground instance, not4proved from the syntax subset or a full-population
 coverage update. Exact frozen Option checkpoint inputs/config/report are under
 benchmarks/native/option-real-*; weighted semantics match commit271263d.
+
+## Fixed one-field records
+
+Inhabited/Mul/Add/Subsingleton share a fixed record path in103semantic phases
+and58intrinsics. Projection inference instantiates the actual fixed constructor
+schema by weighted substitution, then extracts its field binder domain. This
+handles field binding without host inference or input certificates. Inhabited
+uses Sort(max1u); Mul/Add use Type-u carriers; Subsingleton is Prop with a proof
+of forall a b, Eq a b. Data records use typed eta and neutral recursor expansion.
+A neutral Subsingleton cannot compute data through its recursor, matching Lean.
+
+Twenty weighted cases pass16A4R(264.089s), including actual closed aliases,
+field typing under binders, constructor/neutral boundaries and two retained
+Subtype checks. Nine relative feature cases agree with actualLean(2.415s).
+This focused reference validation overlapped part of the preceding Option GPU
+run, so it is not a controlled CPU/GPU performance comparison. Native source
+and fixture evidence is recorded separately below after checking.
+
+The native12case batch passes9A3R, with every semantic-step count matching the
+spec plan. Actual mathlib Function.injective_of_subsingleton@[1,1] accepts in
+2643transitions with three checked dependencies and noaxioms; Lean accepts the
+same exported judgment(2.603s). The other cases cover the Inhabited universe
+floor, Mul recursor type, data eta for all three data records, neutral Inhabited
+recursion, constructor Subsingleton iota, three required rejections and retained
+Subtype eta.
+
+At heap512/stack32/context16/constants8/fuel2688:75boot+2690stockforwards,
+279.794s forward,24.276s compile,1,356,195,212BF16parameters/2,712,390,424
+weightbytes/H5120/71layers/inter1024; CUDApeak2,848,267,776bytes and
+host1,775,697,920bytes. This is a new feature batch, not a matched speedup
+comparison with an earlier smaller model. Actual source work leaves45fuelsteps
+padding. Exact input/config/report are in benchmarks/native/one-field-*.
+The smaller256cell774.4Mparameter shape is a compiler plan only, not this
+measured native batch. Of96prior one-field-first blockers38now syntax-export;
+this checkpoint adds one real native mathlib acceptance, not38proved.

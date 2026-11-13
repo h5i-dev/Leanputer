@@ -22,6 +22,9 @@ data recursor. Subtype includes dependent fields and typed record eta.
 Bool includes its two nullary constructors and dependent data recursor.
 Option includes its zero/one-field constructors and dependent data recursor,
 with successor universes for its Type-valued carrier.
+Fixed one-field records cover Inhabited, Mul, Add and Subsingleton, including
+dependent field typing. Data records support typed eta; the Prop-valued
+Subsingleton keeps constructor-only data reduction.
 Fixed Quot/Mk/Ind/Lift rules include checked
 relation respectfulness for lifting.
 Numeric universes use Lean's impredicative Prop rule. Conversion includes
@@ -182,7 +185,7 @@ traces, seeded tests and external replay provide evidence, not formal soundness.
 
 
 The current complete syntax refresh retains all 857 selected public theorems:
-366 export and 491 remain unsupported. EXPORTED is not proof acceptance; a
+404 export and 453 remain unsupported. EXPORTED is not proof acceptance; a
 new full-population native check has not been run. The [complete syntax
 outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
 assumptions, input sizes and every unsupported row. Monoid is the largest current
