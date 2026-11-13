@@ -38,6 +38,13 @@ class MajorTransitionTest(unittest.TestCase):
             self.assertEqual(actual, machine.step())
             if owner == spec.Task.LIFT: self.assertEqual(actual['regs']['mode'], spec.Mode.RESUME)
             else: self.assertEqual((actual['regs']['mode'], actual['regs']['task']), (spec.Mode.MAJOR_VALUE, owner))
+        for owner, mode in ((spec.Task.REDUCE_RECURSOR, spec.Mode.REDUCE_SPINE),
+                (spec.Task.GATHER_RECURSOR_ARGUMENTS, spec.Mode.GATHER_RESTORE)):
+            state = spec.prepare(cfg, request)
+            state['regs'].update(mode=int(spec.Mode.RETURN), sp=1, r=root)
+            state['stack'][0] = list(map(int, (0, root, root, owner, 0, 0)))
+            actual = circuit.step(state); self.assertEqual(actual, spec.SpecMachine(cfg, state).step())
+            self.assertEqual((actual['regs']['task'], actual['regs']['mode']), (owner, mode))
 
     def test_checked_k_eta_prop_exclusion_recursive_neutral_and_saved_call_state(self):
         cfg = spec.MachineConfig(heap=1024, stack=32, context=16, constants=2, fuel=8192, word_bits=11)
@@ -46,7 +53,7 @@ class MajorTransitionTest(unittest.TestCase):
             Phase.WHNF, Phase.ETA_INFER, Phase.ETA_TYPE_WHNF, Phase.ETA_SORT_INFER, Phase.ETA_SORT_WHNF}
         def run(state, task, x, poison=False, expected=spec.Outcome.DONE, **updates):
             state = deepcopy(state); state['regs'].update(status=0, reason=0, fuel=cfg.fuel, sp=0,
-                task=int(task), mode=int(spec.Mode.WALK), x=x, **updates)
+                task=int(task), mode=int(spec.Mode.BETA_ZETA if task == spec.Task.BETA_ZETA else spec.Mode.WALK), x=x, **updates)
             before = deepcopy(state)
             for step in range(cfg.fuel+2):
                 r = state['regs']
@@ -108,6 +115,25 @@ class MajorTransitionTest(unittest.TestCase):
                         expected = source.arena.app(expressions[constructor], projections)
                     else: expected = expressions[neutral]
                     self.assertTrue(representation_equal(source.arena, expressions[actual['regs']['r']], expected))
+            # The real WHNF entry must consume/preserve its own pending stack,
+            # not merely return the pure preparation operation's expression.
+            state = run(state, spec.Task.APPLICATION_SPINE, type_ref)
+            type_spine = state['regs']['r']; type_args = vector(SimpleNamespace(heap=state['heap']), state['heap'][type_spine][2], VectorKind.REFERENCES)
+            nparams = state['heap'][counts][1]
+            params = tuple(state['heap'][state['context'][i][0]][1] for i in range(r['header_parameter_base'], r['header_parameter_end']))
+            motives = tuple(state['heap'][state['heap'][info][2]][1] for info in vector(SimpleNamespace(heap=state['heap']), r['core_motives'], VectorKind.REFERENCES))
+            minors = tuple(state['heap'][state['heap'][info][2]][1] for info in vector(SimpleNamespace(heap=state['heap']), r['core_minors'], VectorKind.REFERENCES))
+            rec_expr = cell(Tag.CONST, state['heap'][sig][1], r['core_rec_levels'])
+            for argument in params+motives+minors+type_args[nparams:]+(neutral,): rec_expr = cell(Tag.APP, rec_expr, argument)
+            actual = run(state, spec.Task.BETA_ZETA, rec_expr)
+            _, expressions = decode_syntax(SimpleNamespace(heap=actual['heap'][:actual['regs']['free']]), source.arena)
+            if doc['name'] == 'original-Eq-core-block': expected = expressions[minors[0]]
+            elif doc['name'] in ('Data0', 'Data3'):
+                projections = tuple(source.arena.mk(Tag.PROJ, actual['heap'][owner][1], i, expressions[neutral]) for i in range(nfields))
+                expected = source.arena.app(expressions[minors[0]], projections)
+            else: expected = expressions[rec_expr]
+            self.assertTrue(representation_equal(source.arena, expressions[actual['regs']['r']], expected), doc['name'])
+            self.assertEqual(actual['regs']['sp'], 0)
 
 
 if __name__ == '__main__': unittest.main()

@@ -115,8 +115,7 @@ with overflow checks; searches only that recursor's derived rules; returns null
 for the source's optional-reduction failures; instantiates the selected RHS with
 the shared scheme service; and composes the three source slices. No reduction or
 type oracle is consulted. This internal segment cannot itself certify a major's
-normal form or K/eta validity and has no raw-input entry point. It does not yet
-change the existing WHNF controller's neutral recursor behavior.
+normal form or K/eta validity and has no raw-input entry point. The subsequent reentrant integration below composes this segment into WHNF.
 
 `VECTOR_REFERENCE` additionally selects a reference from a typed vector, returning
 null for an absent index; it shares the application representation and preserves
@@ -160,3 +159,39 @@ be overwritten during recursive inference/WHNF/conversion. Immutable generated
 metadata is reread after those calls; pure spine/slice operations do not recurse
 into major preparation. Projection generation is a counted loop, not one branch
 per supported arity. The public parser forbids this internal service.
+
+## Reentrant WHNF integration
+
+The reducer now composes checked recursor lookup, metadata-derived major
+selection, the K/WHNF/structure preparation operation, and derived-rule
+specialization/application. Its private six-word frame retains the original
+expression, recursor metadata, recursor spine and checked signature across
+recursive calls. Task-owned phases0..5 are disjoint from the preparation
+controller's same-numbered labels because dispatch includes the owner task.
+
+The existing WHNF Const lookup routes checked recursor heads through a counted
+walk of its contiguous pending-argument frames. The walk reconstructs the
+application without evaluating arguments, saves an immutable
+`REDUCER_CALL(originalHead,pendingStackBase,0)` record (output-only tag184), and
+restores the stack before calling the reducer. On no reduction it pops only its
+Const frame and returns the original head, letting the existing pending stack
+rebuild the application. On success it drops that consumed pending spine once
+and resumes shared WHNF on the source RHS application, preserving the caller's
+older frames and context window. Nested reductions in a major can overwrite
+all bridge scratch registers; the saved heap record and caller frame remain.
+Opaque/axiom/family/constructor heads retain their source neutrality; permitted
+transparent definitions/theorems still use the existing universe scheme path.
+
+Focused exact-state IR integration passed3tests173.556s: a recursor whose major
+reduces by another invocation of the same reducer, a well-typed function-valued
+motive with surplus beta application, neutral partial application, Eq K,
+zero/multiple dependent-field structure eta, Prop and recursive no-eta cases,
+and 8-bit owner-scoped continuations. All metadata was derived by the preceding
+controller, and caller live scope/environment was checked. These are private
+kernel-operation tests, not original-source theorem admission or stock-forward
+runtime evidence. The stock report at9245bca predates this integration.
+
+Literal/Quot/projection reduction and complete typed conversion remain required
+services. Original-source nested staging/restoration/publication is still
+unfinished; the source controller retains its GAP boundary. The existence of
+this generic reducer does not bypass any of those checks.

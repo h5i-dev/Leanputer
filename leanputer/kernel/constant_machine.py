@@ -53,7 +53,9 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
     if r['mode'] == Mode.CONST_SIGNATURE:
         r.update(signature_type=b, mode=Mode.CONST_SCHEME, x=c)
     elif r['mode'] == Mode.CONST_SCHEME:
-        if r['task'] == Task.BETA_ZETA and b not in (DeclarationKind.DEFINITION, DeclarationKind.THEOREM):
+        if r['task'] == Task.BETA_ZETA and b == 10:
+            r.update(task=Task.GATHER_RECURSOR_ARGUMENTS, mode=Mode.WALK, x=s['stack'][r['sp']-1][1])
+        elif r['task'] == Task.BETA_ZETA and b not in (DeclarationKind.DEFINITION, DeclarationKind.THEOREM):
             original = s['stack'][r['sp']-1][1]
             r['sp'] -= 1; ret(original)
         elif not 0 < a < r['free'] or (r['task'] == Task.BETA_ZETA and not 0 < c < r['free']): stop(Outcome.INVALID, Reason.SYNTAX)

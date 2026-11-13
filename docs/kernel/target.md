@@ -365,20 +365,27 @@ target without assuming it. Original schemes feed the SAME constant lookup and
 universe instantiation. [General checked delta](reduction-native.md) now unfolds
 source-permitted definition/theorem bodies on that environment. Raw-bank cursor
 advancement/publication and ordinary inference are implemented. Complete typed
-conversion and general inductive/recursor generation/restoration, Quot/literal/
-projection/K/eta services remain unfinished explicit GAPs. Ordinary native source
-evidence is distinct from earlier operation DONEs and offline inductive specs.
+conversion, original-source nested transformation/restoration/publication and
+Quot/literal/projection services remain unfinished. Ordinary native source
+evidence is distinct from operation DONEs and offline inductive specs.
 No complete857-source native rerun/mathlib fraction is claimed.
 
-The [core-through-motives stock report](../../benchmarks/kernel-motives-stock/README.md)
-at72cd7a0 now derives all private header/constructor checks, functional recursion
-descriptors, recursor-name relations, constructor signatures, elimination/K and
-all-family motive types from raw syntax, with exact register/cache agreement.
-It ends GAP before minors/recursor types/rules. The original-source controller
-still GAPs before missing nested staging; this explicit kernel-function operation
-cannot certify an original nested declaration or theorem. Subsequent IR modules
-scan raw recursion/reflexivity flags and reopen generic dependent recursive
-prefix/index templates using shared context-window substitution/snapshots.
-These later modules are not part of that pinned stock measurement. The complete
-generation/restoration/reduction algorithms above remain the implementation
-target, not a supported shape catalog.
+The latest [CORE stock report](../../benchmarks/kernel-recursor-claims-stock/README.md)
+at9245bca derives all private header/constructor checks, functional recursive
+argument descriptors, names, constructors, flags/elimination/K, motives,
+minors/IHs, closed recursor types/computation rules, grouped private signatures
+and optional untrusted recursor-claim inference/universe renaming/comparison from
+raw syntax, with exact register/cache agreement. Both cases end
+GAP_RECURSOR_GENERATION; public Γ/admitted count zero. Original-source still
+GAPs before missing nested staging. The explicit kernel-function API cannot
+certify an original nested declaration or theorem.
+
+Subsequent focused semantic-IR modules implement shared application spines,
+reference/slice traversal, derived-rule lookup/specialization/application and
+generic checked K/structure-major preparation with reentrant continuations.
+Runtime recursor/WHNF integration now passes focused exact-state tests through
+those same modules, including a recursively reduced major and K/eta cases.
+These later modules are not covered by the pinned stock report. The complete
+source generation/restoration/reduction algorithms above remain the target,
+not a supported shape/name catalog. Physical capacities and conservative GAPs
+are reported separately from proof rejection and accepted source theorems.
