@@ -41,8 +41,10 @@ integration order, not a claim that an incomplete module admits a block.
 
 Development spec already implements these block modules, including mutual/
 indexed/functional recursion and nested restoration. It remains OFFLINE and
-cannot supply native input answers. The weighted source driver currently GAPs
-at a raw inductive block; no header-only analysis may turn that into ACCEPT.
+cannot supply native input answers. The weighted source driver now runs
+the [private generic header phase](../../benchmarks/kernel-inductive-headers-stock/README.md)
+then GAPs for missing constructor/generation/restoration stages; no header-only
+analysis may turn that into ACCEPT.
 
 Current weighted prerequisites: complete symbolic levels, all-Expr traversal/
 substitution/scope/comparison, private checked environment, ordinary type/body
@@ -73,3 +75,22 @@ passes the committed head; provisional constructor checking later passes the
 source-staged overlay; header duplicate checks can search previous private
 headers WITHOUT exposing them to header type inference. This removes accidental
 ambient-environment mutation and preserves the source staging requirement.
+
+Occurrence calls borrow a TEMPORARY symbol window at the current context end.
+Weights copy the checked-header symbols into that window, leaving the live
+Local-context length unchanged, save the caller's universe/count/window state,
+run the composable occurrence service, then restore the caller state. The window
+is rebuilt before each call. Subsequent fresh Local allocation may overwrite the
+dead scratch symbols. Thus functional-prefix growth cannot overwrite a live
+family set, and inference never mistakes family symbols for Local/type records.
+The space check is physical `liveContext + familyCount <= capacity`, with no
+field/parameter-count semantic classes or host-generated occurrence answers.
+
+Current header implementation scope: family-symbol validation/duplicate checks,
+raw universe scope/type checking in the previous environment, shared dependent
+parameter reuse, generic index opening and result-universe comparison are
+lowered. Generated recursor-name construction/validation and constructor-name
+checks belong to the remaining source block staging; raw recursor names/claims
+are not yet treated as checked results. The header output retains raw-family
+references for those later checks. Neither a private header signature nor
+header-phase completion is full inductive admission.

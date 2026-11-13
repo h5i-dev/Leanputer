@@ -36,7 +36,7 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         if r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)
         else:
             s['stack'][r['sp']] = [CALL_INFER_CONSTANT_LOOKUP, r['x'], r['ctx'], r['task'], r['arg_base'], r['count']]
-            r.update(sp=r['sp']+1, mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a)
+            r.update(sp=r['sp']+1, mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a, lookup_head=r['env_head'])
         return True
     if r['mode'] not in (Mode.CONST_SIGNATURE, Mode.CONST_SCHEME, Mode.CONST_EXPRESSION,
         Mode.CONST_PARAMETER_HEADER, Mode.CONST_LEVEL_HEADER, Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL): return False

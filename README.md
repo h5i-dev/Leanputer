@@ -20,8 +20,9 @@ and [dependent telescope opening/folding/parameter reuse](benchmarks/kernel-depe
 [typed inference core](benchmarks/kernel-inference-core-stock/README.md) calls
 those same weighted services. [Ordinary source transactions](benchmarks/kernel-source-transactions-stock/README.md)
 now check raw dependency types/bodies before generating a private environment,
-and constant inference instantiates only checked schemes. General inductive/
-nested admission and recursor generation remain development specs; complete
+and constant inference instantiates only checked schemes. [Private general inductive-header analysis](benchmarks/kernel-inductive-headers-stock/README.md)
+is now weighted; full inductive/nested admission and recursor generation remain
+development specs; complete
 conversion/reduction and primitive/projection/literal services still return GAP. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax

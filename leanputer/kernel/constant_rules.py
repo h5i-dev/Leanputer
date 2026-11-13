@@ -29,7 +29,7 @@ def emit_rules(c):
     c.stop(c.AND(entering, c.NOT(room)), Outcome.RESOURCE, Reason.STACK)
     entering = c.AND(entering, room)
     c.write('stack', entering, r['sp'], (CALL_INFER_CONSTANT_LOOKUP, x, r['ctx'], r['task'], r['arg_base'], r['count']))
-    c.emit(entering, sp=c.add(r['sp'], 1), mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a)
+    c.emit(entering, sp=c.add(r['sp'], 1), mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a, lookup_head=r['env_head'])
     modes = (Mode.CONST_SIGNATURE, Mode.CONST_SCHEME, Mode.CONST_EXPRESSION, Mode.CONST_PARAMETER_HEADER,
              Mode.CONST_LEVEL_HEADER, Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL)
     active_mode = c.OR(*(c.mode(mode) for mode in modes))

@@ -11,9 +11,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_SOURCE_NAME, CALL_SOURCE_DUPLICATE, CALL_SOURCE_PARAMETERS,
     CALL_SOURCE_TYPE_SCOPE, CALL_SOURCE_TYPE_INFER, CALL_SOURCE_TYPE_WHNF,
     CALL_SOURCE_PROPOSITION, CALL_SOURCE_VALUE_SCOPE, CALL_SOURCE_VALUE_INFER,
-    CALL_SOURCE_VALUE_CONVERT)
+    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS)
 
-PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))
+PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,)
 
 
 def resume(machine, frame, stop, ret, alloc):
@@ -22,8 +22,10 @@ def resume(machine, frame, stop, ret, alloc):
     def call(next_phase, task, x, mode=Mode.WALK, **updates):
         s['stack'][r['sp']-1] = [next_phase, 0, 0, Task.CHECK_SOURCE, 0, 0]
         r.update(mode=mode, task=task, x=x, depth=0, **updates)
-    if phase == CALL_SOURCE_NAME:
-        call(CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'])
+    if phase == CALL_SOURCE_BLOCK_HEADERS:
+        stop(Outcome.GAP, Reason.GAP_INDUCTIVE) # Constructor/positivity/generation/restoration not integrated.
+    elif phase == CALL_SOURCE_NAME:
+        call(CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     elif phase == CALL_SOURCE_DUPLICATE:
         if r['r']: stop(Outcome.INVALID, Reason.DUPLICATE_DECLARATION)
         else: call(CALL_SOURCE_PARAMETERS, Task.LOAD_PARAMETERS, r['active_parameters'])
@@ -66,7 +68,11 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             kind, symbol, parameters, type_ref, value, extra = s['constants'][r['raw_index']]
             if r['raw_index'] == r['target_index'] and kind == DeclarationKind.AXIOM:
                 stop(Outcome.INVALID, Reason.INVALID_DECLARATION)
-            elif kind == DeclarationKind.BLOCK: stop(Outcome.GAP, Reason.GAP_INDUCTIVE)
+            elif kind == DeclarationKind.BLOCK:
+                if r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [CALL_SOURCE_BLOCK_HEADERS,0,0,Task.CHECK_SOURCE,0,0]
+                    r.update(sp=r['sp']+1,task=Task.ANALYZE_HEADERS,mode=Mode.WALK,x=extra,header_parameters=parameters)
             elif kind == DeclarationKind.RECURSOR_CLAIM: stop(Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
             elif kind == DeclarationKind.QUOT_PRIMITIVE: stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
             elif kind not in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE):

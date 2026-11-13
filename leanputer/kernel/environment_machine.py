@@ -12,8 +12,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
     s, r = machine.state, machine.state['regs']
     if r['task'] != Task.ENV_LOOKUP: return False
     if r['mode'] == Mode.WALK:
-        if not r['env_head']: ret(0)
-        else: r.update(mode=Mode.ENV_CELL, x=r['env_head'])
+        if not r['lookup_head']: ret(0)
+        else: r.update(mode=Mode.ENV_CELL, x=r['lookup_head'])
     elif r['mode'] == Mode.ENV_CELL:
         if not 0 < a < r['free'] or b >= r['free']:
             stop(Outcome.INVALID, Reason.SYNTAX)

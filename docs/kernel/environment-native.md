@@ -61,6 +61,8 @@ state and all cache banks. `leanputer.kernel_check` is the production syntax-onl
 loader/stock inference CLI; it invokes no reference checker. Every unavailable,
 malformed, packing-resource or native-incomplete row remains in its ledger.
 This is not full Lean checking or new native mathlib population coverage.
-Inductive blocks/recursor claims/Quot still GAP, as do missing projection/literal
+Inductive headers now run the [private general header phase](../../benchmarks/kernel-inductive-headers-stock/README.md)
+before GAP for missing constructor/generation/restoration; no block is admitted.
+Recursor claims/Quot still GAP, as do missing projection/literal
 and complete conversion/reduction services. The generic algorithms above remain
 the implementation target, not a completed native-support claim.

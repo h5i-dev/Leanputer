@@ -97,6 +97,7 @@ class Task(IntEnum):
     CONSUME_PARAMETERS = 37     # Reuse derived Locals; dependent domain checking.
     PREPARE_REUSE = 38          # Public operation wrapper, not source admission.
     HAS_CONSTANTS = 39          # Composable symbol-set Expr occurrence callback.
+    ANALYZE_HEADERS = 40        # General private header phase; not block admission.
 
 
 
@@ -195,6 +196,15 @@ class Mode(IntEnum):
     REUSE_INSTANTIATE = 91
     REUSE_SUBST_SELECT = 92
     REUSE_SUBST_RECORD = 93
+    HEADER_VECTOR = 94
+    HEADER_CELL = 95
+    HEADER_FAMILY = 96
+    HEADER_TYPE_SORT = 97
+    HEADER_SORT = 98
+    HEADER_STORE_FAMILY = 99
+    HEADER_STORE_SCHEME = 100
+    HEADER_STORE_SIGNATURE = 101
+    HEADER_LINK = 102
 
 
 CALL_BETA_ZETA = 16
@@ -273,6 +283,18 @@ CALL_REUSE_SCOPE_CANDIDATE = 88
 CALL_REUSE_OPEN = 89
 CALL_REUSE_FINISH = 90
 CALL_OCCURRENCE_FINISH = 91
+CALL_SOURCE_BLOCK_HEADERS = 92
+CALL_HEADER_PARAMETERS = 93
+CALL_HEADER_NAME = 94
+CALL_HEADER_DUPLICATE_GLOBAL = 95
+CALL_HEADER_DUPLICATE_PRIVATE = 96
+CALL_HEADER_SCOPE = 97
+CALL_HEADER_INFER = 98
+CALL_HEADER_TYPE_WHNF = 99
+CALL_HEADER_OPEN_PARAMETERS = 100
+CALL_HEADER_CONSUME = 101
+CALL_HEADER_INDICES = 102
+CALL_HEADER_LEVEL = 103
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -291,7 +313,11 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'name_second', 'name_part', 'name_length', 'name_index', 'target_index', 'kernel_zero', 'active_kind',
     'active_symbol', 'active_parameters', 'active_type', 'active_value', 'active_extra', 'commit_scheme', 'commit_signature', 'pending_reuse', 'reuse_root', 'reuse_base', 'reuse_end',
     'reuse_index', 'reuse_whnf', 'reuse_body', 'reuse_domain',
-    'occurrence_internal', 'occurrence_mark', 'occurrence_found')
+    'occurrence_internal', 'occurrence_mark', 'occurrence_found', 'lookup_head',
+    'header_parameters', 'header_parameter_count', 'header_vector', 'header_head', 'header_seen',
+    'header_parameter_base', 'header_parameter_end', 'header_symbol', 'header_type', 'header_raw',
+    'header_remaining', 'header_next', 'header_indices', 'header_current_level', 'header_result_level',
+    'header_meta', 'header_scheme', 'header_signature')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -390,7 +416,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -477,7 +503,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.REUSE_SUBST_RECORD or r['task'] > Task.HAS_CONSTANTS
+                or r['mode'] > Mode.HEADER_LINK or r['task'] > Task.ANALYZE_HEADERS
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -499,6 +525,7 @@ class SpecMachine:
         from . import source_machine as source
         from . import telescope_machine as telescope
         from . import occurrence_machine as occurrence
+        from . import header_machine as header
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -519,7 +546,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in occurrence.PRIVATE_PHASES:
+                if phase in header.PRIVATE_PHASES:
+                    header.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in occurrence.PRIVATE_PHASES:
                     occurrence.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in telescope.PRIVATE_PHASES:
                     telescope.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -608,13 +637,18 @@ class SpecMachine:
         if r['task'] == Task.ENV_LOOKUP and r['mode'] == Mode.WALK:
             environment.step(self, 0, 0, 0, 0, stop, ret, alloc)
             return s
+        if r['task'] == Task.ANALYZE_HEADERS and r['mode'] in (Mode.HEADER_STORE_FAMILY, Mode.HEADER_STORE_SCHEME, Mode.HEADER_STORE_SIGNATURE, Mode.HEADER_LINK):
+            header.step(self, 0, 0, 0, 0, stop, ret, alloc)
+            return s
         if not 0 < r['x'] < r['free']:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
         level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE)
-        valid_tag = (names.valid_tag(r['mode'], tag) if r['task'] == Task.CHECK_NAME else
+        header_tag = (CellTag.RAW_BLOCK if r['mode'] == Mode.WALK else CellTag.VECTOR if r['mode'] == Mode.HEADER_VECTOR else
+            CellTag.VECTOR_CELL if r['mode'] == Mode.HEADER_CELL else CellTag.RAW_FAMILY if r['mode'] == Mode.HEADER_FAMILY else None)
+        valid_tag = (tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] == Task.CHECK_NAME else
             tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
             tag == CellTag.CHECKED_SCHEME if r['mode'] == Mode.CONST_SCHEME else
             tag == CellTag.VECTOR if r['mode'] in (Mode.CONST_PARAMETER_HEADER, Mode.CONST_LEVEL_HEADER) else
@@ -632,6 +666,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if header.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if occurrence.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if telescope.step(self, tag, a, b, c, stop, ret, alloc):

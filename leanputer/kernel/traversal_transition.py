@@ -4,7 +4,7 @@ Stock Qwen3.5/GatedDeltaNet emission is provided by native_machine. This module
 has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
-from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules
+from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules, header_rules
 from .arena import Tag
 from .native_cells import CellTag, VectorKind
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
@@ -70,7 +70,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.REUSE_SUBST_RECORD, self.r['mode']), self.lt(Task.HAS_CONSTANTS, self.r['task']),
+            self.lt(Mode.HEADER_LINK, self.r['mode']), self.lt(Task.ANALYZE_HEADERS, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.lt(1, self.r['occurrence_internal']), self.lt(1, self.r['occurrence_found']), self.lt(1, self.r['pending_reuse']), self.lt(1, self.r['reuse_whnf']), self.lt(1, self.r['pending_scope']), self.lt(1, self.r['env_ready']), self.lt(1, self.r['pending_infer']), self.lt(self.cfg.context, self.r['local_base']),
             self.lt(1, self.r['vec_changed']), self.lt(2, self.r['pending_compare']), self.lt(1, self.r['order_same_base']),
@@ -86,7 +86,9 @@ class RuleCompiler:
         self.active = self.AND(self.active, self.NOT(window_bad))
         needs_node = self.AND(self.NOT(self.eq(self.r['mode'], Mode.RETURN)),
             self.NOT(self.AND(self.eq(self.r['task'], Task.ENV_LOOKUP), self.eq(self.r['mode'], Mode.WALK))),
-            self.NOT(self.AND(self.eq(self.r['task'], Task.CHECK_SOURCE), self.NOT(self.eq(self.r['mode'], Mode.SOURCE_TYPE_SORT)))))
+            self.NOT(self.AND(self.eq(self.r['task'], Task.CHECK_SOURCE), self.NOT(self.eq(self.r['mode'], Mode.SOURCE_TYPE_SORT)))),
+            self.NOT(self.AND(self.eq(self.r['task'], Task.ANALYZE_HEADERS), self.OR(*(self.eq(self.r['mode'], m) for m in
+                (Mode.HEADER_STORE_FAMILY, Mode.HEADER_STORE_SCHEME, Mode.HEADER_STORE_SIGNATURE, Mode.HEADER_LINK))))))
         internal_record = self.OR(self.eq(self.r['mode'], Mode.FOLD_RECORD), self.eq(self.r['mode'], Mode.INFER_LOCAL_RECORD), self.eq(self.r['mode'], Mode.REUSE_RECORD), self.eq(self.r['mode'], Mode.REUSE_SUBST_RECORD))
         binding_record = self.eq(self.r['mode'], Mode.LEVEL_BINDING)
         loading_parameters = self.eq(self.r['task'], Task.LOAD_PARAMETERS)
@@ -120,6 +122,11 @@ class RuleCompiler:
             self.AND(self.eq(self.r['mode'], Mode.NAME_ENTRY), self.eq(self.read['node']['tag'], CellTag.SYMBOL_ENTRY)),
             self.AND(self.eq(self.r['mode'], Mode.NAME_COMPONENT), self.OR(self.eq(self.read['node']['tag'], CellTag.NAME_STRING), self.eq(self.read['node']['tag'], CellTag.NAME_NUMERAL))))
         tag_bad = self.OR(self.AND(name_task, self.NOT(name_ok)), self.AND(self.NOT(name_task), tag_bad))
+        header_task = self.eq(self.r['task'], Task.ANALYZE_HEADERS)
+        header_special = self.OR(*(self.eq(self.r['mode'], m) for m in (Mode.WALK, Mode.HEADER_VECTOR, Mode.HEADER_CELL, Mode.HEADER_FAMILY)))
+        header_ok = self.OR(*(self.AND(self.eq(self.r['mode'], m), self.eq(self.read['node']['tag'], t)) for m,t in
+            ((Mode.WALK, CellTag.RAW_BLOCK),(Mode.HEADER_VECTOR, CellTag.VECTOR),(Mode.HEADER_CELL, CellTag.VECTOR_CELL),(Mode.HEADER_FAMILY, CellTag.RAW_FAMILY))))
+        tag_bad = self.OR(self.AND(header_task, header_special, self.NOT(header_ok)),self.AND(self.NOT(self.AND(header_task, header_special)),tag_bad))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -214,7 +221,7 @@ class RuleCompiler:
         self.ret(self.AND(or_return, self.NOT(self.eq(result, 0))), 1)
         self.emit(self.AND(or_return, self.eq(result, 0)), mode=Mode.WALK, x=frame['original'], task=Task.LEVEL_NOT_ZERO)
         private_phase = self.OR(*(self.eq(frame['phase'], value) for value in
-            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES+level_normalize_rules.PRIVATE_PHASES+level_geq_rules.PRIVATE_PHASES+expression_equal_rules.PRIVATE_PHASES+inference_rules.PRIVATE_PHASES+constant_rules.PRIVATE_PHASES+source_rules.PRIVATE_PHASES+telescope_rules.PRIVATE_PHASES+occurrence_rules.PRIVATE_PHASES))
+            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES+level_normalize_rules.PRIVATE_PHASES+level_geq_rules.PRIVATE_PHASES+expression_equal_rules.PRIVATE_PHASES+inference_rules.PRIVATE_PHASES+constant_rules.PRIVATE_PHASES+source_rules.PRIVATE_PHASES+telescope_rules.PRIVATE_PHASES+occurrence_rules.PRIVATE_PHASES+header_rules.PRIVATE_PHASES))
         self.emit(self.AND(returning, nonempty, self.NOT(private_phase)), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
 
@@ -268,6 +275,7 @@ class RuleCompiler:
         source_rules.emit_rules(self)
         telescope_rules.emit_rules(self)
         occurrence_rules.emit_rules(self)
+        header_rules.emit_rules(self)
 
         sorting = self.mode(Mode.SORT_RESULT)
         self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
@@ -451,7 +459,7 @@ class RuleCompiler:
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
         walking = self.AND(walking, self.NOT(intercepted),
-            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS))))
+            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS), self.task(Task.ANALYZE_HEADERS))))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)

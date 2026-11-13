@@ -10,9 +10,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_SOURCE_NAME, CALL_SOURCE_DUPLICATE, CALL_SOURCE_PARAMETERS,
     CALL_SOURCE_TYPE_SCOPE, CALL_SOURCE_TYPE_INFER, CALL_SOURCE_TYPE_WHNF,
     CALL_SOURCE_PROPOSITION, CALL_SOURCE_VALUE_SCOPE, CALL_SOURCE_VALUE_INFER,
-    CALL_SOURCE_VALUE_CONVERT)
+    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS)
 
-PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))
+PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,)
 
 
 def emit_rules(c):
@@ -23,7 +23,8 @@ def emit_rules(c):
     def call(guard, phase, task, x, mode=Mode.WALK, **updates):
         c.write('stack', guard, top, (phase, 0, 0, Task.CHECK_SOURCE, 0, 0))
         c.emit(guard, mode=mode, task=task, x=x, depth=0, **updates)
-    call(at_return(CALL_SOURCE_NAME), CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'])
+    c.stop(at_return(CALL_SOURCE_BLOCK_HEADERS), Outcome.GAP, Reason.GAP_INDUCTIVE)
+    call(at_return(CALL_SOURCE_NAME), CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     duplicate = at_return(CALL_SOURCE_DUPLICATE)
     c.stop(c.AND(duplicate, c.NOT(c.eq(result, 0))), Outcome.INVALID, Reason.DUPLICATE_DECLARATION)
     call(c.AND(duplicate, c.eq(result, 0)), CALL_SOURCE_PARAMETERS, Task.LOAD_PARAMETERS, r['active_parameters'])
@@ -57,7 +58,11 @@ def emit_rules(c):
     read = c.AND(read, row_ok)
     target_axiom = c.AND(c.eq(r['raw_index'], r['target_index']), c.eq(raw['kind'], DeclarationKind.AXIOM))
     c.stop(c.AND(read, target_axiom), Outcome.INVALID, Reason.INVALID_DECLARATION)
-    c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.BLOCK)), Outcome.GAP, Reason.GAP_INDUCTIVE)
+    block = c.AND(read, c.eq(raw['kind'], DeclarationKind.BLOCK))
+    block_room = c.lt(r['sp'], c.cfg.stack)
+    c.stop(c.AND(block, c.NOT(block_room)), Outcome.RESOURCE, Reason.STACK)
+    c.write('stack', c.AND(block, block_room), r['sp'], (CALL_SOURCE_BLOCK_HEADERS,0,0,Task.CHECK_SOURCE,0,0))
+    c.emit(c.AND(block, block_room), sp=c.add(r['sp'],1), task=Task.ANALYZE_HEADERS, mode=Mode.WALK, x=raw['extra'], header_parameters=raw['parameters'])
     c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.RECURSOR_CLAIM)), Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
     c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.QUOT_PRIMITIVE)), Outcome.GAP, Reason.GAP_PRIMITIVE)
     ordinary = c.OR(*(c.eq(raw['kind'], kind) for kind in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE)))
