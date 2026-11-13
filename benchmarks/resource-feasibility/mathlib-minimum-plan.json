@@ -1,0 +1,34 @@
+[
+  {
+    "name": "npowRec.eq_1@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 30413,
+    "free": 4296,
+    "environment": 16
+  },
+  {
+    "name": "npowRec'.eq_1@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 36566,
+    "free": 5131,
+    "environment": 16
+  },
+  {
+    "name": "nsmulRec.eq_1@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 30412,
+    "free": 4295,
+    "environment": 16
+  },
+  {
+    "name": "nsmulRec'.eq_1@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 36566,
+    "free": 5131,
+    "environment": 16
+  }
+]

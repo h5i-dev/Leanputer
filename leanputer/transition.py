@@ -201,8 +201,8 @@ class RuleCompiler:
                            self.OR(self.NOT(self.tag(hs, Tag.CONST)), self.lt(hs['v'], r['decl_count'])))
         counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
         universe_bits=self.cfg.universe_bits
-        builtin_ok=self.AND(self.tag(hs,Tag.BUILTIN),self.eq(hs['b'],0),self.OR(*(
-            self.AND(self.eq(hs['v'],code),self.NOT(self.OR(*hs['a'][counts.get(code,0)*universe_bits:])))
+        builtin_ok=self.AND(self.tag(hs,Tag.BUILTIN),self.OR(*(
+            self.AND(self.eq(hs['v'],code),self.NOT(self.OR(*hs['a'][min(counts.get(code,0),3)*universe_bits:])),self.NOT(self.OR(*hs['b'][max(0,counts.get(code,0)-3)*universe_bits:])))
             for code in PRIMITIVE_SCHEMAS)))
         projection_ok = self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.eq(hs['b'],0),self.lt(hs['v'],PROJECTION_COUNT))
         let_ok=self.AND(self.tag(hs,Tag.LET),*(self.AND(self.NOT(self.eq(hs[field],0)),self.lt(hs[field],r['scan']))for field in ('a','b','v')))
@@ -212,12 +212,14 @@ class RuleCompiler:
         high=self.OR(self.AND(self.tag(hs,Tag.SORT),self.lt(self.cfg.universe,hs['v'])),
                      self.AND(self.tag(hs,Tag.BUILTIN),self.OR(*(
                          self.AND(self.eq(hs['v'],code),self.OR(*(
-                             self.NOT(self.lt(self.g.fit(hs['a'][index*universe_bits:(index+1)*universe_bits],self.width),self.cfg.universe))
+                             self.NOT(self.lt(self.g.fit((hs['a']if index<3 else hs['b'])[(index if index<3 else index-3)*universe_bits:((index if index<3 else index-3)+1)*universe_bits],self.width),self.cfg.universe))
                              for index in range(count)))) for code,count in counts.items()))))
         self.stop(self.AND(check, valid, high), Outcome.RESOURCE, Reason.UNIVERSE)
         self.emit(self.AND(check, valid, self.NOT(high)), scan=self.add(r['scan'], 1))
         op = self.mode(Op.BUILTIN_TYPE)
-        known=self.OR(*(self.AND(self.eq(x,code),self.lt(y,len(schema)))for code,schema in PRIMITIVE_SCHEMAS.items()))
+        code_bits=self.cfg.primitive_bits
+        primitive=self.g.fit(x[:code_bits],self.width)
+        known=self.OR(*(self.AND(self.eq(primitive,code),self.lt(y,len(schema)),self.NOT(self.OR(*x[code_bits+max(0,counts.get(code,0)-3)*self.cfg.universe_bits:])))for code,schema in PRIMITIVE_SCHEMAS.items()))
         valid=self.AND(known,self.NOT(self.eq(z,0)),self.eq(self.add(z,y),r['free']))
         self.stop(self.AND(op,self.NOT(valid)),Outcome.REJECT,Reason.SYNTAX)
         universe_bits=self.cfg.universe_bits
@@ -234,13 +236,13 @@ class RuleCompiler:
                         level=self.vec(resolve(part));maximum=self.mux(self.lt(maximum,level),level,maximum)
                     return maximum
                 raise ValueError('unknown fixed universe expression')
-            return first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else first_successor if value==-4 else second_successor if value==-5 else self.g.fit(w[2*universe_bits:3*universe_bits],self.width) if value==-6 else value
+            return first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else first_successor if value==-4 else second_successor if value==-5 else self.g.fit(w[2*universe_bits:3*universe_bits],self.width) if value==-6 else self.g.fit(x[code_bits:code_bits+universe_bits],self.width) if value==-8 else value
         for code,schema in PRIMITIVE_SCHEMAS.items():
             for position,(tag,a,b,v) in enumerate(schema):
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,self.add(y,1),z,w) if position+1<len(schema) else None
-                self.allocate(self.AND(op,valid,self.eq(x,code),self.eq(y,position)),tag,
-                              self.g.fit([bit for level in a for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,a) if binary else resolve(a),self.add(z,b) if binary else resolve(b),
+                self.allocate(self.AND(op,valid,self.eq(primitive,code),self.eq(y,position)),tag,
+                              self.g.fit([bit for level in a[:3] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,a) if binary else resolve(a),self.g.fit([bit for level in a[3:] for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,b) if binary else resolve(b),
                               resolve(v),resume=resume)
         # Environment and root-check orchestration.
         op = self.mode(Op.ENV)
@@ -298,7 +300,7 @@ class RuleCompiler:
         empty = self.eq(hx['v'],0)
         self.allocate(self.AND(primitive,empty),Tag.SORT,v=0)
         packed=hx['a']
-        self.tail(self.AND(primitive,self.NOT(empty)),Op.BUILTIN_TYPE,hx['v'],0,r['free'],packed)
+        self.tail(self.AND(primitive,self.NOT(empty)),Op.BUILTIN_TYPE,self.g.fit(hx['v'][:self.cfg.primitive_bits]+hx['b'][:self.cfg.universe_bits],self.width),0,r['free'],packed)
         self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.I_PROJ,x))
         self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI, Tag.LET)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.INFER, hx['a'], continuation=(Op.I_APP, hx['b']))

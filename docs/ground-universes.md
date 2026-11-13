@@ -1,18 +1,19 @@
 # Ground-universe tuples and fixed pair records
 
-This work extends fixed primitive schemas to three ground universe parameters,
-needed by PProd/Prod recursors. It does not solve symbolic universe constraints
+Fixed primitive schemas now support up to four ground universe parameters,
+needed by heterogeneous arithmetic recursors. This does not solve symbolic universe constraints
 or admit arbitrary inductive declarations. The input JSON syntax stays unchanged.
 
 The internal heap still has four words per node. For builtin nodes, `a` holds
-all universe levels in fixed-width little-endian lanes, `b` is zero and `v` is
-the fixed primitive code. Lane width is max(1, universe_bound.bit_length()),
+the first three universe levels in fixed-width little-endian lanes, `b` holds
+the fourth level only for a four-parameter primitive, and `v` is the fixed code.
+Lower arities require b=0. Lane width is max(1, universe_bound.bit_length()),
 leaving room to represent an out-of-bound level at the bound itself. Public
 syntax packing rejects only scalars that cannot fit a lane. Validation inside
 the weights checks every lane against the exclusive primitive universe bound,
-checks unused high bits and checks b=0. Thus an invalid level cannot carry into
+checks unused high bits in both words. Thus an invalid level cannot carry into
 another level and silently select a different type. Word width includes the
-largest primitive universe arity times lane width. Small model shapes can grow
+packed first-three levels and the primitive-code/fourth-level control word. Small model shapes can grow
 when a new arity requires more bits; this is explicit feature capacity, not a
 matched downsizing claim. Existing heap512/1024 configurations have enough bits.
 
@@ -54,3 +55,14 @@ The largest bank payload is the six-word stack frame, so word width must be
 at most21. The compiler rejects a larger width before allocating state/model
 tensors. The default ground-universe bound4 and tested heap512/1024 models
 remain within this limit.
+
+Four-level type construction carries the fourth level above the primitive code
+in the existing x register, while w carries the first three. Schema selection
+masks out that payload, and a distinct marker resolves it inside weights.
+No extra heap word, custom layer/cache, host dispatch or precision change is
+introduced. Heap512 remains10-bit words and heap1024 remains11-bit words;
+the original512-heap Nat-overflow fixture remains a numeric resource result.
+Four-lane/padding and retained triple-lane tests pass6.483s. HAdd/HMul's targeted
+native19cases pass12A6R1numeric-resource; full arithmetic source checking remains
+blocked by30k-step/4.3k-node closures. See native-backend.md for the measured
+core configuration and the separate source resource boundary.

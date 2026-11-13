@@ -8,6 +8,25 @@ from leanputer.transition import compile_machine
 
 
 class UniverseLaneBoundary(unittest.TestCase):
+    def test_fourth_lane_and_matched_word_widths(self):
+        torch.set_num_threads(1)
+        self.assertEqual(MachineConfig(heap=512).word_bits,10)
+        self.assertEqual(MachineConfig(heap=1024).word_bits,11)
+        cfg=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=32)
+        model=compile_machine(cfg,memory_update='attention_delta')
+        states=[]
+        levels=[(0,1,2,3),(3,2,1,0),(4,1,2,3),(0,4,2,3),(0,1,4,3),(0,1,2,4)]
+        for values in levels:states.append(prepare(cfg,('builtin','HAdd.rec')+values,('sort',0)))
+        for field,value in [(1,1<<(3*cfg.universe_bits)),(2,1<<cfg.universe_bits)]:
+            state=deepcopy(states[0]);state['heap'][1][field]=value;states.append(state)
+        with torch.inference_mode():result=model(torch.cat([model.layout.encode(s)for s in states]))
+        expected=[(Outcome.RUNNING,Reason.NONE)]*2+[(Outcome.RESOURCE,Reason.UNIVERSE)]*4+[(Outcome.REJECT,Reason.SYNTAX)]*2
+        for bits,verdict in zip(result.tolist(),expected):
+            regs=model.layout.decode(bits)['regs']
+            self.assertEqual((regs['status'],regs['reason']),verdict)
+        with self.assertRaises(Exhausted):
+            prepare(cfg,('builtin','HAdd.rec',0,1,2,8),('sort',0))
+
     def test_each_lane_padding_and_unrepresentable_scalar(self):
         torch.set_num_threads(1)
         cfg=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=32)

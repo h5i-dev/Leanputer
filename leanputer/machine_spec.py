@@ -177,9 +177,14 @@ class MachineConfig:
         return max(1,self.universe.bit_length())
 
     @property
+    def primitive_bits(self):
+        return max(PRIMITIVE_CODES.values()).bit_length()
+
+    @property
     def word_bits(self):
         return max(7,int(max(Op)).bit_length(),max(PRIMITIVE_CODES.values()).bit_length(),
-                   max(PRIMITIVE_UNIVERSES.values(),default=0)*self.universe_bits,
+                   min(3,max(PRIMITIVE_UNIVERSES.values(),default=0))*self.universe_bits,
+                   self.primitive_bits+max(0,max(PRIMITIVE_UNIVERSES.values(),default=0)-3)*self.universe_bits,
                    max(self.heap,self.stack,self.context,self.constants).bit_length())
 
 
@@ -218,7 +223,8 @@ def prepare(config, term, claim, declarations=()):
             v = primitive_code(expr)
             if any(level >= 1<<config.universe_bits for level in expr[2:]):
                 raise Exhausted('universe lane encoding capacity')
-            a=sum(level<<(index*config.universe_bits)for index,level in enumerate(expr[2:]))
+            a=sum(level<<(index*config.universe_bits)for index,level in enumerate(expr[2:5]))
+            b=sum(level<<(index*config.universe_bits)for index,level in enumerate(expr[5:]))
         else:
             v = expr[1]
         if max(a,b,v) >= 1 << config.word_bits:
@@ -344,19 +350,22 @@ class SpecMachine:
                 elif tag == Tag.BUILTIN:
                     counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
                     count=counts.get(v,0)
-                    valid &= v in PRIMITIVE_SCHEMAS and b==0 and a < 1<<(count*cfg.universe_bits)
+                    valid &= v in PRIMITIVE_SCHEMAS and a < 1<<(min(count,3)*cfg.universe_bits) and b < 1<<(max(0,count-3)*cfg.universe_bits)
                 else:
                     valid &= a == b == 0
                 if tag == Tag.CONST:
                     valid &= v < r['decl_count']
                 if not valid:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
-                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and any(((a>>(index*cfg.universe_bits))&((1<<cfg.universe_bits)-1))>=cfg.universe for index in range(count))):
+                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and any((((a|(b<<(3*cfg.universe_bits)))>>(index*cfg.universe_bits))&((1<<cfg.universe_bits)-1))>=cfg.universe for index in range(count))):
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
                     r['scan'] += 1
         elif op == Op.BUILTIN_TYPE:
-            schema=PRIMITIVE_SCHEMAS.get(x,())
+            code=x&((1<<cfg.primitive_bits)-1)
+            schema=PRIMITIVE_SCHEMAS.get(code,())
+            count=next((count for name,count in PRIMITIVE_UNIVERSES.items()if PRIMITIVE_CODES[name]==code),0)
+            if x >= 1<<(cfg.primitive_bits+max(0,count-3)*cfg.universe_bits):schema=()
             if not 0 <= y < len(schema) or z<=0 or z+y!=r['free']:
                 self.stop(Outcome.REJECT,Reason.SYNTAX)
             else:
@@ -369,9 +378,10 @@ class SpecMachine:
                         if value[0]=='succ':return resolve(value[1])+1
                         if value[0]=='max':return max(resolve(part)for part in value[1:])
                         raise ValueError('unknown fixed universe expression')
-                    return u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else (w>>(2*cfg.universe_bits))&((1<<cfg.universe_bits)-1) if value==-6 else value
-                encoded_a=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a)) if tag==Tag.BUILTIN else z+a if binary else resolve(a)
-                self.allocate(tag,encoded_a,z+b if binary else resolve(b),resolve(v),resume)
+                    return u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else (w>>(2*cfg.universe_bits))&((1<<cfg.universe_bits)-1) if value==-6 else (x>>cfg.primitive_bits)&((1<<cfg.universe_bits)-1) if value==-8 else value
+                encoded_a=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a[:3])) if tag==Tag.BUILTIN else z+a if binary else resolve(a)
+                encoded_b=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a[3:])) if tag==Tag.BUILTIN else z+b if binary else resolve(b)
+                self.allocate(tag,encoded_a,encoded_b,resolve(v),resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
                 self.call(Op.INFER, r['claim'], continuation=(Op.ROOT_TYPE,))
@@ -427,7 +437,7 @@ class SpecMachine:
                 if v==0:
                     self.allocate(Tag.SORT,v=0)
                 else:
-                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a)
+                    self.tail(Op.BUILTIN_TYPE,v|(b<<cfg.primitive_bits),0,r['free'],a)
             elif tag==Tag.PROJ:
                 self.call(Op.INFER,a,continuation=(Op.I_PROJ,x))
             elif tag in (Tag.LAM, Tag.PI, Tag.LET):

@@ -355,3 +355,12 @@ dependencies for checking. Lean replay adds the standard polymorphic outParam
 definition by kernel-checked declaration before adding Membership's genuine
 inductive declaration. It does not add an axiom. Different carriers, reversed
 field arguments or arbitrary distinct relation values cannot be identified.
+
+HAdd/HMul have three uniform Type parameters and field α→β→γ. Family/constructor
+levels are left/right/result-carrier; recursor levels are motive-result followed
+by all three carrier levels. The fourth level is stored separately and checked
+with the others inside weights, including zero padding for lower arities.
+Field inference instantiates all three parameters and preserves the result type.
+Typed data eta checks the exact family/type before comparing fields; a swapped
+argument, wrong result carrier or changed fourth universe rejects in targeted
+Lean/native checks. These remain fixed declarations, not generic user records.

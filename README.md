@@ -30,6 +30,7 @@ Fixed one-field records cover Inhabited, Mul, Add and Subsingleton, including
 dependent field typing. Zero and One use the same fixed data-record path.
 LT and LE add relation-valued fields, preserving typed data eta and family checks.
 Membership retains both carrier types and its container-first relation field.
+HAdd and HMul retain three carrier types and four recursor universe parameters.
 PProd and Prod add two-field records with typed eta and dependent recursors;
 [ground-universe tuples](docs/ground-universes.md) retain all three recursor levels.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec

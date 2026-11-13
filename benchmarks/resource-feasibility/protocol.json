@@ -1,0 +1,19 @@
+{
+  "scope": "Offline specification feasibility; no native arithmetic theorem results",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "feature_boundary": "95 fixed primitives / 114 phases / four ground universes",
+  "config": {
+    "heap": 8192,
+    "stack": 128,
+    "context": 64,
+    "constants": 16,
+    "fuel": 131072
+  },
+  "baseline": {
+    "name": "npowRec.eq_1@[1]",
+    "status": "ACCEPT",
+    "semantic_steps": 30413,
+    "allocated_heap_nodes": 4295
+  },
+  "limitations": "Experimental probes are not compiler implementations or formal correctness evidence; no cache is used by production inference."
+}

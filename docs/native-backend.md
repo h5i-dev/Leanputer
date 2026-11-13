@@ -585,3 +585,42 @@ these memory capacities/fuel bit width, with different checker weights.
 
 The same857-name syntax refresh is435EXPORTED422UNSUPPORTED15.455s; ten new
 exports, two new targeted native acceptances, no full native population run.
+
+## Heterogeneous arithmetic core
+
+HAdd/HMul retain three uniform Type parameters, a field α→β→γ, and four recursor
+universes (95primitives/114phases). The fourth level uses builtin.b and unused
+control-register bits during schema construction; lower arities keep b=0.
+All lane/padding checks remain in weights. Heap512word10 and heap1024word11
+are unchanged, including the tested numeric resource boundary. Source schemas
+retain actual outParam dependencies; actual Lean basis declarations are checked.
+The stock architecture, forward, cache and BF16 precision are unchanged.
+
+Native19core cases pass12A6R1RESOURCE, matching all planned reasons, steps and
+heap counts. These cover four-level aliases, three distinct carriers, typed
+eta/neutral recursion, argument/result/family/universe negatives and retained
+Eq/PUnit/PProd/Membership/numeric-overflow behavior. Weighted10cases pass244.349s;
+lane tests6.483s, base state/weight-sharing trace27.199s; actual Lean and recursive
+reference agree. Heap1024/stack32/context16/constants8/fuel4608:69boot+4610stock
+forwards706.277s,compile49.935s;2,182,712,910BF16parameters/4,365,425,820bytes,
+H5632/104layers/FFN1024; peakforwardCUDA5,006,100,480bytes/hostRSS1,760,186,368.
+Exact evidence: heterogeneous-*. Development CPU work overlapped; no speed
+comparison is claimed against different features, cases or fuel budgets.
+
+This is a core checkpoint, not a new arithmetic mathlib acceptance. Sixteen of
+25first-blocked source rows newly syntax-export; nine still require Nat.le.
+The smallest new full closures have16dependencies and independently plan at
+30412–36566steps/4295–5131allocatednodes. No hour-scale native source run was
+launched. The complete857-source syntax snapshot is451EXPORTED406UNSUPPORTED,
+export9.816s, not451verified proofs; all check-status and unknownΓ boundaries
+remain explicit.
+
+Focused offline feasibility probes are recorded under benchmarks/resource-feasibility,
+with no inference-time cache added. For npowRec.eq_1, baseline30413steps/4295nodes:
+closed-type cache64 gives30211/4041; transform memo128 gives36294/3966.
+A naive lazy structural representation regressed to a resource failure and was
+discarded. Exact syntactic allocation reuse is promising for space only in the
+current probes: bounded128 gives28753/3028; an unbounded ideal gives23876/1755.
+These are reference experiments, not compiled implementations, speedups or
+additional native proof results. They do not establish correctness for a new
+algorithm; the production checker remains the tested eager transition program.

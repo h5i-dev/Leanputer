@@ -38,6 +38,10 @@ ONE_FIELD_RECORDS = {
     'LE':dict(code=77, projection=14, constructor='mk', field='relation', data=True, type_carrier=True),
     'Membership':dict(code=86, projection=19, constructor='mk', field='membership', data=True,
                       type_carrier=True,parameters=2,universe_parameters=2),
+    'HAdd':dict(code=89,projection=20,constructor='mk',field='heterogeneous',data=True,
+                type_carrier=True,parameters=3,universe_parameters=3),
+    'HMul':dict(code=92,projection=21,constructor='mk',field='heterogeneous',data=True,
+                type_carrier=True,parameters=3,universe_parameters=3),
 }
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
@@ -290,6 +294,7 @@ def _option_type(expression):
 def _one_record_type(expression):
     name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
     if record['field']=='membership':return _membership_type(expression)
+    if record['field']=='heterogeneous':return _heterogeneous_type(expression)
     carrier=expression[3] if name.endswith('.rec') else expression[2]
     carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
     v=lambda n:('named',n)
@@ -357,6 +362,27 @@ def _membership_type(expression):
     return _close_schema(bind('alpha',('sort',sorts[0]),bind('container',('sort',sorts[1]),tail)))
 
 
+def _heterogeneous_type(expression):
+    name=expression[1];family=name.split('.')[0]
+    levels=expression[3:]if name.endswith('.rec')else expression[2:]
+    successor=lambda level:level+1 if level>=0 else ('succ',level)
+    sorts=tuple(successor(level)for level in levels)
+    result=max(sorts)if all(isinstance(level,int)and level>=0 for level in sorts)else ('max',)+sorts
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,beta,gamma,field,motive,major=map(v,('alpha','beta','gamma','field','motive','major'))
+    record=apps(('builtin',family)+tuple(levels),alpha,beta,gamma)
+    field_type=bind('left',alpha,bind('right',beta,gamma))
+    if name==family:tail=('sort',result)
+    elif name.endswith('.mk'):tail=bind('field',field_type,record)
+    else:
+        ctor=apps(('builtin',family+'.mk')+tuple(levels),alpha,beta,gamma,field)
+        tail=bind('motive',bind('major',record,('sort',expression[2])),
+             bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',sorts[0]),bind('beta',('sort',sorts[1]),bind('gamma',('sort',sorts[2]),tail))))
+
+
 def _natural_type(expression):
     name=expression[1];natural=('builtin','Nat')
     if name=='Nat':return ('sort',1)
@@ -404,7 +430,7 @@ def type_schema(expression):
     return tuple(rows)
 
 
-UNIVERSE_MARKERS=(-1,-2,-6)
+UNIVERSE_MARKERS=(-1,-2,-6,-8)
 PRIMITIVE_SCHEMAS = {code:type_schema(primitive_type(('builtin',name)+UNIVERSE_MARKERS[:PRIMITIVE_UNIVERSES.get(name,0)]))
                      for name,code in PRIMITIVE_CODES.items()}
 EMPTY_ELIMINATOR = PRIMITIVE_SCHEMAS[1]

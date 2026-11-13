@@ -39,10 +39,12 @@ sort, including at0/0. The packed universe ABI validates every lane/padding in
 weights; the public JSON stays unchanged. Preserve all features/stockforward/
 cache for the next slice. Membership now passes native17cases13A4R, including
 two real ne_of_notMem source judgments and its γ→α→Prop field order with two
-uniform Type parameters. HAdd/HMul need four recursor universes; the isolated
-draft passes targeted CPU/reference checks, with native checking pending.
-Its16dependency source closures plan at30ksteps/4.3knodes, requiring a specific
-resource fix before large native replay. General
+uniform Type parameters. HAdd/HMul now pass native19core cases12A6R1Resource,
+including four recursor universes and the retained numeric boundary. Their
+16dependency source closures plan at30ksteps/4.3knodes, so a new arithmetic
+source acceptance still needs a specific resource fix. Primitive-type caching,
+transform caching and a naive lazy prototype did not justify production changes.
+General
 multi-field/inherited records remain a separate admission problem.
 
 Native speed is an unresolved research limit. Minimum required efficiency work

@@ -14,16 +14,16 @@
   "public_population": 857,
   "ground_instances_per_source": 1,
   "counts": {
-    "UNSUPPORTED": 422,
-    "EXPORTED": 435
+    "UNSUPPORTED": 406,
+    "EXPORTED": 451
   },
-  "export_seconds": 15.45515505799267,
-  "enumeration_seconds": 6.530155478991219,
+  "export_seconds": 9.816285076987697,
+  "enumeration_seconds": 4.203190965999966,
   "unsupported_reasons": {
     "unsupported inductive/constructor/recursor/quotient dependency IsCancelMul": 5,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommMagma": 11,
     "unsupported inductive/constructor/recursor/quotient dependency SubtractionMonoid": 8,
-    "unsupported inductive/constructor/recursor/quotient dependency HAdd": 18,
+    "unsupported inductive/constructor/recursor/quotient dependency Nat.le": 13,
     "unsupported inductive/constructor/recursor/quotient dependency RightCancelMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency IsPartialOrder": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Monoid": 32,
@@ -58,7 +58,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsCancelAdd": 5,
     "unsupported inductive/constructor/recursor/quotient dependency Trans": 1,
     "unsupported inductive/constructor/recursor/quotient dependency BEq": 6,
-    "unsupported inductive/constructor/recursor/quotient dependency HMul": 7,
     "unsupported inductive/constructor/recursor/quotient dependency MulOne": 6,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Irrefl": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CommGroup": 7,
@@ -87,7 +86,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsEquiv": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CancelCommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Pow": 2,
-    "unsupported inductive/constructor/recursor/quotient dependency Nat.le": 4,
     "unsupported inductive/constructor/recursor/quotient dependency CommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency InvolutiveInv": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Sigma": 1,
@@ -104,9 +102,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency DivisionCommMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency HDiv": 1
   },
-  "exporter_sha256": "3fc53171d4dabb90f94cc0e89b9a1ddc6b7a18ed245ff2250df7cd43a1d6667b",
-  "corpus_sha256": "929e165763fa6914d693c2f63f53e521edae3094d48604b4a078435d265491ae",
-  "all_outcomes_sha256": "fc4501bf201481f08f8d413c01c97ae7e511b79dde70cf4cb6c893909bbdcbd4",
-  "leanputer_feature_boundary": "89 primitives / 114 phases; Membership and three ground universes, syntax-only refresh; separate targeted native evidence",
+  "exporter_sha256": "28a2672f0a6bae286c4c602f38679eb2994a2dc8b18c15c2233c51c247c50068",
+  "corpus_sha256": "3bae1c88f069406fc8e488448dcee6a3585ab4f3ed40ef4467b2131bf5d82a6f",
+  "all_outcomes_sha256": "2ff93a5b050b55a049e1bdb0ea3192af902768b08fdd76019358d4eaea8a3b6d",
+  "leanputer_feature_boundary": "95 primitives / 114 phases; four ground universes and HAdd/HMul, targeted native core passed, arithmetic sources resource-blocked",
   "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh."
 }
