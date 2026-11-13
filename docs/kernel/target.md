@@ -228,7 +228,7 @@ semantics to invent from examples.
 | Module | Current reusable implementation | General work required |
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities (spec) | raw/derived declaration transactions; native ABI/lowering |
-| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec) | lower shared work-stack operations to stock layers |
+| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock lift/instantiate/abstract/occurrence controller | lower symbolic levels, scopes and dependent telescope services; integrate caller continuations |
 | Expression/universe checking | ground Pi/Lam/App and partial conversion | symbolic levels, Let/literals, complete pinned conversion and primitive checks |
 | Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors (spec) | integrate complete admission, nested queue, universe/elimination derivation and publication |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
@@ -241,8 +241,15 @@ indices and names against the pre-existing algorithm. Documentation and reports
 must keep design, executable-spec coverage, native coverage and trust assumptions
 separate. No completion percentage or generic mathlib fraction is established.
 
-The executable modules under `leanputer/kernel/` are **not an inference path**
-yet. They are not imported by the native syntax loader. `BetaZeta` implements
+The Python algorithm modules under `leanputer/kernel/` are **not a kernel
+inference path**. They are not imported by the proof checker's native syntax
+loader. The separate `traversal_transition` program compiles the shared
+LIFT/INSTANTIATE/ABSTRACT/OCCURS operations to stock forward/cache; its loader
+reconstructs raw syntax/operand vectors only. The matched eight-operation
+[stock smoke](../../benchmarks/kernel-traversal-stock/README.md) verifies exact
+registers and output cache rows. DONE means operation completion, not proof
+acceptance. These operations are not yet integrated into full admission.
+`BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit
 tests supply structural equality or the beta/zeta subservice to test these

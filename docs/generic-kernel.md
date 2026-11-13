@@ -1,3 +1,11 @@
+# Source-defined target
+
+The complete algorithm/data contract is now [kernel/target.md](kernel/target.md).
+The restricted checker described below is preserved reference work; its field
+and parameter restrictions do not define the target. General modules under
+`leanputer/kernel/` are executable specifications until explicitly lowered and
+tested with stock forward/cache. They are never trusted preprocessing answers.
+
 # Declaration-as-data kernel
 
 The per-name primitive backend is a historical experiment. Increasing its
@@ -196,11 +204,3 @@ can stop after6of7declarations; a bad proof can reject after7of7. Unsupported
 preparation rows keep unknown counts as null rather than assuming an empty or
 trusted environment. Larger scope does not imply matched speed or capacity:
 the parameterized batch uses256heap cells and2816fuel.
-# Source-defined target
-
-The complete algorithm/data contract is now [kernel/target.md](kernel/target.md).
-The restricted checker described below is preserved reference work; its field
-and parameter restrictions do not define the target. General modules under
-`leanputer/kernel/` are executable specifications until explicitly lowered and
-tested with stock forward/cache. They are never trusted preprocessing answers.
-

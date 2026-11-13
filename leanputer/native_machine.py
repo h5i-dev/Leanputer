@@ -137,7 +137,7 @@ class NativeMachine:
         result[:,:,self.feature_slots] = features.to(result.device,result.dtype)
         return result
 
-    def check(self, documents, diagnostic_steps=None):
+    def check(self, documents, diagnostic_steps=None, diagnostic_cache=False):
         parser=self.program.parse_document if self.program else parse_document
         encoder=self.program.prepare if self.program else prepare
         get_assumptions=self.program.assumptions if self.program else lambda ds:[d.name for d in ds if d.value is None]
@@ -148,12 +148,15 @@ class NativeMachine:
         control_width = self.register_layout.width
         # Static syntax load. Equal capacities give every item the same boot length.
         boot = []
+        boot_length = (self.program.boot_length if self.program and hasattr(self.program, 'boot_length') else
+                       lambda bank, state: state['regs']['free'] if bank == 'heap' else
+                       state['regs']['decl_count'] if bank == 'constants' else 0)
         for bank in ('heap','stack','context','constants'):
-            for row in range(max(state['regs']['free'] for state in states) if bank=='heap' else max(state['regs']['decl_count'] for state in states) if bank=='constants' else 0):
+            for row in range(max(boot_length(bank, state) for state in states)):
                 packet = torch.zeros(len(states),len(self.feature_slots))
                 for index,state in enumerate(states):
                     packet[index,:control_width] = self.state_layout.encode(state)[0,:control_width]
-                    packet[index,self.offsets['boot/'+bank]] = float(row < (state['regs']['free'] if bank=='heap' else state['regs']['decl_count']))
+                    packet[index,self.offsets['boot/'+bank]] = float(row < boot_length(bank, state))
                     for bit in range(self.offsets['address_width']):
                         packet[index,self.offsets['boot/address']+bit] = float(bool(row & (1 << bit)))
                     fields = state[bank][row]
@@ -199,7 +202,7 @@ class NativeMachine:
                         allocated_heap_nodes=r['free']-1,
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==reason_class.FUEL))
                    for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]
-        return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
+        report = dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
                     layout_policy=self.layout_policy,layout_statistics=self.layout_statistics,
                     bank_layout=self.bank_layout,
                     max_ballast=self.max_ballast,ballast_channels=self.layout.m,
@@ -212,6 +215,11 @@ class NativeMachine:
                     host_process_peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
                     boot_tokens=len(boot),applied_steps=diagnostic_steps or self.config.fuel+2)
+        if diagnostic_cache:
+            # Development evidence only. Never consulted to decide the result
+            # or provide a semantic answer to a subsequent inference token.
+            report['diagnostic_cache'] = cache
+        return report
 
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
@@ -274,10 +282,13 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     address1,address2 = address_compiler(registers,target=collect)
     addresses = builder.circuit(address1,control,'address1')
     first = []; offset = 0
-    for bank,ports in [('heap',4),('stack',1),('constants',1)]:
+    first_banks = program.first_banks if program and hasattr(program, 'first_banks') else [('heap',4),('stack',1),('constants',1)]
+    for bank,ports in first_banks:
         bits = getattr(config,bank).bit_length()-1
         for port in range(ports):
             first.extend(read(bank,addresses[offset:offset+bits],f'read/{bank}/{port}')); offset += bits
+    if offset != len(addresses):
+        raise ValueError('program first read address ABI differs')
     second = builder.circuit(address2,control+first,'address2')
     ctxbits = config.context.bit_length()-1
     if program:
