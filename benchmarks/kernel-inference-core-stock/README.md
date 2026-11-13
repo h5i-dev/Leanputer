@@ -45,3 +45,5 @@ DONE is INFERENCE OPERATION completion, not source/declaration/theorem admission
 The checked environment, complete conversion/primitives and general weighted
 inductive admission/generation/whole-source driver are unfinished. No new native
 mathlib theorem coverage or formal-verification claim.
+
+Evidence is pinned to `8d9a76d`; later ABI revisions add raw declaration reads.

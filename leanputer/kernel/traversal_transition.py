@@ -15,6 +15,7 @@ from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
 
 PORTS = (('node', ('tag', 'a', 'b', 'c')),
          ('frame', ('phase', 'original', 'depth', 'task', 'first', 'second')),
+         ('declaration', ('kind', 'symbol', 'parameters', 'type', 'value', 'extra')),
          ('operand', ('value',)))
 
 
@@ -31,8 +32,8 @@ def compile_addresses(layout, optimized=True, target=None):
     g = Builder(layout.names, optimized)
     r = state_words(g, layout)
     minus = g.sub(r['sp'], g.const(1, width))[0]
-    first = g.compile(list(r['x'][:cfg.heap.bit_length()-1])+list(minus[:cfg.stack.bit_length()-1]), target)
-    g = Builder(layout.names+port_names(width, PORTS[:2]), optimized)
+    first = g.compile(list(r['x'][:cfg.heap.bit_length()-1])+list(minus[:cfg.stack.bit_length()-1])+list(r['raw_index'][:cfg.constants.bit_length()-1]), target)
+    g = Builder(layout.names+port_names(width, PORTS[:3]), optimized)
     r = state_words(g, layout)
     a = tuple(g.inputs[len(layout.names)+width:len(layout.names)+2*width])
     base = g.add(r['depth'], r['start'])

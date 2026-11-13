@@ -131,5 +131,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.general-typed-services.v1'
+program_name = 'kernel.general-typed-services.v2'
 primitive_basis = ()

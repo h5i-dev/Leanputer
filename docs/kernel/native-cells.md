@@ -19,7 +19,7 @@ until weighted checking and atomic publication derive checked records.
 | 80..82 | String/numeral name segments and `(symbolID,nameVector,0)` entries |
 | 88 | Raw symbolic-substitution argument `(parameterSymbol,levelPointer,0)` |
 | 96..100 | Raw family/constructor/recursor-claim/block records |
-| 160..164 | Reserved checked signature/family/constructor/recursor/rule records; never input answers |
+| 160..165 | Reserved checked signature/family/constructor/recursor/rule records; never input answers |
 
 Vector roles distinguish object references, level references, 16-bit natural
 limbs, UTF-8 bytes and symbol IDs. This distinction is necessary: the syntax
@@ -73,3 +73,10 @@ traversal, including empty universe contexts. Raw declaration universe parameter
 are scope data, not admitted types. Constant/projection existence, signature
 arity and type correctness remain checked-environment/inference work. A scope
 DONE must never be reported as proof or declaration acceptance.
+
+The six-word raw declaration bank is now a stock read port, addressed by a
+separate `raw_index` register. [Four-bank exact-state evidence](../../benchmarks/kernel-environment-abi-stock/README.md)
+includes the raw constants bank. This is transport only: no raw type becomes an
+inferred answer, and cursor advancement/checking/publication is unfinished.
+The [checked environment integration contract](environment-native.md) reserves
+output-only signature/scheme records and separates raw-item/admitted counts.

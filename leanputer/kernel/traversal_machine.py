@@ -216,7 +216,7 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
     'order_same_base', 'merge_l', 'merge_r', 'merge_hl', 'merge_tl', 'merge_hr', 'merge_tr',
     'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset', 'geq_left', 'geq_right', 'left_c', 'vector_expected_role', 'vector_remaining', 'comparison_root', 'pending_infer', 'local_base', 'lookup_uid', 'lookup_index',
-    'lookup_type', 'convert_left_level')
+    'lookup_type', 'convert_left_level', 'raw_index')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -953,6 +953,6 @@ def assumptions(_):
 
 program_name = 'kernel.general-telescope-services.v4'
 constant_fields = 6
-first_banks = (('heap', 1), ('stack', 1))
+first_banks = (('heap', 1), ('stack', 1), ('constants', 1))
 second_banks = ('context',)
 primitive_basis = ()

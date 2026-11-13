@@ -21,11 +21,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--device', default='cuda', choices=('cpu', 'cuda'))
-    parser.add_argument('--group', choices=('syntax', 'constructors', 'instantiation', 'normalization', 'geq', 'scope', 'comparison', 'inference'), default='syntax')
+    parser.add_argument('--group', choices=('syntax', 'constructors', 'instantiation', 'normalization', 'geq', 'scope', 'comparison', 'inference', 'environment-abi'), default='syntax')
     args = parser.parse_args()
     torch.set_num_threads(1)
     cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=512 if args.group == 'geq' else 160 if args.group == 'inference' else 128, word_bits=8)
-    if args.group == 'inference':
+    if args.group == 'environment-abi':
+        raw_cases = inference_cases()
+        documents = [raw_cases[1], raw_cases[-1]]
+    elif args.group == 'inference':
         documents = inference_cases()
     elif args.group == 'comparison':
         documents = expression_equality_cases()
@@ -63,8 +66,6 @@ def main():
     verified = []
     for head in machine.native_heads:
         bank, part = head['bank'], head['row_bank']
-        if bank == 'constants':
-            continue
         memory = cache.layers[head['layer']].recurrent_states[0]
         count = min(128, getattr(cfg, bank)-128*part)
         fields = spec.BANK_FIELDS[bank]

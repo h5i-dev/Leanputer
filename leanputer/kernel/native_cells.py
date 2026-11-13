@@ -36,6 +36,7 @@ class CellTag(IntEnum):
     CHECKED_CONSTRUCTOR = 162
     CHECKED_RECURSOR = 163
     CHECKED_RULE = 164
+    CHECKED_SCHEME = 165          # Output-only (uparams,kind,payload), never packed.
 
 
 class VectorKind(IntEnum):

@@ -98,8 +98,10 @@ class CircuitHarness:
         cfg = self.cfg
         control = self.layout.encode(state)[0, :self.control.width].tolist()
         first_query = evaluate(self.address1, control)
-        addresses = unpack_words(first_query, [cfg.heap.bit_length()-1, cfg.stack.bit_length()-1])
-        first = pack_words(state['heap'][addresses[0]]+state['stack'][addresses[1]], [cfg.word_bits]*10)
+        banks = [bank for bank, count in spec.first_banks for _ in range(count)]
+        addresses = unpack_words(first_query, [getattr(cfg, bank).bit_length()-1 for bank in banks])
+        values = [value for bank, address in zip(banks, addresses) for value in state[bank][address]]
+        first = pack_words(values, [cfg.word_bits]*len(values))
         operand = unpack_words(evaluate(self.address2, control+first), [cfg.context.bit_length()-1])[0]
         bits = evaluate(self.rules, control+first+pack_words(state['context'][operand], [cfg.word_bits]))
         state = deepcopy(state)

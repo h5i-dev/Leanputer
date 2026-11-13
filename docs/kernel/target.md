@@ -351,3 +351,8 @@ connects [inference callers](inference-native.md) to the SAME private telescope/
 substitution/abstraction/level services. Raw signatures are not checked answers;
 missing environment/projection/literal/full-conversion paths return GAP. DONE
 returns an inferred type, not source theorem/admission acceptance.
+
+The [read-only raw declaration port smoke](../../benchmarks/kernel-environment-abi-stock/README.md)
+verifies all four cache banks before [checked-environment/source transaction
+integration](environment-native.md). A separate raw cursor address is available;
+advancement and publication remain unfinished. Transport is not admission.
