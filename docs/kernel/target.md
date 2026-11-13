@@ -228,7 +228,7 @@ semantics to invent from examples.
 | Module | Current reusable implementation | General work required |
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities (spec) | raw/derived declaration transactions; native ABI/lowering |
-| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock lift/instantiate/abstract/occurrence controller | lower symbolic levels, scopes and dependent telescope services; integrate caller continuations |
+| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversal controller plus beta/zeta-to-substitution internal calls | lower symbolic levels, scopes and dependent telescope services; connect full kernel callers |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors; `admission.py`: general core-phase header/index/constructor/universe/positivity checks, elimination/K metadata and generation (spec) | nested queue/restoration, prior declarations/transactions, complete internal services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
@@ -249,6 +249,10 @@ reconstructs raw syntax/operand vectors only. The matched eight-operation
 [stock smoke](../../benchmarks/kernel-traversal-stock/README.md) verifies exact
 registers and output cache rows. DONE means operation completion, not proof
 acceptance. These operations are not yet integrated into full admission.
+The [extended eleven-operation smoke](../../benchmarks/kernel-expression-services-stock/README.md)
+also verifies beta/literal-Let/metadata reduction through the same substitution
+walk and private continuation stack. Checked-environment/local-let lookup,
+recursor/projection/K/eta/literal/Quot rules are not part of that subservice.
 `BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit

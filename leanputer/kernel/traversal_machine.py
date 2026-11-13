@@ -2,6 +2,9 @@
 
 This is a kernel operation controller, not a proof-supplied instruction stream.
 LIFT/INSTANTIATE/ABSTRACT/OCCURS use one stack and the same all-tag child walk.
+The beta/literal-Let/metadata subservice calls that substitution operation via
+private continuations. Checked-environment/local-let and other WHNF rules are
+not implemented by this subservice.
 The stock compiler receives capacities only. Syntax and operand vectors are
 loaded as data. Python step() is solely a development reference.
 """
@@ -35,6 +38,8 @@ class Task(IntEnum):
     INSTANTIATE = 1
     ABSTRACT = 2
     OCCURS = 3
+    BETA_ZETA = 4
+    INSTANTIATE_ONE = 5          # Internal service call, no proof-data entry.
 
 
 class Mode(IntEnum):
@@ -42,11 +47,16 @@ class Mode(IntEnum):
     RETURN = 1
     RESUME = 2
     FIND = 3
+    BETA_ZETA = 4
+
+
+CALL_BETA_ZETA = 16
+PENDING_ARGUMENT = 17
 
 
 REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
-    'count', 'i', 'found', 'root')
+    'count', 'i', 'found', 'root', 'substitution')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -145,6 +155,8 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
+    if task == Task.INSTANTIATE_ONE:
+        raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
         for value in operands:
@@ -173,6 +185,8 @@ def prepare(config, request, _unused=None, _declarations=()):
     state['regs'].update(fuel=config.fuel, free=len(a.rows), x=request['root'],
         root=request['root'], task=int(request['task']), count=len(operands), ctx=len(operands),
         **{n: request[n] for n in ('delta', 'cutoff', 'start')})
+    if request['task'] == Task.BETA_ZETA:
+        state['regs']['mode'] = int(Mode.BETA_ZETA)
     return state
 
 
@@ -211,7 +225,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context
-                or r['mode'] > Mode.FIND or r['task'] > Task.OCCURS):
+                or r['mode'] > Mode.BETA_ZETA or r['task'] > Task.INSTANTIATE_ONE):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         if r['mode'] == Mode.RETURN:
@@ -219,7 +233,12 @@ class SpecMachine:
                 stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
+                if phase == CALL_BETA_ZETA:
+                    r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA, x=r['r'], depth=0, task=Task.BETA_ZETA)
+                elif phase == PENDING_ARGUMENT:
+                    r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
+                else:
+                    r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
             return s
         if not 0 < r['x'] < r['free']:
             stop(Outcome.INVALID, Reason.SYNTAX)
@@ -229,6 +248,28 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if r['mode'] == Mode.BETA_ZETA:
+            if tag == Tag.MDATA:
+                r['x'] = a
+            elif tag == Tag.APP:
+                if r['sp'] == cfg.stack:
+                    stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [PENDING_ARGUMENT, r['x'], 0, Task.BETA_ZETA, b, 0]
+                    r.update(sp=r['sp']+1, x=a)
+            elif tag == Tag.LAM and r['sp'] and s['stack'][r['sp']-1][0] == PENDING_ARGUMENT:
+                argument = s['stack'][r['sp']-1][4]
+                s['stack'][r['sp']-1] = [CALL_BETA_ZETA, 0, 0, Task.BETA_ZETA, 0, 0]
+                r.update(mode=Mode.WALK, x=b, substitution=argument, depth=0, task=Task.INSTANTIATE_ONE)
+            elif tag == Tag.LET:
+                if r['sp'] == cfg.stack:
+                    stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [CALL_BETA_ZETA, 0, 0, Task.BETA_ZETA, 0, 0]
+                    r.update(sp=r['sp']+1, mode=Mode.WALK, x=c, substitution=b, depth=0, task=Task.INSTANTIATE_ONE)
+            else:
+                ret(r['x'])
+            return s
         if r['mode'] == Mode.FIND:
             if r['i'] >= r['count']:
                 stop(Outcome.INVALID, Reason.SYNTAX)
@@ -254,6 +295,14 @@ class SpecMachine:
                 return s
             frame = s['stack'][r['sp']-1]
             phase, original, old_depth, old_task, first, second = frame
+            if phase == PENDING_ARGUMENT:
+                if tag != Tag.APP:
+                    stop(Outcome.INVALID, Reason.SYNTAX)
+                else:
+                    r['sp'] -= 1
+                    if a == r['r']: ret(original)
+                    else: alloc((Tag.APP, r['r'], first, 0))
+                return s
             if not 1 <= phase <= len(child_list):
                 stop(Outcome.INVALID, Reason.SYNTAX)
                 return s
@@ -283,8 +332,10 @@ class SpecMachine:
             else:
                 s['stack'][r['sp']] = [1, r['x'], depth, task, 0, 0]
                 r.update(sp=r['sp']+1, mode=Mode.WALK, x=child_list[0])
-        elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE):
-            offset = depth+(r['cutoff'] if task == Task.LIFT else r['start'])
+        elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE, Task.INSTANTIATE_ONE):
+            start = 0 if task == Task.INSTANTIATE_ONE else r['cutoff'] if task == Task.LIFT else r['start']
+            count = 1 if task == Task.INSTANTIATE_ONE else r['count']
+            offset = depth+start
             if not bounded(offset):
                 return s
             if a < offset:
@@ -294,11 +345,11 @@ class SpecMachine:
                 if bounded(value):
                     if value == a: ret(r['x'])
                     else: alloc((Tag.BVAR, value, 0, 0))
-            elif a-offset >= r['count']:
-                if not r['count']: ret(r['x'])
-                else: alloc((Tag.BVAR, a-r['count'], 0, 0))
+            elif a-offset >= count:
+                if not count: ret(r['x'])
+                else: alloc((Tag.BVAR, a-count, 0, 0))
             else:
-                value = s['context'][a-offset][0]
+                value = r['substitution'] if task == Task.INSTANTIATE_ONE else s['context'][a-offset][0]
                 if not 0 < value < r['free']:
                     stop(Outcome.INVALID, Reason.SYNTAX)
                 elif not depth:
@@ -317,7 +368,7 @@ def assumptions(_):
     return []
 
 
-program_name = 'kernel.general-expression-traversal.v1'
+program_name = 'kernel.general-expression-services.v2'
 constant_fields = 6
 first_banks = (('heap', 1), ('stack', 1))
 second_banks = ('context',)

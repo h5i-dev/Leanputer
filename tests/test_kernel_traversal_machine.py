@@ -9,6 +9,7 @@ from dataclasses import replace
 from leanputer.bitvec import pack_words, unpack_words
 from leanputer.kernel.arena import Arena, LocalContext, Tag
 from leanputer.kernel.operations import abstract, has_constant, instantiate, lift
+from leanputer.kernel.reduction import BetaZeta
 from leanputer.kernel import traversal_machine as spec
 from leanputer.kernel import traversal_transition as weighted
 
@@ -38,6 +39,20 @@ def cases():
     docs.append(spec.document(b, high, spec.Task.LIFT, amount=1))
     # Names and list lengths are data in the same compiled transition.
     docs.append(spec.document(a, local, spec.Task.ABSTRACT, (2, 3, 4, 5, 1)))
+    # Internal service calls exercise capture avoidance, zeta substitution and
+    # the pending-application spine. These are the finite beta/zeta rules, not
+    # names, datatype shapes or precomputed reduction answers.
+    z = Arena()
+    ty = z.mk(Tag.SORT, z.zero)
+    b0, b1 = z.mk(Tag.BVAR, 0), z.mk(Tag.BVAR, 1)
+    const = z.const(37)
+    capturing = z.app(z.mk(Tag.LAM, ty, z.mk(Tag.LAM, ty, b1)), (b0,))
+    docs.append(spec.document(z, capturing, spec.Task.BETA_ZETA))
+    let = z.mk(Tag.LET, ty, z.mk(Tag.MDATA, const, 19),
+        z.app(z.mk(Tag.LAM, ty, b0), (b0,)))
+    docs.append(spec.document(z, let, spec.Task.BETA_ZETA))
+    stuck = z.app(z.mk(Tag.LAM, ty, const), (z.const(41), z.const(43)))
+    docs.append(spec.document(z, stuck, spec.Task.BETA_ZETA))
     for i, doc in enumerate(docs):
         doc['name'] = f'kernel-operation-{i}'
     return docs
@@ -132,9 +147,11 @@ class TraversalTransitionTest(unittest.TestCase):
                     expected = lift(a, root, doc.get('amount', 0), doc.get('cutoff', 0))
                 elif task == spec.Task.INSTANTIATE:
                     expected = instantiate(a, root, doc['operands'], doc.get('start', 0))
-                else:
+                elif task == spec.Task.ABSTRACT:
                     locals_ = tuple(a.mk(Tag.LOCAL, uid) for uid in doc['operands'])
                     expected = abstract(a, root, locals_)
+                else:
+                    expected = BetaZeta(a, LocalContext(a))(root)
                 self.assertEqual(canonical_result(state, a), expected)
             self.assertEqual(state['regs']['sp'], 0)
         self.assertTrue(circuit.assert_length)

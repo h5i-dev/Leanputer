@@ -67,7 +67,7 @@ def main():
     report.update(format='leanputer.kernel-operation-stock-smoke.v1', config=asdict(cfg),
         compile_seconds=compile_seconds, device=args.device, input_documents=docs,
         exact_register_match=True, exact_cache_match=True, verified_cache_banks=verified,
-        validation_scope='Eight general traversal operation probes, not declaration admission or proof coverage',
+        validation_scope=f'{len(docs)} general expression-service probes, not declaration admission or proof coverage',
         full_kernel_native_support=False)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2)+'\n')

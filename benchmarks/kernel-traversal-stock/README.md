@@ -3,6 +3,9 @@
 This verifies four reusable operations: all-tag capture-avoiding lift and
 instantiation, internal-Local abstraction, and symbol occurrence traversal.
 It is **not declaration admission, proof acceptance, or mathlib coverage**.
+This original controller/evidence is pinned at commit `e756db2`; the current
+source adds internal beta/zeta calls, with separate
+[extended evidence](../kernel-expression-services-stock/README.md).
 The same capacities/weights process all eight raw syntax/operand inputs stored
 in [report.json](report.json). All registers and every heap/stack/operand cache
 row match the independent transition specification exactly. One unsigned-word

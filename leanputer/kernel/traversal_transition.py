@@ -6,6 +6,7 @@ has no runtime dependency on the Python kernel operations/reference machine.
 from ..bitvec import Builder
 from .arena import Tag
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
+    CALL_BETA_ZETA, PENDING_ARGUMENT,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
     program_name, constant_fields, first_banks, second_banks, primitive_basis)
 
@@ -60,7 +61,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']),
-            self.lt(Mode.FIND, self.r['mode']), self.lt(Task.OCCURS, self.r['task']))
+            self.lt(Mode.BETA_ZETA, self.r['mode']), self.lt(Task.INSTANTIATE_ONE, self.r['task']))
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(invalid))
         needs_node = self.NOT(self.eq(self.r['mode'], Mode.RETURN))
@@ -120,8 +121,33 @@ class RuleCompiler:
         top = self.sub(r['sp'], 1)
         returning = self.mode(Mode.RETURN)
         self.stop(self.AND(returning, self.NOT(nonempty)), Outcome.DONE)
-        self.emit(self.AND(returning, nonempty), mode=Mode.RESUME,
+        internal_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_BETA_ZETA))
+        self.emit(internal_return, sp=top, mode=Mode.BETA_ZETA, x=result, depth=0, task=Task.BETA_ZETA)
+        self.emit(self.AND(returning, nonempty, self.NOT(self.eq(frame['phase'], CALL_BETA_ZETA))), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
+
+        # The beta/zeta service calls the SAME capture-avoiding substitution
+        # walk, then resumes through a private continuation. App arguments are
+        # internal stack frames, never an input-provided traversal schedule.
+        reducing = self.mode(Mode.BETA_ZETA)
+        self.emit(self.AND(reducing, self.tag(Tag.MDATA)), x=a)
+        room = self.lt(r['sp'], self.cfg.stack)
+        argument = self.AND(nonempty, self.eq(frame['phase'], PENDING_ARGUMENT))
+        push_argument = self.AND(reducing, self.tag(Tag.APP))
+        let_call = self.AND(reducing, self.tag(Tag.LET))
+        pushing = self.OR(push_argument, let_call)
+        self.stop(self.AND(pushing, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)
+        self.write('stack', self.AND(push_argument, room), r['sp'],
+            (PENDING_ARGUMENT, x, 0, Task.BETA_ZETA, b, 0))
+        self.emit(self.AND(push_argument, room), sp=self.add(r['sp'], 1), x=a)
+        beta = self.AND(reducing, self.tag(Tag.LAM), argument)
+        self.write('stack', beta, top, (CALL_BETA_ZETA, 0, 0, Task.BETA_ZETA, 0, 0))
+        self.emit(beta, mode=Mode.WALK, x=b, substitution=frame['first'], depth=0, task=Task.INSTANTIATE_ONE)
+        self.write('stack', self.AND(let_call, room), r['sp'], (CALL_BETA_ZETA, 0, 0, Task.BETA_ZETA, 0, 0))
+        self.emit(self.AND(let_call, room), sp=self.add(r['sp'], 1), mode=Mode.WALK,
+            x=c, substitution=b, depth=0, task=Task.INSTANTIATE_ONE)
+        stuck = self.AND(reducing, self.NOT(self.OR(self.tag(Tag.MDATA, Tag.APP, Tag.LET), self.AND(self.tag(Tag.LAM), argument))))
+        self.ret(stuck, x)
 
         # Reverse list search implements Local abstraction and symbol-set DFS.
         finding = self.mode(Mode.FIND)
@@ -151,7 +177,14 @@ class RuleCompiler:
         self.emit(down, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=self.mux(self.tag(Tag.PROJ), c, a))
 
         # Revisit a completed child using the original row and continuation data.
-        resuming = self.mode(Mode.RESUME)
+        resume_argument = self.AND(self.mode(Mode.RESUME), self.eq(frame['phase'], PENDING_ARGUMENT))
+        valid_argument = self.AND(nonempty, self.tag(Tag.APP))
+        self.stop(self.AND(resume_argument, self.NOT(valid_argument)), Outcome.INVALID, Reason.SYNTAX)
+        resume_argument = self.AND(resume_argument, valid_argument)
+        self.emit(resume_argument, sp=top)
+        self.ret(self.AND(resume_argument, self.eq(a, result)), x)
+        self.alloc(self.AND(resume_argument, self.NOT(self.eq(a, result))), (Tag.APP, result, frame['first'], 0))
+        resuming = self.AND(self.mode(Mode.RESUME), self.NOT(self.eq(frame['phase'], PENDING_ARGUMENT)))
         child_count = self.mux(let, 3, self.mux(binary, 2, self.mux(unary, 1, 0)))
         phase_valid = self.AND(nonempty, self.NOT(self.eq(frame['phase'], 0)), self.NOT(self.lt(child_count, frame['phase'])))
         self.stop(self.AND(resuming, self.NOT(phase_valid)), Outcome.INVALID, Reason.SYNTAX)
@@ -178,9 +211,12 @@ class RuleCompiler:
         self.alloc(self.AND(rebuild, self.tag(Tag.MDATA)), (node['tag'], result, b, 0))
 
         leaf = self.AND(walking, self.NOT(branch))
-        var_transform = self.AND(leaf, self.tag(Tag.BVAR), self.OR(self.task(Task.LIFT), self.task(Task.INSTANTIATE)))
+        inst = self.OR(self.task(Task.INSTANTIATE), self.task(Task.INSTANTIATE_ONE))
+        var_transform = self.AND(leaf, self.tag(Tag.BVAR), self.OR(self.task(Task.LIFT), inst))
+        start = self.mux(self.task(Task.INSTANTIATE_ONE), 0, self.mux(self.task(Task.LIFT), r['cutoff'], r['start']))
+        count = self.mux(self.task(Task.INSTANTIATE_ONE), 1, r['count'])
         offset_guard, offset = self.checked_add(var_transform, depth,
-            self.mux(self.task(Task.LIFT), r['cutoff'], r['start']))
+            start)
         under = self.lt(a, offset)
         self.ret(self.AND(offset_guard, under), x)
         above = self.AND(offset_guard, self.NOT(under))
@@ -189,13 +225,14 @@ class RuleCompiler:
         unchanged_lift = self.eq(lifted, a)
         self.ret(self.AND(lifting, unchanged_lift), x)
         self.alloc(self.AND(lifting, self.NOT(unchanged_lift)), (Tag.BVAR, lifted, 0, 0))
-        instantiating = self.AND(above, self.task(Task.INSTANTIATE))
+        instantiating = self.AND(above, inst)
         relative = self.sub(a, offset)
-        within = self.lt(relative, r['count'])
+        within = self.lt(relative, count)
         beyond = self.AND(instantiating, self.NOT(within))
-        self.ret(self.AND(beyond, self.eq(r['count'], 0)), x)
-        self.alloc(self.AND(beyond, self.NOT(self.eq(r['count'], 0))), (Tag.BVAR, self.sub(a, r['count']), 0, 0))
+        self.ret(self.AND(beyond, self.eq(count, 0)), x)
+        self.alloc(self.AND(beyond, self.NOT(self.eq(count, 0))), (Tag.BVAR, self.sub(a, count), 0, 0))
         substituting = self.AND(instantiating, within)
+        operand = self.mux(self.task(Task.INSTANTIATE_ONE), r['substitution'], operand)
         valid_operand = self.AND(self.NOT(self.eq(operand, 0)), self.lt(operand, r['free']))
         self.stop(self.AND(substituting, self.NOT(valid_operand)), Outcome.INVALID, Reason.SYNTAX)
         substituting = self.AND(substituting, valid_operand)
