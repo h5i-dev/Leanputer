@@ -158,3 +158,15 @@ broad corpus, profiling or plotting runs are active. The semantic specification
 is retained; the old custom sparse engine is a reference, not the final claimed
 architecture. Stock normalization/activation/cache compatibility must be tested,
 not replaced or renamed. Full Qwen natural-language integration remains optional.
+
+Native architecture checkpoint d3a146d compiles the shared machine into stock
+Qwen3.5 GatedDeltaNet cache/SwiGLU with CPU/CUDA identity/unbound smokes. Native
+BAll.imp_left also accepts in a banked256-cell configuration. False/False.rec
+are now implemented as intrinsic rules plus weighted type-schema construction;
+new real source Function.mt accepts through stock native forward (802steps),
+alongside a universe1eliminator and a wrong-claim rejection. Only the15old
+False-first blockers were re-exported;14still expose Eq/Iff/Exists/Decidable.
+No new full857coverage result or broad differential campaign is claimed.
+Next implement Iff/And constructors, native projections and eliminators on this
+existing native lowering, then equality. Compiler residual liveness/dense-zero
+parameter overhead remains substantial and must not be called efficient.

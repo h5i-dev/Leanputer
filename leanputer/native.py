@@ -56,6 +56,12 @@ class NativeCompilation:
         return inputs
 
 
+class ScratchResetCapacity(ValueError):
+    def __init__(self, required):
+        self.required = required
+        super().__init__(f'native scratch reset needs {required} reserved layers')
+
+
 def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     results = result_dims
@@ -63,6 +69,10 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
     allocation = allocate(graph, None, keep, intermediate)
     layout = pick_layout(allocation.n_slots)
     layout.slots = allocation.slots
+    persistent = {layout.dim(d) for d in keep}
+    clear = [d for d in range(layout.m, layout.hidden) if d not in persistent]
+    if reset_layers and len(clear) > reset_layers*intermediate:
+        raise ScratchResetCapacity((len(clear)+intermediate-1)//intermediate)
     layers = graph.n_layers()
     tc = dict(hidden_size=layout.hidden, vocab_size=len(results), intermediate_size=intermediate,
               num_hidden_layers=layers+1, layer_types=['linear_attention']*layers+['full_attention'],
@@ -81,10 +91,6 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
     state.update(emit_layers(graph, layout, tc, 0, 'model.', allocation))
     if reset_layers:
         from .native_vendor.qwenputer.emit import row
-        persistent = {layout.dim(d) for d in keep}
-        clear = [d for d in range(layout.m, layout.hidden) if d not in persistent]
-        if len(clear) > reset_layers*intermediate:
-            raise ValueError('native scratch reset needs more reserved layers')
         for unit, slot in enumerate(clear):
             layer, index = divmod(unit, intermediate)
             prefix = f'model.layers.{layer}.mlp.'

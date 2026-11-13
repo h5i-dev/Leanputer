@@ -10,7 +10,7 @@ from .transition import compile_machine
 
 ARTIFACT_FORMAT = 'leanputer.shared-ground-pi.v1'
 COMPILER_FILES = ('transition.py', 'circuit.py', 'bitvec.py', 'logic.py', 'memory.py', 'machine_spec.py',
-                  'state_layout.py', 'dependent.py')
+                  'state_layout.py', 'dependent.py', 'primitives.py')
 
 
 def compiler_fingerprint():

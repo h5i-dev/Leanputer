@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
+from .primitives import EMPTY_ELIMINATOR, primitive_code
 
 
 class Outcome(IntEnum):
@@ -83,6 +84,7 @@ class Op(IntEnum):
     E_BUILD = 46
     E_MAKE_APP = 47
     E_COMPARE = 48
+    BUILTIN_TYPE = 49
 
 
 @dataclass(frozen=True)
@@ -136,9 +138,12 @@ def prepare(config, term, claim, declarations=()):
             if expr[1] not in names:
                 raise ValueError(f'undeclared constant: {expr[1]}')
             v = names[expr[1]]
+        elif tag == 'builtin':
+            v = primitive_code(expr)
+            a = expr[2] if len(expr)==3 else 0
         else:
             v = expr[1]
-        if v >= 1 << config.word_bits:
+        if max(a,b,v) >= 1 << config.word_bits:
             raise Exhausted('syntax scalar encoding capacity')
         if len(heap) >= config.heap:
             raise Exhausted('input heap capacity')
@@ -191,7 +196,7 @@ class SpecMachine:
         if context is not None:
             r['ctx'] = context
 
-    def allocate(self, tag, a=0, b=0, v=0):
+    def allocate(self, tag, a=0, b=0, v=0, resume=None):
         r = self.state['regs']
         if r['free'] >= self.config.heap:
             self.stop(Outcome.RESOURCE, Reason.HEAP); return
@@ -201,6 +206,8 @@ class SpecMachine:
         self.state['heap'][pointer] = [int(tag), a, b, v]
         r['free'] += 1
         self.ret(pointer)
+        if resume is not None:
+            self.tail(*resume)
 
     def step(self):
         s, cfg = self.state, self.config
@@ -233,19 +240,29 @@ class SpecMachine:
                 self.tail(Op.ENV)
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
-                valid = 1 <= tag <= 6
+                valid = 1 <= tag <= 7
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
+                elif tag == Tag.BUILTIN:
+                    valid &= b==0 and v in (0,1) and (v==1 or a==0)
                 else:
                     valid &= a == b == 0
                 if tag == Tag.CONST:
                     valid &= v < r['decl_count']
                 if not valid:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
-                elif tag == Tag.SORT and v > cfg.universe:
+                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and v==1 and a>=cfg.universe):
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
                     r['scan'] += 1
+        elif op == Op.BUILTIN_TYPE:
+            if x!=1 or not 0 <= y < len(EMPTY_ELIMINATOR) or z<=0 or z+y!=r['free']:
+                self.stop(Outcome.REJECT,Reason.SYNTAX)
+            else:
+                tag,a,b,v = EMPTY_ELIMINATOR[y]
+                binary = tag in (Tag.PI,Tag.APP)
+                resume = (Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(EMPTY_ELIMINATOR) else None
+                self.allocate(tag,z+a if binary else 0,z+b if binary else 0,w if v is None else v,resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
                 self.call(Op.INFER, r['claim'], continuation=(Op.ROOT_TYPE,))
@@ -296,6 +313,13 @@ class SpecMachine:
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
                     self.allocate(Tag.SORT, v=v+1)
+            elif tag == Tag.BUILTIN:
+                if v==0:
+                    self.allocate(Tag.SORT,v=0)
+                elif a>=cfg.universe:
+                    self.stop(Outcome.RESOURCE,Reason.UNIVERSE)
+                else:
+                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a)
             elif tag in (Tag.LAM, Tag.PI):
                 self.call(Op.INFER, a, continuation=(Op.I_DOM, x))
             elif tag == Tag.APP:
@@ -352,7 +376,7 @@ class SpecMachine:
                     self.tail(Op.WHNF, s['constants'][v][2])
                 else:
                     self.ret(x)
-            elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM):
+            elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.BUILTIN):
                 self.ret(x)
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
@@ -368,7 +392,7 @@ class SpecMachine:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):
             tag, a, b, v = self.node(x)
-            if tag in (Tag.SORT, Tag.CONST) or (op == Op.SHIFT and z == 0):
+            if tag in (Tag.SORT, Tag.CONST,Tag.BUILTIN) or (op == Op.SHIFT and z == 0):
                 self.ret(x)
             elif tag == Tag.VAR:
                 if op == Op.SHIFT:
@@ -414,8 +438,8 @@ class SpecMachine:
                 self.ret(1)
             elif tx != ty:
                 self.tail(Op.FALLBACK, x, result)
-            elif tx in (Tag.VAR, Tag.SORT, Tag.CONST):
-                if vx == vy:
+            elif tx in (Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN):
+                if vx == vy and (tx != Tag.BUILTIN or ax == ay):
                     self.ret(1)
                 else:
                     self.tail(Op.FALLBACK, x, result)

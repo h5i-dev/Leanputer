@@ -10,10 +10,12 @@ custom backend is not a conventional Transformer result.
 
 The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
-and acyclic axiom/definition/opaque dependencies. Numeric universes use
+and acyclic axiom/definition/opaque dependencies. The native/shared IR now also
+implements the empty proposition False and its dependent eliminator as fixed
+kernel primitives, with targeted smokes pending broader validation. Numeric universes use
 Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
 Opaque dependency values are checked while their opacity is preserved. Symbolic
-universe constraints, inductives, recursors, quotient rules, lets and projections
+universe constraints, general inductive/recursor declarations, quotient rules, lets and projections
 are not yet supported. The supported ground fragment is still experimental.
 The tool does not claim a complete Lean kernel, formal soundness verification,
 or conference-level results from the current test count.

@@ -27,9 +27,10 @@ class Tag(IntEnum):
     LAM = 4
     APP = 5
     CONST = 6
+    BUILTIN = 7
 
 
-TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST}
+TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN}
 
 
 def parse_expr(value):
@@ -42,6 +43,11 @@ def parse_expr(value):
         return (tag, value[1])
     if tag == 'const' and len(value) == 2 and isinstance(value[1], str) and value[1]:
         return (tag, value[1])
+    if tag == 'builtin':
+        if len(value)==2 and value[1]=='False': return (tag,'False')
+        if len(value)==3 and value[1]=='False.rec' and type(value[2]) is int and value[2]>=0:
+            return (tag,'False.rec',value[2])
+        raise Unsupported('unsupported logical primitive')
     if tag in ('pi', 'lam', 'app') and len(value) == 3:
         return (tag, parse_expr(value[1]), parse_expr(value[2]))
     raise ValueError(f'malformed dependent {tag} expression')
@@ -88,7 +94,7 @@ class Oracle:
         tag = term[0]
         if tag == 'var':
             return ('var', term[1] + (delta if term[1] >= cutoff else 0))
-        if tag in ('sort', 'const'):
+        if tag in ('sort', 'const', 'builtin'):
             return term
         return (tag, self.shift(term[1], delta, cutoff),
                 self.shift(term[2], delta, cutoff + int(tag in ('pi', 'lam'))))
@@ -101,7 +107,7 @@ class Oracle:
             if index == depth:
                 return self.shift(replacement, depth)
             return ('var', index - int(index > depth))
-        if tag in ('sort', 'const'):
+        if tag in ('sort', 'const', 'builtin'):
             return term
         return (tag, self.substitute(term[1], replacement, depth),
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
@@ -149,6 +155,9 @@ class Oracle:
     def infer(self, term, context=()):
         self.tick()
         tag = term[0]
+        if tag == 'builtin':
+            from .primitives import primitive_type
+            return primitive_type(term)
         if tag == 'sort':
             return ('sort', term[1] + 1)
         if tag == 'var':

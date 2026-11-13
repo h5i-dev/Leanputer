@@ -104,3 +104,12 @@ five syntax boot tokens. It is a development observation, not a speedup claim.
 The CPU test used the earlier full-capacity boot schedule and took42.144s, so
 these are not matching timing boundaries. Sparse-reference results and native
 results must remain separately labeled until the deferred validation phase.
+
+A subsequent single-source native smoke accepted real mathlib
+`BAll.imp_left@[1]` with heap256/fuel1152:1,060semantic steps,148allocated nodes,
+41syntax boot tokens,1,154stock forwards. Banking across native DeltaNet heads
+therefore exercised addresses above127. The generated configuration had
+642,278,382BF16parameters, hidden3072 and56native layers; the fallback-kernel
+forward took92.434s. This is larger and slower than desired, but is a standalone
+compiled model, not a downloaded pretrained backbone. It is one actual source
+smoke, not a new full-population coverage estimate.

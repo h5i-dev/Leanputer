@@ -91,3 +91,22 @@ Host peak RSS includes evaluation references and is labeled process-wide;
 CUDA peaks measure PyTorch allocations only. The runtime has no dependency
 verification cache. Reused artifacts/graphs reuse compiled weights, never prior
 proof answers or unchecked theorems.
+
+## Empty proposition primitive slice
+
+The input grammar now includes `["builtin","False"]` and
+`["builtin","False.rec",u]` for a concrete unsigned universe u. These are fixed
+kernel primitives, distinct from user environment constants. Their typing rules
+are `False : Prop` and
+`False.rec.{u} : (motive : False → Sort u) → (t : False) → motive t`.
+False has no constructors and its eliminator has no iota branches. This does
+not implement arbitrary user inductive declarations or unchecked environment
+assumptions. The eight-node dependent eliminator type is allocated by weighted
+transitions from a compiled schema. Preparation does not infer it as a proof
+certificate or inject an axiom declaration. Source exports preserve the actual
+False/False.rec occurrences. User declarations remain checked in order.
+
+This slice has targeted native/reference/Lean smokes; final broad differential
+validation is deferred until architecture/feature implementation is complete,
+as requested. The nanoda syntax adapter has not yet been extended for these
+intrinsics; existing nanoda evidence applies to the earlier lambda-Pi fragment.

@@ -58,6 +58,10 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .app fn arg => return jsonArray [text "app", ← encodeExpr env fn, ← encodeExpr env arg]
   | .const name levels =>
     let values ← levels.mapM (fun level => (liftM (groundLevel level) : ExportM Nat))
+    if name == ``False && values.isEmpty then
+      return jsonArray [text "builtin",text "False"]
+    if name == ``False.rec && values.length == 1 then
+      return jsonArray [text "builtin",text "False.rec",toJson values[0]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
   | .mdata _ inner => encodeExpr env inner

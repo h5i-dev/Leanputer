@@ -11,10 +11,10 @@ import time
 import torch
 
 from .bitvec import pack_words
-from .machine_spec import MachineConfig, prepare
-from .native import emit_stock
+from .machine_spec import MachineConfig, Outcome, Reason, prepare
+from .native import emit_stock, ScratchResetCapacity
 from .native_vendor.qwenputer.expr import Expr
-from .native_vendor.qwenputer.ir import Graph, Target, K, A_BIT, A_REF
+from .native_vendor.qwenputer.ir import Graph, Target, Head, K, A_BIT, A_REF
 from .runner import parse_document
 from .state_layout import StateLayout, RegisterLayout
 from .transition import compile_addresses, RuleCompiler
@@ -69,7 +69,8 @@ class NativeMachine:
         return result
 
     def check(self, documents, diagnostic_steps=None):
-        states = [prepare(self.config,*parse_document(document)) for document in documents]
+        parsed = [parse_document(document) for document in documents]
+        states = [prepare(self.config,*judgment) for judgment in parsed]
         control_width = self.register_layout.width
         # Static syntax load. Equal capacities give every item the same boot length.
         boot = []
@@ -88,6 +89,7 @@ class NativeMachine:
         initial = torch.zeros(len(states),1,len(self.feature_slots))
         for index,state in enumerate(states): initial[index,0,:control_width] = self.state_layout.encode(state)[0,:control_width]
         device = next(self.model.parameters()).device
+        if device.type=='cuda': torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction=False
         if device.type=='cuda': torch.cuda.synchronize()
         started = time.perf_counter()
         with torch.inference_mode():
@@ -116,7 +118,12 @@ class NativeMachine:
         for row in bits.tolist():
             registers.append({name:sum(int(row[s.start+i]) << i for i in range(s.stop-s.start))
                               for name,s in self.register_layout.slices.items()})
-        return dict(registers=registers,forward_seconds=time.perf_counter()-started,
+        results = [dict(name=document.get('name',str(index)),status=Outcome(r['status']).name,
+                        reason=Reason(r['reason']).name,assumptions=[declaration.name for declaration in judgment[2] if declaration.value is None],
+                        semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL))
+                   for index,(document,judgment,r) in enumerate(zip(documents,parsed,registers))]
+        return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
+                    primitive_basis=['False','False.rec'],
                     stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
                     parameters=sum(p.numel() for p in self.model.parameters()),
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
@@ -150,6 +157,10 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     head_metadata = []
 
     def read(bank,query,name):
+        saved_barrier = builder.barrier
+        # Produce one-hot arrays shortly before their consuming native head,
+        # rather than keeping every port's arrays live across all read rounds.
+        builder.barrier = max(builder.barrier, max((node.level for node in graph.nodes if isinstance(node,Head)),default=0))
         cells = getattr(config,bank); width = {'heap':4,'stack':6,'context':1,'constants':3}[bank]*config.word_bits
         boot = boot_banks[bank]
         paddr,penable,payload = pending.get(bank,([Expr()]*address_width,Expr(),[Expr()]*width))
@@ -178,6 +189,8 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
                                  min_level=builder.barrier)
             head_metadata.append(dict(name=named,bank=bank,row_bank=part,layer=(graph.nodes[-1].level-1)//2))
             parts.append(outputs)
+            builder.barrier = graph.nodes[-1].level
+        builder.barrier = saved_barrier
         return [sum((part[i] for part in parts),Expr())for i in range(width)]
 
     collect = lambda circuit,outputs:(circuit,outputs)
@@ -206,7 +219,13 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         graph.ffn([(1,graph.one,value),(-1,graph.one,feature)], name=f'commit/{index}',into=feature,min_level=level)
     dimensions = [next(iter(expression.terms))for expression in control]
     keep = {next(iter(expression.terms))for expression in features}
-    model,layout,_ = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
+    required_reset = None
+    try:
+        model,layout,_ = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
+    except ScratchResetCapacity as error:
+        required_reset = error.required
+    if required_reset is not None:
+        return compile_native_machine(config,intermediate,required_reset,device,dtype)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata)
 
