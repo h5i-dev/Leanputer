@@ -62,9 +62,8 @@ class ScratchResetCapacity(ValueError):
         super().__init__(f'native scratch reset needs {required} reserved layers')
 
 
-def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
-    from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
-    from transformers.initialization import no_init_weights
+def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0):
+    """Allocate residual slots and report stock shapes before allocating tensors."""
     results = result_dims
     keep = set(result_dims) | set(keep_dims or ())
     allocation = allocate(graph, None, keep, intermediate)
@@ -82,6 +81,14 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
               head_dim=256, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
               rope_parameters=dict(rope_type='default', rope_theta=10000000, partial_rotary_factor=.25,
                                    mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
+    return layout,allocation,tc,clear
+
+
+def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
+    from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
+    from transformers.initialization import no_init_weights
+    layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers)
+    layers=graph.n_layers()
     native_config = Qwen3_5TextConfig(**tc)
     native_config._attn_implementation = 'eager'
     # Build stock modules directly at the target dtype/device, then copy one

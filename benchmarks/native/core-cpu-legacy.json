@@ -1,0 +1,103 @@
+{
+  "format": "leanputer.native-report.v1",
+  "results": [
+    {
+      "name": "dependent-identity",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 52
+    },
+    {
+      "name": "unbound-variable",
+      "status": "REJECT",
+      "reason": "UNBOUND",
+      "assumptions": [],
+      "semantic_steps": 11
+    }
+  ],
+  "counts": {
+    "ACCEPT": 1,
+    "REJECT": 1
+  },
+  "config": {
+    "heap": 32,
+    "stack": 8,
+    "context": 4,
+    "constants": 2,
+    "universe": 4,
+    "fuel": 64
+  },
+  "batches": [
+    {
+      "forward_seconds": 76.60124255399569,
+      "layout_policy": "legacy",
+      "layout_statistics": {
+        "allocated_slots": 8342,
+        "persistent_channels": 274,
+        "subtract_handovers": 4231,
+        "head_clears": 147,
+        "logic_units_per_layer": 1024,
+        "reset_layers": 9,
+        "graph": {
+          "layers": 48,
+          "dims": 12721,
+          "heads": 8,
+          "ffn_units": 13735,
+          "max_units": 1024,
+          "max_heads": 1
+        }
+      },
+      "primitive_basis": [
+        "False",
+        "False.rec",
+        "Iff",
+        "Iff.intro",
+        "And",
+        "And.intro",
+        "Eq",
+        "Eq.refl",
+        "Eq.rec",
+        "True",
+        "True.intro"
+      ],
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 1686507104,
+      "weight_bytes": 3373014208,
+      "cuda_peak_allocated_bytes": null,
+      "host_process_peak_rss_bytes": 4391399424,
+      "hidden_size": 9216,
+      "native_layers": 49,
+      "boot_tokens": 5,
+      "applied_steps": 66,
+      "input_positions": [
+        0,
+        1
+      ]
+    }
+  ],
+  "parameters": 1686507104,
+  "weight_bytes": 3373014208,
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec",
+    "True",
+    "True.intro"
+  ],
+  "validation_scope": "Experimental native backend; broad differential validation pending",
+  "compile_seconds": 35.180512332000944,
+  "device": "cpu",
+  "hidden_size": 9216,
+  "native_layers": 49,
+  "intermediate_size": 1024,
+  "measurement_scope": "One fresh process development run; small two-fixture configuration only, not large mathlib CPU throughput",
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "5.19.0"
+}

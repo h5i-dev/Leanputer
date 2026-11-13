@@ -1,0 +1,143 @@
+{
+  "registers": [
+    {
+      "mode": 8,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 0,
+      "r": 1,
+      "ctx": 0,
+      "sp": 0,
+      "free": 164,
+      "scan": 43,
+      "decl": 2,
+      "decl_count": 2,
+      "term": 32,
+      "claim": 42,
+      "fuel": 323,
+      "status": 1,
+      "reason": 0,
+      "head": 0,
+      "arity": 0
+    },
+    {
+      "mode": 8,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 0,
+      "r": 1,
+      "ctx": 0,
+      "sp": 0,
+      "free": 123,
+      "scan": 26,
+      "decl": 5,
+      "decl_count": 5,
+      "term": 12,
+      "claim": 25,
+      "fuel": 295,
+      "status": 1,
+      "reason": 0,
+      "head": 0,
+      "arity": 0
+    },
+    {
+      "mode": 8,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 0,
+      "r": 0,
+      "ctx": 0,
+      "sp": 0,
+      "free": 46,
+      "scan": 12,
+      "decl": 3,
+      "decl_count": 3,
+      "term": 6,
+      "claim": 11,
+      "fuel": 1154,
+      "status": 2,
+      "reason": 5,
+      "head": 0,
+      "arity": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "Function.const_def@[1,1]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 1213
+    },
+    {
+      "name": "relative-K",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [
+        "A",
+        "a",
+        "q",
+        "P",
+        "h"
+      ],
+      "semantic_steps": 1241
+    },
+    {
+      "name": "wrong-refl-endpoint",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [
+        "A",
+        "a",
+        "b"
+      ],
+      "semantic_steps": 382
+    }
+  ],
+  "forward_seconds": 121.77161718099524,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 2162,
+    "persistent_channels": 358,
+    "subtract_handovers": 7056,
+    "head_clears": 176,
+    "logic_units_per_layer": 512,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 53,
+      "dims": 9395,
+      "heads": 12,
+      "ffn_units": 10710,
+      "max_units": 512,
+      "max_heads": 1
+    }
+  },
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec",
+    "True",
+    "True.intro"
+  ],
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 464688106,
+  "weight_bytes": 929376212,
+  "cuda_peak_allocated_bytes": 970640384,
+  "host_process_peak_rss_bytes": 1706348544,
+  "hidden_size": 2304,
+  "native_layers": 54,
+  "boot_tokens": 48,
+  "applied_steps": 1538,
+  "compile_seconds": 8.386634751004749,
+  "final_registers_match_eq_fc65017_baseline": true,
+  "comparison_scope": "Same Eq cases/capacities/fuel; compact feature superset also includes let/True. Main strict same-feature comparison is let-true baseline."
+}

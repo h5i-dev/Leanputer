@@ -1,0 +1,137 @@
+{
+  "format": "leanputer.native-report.v1",
+  "results": [
+    {
+      "name": "iff_mpr_iff_true_intro@[]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 2685
+    },
+    {
+      "name": "substitute-through-let",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 117
+    },
+    {
+      "name": "shift-through-let",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 141
+    },
+    {
+      "name": "bad-unused-let-value",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [],
+      "semantic_steps": 45
+    },
+    {
+      "name": "forall_true_left@[]",
+      "status": "UNSUPPORTED",
+      "reason": "unsupported inductive/constructor/recursor/quotient dependency Nonempty"
+    },
+    {
+      "name": "Function.LeftInverse.comp_eq_id@[1,1]",
+      "status": "UNSUPPORTED",
+      "reason": "unsupported inductive/constructor/recursor/quotient dependency Quot"
+    }
+  ],
+  "counts": {
+    "ACCEPT": 3,
+    "REJECT": 1,
+    "UNSUPPORTED": 2
+  },
+  "config": {
+    "heap": 512,
+    "stack": 32,
+    "context": 16,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 3072
+  },
+  "batches": [
+    {
+      "forward_seconds": 315.1964173209999,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 2407,
+        "persistent_channels": 396,
+        "subtract_handovers": 9754,
+        "head_clears": 369,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 69,
+          "dims": 12531,
+          "heads": 20,
+          "ffn_units": 13667,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "primitive_basis": [
+        "False",
+        "False.rec",
+        "Iff",
+        "Iff.intro",
+        "And",
+        "And.intro",
+        "Eq",
+        "Eq.refl",
+        "Eq.rec",
+        "True",
+        "True.intro"
+      ],
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 668641546,
+      "weight_bytes": 1337283092,
+      "cuda_peak_allocated_bytes": 1388660224,
+      "host_process_peak_rss_bytes": 1707610112,
+      "hidden_size": 2560,
+      "native_layers": 70,
+      "boot_tokens": 80,
+      "applied_steps": 3074,
+      "input_positions": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "parameters": 668641546,
+  "weight_bytes": 1337283092,
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec",
+    "True",
+    "True.intro"
+  ],
+  "validation_scope": "Experimental native backend; broad differential validation pending",
+  "compile_seconds": 11.346320368000306,
+  "device": "cuda",
+  "hidden_size": 2560,
+  "native_layers": 70,
+  "intermediate_size": 1024,
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "5.19.0",
+  "linear_key_head_dim": 128,
+  "linear_value_head_dim": 128,
+  "linear_num_key_heads": 1,
+  "linear_num_value_heads": 1,
+  "matched_baseline": "benchmarks/native/let-true-baseline.json",
+  "measurement_scope": "One cold development run: compilation separately; forward includes syntax boot and fixed fuel; not steady repeated latency",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "feature_set": "Eq plus let and True/True.intro; other new positive primitives paused"
+}

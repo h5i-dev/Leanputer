@@ -36,6 +36,15 @@ class Builder:
                 return self.zero
         return self.c.NOT(arg)
 
+    def masked_or(self, choices, factor=True):
+        """Distribute OR over repeated guarded data, including overlapping guards."""
+        if factor:
+            grouped={}
+            for condition,value in choices:
+                if value!=self.zero:grouped.setdefault(value,[]).append(condition)
+            choices=[(self.OR(*conditions),value)for value,conditions in grouped.items()]
+        return self.OR(*(self.AND(condition,value)for condition,value in choices))
+
     def const(self, value, width):
         if not 0 <= value < 1 << width:
             raise ValueError('constant does not fit bit-vector')

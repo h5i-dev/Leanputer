@@ -14,3 +14,11 @@ and experimental provenance, including dirty worktree status where applicable.
 A row marked UNSUPPORTED was screened by external syntax preparation and was
 never accepted by the weighted checker. Logical rejects, resource failures and
 external-reference tool failures must remain distinct from successful proofs.
+
+
+`native/let-true-{baseline,compact}.json` compare the same six regression rows
+under identical capacities/fuel and feature set:3ACCEPT,1REJECT,2UNSUPPORTED.
+Only one row is a new real mathlib theorem; this is not a population coverage
+estimate. The files retain actual model bytes/parameters, memory and cold
+compile/fixed forward costs. Input/config files reproduce the comparison.
+See docs/native-downsizing.md for timing boundaries and remaining limitations.

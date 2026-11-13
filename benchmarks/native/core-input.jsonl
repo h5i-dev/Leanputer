@@ -1,0 +1,2 @@
+{"format": "leanputer.dependent.v1", "name": "dependent-identity", "term": ["lam", ["sort", 0], ["var", 0]], "claim": ["pi", ["sort", 0], ["sort", 0]]}
+{"format": "leanputer.dependent.v1", "name": "unbound-variable", "term": ["var", 0], "claim": ["sort", 0]}

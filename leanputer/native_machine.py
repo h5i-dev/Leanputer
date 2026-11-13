@@ -17,9 +17,10 @@ import torch
 from .bitvec import pack_words
 from .dependent import Exhausted, Unsupported
 from .machine_spec import MachineConfig, Outcome, Reason, prepare
-from .native import emit_stock, ScratchResetCapacity
+from .native import emit_stock, plan_stock, ScratchResetCapacity
 from .native_vendor.qwenputer.expr import Expr
-from .native_vendor.qwenputer.ir import Graph, Target, Head, K, A_BIT, A_REF
+from .native_vendor.qwenputer.ir import Graph, Target, Head, FFN, K, A_BIT, A_REF
+from .native_vendor.qwenputer.emit import reads
 from .runner import parse_document
 from .primitives import PRIMITIVE_CODES
 from .state_layout import StateLayout, RegisterLayout
@@ -27,15 +28,20 @@ from .transition import compile_addresses, RuleCompiler
 
 
 class NativeBuilder:
-    def __init__(self, intermediate=1024, reset_layers=4):
-        self.graph = Graph(Target(key_heads=1, value_heads=1, intermediate=intermediate))
+    def __init__(self, intermediate=1024, reset_layers=4, layout_policy='compact'):
+        # A reused residual slot needs an extra SwiGLU subtraction unit. Filling
+        # every row with logic prevents handovers and needlessly grows global H.
+        gate_units=intermediate if layout_policy=='legacy' else intermediate//2
+        self.graph = Graph(Target(key_heads=1, value_heads=1, intermediate=gate_units))
         self.barrier = 2*reset_layers
+        self.layout_policy=layout_policy
 
     def feature(self, name): return self.graph.token_feature(name, lambda token:0)
 
     def gate(self, operation, values, name):
         total = sum(values, Expr())
         one = self.graph.one
+        if operation=='not' and self.layout_policy=='compact':return one-total
         if operation == 'not': terms = [(1, one, one-total)]
         elif operation == 'and': terms = [(1, one, total+1-len(values))]
         else: terms = [(1, one, total),(-1, one, total-1)]
@@ -56,6 +62,22 @@ class NativeBuilder:
                                            for i,bit in enumerate(bits)], f'{name}/{row}') for row in range(cells)]
 
 
+def validate_native_schedule(graph):
+    """Check read/write dependencies after compiler-only channel scheduling."""
+    writers={}
+    for index,node in enumerate(graph.nodes):
+        dimensions=[node.out] if isinstance(node,FFN) else [d for vh in node.vheads()for _,d,_ in vh.out]
+        for dimension in dimensions:writers.setdefault(dimension,[]).append(index)
+    for index,node in enumerate(graph.nodes):
+        for dimension in reads(node):
+            previous=[w for w in writers.get(dimension,[])if w<index]
+            following=[w for w in writers.get(dimension,[])if w>index]
+            if previous and max(graph.nodes[w].level for w in previous)>=node.level:
+                raise ValueError('native schedule reads before a preceding write: '+node.name)
+            if following and min(graph.nodes[w].level for w in following)<node.level:
+                raise ValueError('native schedule reads after a following overwrite: '+node.name)
+
+
 @dataclass
 class NativeMachine:
     model: object
@@ -66,6 +88,8 @@ class NativeMachine:
     config: MachineConfig
     offsets: dict
     native_heads: list
+    layout_policy: str='legacy'
+    layout_statistics: object=None
 
     def embeddings(self, features):
         parameter = next(self.model.parameters())
@@ -130,6 +154,7 @@ class NativeMachine:
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL))
                    for index,(document,judgment,r) in enumerate(zip(documents,parsed,registers))]
         return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
+                    layout_policy=self.layout_policy,layout_statistics=self.layout_statistics,
                     primitive_basis=list(PRIMITIVE_CODES),
                     stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
                     parameters=sum(p.numel() for p in self.model.parameters()),
@@ -141,9 +166,13 @@ class NativeMachine:
 
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
-                           intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16):
+                           intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
+                           layout_policy='compact',plan_only=False):
+    if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
+    if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
+    if type(reset_layers)is not int or reset_layers<1:raise ValueError('recurrent native execution requires scratch reset layers')
     state_layout = StateLayout(config); registers = RegisterLayout(state_layout)
-    builder = NativeBuilder(intermediate,reset_layers); graph = builder.graph
+    builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
     features = [builder.feature(name) for name in registers.names]
     control = list(features)
     pending = {}
@@ -214,7 +243,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     second = builder.circuit(address2,control+first,'address2')
     ctxbits = config.context.bit_length()-1
     all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
-    plan = RuleCompiler(registers).finish('attention_delta',target=collect)
+    plan = RuleCompiler(registers,factor_choices=layout_policy=='compact').finish('attention_delta',target=collect)
     outputs = builder.circuit(plan,control+all_reads,'transition')
     update_features = control+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
     if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
@@ -227,17 +256,25 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     level = max(graph.level(expression) for expression in outputs)+2
     for index,(feature,value) in enumerate(zip(update_features,outputs)):
         graph.ffn([(1,graph.one,value),(-1,graph.one,feature)], name=f'commit/{index}',into=feature,min_level=level)
+    validate_native_schedule(graph)
     dimensions = [next(iter(expression.terms))for expression in control]
     keep = {next(iter(expression.terms))for expression in features}
     required_reset = None
     try:
-        model,layout,_ = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
+        if plan_only:
+            layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers)
+            return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
+                        persistent_channels=len(keep),clear_channels=len(clear),layout_policy=layout_policy)
+        model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
-    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata)
+    stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
+               subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
+               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats())
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats)
 
 
 def check_documents(machine, documents, batch_size=4):
@@ -280,6 +317,7 @@ def main(argv=None):
     parser.add_argument('--device',choices=('cpu','cuda'),default='cpu')
     parser.add_argument('--batch-size',type=int,default=4)
     parser.add_argument('--intermediate',type=int,default=1024)
+    parser.add_argument('--layout',choices=('compact','legacy'),default='compact')
     args=parser.parse_args(argv)
     torch.set_num_threads(1)
     try:
@@ -291,7 +329,7 @@ def main(argv=None):
             parsed=json.loads(content);documents=parsed if isinstance(parsed,list) else [parsed]
         except json.JSONDecodeError: documents=[json.loads(line)for line in content.splitlines()if line.strip()]
         started=time.perf_counter()
-        machine=compile_native_machine(config,intermediate=args.intermediate,device=args.device)
+        machine=compile_native_machine(config,intermediate=args.intermediate,device=args.device,layout_policy=args.layout)
         compilation=time.perf_counter()-started
         report=check_documents(machine,documents,args.batch_size)
         report.update(compile_seconds=compilation,device=args.device,hidden_size=machine.layout.hidden,

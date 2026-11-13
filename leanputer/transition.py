@@ -68,10 +68,11 @@ def compile_initializer(layout, optimized=True):
 
 
 class RuleCompiler:
-    def __init__(self, layout, optimized=True):
+    def __init__(self, layout, optimized=True, factor_choices=False):
         self.layout, self.cfg = layout, layout.config
         self.width = self.cfg.word_bits
         self.optimized = optimized
+        self.factor_choices=factor_choices
         self.g = Builder(layout.names + port_names(self.width, PORTS), optimized)
         self.c = self.g.c
         self.old = state_words(self.g, layout)
@@ -123,6 +124,9 @@ class RuleCompiler:
     def mux(self, bit, x, y): return self.g.mux(bit, self.vec(x), self.vec(y))
     def mode(self, op): return self.AND(self.active, self.eq(self.r['mode'], op))
     def tag(self, node, *tags): return self.OR(*(self.eq(node['tag'], t) for t in tags))
+
+    def masked_or(self, choices):
+        return self.g.masked_or(choices,factor=self.factor_choices)
 
     def emit(self, condition, **updates):
         for name, value in updates.items():
@@ -525,7 +529,7 @@ class RuleCompiler:
                 enable = self.OR(*(condition for condition, _, _ in choices))
                 outputs.extend(address[:getattr(self.cfg, bank).bit_length()-1]); outputs.append(enable)
                 for field in range(len(fields)):
-                    outputs.extend(self.OR(*(self.AND(condition, payload[field][bit]) for condition, _, payload in choices))
+                    outputs.extend(self.masked_or([(condition,payload[field][bit]) for condition, _, payload in choices])
                                    for bit in range(self.width))
             return self.g.compile(outputs, target=target)
         # Masked memory writes are control FFNs, with one write per bank/step.
@@ -560,8 +564,7 @@ class RuleCompiler:
                 outputs.extend(self.g.mux(condition, value, self.old[name])); continue
             keep = self.NOT(self.OR(*(condition for condition, _ in choices)))
             for i, old in enumerate(self.old[name]):
-                outputs.append(self.OR(self.AND(keep, old),
-                    *(self.AND(condition, value[i]) for condition, value in choices)))
+                outputs.append(self.masked_or([(keep,old)]+[(condition,value[i])for condition,value in choices]))
         return outputs
 
 

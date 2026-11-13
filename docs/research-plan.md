@@ -212,3 +212,11 @@ cannot be reused and global dense width grows. Reserve handover capacity,
 measure slot/layer/weight cost and run exactly the same few cases. Other
 positive recursor work is preserved but paused. Resume features after a
 material sustainable reduction; broad validation remains deferred.
+
+
+Downsizing main matched result passed:3A1R2Uidenticalwithsame74-phasefeature
+set/capacities/fuel. Factored data selection + affine NOT + reserved handover
+units reduce4.021B→668.6Mparameters(6.013x),hidden13312→2560,layers81→70.
+GPUforward372.825→315.196s(only1.183x); high-throughput execution remains
+unsolved. Eq retention and small matched CPU/GPU fixtures finish the targeted
+checkpoint, then resume preserved positive-construct work. No broad campaign.

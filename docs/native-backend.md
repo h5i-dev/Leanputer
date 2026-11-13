@@ -1,4 +1,4 @@
-# Stock Qwen3.5 backend migration
+# Stock Qwen3.5 native backend
 
 The user requirement is a small existing Transformer with compiler-generated
 weights and stock forward, followed by feature expansion on that backend.
@@ -7,7 +7,7 @@ reference/prototype; arbitrary tensor operations plus attention do not make it
 a conventional Transformer. Full pretrained language-model integration is last
 and optional. No pretrained model weights have been downloaded.
 
-## Implemented native slice
+## Initial bounded STLC slice
 
 `python -m leanputer.native` compiles the **complete bounded STLC checker** into
 unmodified `transformers.Qwen3_5ForCausalLM`. Syntax/table validity, lexical
@@ -194,3 +194,16 @@ This exact Eq+let+True feature set and capacities/documents form the matched
 baseline. Further Nonempty/Exists/Or/recursor work is preserved on scratch and
 paused. No broad validation campaign, capacity reduction, custom runtime or
 host semantic work is part of the downsizing task.
+
+
+## Compact layout checkpoint
+
+The default shared-native layout now factors repeated guarded writes, inlines
+NOT in projection weights and reserves SwiGLU units for residual slot reuse.
+At the identical512-cell Eq+let+True feature boundary, stock native smoke
+results/assumptions/semantic steps match while parameters shrink4.021B→668.6M
+and GPU allocated peak8.169GB→1.389GB. Compile81.135→11.346s; fixed forward
+372.825→315.196s. Stock fallback runtime remains slow. `--layout legacy`
+retains the baseline compiler for reproduction. See native-downsizing.md for
+exact inputs, dimensions, costs, numerical scope and remaining architectural
+debt. No semantic phase or capacity was removed.

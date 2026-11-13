@@ -1,29 +1,29 @@
 # Leanputer
 
-Leanputer compiles proof-checking logic into deterministic weights without
-training. The [new native path](docs/native-backend.md) executes a complete
-bounded STLC checker using stock `Qwen3_5ForCausalLM.forward`, with a small
-compiler-generated configuration and no pretrained backbone. The shared dependent checker also runs through stock Qwen3.5 layers with
-active GatedDeltaNet cache and identity hidden-state feedback. Its generated
-dense configurations have grown substantially with feature support; sizes and
-timing are recorded in the native documentation. The custom sparse
-circuit/attention-RAM implementation remains a semantic reference backend.
+Leanputer compiles a bounded proof checker into deterministic weights without
+training. The [native backend](docs/native-backend.md) runs through stock
+`Qwen3_5ForCausalLM.forward`, GatedDeltaNet cache and identity hidden-state
+feedback. The compiler generates all weights for a standalone configuration.
+The custom sparse circuit/attention-RAM implementation remains a reference.
 
-The research program is in progress. Current support is a ground-universe Lean
-lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
-and acyclic axiom/definition/opaque dependencies. The native/shared IR now also
-implements False/False.rec and the Iff/And proposition structures with
-constructors and field projections, True/True.intro, plus
-Eq/Eq.refl/dependent Eq.rec, as fixed
-kernel primitives. Targeted stock
-forward smokes pass; broader validation is pending. Numeric universes use
-Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
-Opaque dependency values are checked while their opacity is preserved. Symbolic
-universe constraints, general inductive/recursor declarations, quotient rules,
-and arbitrary structure projections are not yet supported. Let expressions
-retain their annotations/values and are checked and zeta-reduced in weights. The supported ground fragment is still experimental.
-The tool does not claim a complete Lean kernel, formal soundness verification,
-or conference-level results from the current test count.
+[Layout improvements](docs/native-downsizing.md) reduce the matched 512-cell
+model from 4.021 billion to 668.6 million BF16 parameters, with identical
+outcomes on targeted checks. GPU forward remains slow: 372.83s → 315.20s for
+the fixed development batch. These results establish a size reduction, not
+high proof throughput or broad correctness.
+
+The supported ground-universe fragment includes Sort, de Bruijn variables,
+dependent Pi, annotated Lam, App, checked acyclic dependencies and let
+expressions. Fixed kernel primitives provide False and its eliminator, Iff/And
+constructors and projections, True/True.intro, and Eq/refl/dependent Eq.rec.
+Numeric universes use Lean's impredicative Prop rule. Conversion includes
+beta/delta/zeta, function eta and definitional proof irrelevance. Opaque values
+are checked while opacity is preserved.
+
+Symbolic universe constraints, general inductive declarations/recursors,
+quotient rules and arbitrary structure projections remain unsupported. The
+fragment and native numerical correspondence are experimental. Whole-checker
+formal soundness and broad native differential validation remain outstanding.
 
 Installation and validation
 
