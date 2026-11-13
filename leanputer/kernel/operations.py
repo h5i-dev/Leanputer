@@ -231,3 +231,33 @@ def spine(arena, root):
         root = row.a
     args.reverse()
     return root, tuple(args)
+
+
+def representation_equal(arena, left, right):
+    """Equality of erased syntax, not full conversion or its negative answer.
+
+    Source expr_eq_fn<false> ignores binder names/info. Our codec additionally
+    erases metadata payloads and let nondep optimization flags. Typed vector
+    roles are determined by the owning expression tag, not integer aliases.
+    """
+    pending = [(left, right)]
+    while pending:
+        arena.check_stack(pending); arena.tick()
+        left, right = pending.pop()
+        x, y = arena.expr(left), arena.expr(right)
+        if x.tag != y.tag: return False
+        if left == right: continue
+        if x.tag in (Tag.BVAR, Tag.LOCAL, Tag.SORT):
+            if x.a != y.a: return False
+        elif x.tag == Tag.CONST:
+            if x.a != y.a or arena.vector(x.b) != arena.vector(y.b): return False
+        elif x.tag in (Tag.NAT, Tag.STRING):
+            if arena.vector(x.a) != arena.vector(y.a): return False
+        elif x.tag == Tag.PROJ:
+            if (x.a, x.b) != (y.a, y.b): return False
+            pending.append((x.c, y.c))
+        elif x.tag == Tag.MDATA: pending.append((x.a, y.a))
+        else:
+            pending.extend(((x.a, y.a), (x.b, y.b)))
+            if x.tag == Tag.LET: pending.append((x.c, y.c))
+    return True

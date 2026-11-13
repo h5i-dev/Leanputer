@@ -69,6 +69,8 @@ class Task(IntEnum):
     LEVEL_GEQ = 26              # Pinned conservative is_geq, no numeric grounding.
     LEVEL_GEQ_CORE = 27         # Internal normalized Max/IMax/offset traversal.
     EXPR_SCOPE = 28             # Closed raw Expr plus scoped Sort/Const universes.
+    EXPR_EQUAL = 29             # Erased-syntax equality; false is NOT defeq false.
+    VECTOR_EQUAL = 30           # Internal typed vector service (levels/limbs/bytes).
 
 
 
@@ -114,6 +116,10 @@ class Mode(IntEnum):
     GEQ_FALLBACK_RIGHT = 38
     GEQ_FALLBACK_LEFT = 39
     GEQ_OFFSET_BASE = 40
+    EXPR_EQUAL_RIGHT = 41
+    VECTOR_HEADER_RIGHT = 42
+    VECTOR_CELL_LEFT = 43
+    VECTOR_CELL_RIGHT = 44
 
 
 CALL_BETA_ZETA = 16
@@ -149,6 +155,8 @@ CALL_GEQ_MAX_SECOND = 45
 CALL_GEQ_OFFSET_LEFT = 46
 CALL_GEQ_OFFSET_RIGHT = 47
 CALL_GEQ_BASE_EQUAL = 48
+EXPR_EQUAL_REST = 49
+CALL_VECTOR_LEVEL_EQUAL = 50
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -161,7 +169,7 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'peer', 'left_tag', 'left_a', 'left_b', 'level_offset', 'pending_compare',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
     'order_same_base', 'merge_l', 'merge_r', 'merge_hl', 'merge_tl', 'merge_hr', 'merge_tr',
-    'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset', 'geq_left', 'geq_right')
+    'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset', 'geq_left', 'geq_right', 'left_c', 'vector_expected_role', 'vector_remaining', 'comparison_root')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -260,7 +268,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -347,9 +355,9 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.GEQ_OFFSET_BASE or r['task'] > Task.EXPR_SCOPE
+                or r['mode'] > Mode.VECTOR_CELL_RIGHT or r['task'] > Task.VECTOR_EQUAL
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
-                or r['vec_changed'] > 1 or r['pending_compare'] > 1 or r['order_same_base'] > 1
+                or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
@@ -359,6 +367,7 @@ class SpecMachine:
             return s
         from . import level_normalize_machine as normalization
         from . import level_geq_machine as geq
+        from . import expression_equal_machine as expression_equal
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_open']:
@@ -367,12 +376,15 @@ class SpecMachine:
                     r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
                         task=Task.FOLD_TELESCOPE, pending_fold=0)
                 elif r['pending_compare']:
-                    r.update(mode=Mode.WALK, x=r['r'], task=Task.LEVEL_EQUAL, pending_compare=0)
+                    r.update(mode=Mode.WALK, x=r['r'], peer=r['comparison_root'],
+                             task=Task.LEVEL_EQUAL if r['pending_compare'] == 1 else Task.EXPR_EQUAL, pending_compare=0)
                 else:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in geq.PRIVATE_PHASES:
+                if phase in expression_equal.PRIVATE_PHASES:
+                    expression_equal.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in geq.PRIVATE_PHASES:
                     geq.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in normalization.PRIVATE_PHASES:
                     normalization.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -449,7 +461,8 @@ class SpecMachine:
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
         level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE)
-        valid_tag = (tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
+        valid_tag = (tag == (CellTag.VECTOR_CELL if r['mode'] in (Mode.VECTOR_CELL_LEFT, Mode.VECTOR_CELL_RIGHT) else CellTag.VECTOR) if r['task'] == Task.VECTOR_EQUAL else
+            tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
             tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
             tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
@@ -459,6 +472,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if expression_equal.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if geq.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if normalization.step(self, tag, a, b, c, stop, ret, alloc):

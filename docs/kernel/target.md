@@ -338,3 +338,10 @@ The [eight-input full expression scope smoke](../../benchmarks/kernel-expression
 connects BVar/Local closure and all Sort/Const universe positions to the SAME
 weighted membership service. Raw scope data does not establish constant existence,
 signature arity, typing or admission. Those remain subsequent typed callers.
+
+The [all-tag expression comparison smoke](../../benchmarks/kernel-expression-comparison-stock/README.md)
+connects typed vector streaming and the SAME structural level comparator. The
+[representation contract](expression-comparison.md) records erased annotations
+and the distinction from full conversion; false is NOT definitional inequality.
+Composed source instantiation creates duplicate runtime levels/vectors before
+comparison. Full typed/environment/admission callers still remain unfinished.

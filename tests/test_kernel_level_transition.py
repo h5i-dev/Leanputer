@@ -9,7 +9,7 @@ from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from tests.test_kernel_traversal_machine import CircuitHarness
 from tests.test_kernel_native_cells import decode_syntax
-from leanputer.kernel.operations import substitute_levels, instantiate_levels
+from leanputer.kernel.operations import substitute_levels, instantiate_levels, representation_equal
 from types import SimpleNamespace
 
 
@@ -224,6 +224,42 @@ def expression_scope_cases():
         name=f'expr-scope-{i}', source=source, root=root) for i, (source, root) in enumerate(probes)]
 
 
+def expression_equality_cases():
+    from copy import deepcopy
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    original = expression_cases()[0]['source']['target']['type']
+    def binder_info(node):
+        if not isinstance(node, list): return node
+        result = [binder_info(child) for child in node]
+        if result and result[0] in ('pi', 'lam'): result[1] = 0
+        return result
+    def source(left, right):
+        return dict(format='leanputer.kernel-source.v1', status='EXPORTED', declarations=[],
+            target=dict(kind='definition', name=name('comparison'), level_params=[name('u'), name('v'), name('w')],
+                type=left, value=right))
+    probes = [
+        (original, binder_info(original)),
+        (['var', 0], ['local', 1]), (['local', 31], ['local', 32]),
+        (['sort', ['max', u, ['zero']]], ['sort', u]),
+        (['const', name('f'), [u, v]], ['const', name('f'), [u, w]]),
+        (['const', name('f'), [u]], ['const', name('f'), []]),
+        (['nat', '1'], ['nat', '2']), (['string', 'ab'], ['string', 'ac']),
+        (['app', ['var', 0], ['var', 1]], ['app', ['var', 0], ['var', 2]]),
+        (['let', ['sort', u], ['nat', '1'], ['var', 0]], ['let', ['sort', u], ['nat', '1'], ['var', 1]]),
+        (['proj', name('R'), 0, ['mdata', ['var', 0]]], ['proj', name('R'), 0, ['mdata', ['var', 1]]])]
+    docs = [dict(format='leanputer.kernel-data-operation.v1', operation='expr_equal',
+        name=f'expr-representation-equal-{i}', source=source(left, right)) for i, (left, right) in enumerate(probes)]
+    left = ['pi', 0, ['sort', u], ['const', name('f'), [['succ', u], ['imax', v, u], u]]]
+    right = ['pi', 3, ['sort', w], ['const', name('f'), [['succ', w], ['imax', v, w], w]]]
+    composed = dict(format='leanputer.kernel-data-operation.v1', operation='expr_instantiate_equal',
+        name='expr-instantiate-then-compare', source=source(left, right), bindings=[dict(parameter=name('u'), level=w)])
+    docs.append(composed)
+    mismatch = deepcopy(composed); mismatch['name'] += '-mismatch'
+    mismatch['source']['target']['value'][3][2][-1] = v
+    docs.append(mismatch)
+    return docs
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -291,6 +327,32 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_all_tag_representation_comparison_and_runtime_duplicate_vectors(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in expression_equality_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            duplicate_compared = False
+            for step in range(cfg.fuel+2):
+                r = state['regs']
+                if r['pending_compare'] == 2 and r['mode'] == spec.Mode.RETURN and not r['sp']:
+                    duplicate_compared = r['r'] != r['comparison_root']
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            left, right = source.target.type, source.target.value
+            if arguments['operation'] == 'expr_instantiate_equal':
+                left = instantiate_levels(source.arena, left, dict(arguments['bindings']))
+                self.assertTrue(duplicate_compared)
+            expected = int(representation_equal(source.arena, left, right))
+            self.assertEqual(state['regs']['r'], expected, doc['name'])
+            self.assertEqual(state['regs']['sp'], 0)
+            self.assertEqual(circuit.step(state), state)
 
     def test_complete_expression_scope_reuses_symbolic_level_scope(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)

@@ -1,0 +1,2399 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 112,
+      "free": 84,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 21,
+      "depth": 0,
+      "task": 29,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 24,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 21,
+      "left_tag": 7,
+      "left_a": 4,
+      "left_b": 21,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 3,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 27
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 125,
+      "free": 45,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 29,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 1,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 125,
+      "free": 45,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 29,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 2,
+      "left_a": 31,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 123,
+      "free": 48,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 66,
+      "left_a": 2,
+      "left_b": 1,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 5
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 114,
+      "free": 61,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 3,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 3,
+      "left_tag": 68,
+      "left_a": 3,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 2,
+      "vector_expected_role": 2,
+      "vector_remaining": 1,
+      "comparison_root": 11
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 123,
+      "free": 56,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 5,
+      "depth": 0,
+      "task": 30,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 5,
+      "left_tag": 4,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 2,
+      "vector_expected_role": 2,
+      "vector_remaining": 0,
+      "comparison_root": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 121,
+      "free": 49,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 30,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 4,
+      "left_tag": 10,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 3,
+      "vector_expected_role": 3,
+      "vector_remaining": 1,
+      "comparison_root": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 119,
+      "free": 51,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 5,
+      "depth": 0,
+      "task": 30,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 5,
+      "left_tag": 11,
+      "left_a": 98,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 4,
+      "vector_expected_role": 4,
+      "vector_remaining": 1,
+      "comparison_root": 8
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 121,
+      "free": 48,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 29,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 4,
+      "left_tag": 1,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 5
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 119,
+      "free": 52,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 8,
+      "depth": 0,
+      "task": 29,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 8,
+      "left_tag": 1,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 9
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 121,
+      "free": 56,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 29,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 4,
+      "left_tag": 1,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 43,
+      "free": 81,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 5,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 2,
+      "lookup_level": 1,
+      "const_original": 13,
+      "expr_depth": 1,
+      "vec_length": 3,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 77,
+      "vec_changed": 1,
+      "vector_result": 78,
+      "peer": 5,
+      "left_tag": 67,
+      "left_a": 5,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 3,
+      "constructor_right": 5,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 2,
+      "vector_expected_role": 2,
+      "vector_remaining": 1,
+      "comparison_root": 21
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 42,
+      "free": 81,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 2,
+      "lookup_level": 1,
+      "const_original": 13,
+      "expr_depth": 1,
+      "vec_length": 3,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 77,
+      "vec_changed": 1,
+      "vector_result": 78,
+      "peer": 3,
+      "left_tag": 68,
+      "left_a": 4,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 3,
+      "constructor_right": 5,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 2,
+      "vector_expected_role": 2,
+      "vector_remaining": 1,
+      "comparison_root": 21
+    }
+  ],
+  "results": [
+    {
+      "name": "expr-representation-equal-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 83,
+      "allocated_heap_nodes": 83,
+      "semantic_steps": 16
+    },
+    {
+      "name": "expr-representation-equal-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 3
+    },
+    {
+      "name": "expr-representation-equal-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 3
+    },
+    {
+      "name": "expr-representation-equal-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 47,
+      "allocated_heap_nodes": 47,
+      "semantic_steps": 5
+    },
+    {
+      "name": "expr-representation-equal-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 60,
+      "allocated_heap_nodes": 60,
+      "semantic_steps": 14
+    },
+    {
+      "name": "expr-representation-equal-5",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 55,
+      "allocated_heap_nodes": 55,
+      "semantic_steps": 5
+    },
+    {
+      "name": "expr-representation-equal-6",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 48,
+      "allocated_heap_nodes": 48,
+      "semantic_steps": 7
+    },
+    {
+      "name": "expr-representation-equal-7",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 50,
+      "allocated_heap_nodes": 50,
+      "semantic_steps": 9
+    },
+    {
+      "name": "expr-representation-equal-8",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 47,
+      "allocated_heap_nodes": 47,
+      "semantic_steps": 7
+    },
+    {
+      "name": "expr-representation-equal-9",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 51,
+      "allocated_heap_nodes": 51,
+      "semantic_steps": 9
+    },
+    {
+      "name": "expr-representation-equal-10",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 55,
+      "allocated_heap_nodes": 55,
+      "semantic_steps": 7
+    },
+    {
+      "name": "expr-instantiate-then-compare",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 71,
+      "allocated_heap_nodes": 80,
+      "semantic_steps": 85
+    },
+    {
+      "name": "expr-instantiate-then-compare-mismatch",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 71,
+      "allocated_heap_nodes": 80,
+      "semantic_steps": 86
+    }
+  ],
+  "forward_seconds": 11.288352974006557,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 2355,
+    "persistent_channels": 756,
+    "subtract_handovers": 5933,
+    "head_clears": 25,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 56,
+      "dims": 8314,
+      "heads": 3,
+      "ffn_units": 10429,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 38,
+  "primitive_basis": [],
+  "semantic_program": "kernel.typed-symbolic-services.v11",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 306727664,
+  "weight_bytes": 613455328,
+  "cuda_peak_allocated_bytes": 718756352,
+  "host_process_peak_rss_bytes": 1698910208,
+  "hidden_size": 2432,
+  "native_layers": 57,
+  "boot_tokens": 85,
+  "applied_steps": 130,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 128,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 6.897743017994799,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-0",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "v"
+                  }
+                ]
+              ]
+            ],
+            [
+              "let",
+              [
+                "sort",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "const",
+                    [
+                      {
+                        "str": "f"
+                      }
+                    ],
+                    [
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "u"
+                          }
+                        ]
+                      ],
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "v"
+                          }
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "nat",
+                    "1"
+                  ]
+                ],
+                [
+                  "string",
+                  "ok"
+                ]
+              ],
+              [
+                "lam",
+                3,
+                [
+                  "sort",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "proj",
+                  [
+                    {
+                      "str": "R"
+                    }
+                  ],
+                  0,
+                  [
+                    "mdata",
+                    [
+                      "app",
+                      [
+                        "var",
+                        0
+                      ],
+                      [
+                        "local",
+                        31
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "v"
+                  }
+                ]
+              ]
+            ],
+            [
+              "let",
+              [
+                "sort",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "const",
+                    [
+                      {
+                        "str": "f"
+                      }
+                    ],
+                    [
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "u"
+                          }
+                        ]
+                      ],
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "v"
+                          }
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "nat",
+                    "1"
+                  ]
+                ],
+                [
+                  "string",
+                  "ok"
+                ]
+              ],
+              [
+                "lam",
+                0,
+                [
+                  "sort",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "proj",
+                  [
+                    {
+                      "str": "R"
+                    }
+                  ],
+                  0,
+                  [
+                    "mdata",
+                    [
+                      "app",
+                      [
+                        "var",
+                        0
+                      ],
+                      [
+                        "local",
+                        31
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-1",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "var",
+            0
+          ],
+          "value": [
+            "local",
+            1
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-2",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "local",
+            31
+          ],
+          "value": [
+            "local",
+            32
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-3",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "sort",
+            [
+              "max",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ],
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": [
+            "sort",
+            [
+              "param",
+              [
+                {
+                  "str": "u"
+                }
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-4",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            [
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ],
+              [
+                "param",
+                [
+                  {
+                    "str": "v"
+                  }
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            [
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ],
+              [
+                "param",
+                [
+                  {
+                    "str": "w"
+                  }
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-5",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            [
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            []
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-6",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "nat",
+            "1"
+          ],
+          "value": [
+            "nat",
+            "2"
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-7",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "string",
+            "ab"
+          ],
+          "value": [
+            "string",
+            "ac"
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-8",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "app",
+            [
+              "var",
+              0
+            ],
+            [
+              "var",
+              1
+            ]
+          ],
+          "value": [
+            "app",
+            [
+              "var",
+              0
+            ],
+            [
+              "var",
+              2
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-9",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "let",
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "nat",
+              "1"
+            ],
+            [
+              "var",
+              0
+            ]
+          ],
+          "value": [
+            "let",
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "nat",
+              "1"
+            ],
+            [
+              "var",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_equal",
+      "name": "expr-representation-equal-10",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "proj",
+            [
+              {
+                "str": "R"
+              }
+            ],
+            0,
+            [
+              "mdata",
+              [
+                "var",
+                0
+              ]
+            ]
+          ],
+          "value": [
+            "proj",
+            [
+              {
+                "str": "R"
+              }
+            ],
+            0,
+            [
+              "mdata",
+              [
+                "var",
+                1
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_instantiate_equal",
+      "name": "expr-instantiate-then-compare",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "const",
+              [
+                {
+                  "str": "f"
+                }
+              ],
+              [
+                [
+                  "succ",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "imax",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "v"
+                      }
+                    ]
+                  ],
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            3,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "w"
+                  }
+                ]
+              ]
+            ],
+            [
+              "const",
+              [
+                {
+                  "str": "f"
+                }
+              ],
+              [
+                [
+                  "succ",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "w"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "imax",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "v"
+                      }
+                    ]
+                  ],
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "w"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "w"
+                    }
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "param",
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_instantiate_equal",
+      "name": "expr-instantiate-then-compare-mismatch",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "comparison"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ],
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "const",
+              [
+                {
+                  "str": "f"
+                }
+              ],
+              [
+                [
+                  "succ",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "imax",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "v"
+                      }
+                    ]
+                  ],
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            3,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "w"
+                  }
+                ]
+              ]
+            ],
+            [
+              "const",
+              [
+                {
+                  "str": "f"
+                }
+              ],
+              [
+                [
+                  "succ",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "w"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "imax",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "v"
+                      }
+                    ]
+                  ],
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "w"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "v"
+                    }
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "param",
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "13 typed-memory comparison operation probes; not full typing, declaration admission or mathlib coverage",
+  "operation_group": "comparison",
+  "full_kernel_native_support": false
+}

@@ -33,3 +33,5 @@ source throughput claim. The geq report uses DIFFERENT fuel512.
 
 Scope DONE establishes no typing, declaration admission, theorem or mathlib
 coverage. The checked environment and full typed checking driver are unfinished.
+
+Evidence is pinned to `7882037`; later shared programs add operations.

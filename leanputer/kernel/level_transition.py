@@ -16,20 +16,28 @@ from .traversal_transition import RuleCompiler, compile_addresses, constant_fiel
 def parse_document(document):
     if document.get('format') == 'leanputer.kernel-data-operation.v1':
         operation = document.get('operation')
-        if operation not in ('telescope_roundtrip', 'expr_substitute_raw', 'expr_instantiate', 'expr_scope'):
+        if operation not in ('telescope_roundtrip', 'expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal'):
             raise KernelError('unknown typed-cell semantic operation')
         codec = SyntaxCodec()
         source = codec.document(document['source'])
         root = document.get('root', 'type')
         if root not in ('type', 'value') or root == 'value' and source.target.value is None:
             raise KernelError('missing syntax root for typed expression operation')
+        if operation == 'expr_equal':
+            peer_root = document.get('right', 'value')
+            if peer_root not in ('type', 'value') or peer_root == 'value' and source.target.value is None:
+                raise KernelError('missing right syntax root for representation comparison')
+            return source, dict(operation=operation, root=root, peer_root=peer_root), source.declarations
         if operation == 'expr_scope':
             return source, dict(operation=operation, root=root), source.declarations
-        if operation in ('expr_substitute_raw', 'expr_instantiate'):
+        if operation in ('expr_substitute_raw', 'expr_instantiate', 'expr_instantiate_equal'):
             bindings = tuple((codec.symbols.intern(binding['parameter']), codec.level(binding['level']))
                              for binding in document['bindings'])
             prefix = tuple(codec.arena.word(value) for value in document.get('argument_prefix', ()))
-            return source, dict(operation=operation, root=root, bindings=bindings, argument_prefix=prefix), source.declarations
+            peer_root = document.get('right', 'value') if operation == 'expr_instantiate_equal' else None
+            if peer_root is not None and (peer_root not in ('type', 'value') or peer_root == 'value' and source.target.value is None):
+                raise KernelError('missing right syntax root for composed instantiation comparison')
+            return source, dict(operation=operation, root=root, bindings=bindings, argument_prefix=prefix, peer_root=peer_root), source.declarations
         kinds = {'pi': int(Tag.PI), 'lam': int(Tag.LAM)}
         open_kind = document.get('open_binder', 'pi')
         fold_kind = document.get('fold_binder', open_kind)
@@ -65,9 +73,9 @@ def parse_document(document):
 
 def prepare(config, source, level, _declarations=()):
     operation = level.get('operation') if isinstance(level, dict) else 'scope'
-    expression = operation in ('expr_substitute_raw', 'expr_instantiate', 'expr_scope')
-    substitute = operation in ('substitute_raw', 'substitute_raw_equal', 'expr_substitute_raw', 'instantiate', 'expr_instantiate')
-    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare', 'equivalent', 'normalize', 'geq')
+    expression = operation in ('expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal')
+    substitute = operation in ('substitute_raw', 'substitute_raw_equal', 'expr_substitute_raw', 'instantiate', 'expr_instantiate', 'expr_instantiate_equal')
+    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare', 'equivalent', 'normalize', 'geq', 'expr_equal')
     telescope = isinstance(level, dict) and not (substitute or service or operation == 'expr_scope')
     peer = level.get('peer') if isinstance(level, dict) else None
     bindings = level['bindings'] if substitute else ()
@@ -90,13 +98,17 @@ def prepare(config, source, level, _declarations=()):
         root = packed.expression_map[raw_root]
     else:
         root = packed.level_map[level['root_level'] if substitute or service else level]
-    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER, 'normalize': Task.LEVEL_NORMALIZE, 'equivalent': Task.LEVEL_EQUIVALENT, 'geq': Task.LEVEL_GEQ}[operation] if service else
-            Task.VARIABLE_SCOPE if telescope else Task.EXPR_SCOPE if operation == 'expr_scope' else Task.EXPR_LEVEL_INSTANTIATE if operation == 'expr_instantiate' else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_INSTANTIATE if operation == 'instantiate' else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
+    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER, 'normalize': Task.LEVEL_NORMALIZE, 'equivalent': Task.LEVEL_EQUIVALENT, 'geq': Task.LEVEL_GEQ, 'expr_equal': Task.EXPR_EQUAL}[operation] if service else
+            Task.VARIABLE_SCOPE if telescope else Task.EXPR_SCOPE if operation == 'expr_scope' else Task.EXPR_LEVEL_INSTANTIATE if operation in ('expr_instantiate', 'expr_instantiate_equal') else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_INSTANTIATE if operation == 'instantiate' else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
     state['regs'].update(mode=int(Mode.WALK), task=int(task),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
         fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
+    if operation in ('expr_equal', 'expr_instantiate_equal'):
+        other = source.target.type if level['peer_root'] == 'type' else source.target.value
+        state['regs'].update(peer=packed.expression_map[other], comparison_root=packed.expression_map[other],
+                             pending_compare=2 if operation == 'expr_instantiate_equal' else 0)
     if peer is not None:
-        state['regs'].update(peer=packed.level_map[peer], pending_compare=int(operation == 'substitute_raw_equal'))
+        state['regs'].update(peer=packed.level_map[peer], comparison_root=packed.level_map[peer], pending_compare=int(operation == 'substitute_raw_equal'))
     if telescope:
         limit = level['limit']
         if limit is not None and limit >= 1 << config.word_bits:
@@ -115,5 +127,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.typed-symbolic-services.v10'
+program_name = 'kernel.typed-symbolic-services.v11'
 primitive_basis = ()

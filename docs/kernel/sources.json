@@ -50,6 +50,16 @@
           "path": "src/kernel/replace_fn.h",
           "sha256": "6b3a850ce10b5646a8d40011ff228f6d3223dc9a79136417bc586588d1aa8e76",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/replace_fn.h"
+        },
+        {
+          "path": "src/kernel/expr_eq_fn.cpp",
+          "sha256": "2dc7bb0aa3fcf8e82ee9e734edcceed40b3b36c31a0bd152d4392e60212310f7",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/expr_eq_fn.cpp"
+        },
+        {
+          "path": "src/kernel/expr.cpp",
+          "sha256": "cb02c18964aca67289b8c1d64864355bb5c10fc93d55bd3c3c9646776af9c592",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/expr.cpp"
         }
       ]
     },
