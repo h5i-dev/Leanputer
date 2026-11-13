@@ -18,7 +18,7 @@ or-equal predicate follows its own Max/IMax/offset recursive rules; it must not
 be replaced by an unrelated sampled/numeric universe comparison. This full
 normalization/equivalence/order target has an executable development spec in
 `levels.py`. Stock normalization/equivalence is now integrated as described below;
-conservative is_geq remains unfinished in weights.
+conservative is_geq is also integrated as described below.
 
 The shared weighted service now provides structural comparison, necessarily-
 nonzero, successor separation and both COMPLETE smart constructors:
@@ -47,8 +47,8 @@ A raw-substitution-then-comparison wrapper exercises allocation of duplicate
 structures and calls the same comparator, without requiring input hash-consing.
 
 Standalone wrappers return operation DONE/INVALID/RESOURCE. They do not run
-proof/declaration admission. Conservative universe geq, dependent inference and
-checked environment callers are subsequent integration work.
+proof/declaration admission. Dependent inference and checked environment callers are subsequent integration
+work.
 There is no additional native source theorem/mathlib coverage from these
 operator contracts, and no full-kernel or formal-verification claim.
 
@@ -77,5 +77,15 @@ No expected normal forms/equivalence answers enter native input.
 [Focused stock normalization evidence](../../benchmarks/kernel-level-normalization-stock/README.md)
 checks exact registers/cache and independently reconstructed outputs at the SAME
 physical capacities/fuel as earlier services. HEAP/STACK/FUEL exhaustion remains
-RESOURCE, never a negative semantic answer. Conservative source `is_geq_core`
-and typed checking/environment/admission callers remain unfinished in weights.
+RESOURCE, never a negative semantic answer. The source conservative `is_geq_core` is now lowered as described below; typed
+checking/environment/admission callers remain unfinished in weights.
+
+The COMPLETE pinned conservative `is_geq/is_geq_core` now normalizes both sides
+through the same normalizer before its pair traversal. Private AND continuations
+handle right Max/IMax; left Max alternatives short-circuit on success and preserve
+the source fallback to remaining IMax/offset rules on failure. Offset comparison
+uses the same separator/structural equality and recursively compares bases when
+both offsets are equal and positive. It does not substitute numeric assignments
+for symbolic reasoning. [Focused stock evidence](../../benchmarks/kernel-level-geq-stock/README.md)
+includes the nontrivial Max-to-IMax fallback and explicit fixed-fuel costs.
+All these entries are operation services, not declaration admission answers.

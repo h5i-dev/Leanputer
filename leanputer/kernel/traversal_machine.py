@@ -66,6 +66,8 @@ class Task(IntEnum):
     LEVEL_MERGE = 23            # Internal: merge two normalized Max chains.
     LEVEL_NORMAL_SUCC = 24      # Internal: distribute one Succ over normalized Max.
     LEVEL_EQUIVALENT = 25       # Normalize both sides, then shared structural ==.
+    LEVEL_GEQ = 26              # Pinned conservative is_geq, no numeric grounding.
+    LEVEL_GEQ_CORE = 27         # Internal normalized Max/IMax/offset traversal.
 
 
 
@@ -106,6 +108,11 @@ class Mode(IntEnum):
     MERGE_RECORD = 33
     MERGE_FOLD = 34
     MERGE_FINISH = 35
+    GEQ_RIGHT = 36
+    GEQ_LEFT = 37
+    GEQ_FALLBACK_RIGHT = 38
+    GEQ_FALLBACK_LEFT = 39
+    GEQ_OFFSET_BASE = 40
 
 
 CALL_BETA_ZETA = 16
@@ -132,6 +139,15 @@ CALL_MERGE_ORDER = 36
 CALL_MERGE_OFFSET = 37
 CALL_EQUIVALENT_LEFT = 38
 CALL_EQUIVALENT_RIGHT = 39
+CALL_GEQ_LEFT = 40
+CALL_GEQ_RIGHT = 41
+CALL_GEQ_EQUAL = 42
+CALL_GEQ_AND = 43
+CALL_GEQ_MAX_FIRST = 44
+CALL_GEQ_MAX_SECOND = 45
+CALL_GEQ_OFFSET_LEFT = 46
+CALL_GEQ_OFFSET_RIGHT = 47
+CALL_GEQ_BASE_EQUAL = 48
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -144,7 +160,7 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'peer', 'left_tag', 'left_a', 'left_b', 'level_offset', 'pending_compare',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
     'order_same_base', 'merge_l', 'merge_r', 'merge_hl', 'merge_tl', 'merge_hr', 'merge_tr',
-    'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset')
+    'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset', 'geq_left', 'geq_right')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -243,7 +259,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -330,7 +346,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.MERGE_FINISH or r['task'] > Task.LEVEL_EQUIVALENT
+                or r['mode'] > Mode.GEQ_OFFSET_BASE or r['task'] > Task.LEVEL_GEQ_CORE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['vec_changed'] > 1 or r['pending_compare'] > 1 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
@@ -341,6 +357,7 @@ class SpecMachine:
             stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
         from . import level_normalize_machine as normalization
+        from . import level_geq_machine as geq
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_open']:
@@ -354,7 +371,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in normalization.PRIVATE_PHASES:
+                if phase in geq.PRIVATE_PHASES:
+                    geq.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in normalization.PRIVATE_PHASES:
                     normalization.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase == CALL_BETA_ZETA:
                     r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA, x=r['r'], depth=0, task=Task.BETA_ZETA)
@@ -428,7 +447,7 @@ class SpecMachine:
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
-        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT)
+        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE)
         valid_tag = (tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
             tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
@@ -439,6 +458,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if geq.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if normalization.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if r['task'] == Task.LEVEL_ORDER:

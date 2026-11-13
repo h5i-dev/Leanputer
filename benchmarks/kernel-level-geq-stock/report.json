@@ -1,0 +1,1454 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 501,
+      "free": 35,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 27,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 2,
+      "geq_right": 1
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 490,
+      "free": 42,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 1,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 1,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 458,
+      "free": 46,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 66,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 45,
+      "merge_anchor": 1,
+      "merge_chosen": 2,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 45,
+      "geq_right": 1
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 438,
+      "free": 46,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 1,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 45,
+      "merge_anchor": 1,
+      "merge_chosen": 2,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 1,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 433,
+      "free": 50,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 66,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 49,
+      "merge_anchor": 2,
+      "merge_chosen": 2,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 474,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 67,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 2,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 43,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 453,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 2,
+      "constructor_stage": 0,
+      "left_base": 1,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 1,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 211,
+      "free": 56,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 2,
+      "constructor_stage": 0,
+      "left_base": 1,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 55,
+      "merge_anchor": 1,
+      "merge_chosen": 2,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 1,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 434,
+      "free": 54,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 47,
+      "merge_anchor": 1,
+      "merge_chosen": 2,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 50,
+      "geq_right": 51
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 425,
+      "free": 49,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 2,
+      "left_tag": 67,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 1,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 2,
+      "constructor_stage": 0,
+      "left_base": 45,
+      "left_offset": 1,
+      "right_offset": 1,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 48,
+      "geq_right": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 476,
+      "free": 41,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 27,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 68,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 2,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 2,
+      "left_offset": 1,
+      "right_offset": 2,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 38,
+      "geq_right": 40
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 474,
+      "free": 39,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 1,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 1,
+      "left_offset": 2,
+      "right_offset": 1,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 37,
+      "geq_right": 38
+    }
+  ],
+  "results": [
+    {
+      "name": "level-geq-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 34,
+      "allocated_heap_nodes": 34,
+      "semantic_steps": 11
+    },
+    {
+      "name": "level-geq-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 41,
+      "allocated_heap_nodes": 41,
+      "semantic_steps": 22
+    },
+    {
+      "name": "level-geq-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 54
+    },
+    {
+      "name": "level-geq-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 74
+    },
+    {
+      "name": "level-geq-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 43,
+      "allocated_heap_nodes": 49,
+      "semantic_steps": 79
+    },
+    {
+      "name": "level-geq-5",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 38
+    },
+    {
+      "name": "level-geq-6",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 59
+    },
+    {
+      "name": "level-geq-7",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 43,
+      "allocated_heap_nodes": 55,
+      "semantic_steps": 301
+    },
+    {
+      "name": "level-geq-8",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 53,
+      "semantic_steps": 78
+    },
+    {
+      "name": "level-geq-9",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 48,
+      "semantic_steps": 87
+    },
+    {
+      "name": "level-geq-10",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 37,
+      "allocated_heap_nodes": 40,
+      "semantic_steps": 36
+    },
+    {
+      "name": "level-geq-11",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 38,
+      "semantic_steps": 38
+    }
+  ],
+  "forward_seconds": 41.01912462100154,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 2186,
+    "persistent_channels": 726,
+    "subtract_handovers": 5661,
+    "head_clears": 26,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 54,
+      "dims": 7874,
+      "heads": 3,
+      "ffn_units": 9886,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 35,
+  "primitive_basis": [],
+  "semantic_program": "kernel.typed-symbolic-services.v9",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 272615596,
+  "weight_bytes": 545231192,
+  "cuda_peak_allocated_bytes": 625400320,
+  "host_process_peak_rss_bytes": 1694937088,
+  "hidden_size": 2240,
+  "native_layers": 55,
+  "boot_tokens": 45,
+  "applied_steps": 514,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 512,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 6.277653876997647,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-0",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "right": [
+        "zero"
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-1",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "right": [
+        "param",
+        [
+          {
+            "str": "v"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-2",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-3",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "right": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-4",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-5",
+      "level": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "param",
+        [
+          {
+            "str": "v"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-6",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "right": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-7",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-8",
+      "level": [
+        "succ",
+        [
+          "max",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          [
+            "param",
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ]
+        ]
+      ],
+      "right": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-9",
+      "level": [
+        "succ",
+        [
+          "imax",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          [
+            "param",
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ]
+        ]
+      ],
+      "right": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-10",
+      "level": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "succ",
+        [
+          "succ",
+          [
+            "zero"
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "geq",
+      "name": "level-geq-11",
+      "level": [
+        "succ",
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ]
+      ],
+      "right": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ]
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "12 typed-memory geq operation probes; not full typing, declaration admission or mathlib coverage",
+  "operation_group": "geq",
+  "full_kernel_native_support": false
+}

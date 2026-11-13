@@ -38,3 +38,5 @@ These operations do not establish proof/declaration acceptance. Conservative
 universe geq, typed inference/conversion, generic admission and the whole-source
 weighted driver remain unfinished. No new native mathlib coverage or formal
 verification is claimed.
+
+Evidence is pinned to `1bc88d9`; subsequent programs include more operations.

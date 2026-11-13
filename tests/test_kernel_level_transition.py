@@ -184,6 +184,21 @@ def normalization_cases():
     return docs
 
 
+def geq_cases():
+    z = ['zero']
+    u, v = (['param', name(s)] for s in ('u', 'v'))
+    probes = [(u, z), (u, v), (['max', u, v], u), (u, ['max', u, v]),
+        (['max', u, v], ['max', v, u]), (['imax', u, v], v), (u, ['imax', u, v]),
+        # BOTH Max alternatives fail, but the subsequent IMax AND rule succeeds.
+        (['max', u, v], ['imax', u, v]),
+        (['succ', ['max', u, v]], ['succ', u]),
+        (['succ', ['imax', u, v]], ['succ', v]),
+        (['succ', u], ['succ', ['succ', z]]),
+        (['succ', ['succ', u]], ['succ', u])]
+    return [dict(format='leanputer.kernel-level-operation.v1', operation='geq',
+        name=f'level-geq-{i}', level=left, right=right) for i, (left, right) in enumerate(probes)]
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -251,6 +266,24 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_complete_pinned_conservative_geq_with_max_fallback(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=1024, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in geq_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            expected = int(LevelOps(source.arena).geq(arguments['root_level'], arguments['peer']))
+            self.assertEqual(state['regs']['r'], expected, doc['name'])
+            self.assertEqual(state['regs']['sp'], 0)
+            self.assertEqual(circuit.step(state), state)
 
     def test_normalizer_physical_exhaustion_is_not_a_semantic_answer(self):
         probes = [(normalization_cases()[0], dict(heap=128, stack=16, fuel=128), 'heap'),

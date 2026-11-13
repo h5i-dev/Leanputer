@@ -57,8 +57,8 @@ They do not run full source environment admission. Expression-wide raw universe 
 calling the same level operation for Sort and every Const universe argument.
 A length-driven vector loop uses private value/return frames; its empty and
 unchanged paths retain original syntax. Canonical symbolic normalization/equivalence now reuse those same services.
-Conservative universe geq, conversion and checked-environment callers still
-need integrated lowering.
+Conservative universe geq also uses those services. Conversion and checked-
+environment callers still need integrated lowering.
 
 Additional raw `level_roots` can be transported as operation operands without
 fabricating declaration types or binding answers. The shared consumers now

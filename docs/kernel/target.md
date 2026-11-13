@@ -229,7 +229,7 @@ semantics to invent from examples.
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities; `environment.py`: private overlay/rechecking and atomic publication (spec) | integrated native ABI/lowering |
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
-| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic scope, raw/source all-Expr instantiation, constructors, normalization/equivalence and typed telescope calls, with argument windows | conservative universe geq, checked-environment callers and full weighted admission; see [native-cells.md](native-cells.md) |
+| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic scope, raw/source all-Expr instantiation, constructors, normalization/equivalence and typed telescope calls, with argument windows | checked-environment/inference callers and full weighted admission; see [native-cells.md](native-cells.md) |
 | Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta, Pi/Lam telescope opening/folding through shared substitution/abstraction/private calls | connect full scopes, checking/generation callers and full kernel |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
@@ -326,6 +326,10 @@ remains unfinished.
 
 The [ten-operation canonicalization smoke](../../benchmarks/kernel-level-normalization-stock/README.md)
 verifies complete symbolic normalization/equivalence through the shared services,
-with no host sort/equality answers. Conservative geq, typed inference/conversion
-and integrated admission remain gaps. No native source theorem coverage follows
+with no host sort/equality answers. Typed inference/conversion and integrated admission remain gaps. No native source theorem coverage follows
 from operation DONE.
+
+The [twelve-operation conservative geq smoke](../../benchmarks/kernel-level-geq-stock/README.md)
+completes the pinned symbolic-level comparison service, including Max failure
+fallback and IMax/offset recursion. Typed checking/environment/admission callers
+remain unfinished; operation DONE adds no native source theorem coverage.
