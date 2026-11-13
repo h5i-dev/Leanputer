@@ -47,10 +47,29 @@ at a raw inductive block; no header-only analysis may turn that into ACCEPT.
 Current weighted prerequisites: complete symbolic levels, all-Expr traversal/
 substitution/scope/comparison, private checked environment, ordinary type/body
 checking and general delta. [Shared telescope WHNF/dependent parameter reuse](../../benchmarks/kernel-dependent-telescope-stock/README.md)
-is now lowered with exact stock operation evidence. Next, make current-family occurrence a composable internal
-call: the earlier public OCCURS operation halts its whole top-level run on a
+is now lowered with exact stock operation evidence. The [current-family occurrence callback](../../benchmarks/kernel-internal-occurrence-stock/README.md)
+is now composable and stock-validated: the earlier public OCCURS operation halts its whole top-level run on a
 match and is therefore unsuitable as a positivity callback. The internal call
-must delimit its own private stack, return a Boolean to its caller and retain
+delimits its own private stack, returns a Boolean to its caller and retains
 caller context windows on both early-match and full-traversal exits. Then lower
 the family-application/positivity/recursive-descriptor callers above. This does
 not change the complete block algorithm or select an easiest semantic class.
+
+The next header-stage ABI uses output-only family161 `(indexCount,resultLevel,
+rawFamilyRef)`, wrapped by scheme165 `(universeParams,INDUCTIVE_KIND,payload)`
+and signature160 `(symbol,checkedHeaderType,scheme)`. These records are generated
+ONLY after checking a header in the previous environment. A private linked list
+collects them for duplicate checking and the subsequent provisional overlay.
+Opening creates the shared parameter Locals; consuming reuses them for each
+remaining family; opening indices derives counts, and context rolls back to the
+shared parameter end after each family. The header list is separate from the
+COMMITTED environment head and admitted-declaration count. Completing headers
+must return to the block controller; until constructor/positivity/generation/
+restoration checks are integrated that controller still reports GAP_INDUCTIVE.
+A partial header list is never proof acceptance or an assumed public family.
+
+Environment lookup will take an explicit private list head. Ordinary inference
+passes the committed head; provisional constructor checking later passes the
+source-staged overlay; header duplicate checks can search previous private
+headers WITHOUT exposing them to header type inference. This removes accidental
+ambient-environment mutation and preserves the source staging requirement.

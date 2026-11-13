@@ -96,6 +96,7 @@ class Task(IntEnum):
     CHECK_SOURCE = 36           # Source transaction; required missing callbacks GAP.
     CONSUME_PARAMETERS = 37     # Reuse derived Locals; dependent domain checking.
     PREPARE_REUSE = 38          # Public operation wrapper, not source admission.
+    HAS_CONSTANTS = 39          # Composable symbol-set Expr occurrence callback.
 
 
 
@@ -271,6 +272,7 @@ CALL_REUSE_SCOPE_TYPE = 87
 CALL_REUSE_SCOPE_CANDIDATE = 88
 CALL_REUSE_OPEN = 89
 CALL_REUSE_FINISH = 90
+CALL_OCCURRENCE_FINISH = 91
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -288,7 +290,8 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'parameter_head', 'level_head', 'zip_count', 'zip_remaining', 'zip_symbol', 'zip_parameter_next', 'pending_scope', 'symbols_root', 'name_table_left', 'name_table_next',
     'name_second', 'name_part', 'name_length', 'name_index', 'target_index', 'kernel_zero', 'active_kind',
     'active_symbol', 'active_parameters', 'active_type', 'active_value', 'active_extra', 'commit_scheme', 'commit_signature', 'pending_reuse', 'reuse_root', 'reuse_base', 'reuse_end',
-    'reuse_index', 'reuse_whnf', 'reuse_body', 'reuse_domain')
+    'reuse_index', 'reuse_whnf', 'reuse_body', 'reuse_domain',
+    'occurrence_internal', 'occurrence_mark', 'occurrence_found')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -387,7 +390,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -474,14 +477,14 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.REUSE_SUBST_RECORD or r['task'] > Task.PREPARE_REUSE
+                or r['mode'] > Mode.REUSE_SUBST_RECORD or r['task'] > Task.HAS_CONSTANTS
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
-                or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
+                or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
-        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE)
+        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.HAS_CONSTANTS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE)
         if uses_arguments and r['arg_base']+r['count'] > cfg.context:
             stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
@@ -495,6 +498,7 @@ class SpecMachine:
         from . import name_machine as names
         from . import source_machine as source
         from . import telescope_machine as telescope
+        from . import occurrence_machine as occurrence
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -515,7 +519,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in telescope.PRIVATE_PHASES:
+                if phase in occurrence.PRIVATE_PHASES:
+                    occurrence.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in telescope.PRIVATE_PHASES:
                     telescope.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in source.PRIVATE_PHASES:
                     source.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -626,6 +632,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if occurrence.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if telescope.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if source.step(self, tag, a, b, c, stop, ret, alloc):
@@ -934,7 +942,9 @@ class SpecMachine:
                 stop(Outcome.INVALID, Reason.SYNTAX)
             elif s['context'][r['arg_base']+r['i']][0] == a:
                 if task == Task.OCCURS:
-                    r.update(found=1, sp=0, r=r['root']); stop(Outcome.DONE)
+                    if r['occurrence_internal']:
+                        r.update(occurrence_found=1,sp=r['occurrence_mark']+1,mode=Mode.RETURN,r=1)
+                    else:r.update(found=1, sp=0, r=r['root']); stop(Outcome.DONE)
                 elif level_scope:
                     ret(r['x'])
                 else:
