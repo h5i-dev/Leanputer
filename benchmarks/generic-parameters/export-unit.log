@@ -1,0 +1,6 @@
+test_actual_source_export_is_dependency_complete (test_generic.GenericDeclarationSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.559s
+
+OK

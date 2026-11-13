@@ -1,0 +1,434 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.uniform-type-parameter-admission.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1536
+  },
+  "results": [
+    {
+      "name": "LeanputerGenericParameters.option_constructor@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 51,
+      "semantic_steps": 703
+    },
+    {
+      "name": "LeanputerGenericParameters.two_parameters@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.two_parameters",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "two_parameters"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 34,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 70,
+      "semantic_steps": 1078
+    },
+    {
+      "name": "LeanputerGenericParameters.option_rec_boundary@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_rec_boundary",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_rec_boundary"
+          }
+        ]
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 51,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 52,
+      "semantic_steps": 170
+    },
+    {
+      "name": "swapped-uniform-constructor-parameters",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.two_parameters",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "two_parameters"
+          }
+        ],
+        "mutation": "swapped-uniform-constructor-parameters"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 36,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 112
+    },
+    {
+      "name": "mismatched-constructor-parameter-binder",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.two_parameters",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "two_parameters"
+          }
+        ],
+        "mutation": "mismatched-constructor-parameter-binder"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 34,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 34,
+      "semantic_steps": 45
+    },
+    {
+      "name": "parameter-reinterpreted-as-unsupported-index",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ],
+        "mutation": "parameter-reinterpreted-as-unsupported-index"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 33
+    },
+    {
+      "name": "excess-parameter-count",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ],
+        "mutation": "excess-parameter-count"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 34
+    },
+    {
+      "name": "wrong-parameterized-constructor-argument",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ],
+        "mutation": "wrong-parameterized-constructor-argument"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 17,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 21,
+      "semantic_steps": 231
+    },
+    {
+      "name": "unsupported-parameterized-prop-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ],
+        "mutation": "unsupported-parameterized-prop-field"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 104
+    },
+    {
+      "name": "renamed-uniform-parameter-datatype",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericParameters.option_constructor",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericParameters"
+          },
+          {
+            "str": "option_constructor"
+          }
+        ],
+        "mutation": "renamed-uniform-parameter-datatype"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 51,
+      "semantic_steps": 703
+    },
+    {
+      "name": "valid-nine-parameters-context-resource",
+      "environment_declarations": 2,
+      "assumptions": [],
+      "input_heap_nodes": 39,
+      "status": "RESOURCE",
+      "reason": "CONTEXT",
+      "allocated_heap_nodes": 39,
+      "semantic_steps": 42
+    },
+    {
+      "name": "LeanputerGenericRecursive.nested_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.nested_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "nested_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 40,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 103,
+      "semantic_steps": 1395
+    },
+    {
+      "name": "LeanputerGenericRecords.projection_beta@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_beta",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_beta"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 24,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 500
+    },
+    {
+      "name": "LeanputerGenericProp.singleton_k@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.singleton_k",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "singleton_k"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 63,
+      "semantic_steps": 717
+    },
+    {
+      "name": "Function.mt@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "Function.mt",
+        "source_name_parts": [
+          {
+            "str": "Function"
+          },
+          {
+            "str": "mt"
+          }
+        ]
+      },
+      "environment_declarations": 3,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 90,
+      "semantic_steps": 807
+    }
+  ],
+  "counts": {
+    "ACCEPT": 7,
+    "UNSUPPORTED": 3,
+    "REJECT": 4,
+    "RESOURCE": 1
+  },
+  "syntax_seconds": 0.008186587001546286,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "forward_seconds": 157.34709137100435,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 1760,
+        "persistent_channels": 399,
+        "subtract_handovers": 6846,
+        "head_clears": 390,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 68,
+          "dims": 8997,
+          "heads": 11,
+          "ffn_units": 10495,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 7,
+      "primitive_basis": [],
+      "semantic_program": "generic.uniform-type-parameter-admission.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 461577096,
+      "weight_bytes": 923154192,
+      "cuda_peak_allocated_bytes": 1054575104,
+      "host_process_peak_rss_bytes": 1704464384,
+      "hidden_size": 1792,
+      "native_layers": 69,
+      "boot_tokens": 59,
+      "applied_steps": 1538
+    }
+  ],
+  "total_check_seconds": 158.50111405400094,
+  "validation_scope": "Restricted positive-Sort zero/one-field inductives with direct-self recursion, and nullary Prop inductives; no full Lean/general inductive soundness claim",
+  "backend": "native",
+  "device": "cuda",
+  "compile_seconds": 8.21401516199694,
+  "cold_compile_and_check_seconds": 166.71515493599873
+}

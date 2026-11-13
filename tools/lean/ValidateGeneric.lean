@@ -44,7 +44,8 @@ def replay (base : Lean.Kernel.Environment) (document : Json) : Except String Un
             (← ctor.getObjValAs? String "family") != name ||
             (← ctor.getObjValAs? Nat "index") != k then throw "constructor metadata mismatch"
         ctors := ctors ++ [{name := userName (← ctor.getObjValAs? String "name"), type := ← expr (← ctor.getObjVal? "type")}]
-      env ← add env (.inductDecl [] 0 [{name := userName name, type, ctors}] false)
+      let params := (entry.getObjValAs? Nat "parameters").toOption.getD 0
+      env ← add env (.inductDecl [] params [{name := userName name, type, ctors}] false)
       i := i+count+1
     else if kind == "recursor" then
       let family ← entry.getObjValAs? String "family"

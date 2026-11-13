@@ -32,6 +32,7 @@ class Declaration:
     constructors: int=0
     index: int=0
     level: int=0
+    parameters: int=0
 
     def __post_init__(self):
         if not isinstance(self.name,str)or not self.name:raise ValueError('declaration name required')
@@ -39,7 +40,7 @@ class Declaration:
         object.__setattr__(self,'type',parse_expr(self.type))
         if self.value is not None:object.__setattr__(self,'value',parse_expr(self.value))
         if self.kind in ('definition','opaque')and self.value is None:raise ValueError('definition needs a value')
-        for key in ('constructors','index','level'):
+        for key in ('constructors','index','level','parameters'):
             if type(getattr(self,key))is not int or getattr(self,key)<0:raise ValueError('nonnegative declaration scalar required')
         if self.kind in ('constructor','recursor')and(not isinstance(self.family,str)or not self.family):raise ValueError('family reference required')
 

@@ -13,7 +13,7 @@ from leanputer.generic_spec import MachineConfig, Outcome, Reason, SpecMachine, 
 from leanputer.generic_syntax import parse_document, assumptions
 from leanputer.generic_transition import compile_machine
 
-CFG = MachineConfig(heap=128, stack=16, context=8, constants=8, fuel=1056)
+CFG = MachineConfig(heap=128, stack=16, context=8, constants=8, fuel=1152)
 
 
 def metadata_cases():
@@ -81,6 +81,9 @@ class GenericDeclarationSmoke(unittest.TestCase):
         from leanputer.preparation import export
         root = Path(__file__).resolve().parents[1]
         expected = [json.loads(s) for s in (root/'tests/fixtures/generic-source.jsonl').read_text().splitlines()][:3]
+        for d in expected:
+            for row in d['environment']:
+                if row['kind']=='inductive':row.setdefault('parameters',0)
         targets = json.loads((root/'examples/generic-targets.json').read_text())
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)/'source.jsonl'

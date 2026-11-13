@@ -3,10 +3,13 @@
 ARCHITECTURAL CORRECTION: per-name expansion has stopped. The catalog below is
 historical evidence, not generic kernel coverage. Active work is
 [declaration-as-data checking](generic-kernel.md), beginning with validated
-monomorphic inductives with0/1 fields perconstructor (prior closed carrier or
+ground-universe inductive families with checked uniform type parameters and
+0/1 fields perconstructor (prior carrier, parameter or
 direct strictly-positive self-reference),
 validated carrier/universe/positivity bounds and data-derived dependent recursor
 types/reductions. Nullary Prop families enforce elimination restrictions and singletonK.
+Parameterized recursors/projections are the next implementation slice; family
+and constructor support must not be reported as full eliminator support.
 Syntax-only actual source export retains full closures. Function.mt now has a
 targeted generic native result (Γ3/noaxioms), not a population coverage estimate.
 No completion percentage is established. Existing checkpoints are preserved.

@@ -5,24 +5,30 @@ catalog was the wrong direction: ordinary inductives belong in checked input
 data, not in generated semantic branches. Its syntax-export counts do not
 measure generic kernel coverage.
 
-The new path supports ground monomorphic inductives in positive numeric
-Sorts, with zero or one independent field per constructor, and nullary Prop
-families. Bool-shaped and three-way enums must use one identical compiled
+The new path supports ground-universe inductive declarations with uniform
+type parameters and zero or one field per constructor. Positive-Sort fields
+may be closed carriers, parameter variables or direct uniform self-references.
+Nullary Prop families are also supported. Bool-shaped and three-way enums must use one identical compiled
 model. The compilation API takes bounds only; declaration names, constructor
 counts and recursor signatures arrive as input data.
 
 An inductive header supplies its type and constructor count. Fixed weighted
-rules require a literal Sort, a complete contiguous constructor block,
-correct owners and ordinals, and each constructor's literal result type equal
-to its own family. A field domain must be a literal reference to an earlier
-checked carrier whose type is a literal Sort no higher than the family Sort,
-or a literal reference to its own family. The latter is a direct strictly
-positive recursive field. Parameters, multiple/dependent fields, indices and
-other recursive shapes are explicitly unsupported. Function domains and nested
+rules require literal Sort parameter domains and result Sort, a complete
+contiguous constructor block, correct owners/ordinals and constructor results
+applying the family to unchanged parameter variables. For zero parameters the
+result is the literal family constant. A field domain is a parameter variable,
+a prior closed carrier with a literal Sort type, or the uniformly applied own
+family. The latter is a direct strictly-positive recursive field. Stored carrier
+universes cannot exceed the positive family universe. Uniform parameter binders have literal numeric Sort domains. Multiple/dependent
+fields, indices, term parameters and other recursive shapes are unsupported. Function domains and nested
 applications cannot smuggle negative occurrences into this class. Positivity
 is checked by this restricted AST shape; it is not a supplied flag.
 
-A recursor supplies a family reference, ground result universe and claimed
+Recursors currently support zero-parameter families; parameterized recursors
+and projections explicitly return UNSUPPORTED. The parameter admission slice
+checks families/constructors first, without claiming their eliminators.
+
+A supported recursor supplies a family reference, ground result universe and claimed
 type. The checker constructs the expected dependent type inside weights:
 `(motive : F → Sort v) → minor₀ → … → (x : F) → motive x`.
 A nullary minor is `motive c`; a one-field minor is
@@ -71,6 +77,8 @@ Input format `leanputer.generic.v1` carries ordered `environment`, `term` and
 `claim` fields. Expressions are tagged arrays: var, sort, const, pi, lam, app, and
 `["proj", familyName, 0, inner]` for the restricted one-field projection.
 Declaration kinds are axiom, definition, opaque, inductive, constructor, recursor.
+Family rows may supply `parameters` (default0), a checked uniform type-parameter
+count; constructor/recursor/ordinary rows reserve this scalar as0.
 Inductive rows carry `constructors`; following constructor rows carry `family`
 and zero-based `index`; recursor rows carry `family` and ground result `level`.
 There are no supplied positivity flags, reduction tables or accepted judgments.
@@ -92,8 +100,9 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The next milestone is uniform parameters and a reusable constructor-telescope
-interpreter for multiple fields, followed by indexed admission. Direct-self
+The next milestone is derived parameterized recursor types/reduction and
+parameterized projections, then a reusable constructor-telescope interpreter
+for multiple fields and indexed admission. Direct-self
 recursion is implemented; nested/functional recursion remains unsupported. No per-name constructors should be added to obtain them.
 
 
@@ -110,7 +119,8 @@ It groups actual constructor declarations into input blocks and exports the
 actual specialized recursor type; the weighted checker independently validates
 both. It does not call inferType/whnf/isDefEq, emit kernel answers, normalize
 terms or export supplied recursor rules. Name dispatch is only identity lookup.
-The initial exporter rejects polymorphic/mutual/nested families and unsupported
+The exporter specializes raw family/constructor universe tuples and rejects
+mutual/nested families and unsupported
 expression syntax rather than promoting dependencies to axioms. All source rows
 are retained, including UNSUPPORTED rows with unknown dependency counts.
 
@@ -152,3 +162,21 @@ syntax extractor is the correspondence boundary for actual elaborated sources;
 weighted inference checks the encoded declarations/judgment. Extraction does not
 normalize or check proofs for the model, and all declarations' types/bodies and
 the restricted inductive/recursor data are validated by the weighted machine.
+
+
+The [uniform parameter admission checkpoint](../benchmarks/generic-parameters/README.md)
+validates exactly the declared number of literal-Sort family binders, matching
+constructor binders, and constructor results with unchanged parameter variables.
+The validator walks applications right-to-left and checks the actual de Bruijn
+indices, including the shift past the stored field. A constructor tail is type
+checked under the parameter context with temporary access only to its own
+already validated family header. Other future constants remain unavailable;
+this permission is cleared before admission and unavailable to ordinary proofs.
+Carrier/result universe constraints and positivity shape checks are enforced.
+
+Declaration memory now has six words per row: kind,type,value,owner,info,parameters.
+The existing stock boot/value heads already fit that width; native forward/cache
+is unchanged. This metadata is checked from syntax, not an assumed typing result.
+Actual Option and arbitrary two-parameter constructors are supported, while
+parameterized Option.rec is explicitly unsupported. A valid nine-parameter
+example exceeds context8 and reports RESOURCE; it is not rejected as false.

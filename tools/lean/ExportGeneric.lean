@@ -76,30 +76,43 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
   modify fun s => {s with visiting := s.visiting.insert specialized}
   match info with
   | .inductInfo family =>
-    if !levels.isEmpty || family.all.length != 1 || family.numNested != 0 then
-      throw "unsupported polymorphic/mutual/nested family export"
-    let ty ← encodeExpr env family.type
+    if family.all.length != 1 || family.numNested != 0 then
+      throw "unsupported mutual/nested family export"
+    let ty ← encodeExpr env (instantiate family.type)
     -- Resolve syntax references while building a single contiguous family block.
     -- Admission is deferred entirely to the weighted checker.
-    modify fun s => {s with complete := (family.ctors.foldl (fun a c => a.insert (key c [])) s.complete).insert specialized}
+    modify fun s => {s with complete := (family.ctors.foldl (fun a c => a.insert (key c levels)) s.complete).insert specialized}
     let mut ctors : Array Json := #[]
     for ctor in family.ctors do
       let some (.ctorInfo c) := (env.setExporting false).find? ctor | throw "missing constructor syntax"
-      let cty ← encodeExpr env c.type
-      ctors := ctors.push (Json.mkObj [("kind",text "constructor"),("name",text (key ctor [])),
+      let cty ← encodeExpr env (c.type.instantiateLevelParams c.levelParams (levels.map numericLevel))
+      ctors := ctors.push (Json.mkObj [("kind",text "constructor"),("name",text (key ctor levels)),
         ("family",text specialized),("index",toJson c.cidx),("type",cty)])
     let header := Json.mkObj [("kind",text "inductive"),("name",text specialized),("type",ty),
-      ("constructors",toJson ctors.size)]
+      ("constructors",toJson ctors.size),("parameters",toJson family.numParams)]
     modify fun s => {s with declarations := s.declarations ++ #[header] ++ ctors, visiting := s.visiting.erase specialized}
   | .ctorInfo ctor =>
     let _ ← ensureDeclaration env ctor.induct levels
     modify fun s => {s with visiting := s.visiting.erase specialized}
   | .recInfo recursor =>
-    if recursor.all.length != 1 || levels.length > 1 then throw "unsupported recursor universe/family shape"
-    let family ← ensureDeclaration env recursor.all[0]! []
-    let ty ← encodeExpr env (instantiate info.type)
+    if recursor.all.length != 1 then throw "unsupported mutual recursor"
+    let some (.inductInfo familyInfo) := (env.setExporting false).find? recursor.all[0]! | throw "missing recursor family"
+    if familyInfo.numIndices != 0 then throw "unsupported indexed recursor"
+    let actualType := instantiate info.type
+    let mut motivePrefix := actualType
+    for _ in [:familyInfo.numParams] do
+      let .forallE _ _ body _ := motivePrefix | throw "unsupported recursor parameter prefix"
+      motivePrefix := body
+    let .forallE _ motive _ _ := motivePrefix | throw "missing recursor motive"
+    let .forallE _ major result _ := motive | throw "unsupported motive shape"
+    let .const ownerName ownerLevels := major.getAppFn | throw "unsupported motive family"
+    let .sort resultLevel := result | throw "unsupported motive result sort"
+    let values ← ownerLevels.mapM (fun u => (liftM (groundLevel u) : ExportM Nat))
+    let outputLevel ← (liftM (groundLevel resultLevel) : ExportM Nat)
+    let family ← ensureDeclaration env ownerName values
+    let ty ← encodeExpr env actualType
     let row := Json.mkObj [("kind",text "recursor"),("name",text specialized),("type",ty),
-      ("family",text family),("level",toJson (levels.headD 0))]
+      ("family",text family),("level",toJson outputLevel)]
     modify fun s => {s with declarations := s.declarations.push row, complete := s.complete.insert specialized, visiting := s.visiting.erase specialized}
   | _ =>
     let (value?, kind) ← match info with

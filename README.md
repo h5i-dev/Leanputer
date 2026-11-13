@@ -10,11 +10,11 @@ The active kernel development path is [declaration-as-data](docs/generic-kernel.
 Its compiler takes resource bounds only. Family names, constructor blocks and
 claimed recursor signatures are input data, validated by fixed weighted rules.
 One stock model checks two- and three-constructor enums, including arbitrary
-renamings. The initial class is ground monomorphic inductives with zero or one field per
+renamings. The initial class is ground-universe declarations with uniform type parameters and zero or one field per
 constructor in positive numeric Sorts; each field is an earlier checked carrier
-or a direct recursive occurrence. It also supports nullary Prop families with checked
-elimination restrictions. Single-field projections use validated constructor
-data, including neutral comparison and substitution. Parameters, indices and Prop constructor fields remain
+a type parameter, or a direct uniform recursive occurrence. It also supports nullary Prop families with checked
+elimination restrictions. Zero-parameter single-field projections use validated constructor
+data, including neutral comparison and substitution. Parameterized recursors/projections, term parameters, indices and Prop constructor fields remain
 unsupported. The checker derives dependent recursor types inside weights and
 performs generic constructor iota reduction. This is experimental, with no
 whole-checker soundness proof or generic mathlib coverage claim.
@@ -49,7 +49,7 @@ Tally type, with no Nat-specific compilation. The
 [recursive stock batch](benchmarks/generic-recursive/README.md) yielded
 9ACCEPT/3REJECT/2UNSUPPORTED/1RESOURCE using445.0M BF16 parameters
 (890.1MB weights) and143.97s GPU execution at1408fuel. Raw literals, general inductives,
-Eq and parameterized structures still require
+Eq and general parameterized elimination still require
 further generic rules.
 
 The remainder documents the **historical per-name catalog backend**, retained

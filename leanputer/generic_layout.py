@@ -47,7 +47,7 @@ class StateLayout:
         words = unpack_words(bits, self.widths)
         state = dict(regs=dict(zip(REGISTERS, words[:len(REGISTERS)])))
         offset = len(REGISTERS)
-        for bank, fields in (('heap', 4), ('stack', 6), ('context', 1), ('constants', 5)):
+        for bank, fields in (('heap', 4), ('stack', 6), ('context', 1), ('constants', 6)):
             capacity = getattr(self.config, bank)
             state[bank] = [words[offset+i*fields:offset+(i+1)*fields] for i in range(capacity)]
             offset += capacity*fields
