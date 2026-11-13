@@ -4,7 +4,7 @@ Stock Qwen3.5/GatedDeltaNet emission is provided by native_machine. This module
 has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
-from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules, header_rules, family_occurrence_rules, formal_levels_rules, family_application_rules, positivity_rules, abstract_scope_rules, reverse_list_rules, recursive_argument_rules, constructor_rules, recursor_name_rules, core_names_rules, declare_constructors_rules, elimination_rules, binder_ops_rules, motive_rules, block_flags_rules, open_prefix_rules, generation_ops_rules, minor_rules, recursor_type_rules, restore_scope_rules, recursor_rule_rules, assemble_recursors_rules, claim_lookup_rules, recursor_claim_rules
+from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules, header_rules, family_occurrence_rules, formal_levels_rules, family_application_rules, positivity_rules, abstract_scope_rules, reverse_list_rules, recursive_argument_rules, constructor_rules, recursor_name_rules, core_names_rules, declare_constructors_rules, elimination_rules, binder_ops_rules, motive_rules, block_flags_rules, open_prefix_rules, generation_ops_rules, minor_rules, recursor_type_rules, restore_scope_rules, recursor_rule_rules, assemble_recursors_rules, claim_lookup_rules, recursor_claim_rules, application_ops_rules
 from .recursor_claim_rules import NO_NODE as CLAIM_NO_NODE, TAGS as CLAIM_TAGS
 from .assemble_recursors_rules import NO_NODE as ASM_NO_NODE, TAGS as ASM_TAGS
 from .recursor_rule_rules import NO_NODE as RULE_NO_NODE, TAGS as RULE_TAGS
@@ -87,7 +87,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.MINOR_LINK, self.r['mode']), self.lt(Task.CHECK_RECURSOR_CLAIMS, self.r['task']),
+            self.lt(Mode.MINOR_LINK, self.r['mode']), self.lt(Task.APPLY_VECTOR_SLICE, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.lt(1, self.r['typing_active']), self.lt(1, self.r['core_operation']), self.lt(1, self.r['occurrence_internal']), self.lt(1, self.r['occurrence_found']), self.lt(1, self.r['pending_reuse']), self.lt(1, self.r['reuse_whnf']), self.lt(1, self.r['pending_scope']), self.lt(1, self.r['env_ready']), self.lt(1, self.r['pending_infer']), self.lt(self.cfg.context, self.r['local_base']),
             self.lt(1, self.r['vec_changed']), self.lt(2, self.r['pending_compare']), self.lt(1, self.r['order_same_base']),
@@ -119,7 +119,8 @@ class RuleCompiler:
         asm_no_node = self.AND(self.eq(self.r['task'],Task.ASSEMBLE_RECURSORS),self.OR(*(self.eq(self.r['mode'],m) for m in ASM_NO_NODE)))
         claim_no_node = self.OR(self.AND(self.eq(self.r['task'],Task.SYMBOL_MEMBER),self.eq(self.r['x'],0)),
             self.AND(self.eq(self.r['task'],Task.CHECK_RECURSOR_CLAIMS),self.OR(*(self.eq(self.r['mode'],m) for m in CLAIM_NO_NODE))))
-        needs_node = self.AND(self.NOT(claim_no_node),self.NOT(asm_no_node),self.NOT(rule_no_node),self.NOT(rec_type_no_node),self.NOT(minor_no_node),self.NOT(prefix_no_node),self.NOT(flags_no_node),self.NOT(motive_no_node),self.NOT(binder_no_node),self.NOT(elimination_no_node),self.NOT(decl_ctor_no_node),self.NOT(core_name_no_node),self.NOT(recname_init),self.NOT(ctor_no_node),self.NOT(self.eq(self.r['mode'], Mode.RETURN)), self.NOT(self.eq(self.r['task'], Task.FORMAL_LEVELS)),
+        application_no_node = self.AND(self.eq(self.r['task'],Task.APPLICATION_SPINE),self.OR(*(self.eq(self.r['mode'],m) for m in application_ops_rules.NO_NODE)))
+        needs_node = self.AND(self.NOT(application_no_node),self.NOT(claim_no_node),self.NOT(asm_no_node),self.NOT(rule_no_node),self.NOT(rec_type_no_node),self.NOT(minor_no_node),self.NOT(prefix_no_node),self.NOT(flags_no_node),self.NOT(motive_no_node),self.NOT(binder_no_node),self.NOT(elimination_no_node),self.NOT(decl_ctor_no_node),self.NOT(core_name_no_node),self.NOT(recname_init),self.NOT(ctor_no_node),self.NOT(self.eq(self.r['mode'], Mode.RETURN)), self.NOT(self.eq(self.r['task'], Task.FORMAL_LEVELS)),
             self.NOT(self.AND(self.eq(self.r['task'], Task.REVERSE_LIST), self.NOT(self.eq(self.r['mode'], Mode.REVERSE_LIST)))),
             self.NOT(self.AND(self.eq(self.r['task'], Task.ENV_LOOKUP), self.eq(self.r['mode'], Mode.WALK))),
             self.NOT(self.AND(self.eq(self.r['task'], Task.CHECK_SOURCE), self.NOT(self.eq(self.r['mode'], Mode.SOURCE_TYPE_SORT)))),
@@ -239,6 +240,11 @@ class RuleCompiler:
             self.AND(self.eq(self.r['mode'],Mode.CLAIM_SORT),self.NOT(expression_tag_bad)))
         tag_bad = self.OR(self.AND(sigv_task,self.NOT(sigv_ok)),self.AND(member_task,self.NOT(self.eq(self.read['node']['tag'],CellTag.VECTOR_CELL))),
             self.AND(claim_task,self.NOT(claim_ok)),self.AND(self.NOT(sigv_task),self.NOT(member_task),self.NOT(claim_task),tag_bad))
+        spine_task = self.eq(self.r['task'],Task.APPLICATION_SPINE)
+        slice_task = self.eq(self.r['task'],Task.APPLY_VECTOR_SLICE)
+        slice_ok = self.OR(*(self.AND(self.eq(self.r['mode'],m),self.eq(self.read['node']['tag'],t)) for m,t in application_ops_rules.SLICE_TAGS.items()),
+            self.AND(self.eq(self.r['mode'],Mode.SLICE_ARGUMENT),self.NOT(expression_tag_bad)))
+        tag_bad = self.OR(self.AND(spine_task,expression_tag_bad),self.AND(slice_task,self.NOT(slice_ok)),self.AND(self.NOT(spine_task),self.NOT(slice_task),tag_bad))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -412,6 +418,7 @@ class RuleCompiler:
         assemble_recursors_rules.emit_rules(self)
         claim_lookup_rules.emit_rules(self)
         recursor_claim_rules.emit_rules(self)
+        application_ops_rules.emit_rules(self)
 
         sorting = self.mode(Mode.SORT_RESULT)
         self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
@@ -604,7 +611,7 @@ class RuleCompiler:
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
         walking = self.AND(walking, self.NOT(intercepted),
-            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS), self.task(Task.ANALYZE_HEADERS), self.task(Task.HAS_FAMILIES), self.task(Task.FAMILY_APPLICATION), self.task(Task.FORMAL_LEVELS), self.task(Task.CHECK_POSITIVITY), self.task(Task.ABSTRACT_SCOPE), self.task(Task.RECURSIVE_ARGUMENT), self.task(Task.REVERSE_LIST), self.task(Task.CHECK_CONSTRUCTORS), self.task(Task.GET_NAME_PATH), self.task(Task.CHECK_RECURSOR_NAME), self.task(Task.CHECK_CORE_NAMES), self.task(Task.DECLARE_CONSTRUCTORS), self.task(Task.INIT_ELIMINATION), self.task(Task.FRESH_LOCAL), self.task(Task.APPLY_SCOPE), self.task(Task.BUILD_MOTIVES), self.task(Task.BLOCK_FLAGS), self.task(Task.INSTANTIATE_SCOPE), self.task(Task.SNAPSHOT_SCOPE), self.task(Task.OPEN_RECURSIVE_PREFIX), self.task(Task.APPLY_LIST), self.task(Task.FIND_MOTIVE), self.task(Task.BUILD_MINORS), self.task(Task.BUILD_RECURSOR_TYPES), self.task(Task.RESTORE_SCOPE), self.task(Task.BUILD_RECURSOR_RULES), self.task(Task.ASSEMBLE_RECURSORS), self.task(Task.INSTANTIATE_SCHEME), self.task(Task.SIGNATURE_VECTOR_LOOKUP), self.task(Task.SYMBOL_MEMBER), self.task(Task.CHECK_RECURSOR_CLAIMS))))
+            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS), self.task(Task.ANALYZE_HEADERS), self.task(Task.HAS_FAMILIES), self.task(Task.FAMILY_APPLICATION), self.task(Task.FORMAL_LEVELS), self.task(Task.CHECK_POSITIVITY), self.task(Task.ABSTRACT_SCOPE), self.task(Task.RECURSIVE_ARGUMENT), self.task(Task.REVERSE_LIST), self.task(Task.CHECK_CONSTRUCTORS), self.task(Task.GET_NAME_PATH), self.task(Task.CHECK_RECURSOR_NAME), self.task(Task.CHECK_CORE_NAMES), self.task(Task.DECLARE_CONSTRUCTORS), self.task(Task.INIT_ELIMINATION), self.task(Task.FRESH_LOCAL), self.task(Task.APPLY_SCOPE), self.task(Task.BUILD_MOTIVES), self.task(Task.BLOCK_FLAGS), self.task(Task.INSTANTIATE_SCOPE), self.task(Task.SNAPSHOT_SCOPE), self.task(Task.OPEN_RECURSIVE_PREFIX), self.task(Task.APPLY_LIST), self.task(Task.FIND_MOTIVE), self.task(Task.BUILD_MINORS), self.task(Task.BUILD_RECURSOR_TYPES), self.task(Task.RESTORE_SCOPE), self.task(Task.BUILD_RECURSOR_RULES), self.task(Task.ASSEMBLE_RECURSORS), self.task(Task.INSTANTIATE_SCHEME), self.task(Task.SIGNATURE_VECTOR_LOOKUP), self.task(Task.SYMBOL_MEMBER), self.task(Task.CHECK_RECURSOR_CLAIMS), self.task(Task.APPLICATION_SPINE), self.task(Task.APPLY_VECTOR_SLICE))))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)

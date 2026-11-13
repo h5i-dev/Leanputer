@@ -55,3 +55,55 @@ entry or wrong universe arity is neutral for WHNF; typed inference still rejects
 those constants. This matters for generic core predicates working under staged
 family data, and does not authorize using raw types as inferred answers. New
 core module tests cover it; the stock report above is pinned539b84f.
+
+## Runtime recursor algorithm and shared application representation
+
+The complete target is pinned `inductive.h:to_cnstr_when_K`,
+`to_cnstr_when_structure`, and `inductive_reduce_rec` (lines30–117), with
+`inductive.cpp:mk_nullary_cnstr`, `expand_eta_struct`, `get_rec_rule_for`.
+This determines the operation before testing instances:
+
+1. Split the recursor expression into head and arguments; require a checked
+   recursor signature and a present major at
+   `nparams + nmotives + nminors + nindices`.
+2. For the metadata K flag, infer/WHNF the major's type, require its owner family,
+   build that family's first constructor at the type's universe arguments and
+   parameter prefix, infer its type, and compare the two types before replacing
+   the major. There are no expression metavariables in the exported target.
+3. WHNF the major. Kernel Nat/String primitives use their source literal
+   expansion; other majors use structure expansion only under the source
+   predicate (one constructor, no indices, nonrecursive), checked owner type,
+   and non-Prop type. Construct all projections in a counted field loop.
+4. Split the resulting major and search the derived rule vector by constructor
+   identity. Missing rule/major/insufficient actual fields or wrong recursor
+   universe arity means no reduction, not a rejected proof.
+5. Instantiate the selected closed RHS's universe scheme. Apply the first
+   `nparams + nmotives + nminors` recursor arguments, then the **trailing**
+   `nfields` actual major arguments, then arguments after the major. Constructor
+   and recursor parameter counts can differ after nested restoration. Do not
+   use either count as a shape restriction or substitute the parent's indices
+   for a recursive subvalue's indices.
+6. Resume the shared WHNF controller on this expression. Neutral return must
+   preserve the caller's pending application stack; successful return consumes
+   the spine exactly once. Recursive WHNF/inference/conversion calls require
+   immutable per-call state retained by continuations, not unprotected global
+   scratch registers.
+
+`APPLICATION_SPINE` is now implemented in the development reference and Boolean
+IR as a pure reusable operation. It allocates an immutable output-only
+`APPLICATION_SPINE(headExpr, argumentVector, 0)` record (tag183); arguments are
+in application order. `get_app_fn` stops at a metadata wrapper exactly as the
+source syntax helper does; transparency belongs to WHNF. `APPLY_VECTOR_SLICE`
+validates `(start,take)` against a reference-vector length without word overflow,
+then allocates the corresponding application chain. Both preserve context,
+environment and stack and have no checking/reduction authority. These operations
+serve runtime reduction, K/structure expansion and projection traversal without
+field-count/name branches. Their current evidence is focused exact-state IR,
+not a native reduction or theorem-acceptance result.
+
+The remaining composition is explicit: select/instantiate/apply derived rules;
+K/structure/literal preparation with the shared checked services; reentrant WHNF
+integration; full original-source nested staging/restoration and publication.
+Missing checked conversion/primitive/projection services must GAP, not supply
+admission answers. This decomposition is of the complete source algorithm,
+not a supported datatype-class ladder.
