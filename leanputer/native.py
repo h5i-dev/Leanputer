@@ -1,9 +1,9 @@
 """Compile checker Boolean IR into unmodified stock Qwen3.5 layers.
 
 Compiler only. Runtime is transformers.Qwen3_5ForCausalLM.forward. No layer
-substitution, norm replacement, monkeypatch, pretrained backbone or emulator.
-The first native slice is the complete bounded STLC checker; dependent-machine
-RAM migration is separate work and is not claimed by this module.
+substitution, norm replacement, runtime forward patch, pretrained backbone or emulator.
+This module also emits the stock layers used by native_machine.py, whose
+shared dependent checker uses active stock GatedDeltaNet memory.
 """
 import argparse
 from dataclasses import dataclass
@@ -84,30 +84,37 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
                                    mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
     native_config = Qwen3_5TextConfig(**tc)
     native_config._attn_implementation = 'eager'
-    # Stock initialization context avoids writing an unnecessary random copy
-    # of large dense weights; stock rotary/cache buffers still initialize.
-    with no_init_weights():
-        model = Qwen3_5ForCausalLM(native_config)
-    # Every parameter is compiler-generated, including inactive native sublayers.
-    state = emit_layers(graph, layout, tc, 0, 'model.', allocation)
-    for name,value in model.state_dict().items():
-        if name not in state: state[name]=torch.zeros(value.shape,dtype=torch.float32)
-    if reset_layers:
+    # Build stock modules directly at the target dtype/device, then copy one
+    # compiler-generated layer at a time. Larger feature catalogs otherwise
+    # require multiple complete FP32 model copies on this 15GB host.
+    original_dtype=torch.get_default_dtype()
+    try:
+        torch.set_default_dtype(dtype)
+        with torch.device(device),no_init_weights():
+            model=Qwen3_5ForCausalLM(native_config)
+    finally:
+        torch.set_default_dtype(original_dtype)
+    with torch.no_grad():
+        for parameter in model.parameters(): parameter.zero_()
         from .native_vendor.qwenputer.emit import row
-        for unit, slot in enumerate(clear):
-            layer, index = divmod(unit, intermediate)
-            prefix = f'model.layers.{layer}.mlp.'
-            row(graph.one, layout, state[prefix+'gate_proj.weight'][index], 128.)
-            state[prefix+'up_proj.weight'][index, slot] = 1/(128*layout.scale)
-            state[prefix+'down_proj.weight'][slot,index] = -1.
-    state['model.norm.weight'].fill_(-1.)
-    for i, dimension in enumerate(result_dims):
-        slot = layout.dim(dimension)
-        state['model.norm.weight'][slot] = 1/layout.scale
-        state['lm_head.weight'][i, slot] = 1.
-    model.load_state_dict(state, strict=True, assign=True)
+        for layer in range(layers):
+            state=emit_layers(graph,layout,tc,0,'model.',allocation,only_layer=layer)
+            if layer<reset_layers:
+                prefix=f'model.layers.{layer}.mlp.'
+                for index,slot in enumerate(clear[layer*intermediate:(layer+1)*intermediate]):
+                    row(graph.one,layout,state[prefix+'gate_proj.weight'][index],128.)
+                    state[prefix+'up_proj.weight'][index,slot]=1/(128*layout.scale)
+                    state[prefix+'down_proj.weight'][slot,index]=-1.
+            _,unexpected=model.load_state_dict(state,strict=False)
+            if unexpected: raise ValueError('native compiler tensor names differ from stock model')
+            del state
+        model.model.norm.weight.fill_(-1.)
+        for index,dimension in enumerate(result_dims):
+            slot=layout.dim(dimension)
+            model.model.norm.weight[slot]=1/layout.scale
+            model.lm_head.weight[index,slot]=1.
     model.requires_grad_(False)
-    model = model.to(device=device, dtype=dtype).eval()
+    model=model.eval()
     return model, layout, allocation
 
 

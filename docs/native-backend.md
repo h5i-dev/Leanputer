@@ -23,8 +23,8 @@ Minimal smoke configuration:
 - Hidden size704, intermediate256, 37 linear-attention/native SwiGLU layers plus
   one inactive full-attention layer; 38,292,874 generated parameters (~153MB fp32).
 - Stock RMSNorm, SiLU/SwiGLU, convolution and GatedDeltaNet implementations.
-  **Attention sublayers are inactive for this unrolled STLC slice.** Native
-  DeltaNet RAM for the shared dependent machine is not yet implemented.
+  **Attention sublayers are inactive for this unrolled STLC slice.** The subsequent shared-machine implementation below uses active native
+  DeltaNet RAM; these size figures describe only the initial STLC slice.
 - Stock model can save/reload with `save_pretrained`/`from_pretrained` and
   `trust_remote_code` is unnecessary. Metadata records input packing slots.
 
@@ -68,12 +68,11 @@ python3.12 -m venv /mnt/scratch/leanputer-native-venv
   --save /mnt/scratch/leanputer-runs/native-stlc-stock
 ```
 
-Next implementation: preserve the explicit dependent semantic machine/Boolean
-IR, compile memory reads/writes to native DeltaNet cache and register-control
-rules to native SwiGLU, establish stock-forward recurrence, then add False/Iff/
-And/equality support based on the measured mathlib blockers. Native memory state,
-normalization, gating, dtype and cache behavior need executable correspondence;
-the current custom rank-one RAM update is not evidence of native compatibility.
+The implemented shared-machine port below preserves the explicit semantic
+machine/Boolean IR and lowers its memory to native DeltaNet cache and control
+to native SwiGLU. Feature expansion follows measured mathlib blockers. Native
+normalization, gating, dtype and cache correspondence remains provisional
+until the deferred broad validation phase.
 
 ## Shared dependent native execution (bring-up checkpoint)
 
@@ -133,3 +132,29 @@ inside a dependent claim (1,330steps). Broad checks are deliberately deferred
 until the planned feature set is implemented. Kernel basis in current native
 reports lists the complete fixed intrinsic catalog; initial four-case log's
 False-only metadata label was stale and has been corrected in reporting code.
+
+## Equality and compilation memory
+
+The Eq/Eq.refl/dependent Eq.rec slice adds ground universe pairs and six
+recursor-control phases (66 total). Partial Eq.rec head/arity is derived by
+weighted weak-head normalization; no preprocessing labels recursor applications.
+See input-and-trust.md for the typed iota/K reduction premise and remaining
+soundness limits. Re-exporting130old Eq-first failures produced38syntax
+candidates; this is not38accepted proofs or a complete population update.
+
+To let feature development fit the15GiB host, stock modules are constructed at
+the target dtype/device with stock `no_init_weights`, then explicitly zeroed.
+The compiler emits/copies one layer's FP32 tensors at a time. This avoids whole
+FP32-model and whole-state-dictionary duplicates; it does not shrink parameter
+shapes, change native runtime methods, or establish efficient model sizing.
+
+Stock GPU equality smoke passed: actual mathlib Function.const_def@[1,1]
+ACCEPT1,213steps with no assumptions; a dependent claim forcing K reduction
+ACCEPT1,241steps under explicit A/a/q/P/h assumptions; invalid reflexivity
+endpoints REJECT/CONVERSION382steps. These are three development cases, not a
+full-population coverage estimate. H256/fuel1536,48boot records and1,538fixed
+forwards took143.099s. Model2,934,590,462BF16parameters (5,869,180,924bytes),
+hidden12288,64native layers; compile58.088s, peak PyTorch CUDA allocation
+5,917,372,416bytes and process RSS1,777,995,776bytes. Layerwise emission bounded
+host memory while preserving stock layer shapes. This substantial dense-zero
+overhead remains architectural debt. Compact evidence: benchmarks/native/equality-smoke.json.

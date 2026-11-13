@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import PRIMITIVE_SCHEMAS, PROJECTION_FAMILIES, primitive_code
+from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code
 
 
 class Outcome(IntEnum):
@@ -96,6 +96,12 @@ class Op(IntEnum):
     PROJ_HEAD = 57
     PROJ_SELECT = 58
     TREE_PROJ = 59
+    EQ_REC = 60
+    EQ_MINOR = 61
+    EQ_ANCHOR = 62
+    EQ_INDEX = 63
+    EQ_SELECT = 64
+    EQ_RESULT = 65
 
 
 @dataclass(frozen=True)
@@ -118,12 +124,16 @@ class MachineConfig:
             raise ValueError('positive fuel required')
 
     @property
+    def universe_bits(self):
+        return max(1,(self.universe-1).bit_length())
+
+    @property
     def word_bits(self):
-        return max(6, max(self.heap, self.stack, self.context, self.constants).bit_length())
+        return max(7,2*self.universe_bits,max(self.heap,self.stack,self.context,self.constants).bit_length())
 
 
 REGISTERS = ('mode', 'x', 'y', 'z', 'w', 'r', 'ctx', 'sp', 'free', 'scan',
-             'decl', 'decl_count', 'term', 'claim', 'fuel', 'status', 'reason')
+             'decl', 'decl_count', 'term', 'claim', 'fuel', 'status', 'reason', 'head', 'arity')
 HEAP_FIELDS = ('tag', 'a', 'b', 'v')
 FRAME_FIELDS = ('mode', 'x', 'y', 'z', 'w', 'ctx')
 
@@ -153,7 +163,8 @@ def prepare(config, term, claim, declarations=()):
             a=visit(expr[3]);v=PROJECTION_FAMILIES[expr[1]]+expr[2]
         elif tag == 'builtin':
             v = primitive_code(expr)
-            a = expr[2] if len(expr)==3 else 0
+            a=expr[2] if len(expr)>2 else 0
+            b=expr[3] if len(expr)>3 else 0
         else:
             v = expr[1]
         if max(a,b,v) >= 1 << config.word_bits:
@@ -191,8 +202,8 @@ class SpecMachine:
     def stop(self, status, reason=Reason.NONE):
         self.state['regs'].update(status=int(status), reason=int(reason))
 
-    def ret(self, result):
-        self.state['regs'].update(mode=int(Op.RET), r=result)
+    def ret(self, result, head=0, arity=0):
+        self.state['regs'].update(mode=int(Op.RET),r=result,head=head,arity=arity)
 
     def tail(self, op, x=0, y=0, z=0, w=0):
         self.state['regs'].update(mode=int(op), x=x, y=y, z=z, w=w)
@@ -209,7 +220,7 @@ class SpecMachine:
         if context is not None:
             r['ctx'] = context
 
-    def allocate(self, tag, a=0, b=0, v=0, resume=None):
+    def allocate(self, tag, a=0, b=0, v=0, resume=None, head=0, arity=0):
         r = self.state['regs']
         if r['free'] >= self.config.heap:
             self.stop(Outcome.RESOURCE, Reason.HEAP); return
@@ -218,7 +229,7 @@ class SpecMachine:
         pointer = r['free']
         self.state['heap'][pointer] = [int(tag), a, b, v]
         r['free'] += 1
-        self.ret(pointer)
+        self.ret(pointer,head,arity)
         if resume is not None:
             self.tail(*resume)
 
@@ -239,18 +250,18 @@ class SpecMachine:
         # Check address domains before any semantic read or update. The weighted
         # engine uses the same guards before interpreting an attention result.
         if (not 1 <= r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['ctx'] > cfg.context
-                or not r['decl'] <= r['decl_count'] <= cfg.constants):
+                or not r['decl'] <= r['decl_count'] <= cfg.constants or r['head']not in(0,8) or r['arity']>5 or (r['head']==0 and r['arity']!=0)):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                   Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE,
-                  Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ):
+                  Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ):
             pointers.append(result)
-        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT):
+        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT):
             pointers.append(y)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
@@ -265,14 +276,16 @@ class SpecMachine:
                 elif tag == Tag.PROJ:
                     valid &= 0<a<i and b==0 and v<4
                 elif tag == Tag.BUILTIN:
-                    valid &= b==0 and v in PRIMITIVE_SCHEMAS and (v==1 or a==0)
+                    counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
+                    count=counts.get(v,0)
+                    valid &= v in PRIMITIVE_SCHEMAS and (count>0 or a==0) and (count>1 or b==0)
                 else:
                     valid &= a == b == 0
                 if tag == Tag.CONST:
                     valid &= v < r['decl_count']
                 if not valid:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
-                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and v==1 and a>=cfg.universe):
+                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and ((count>0 and a>=cfg.universe)or(count>1 and b>=cfg.universe))):
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
                     r['scan'] += 1
@@ -284,7 +297,9 @@ class SpecMachine:
                 tag,a,b,v=schema[y]
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(schema) else None
-                self.allocate(tag,z+a if binary else 0,z+b if binary else 0,w if v is None else v,resume)
+                u=w&((1<<cfg.universe_bits)-1); second=w>>cfg.universe_bits
+                resolve=lambda value:u if value==-1 else second if value==-2 else value
+                self.allocate(tag,z+a if binary else resolve(a),z+b if binary else resolve(b),resolve(v),resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
                 self.call(Op.INFER, r['claim'], continuation=(Op.ROOT_TYPE,))
@@ -338,10 +353,8 @@ class SpecMachine:
             elif tag == Tag.BUILTIN:
                 if v==0:
                     self.allocate(Tag.SORT,v=0)
-                elif v==1 and a>=cfg.universe:
-                    self.stop(Outcome.RESOURCE,Reason.UNIVERSE)
                 else:
-                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a)
+                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a|(b<<cfg.universe_bits))
             elif tag==Tag.PROJ:
                 self.call(Op.INFER,a,continuation=(Op.I_PROJ,x))
             elif tag in (Tag.LAM, Tag.PI):
@@ -424,7 +437,7 @@ class SpecMachine:
                 else:
                     self.ret(x)
             elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.BUILTIN):
-                self.ret(x)
+                self.ret(x,8 if tag==Tag.BUILTIN and v==8 else 0)
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
         elif op==Op.W_PROJ:
@@ -450,10 +463,28 @@ class SpecMachine:
             tag, _, body, _ = self.node(result)
             if tag == Tag.LAM:
                 self.call(Op.SUBST, body, y, continuation=(Op.W_BETA,))
+            elif r['head']==8:
+                if r['arity']==5:
+                    self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
+                elif result==self.node(x)[1]: self.ret(x,8,r['arity']+1)
+                else: self.allocate(Tag.APP,result,y,head=8,arity=r['arity']+1)
             elif result == self.node(x)[1]:
                 self.ret(x)
             else:
                 self.allocate(Tag.APP, result, y)
+        elif op in (Op.EQ_REC,Op.EQ_MINOR,Op.EQ_ANCHOR,Op.EQ_INDEX):
+            tag,a,b,_=self.node(x)
+            if tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.SYNTAX)
+            elif op==Op.EQ_REC: self.tail(Op.EQ_MINOR,a,b)
+            elif op==Op.EQ_MINOR: self.call(Op.EQ_ANCHOR,a,y,continuation=(Op.EQ_SELECT,b))
+            elif op==Op.EQ_ANCHOR: self.tail(Op.EQ_INDEX,a,y)
+            else: self.tail(Op.CONV,b,y)
+        elif op==Op.EQ_SELECT:
+            self.ret(x if result else 0)
+        elif op==Op.EQ_RESULT:
+            if result: self.tail(Op.WHNF,result)
+            elif self.node(x)[1]==y: self.ret(x)
+            else: self.allocate(Tag.APP,y,z)
         elif op == Op.W_BETA:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):
@@ -514,7 +545,7 @@ class SpecMachine:
                 if vx==vy: self.call(Op.CONV,ax,ay,continuation=(Op.C_AFTER_CHILD,x,result))
                 else: self.tail(Op.FALLBACK,x,result)
             elif tx in (Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN):
-                if vx == vy and (tx != Tag.BUILTIN or ax == ay):
+                if vx == vy and (tx != Tag.BUILTIN or (ax==ay and bx==by)):
                     self.ret(1)
                 else:
                     self.tail(Op.FALLBACK, x, result)

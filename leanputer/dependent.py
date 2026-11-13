@@ -45,11 +45,12 @@ def parse_expr(value):
     if tag == 'const' and len(value) == 2 and isinstance(value[1], str) and value[1]:
         return (tag, value[1])
     if tag == 'builtin':
-        from .primitives import PRIMITIVE_CODES
-        if len(value)==2 and value[1] in PRIMITIVE_CODES and value[1]!='False.rec': return (tag,value[1])
-        if len(value)==3 and value[1]=='False.rec' and type(value[2]) is int and value[2]>=0:
-            return (tag,'False.rec',value[2])
-        raise Unsupported('unsupported logical primitive')
+        from .primitives import PRIMITIVE_CODES,PRIMITIVE_UNIVERSES
+        if len(value)>=2 and isinstance(value[1],str) and value[1] in PRIMITIVE_CODES:
+            count=PRIMITIVE_UNIVERSES.get(value[1],0)
+            if len(value)==2+count and all(type(u)is int and u>=0 for u in value[2:]):
+                return tuple(value)
+        raise Unsupported('unsupported logical primitive or universe arity')
     if tag == 'proj':
         if len(value)==4 and value[1] in ('Iff','And') and type(value[2]) is int and 0<=value[2]<2:
             return (tag,value[1],value[2],parse_expr(value[3]))
@@ -120,29 +121,33 @@ class Oracle:
         return (tag, self.substitute(term[1], replacement, depth),
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
 
-    def whnf(self, term):
+    def whnf(self, term, context=()):
         self.tick()
         if term[0] == 'const':
             declaration = self.environment.get(term[1])
             if declaration is None:
                 raise Rejected('unknown constant')
-            return self.whnf(declaration.value) if declaration.value is not None and not declaration.opaque else term
+            return self.whnf(declaration.value,context) if declaration.value is not None and not declaration.opaque else term
         if term[0]=='proj':
-            base=self.whnf(term[3]); head=base; arguments=[]
+            base=self.whnf(term[3],context); head=base; arguments=[]
             while head[0]=='app': arguments.insert(0,head[2]);head=head[1]
             if head==('builtin',term[1]+'.intro') and len(arguments)==4:
-                return self.whnf(arguments[2+term[2]])
+                return self.whnf(arguments[2+term[2]],context)
             return ('proj',term[1],term[2],base)
         if term[0] == 'app':
-            fn = self.whnf(term[1])
+            fn = self.whnf(term[1],context)
             if fn[0] == 'lam':
-                return self.whnf(self.substitute(fn[2], term[2]))
-            return ('app', fn, term[2])
+                return self.whnf(self.substitute(fn[2], term[2]),context)
+            result=('app',fn,term[2]);head=result;arguments=[]
+            while head[0]=='app':arguments.insert(0,head[2]);head=head[1]
+            if head[0]=='builtin' and head[1]=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
+                return self.whnf(arguments[3],context)
+            return result
         return term
 
     def convert(self, left, right, context=()):
         self.tick()
-        left, right = self.whnf(left), self.whnf(right)
+        left,right=self.whnf(left,context),self.whnf(right,context)
         if left == right:
             return True
         if left[0] == right[0] and left[0] in ('pi', 'lam', 'app'):
@@ -155,14 +160,14 @@ class Oracle:
         # Sort and Pi expressions cannot be proof terms or eta-expanded values.
         if left[0] in ('sort', 'pi') or right[0] in ('sort', 'pi'):
             return False
-        left_type = self.whnf(self.infer(left, context))
+        left_type = self.whnf(self.infer(left,context),context)
         if left_type[0] != 'sort':
-            classifier = self.whnf(self.infer(left_type, context))
+            classifier = self.whnf(self.infer(left_type,context),context)
             if classifier == ('sort', 0) and self.convert(left_type, self.infer(right, context), context):
                 return True
         if (left[0] == 'lam') != (right[0] == 'lam'):
             lam, neutral = (left, right) if left[0] == 'lam' else (right, left)
-            fn_type = self.whnf(self.infer(neutral, context))
+            fn_type = self.whnf(self.infer(neutral,context),context)
             if fn_type[0] == 'pi' and self.convert(lam[1], fn_type[1], context):
                 applied = ('app', self.shift(neutral, 1), ('var', 0))
                 return self.convert(lam[2], applied, context + (lam[1],))
@@ -175,7 +180,7 @@ class Oracle:
             from .primitives import primitive_type
             return primitive_type(term)
         if tag=='proj':
-            inferred=self.whnf(self.infer(term[3],context))
+            inferred=self.whnf(self.infer(term[3],context),context)
             if inferred[0]!='app' or inferred[1][0]!='app' or inferred[1][1]!=('builtin',term[1]):
                 raise Rejected('projection family mismatch')
             left,right=inferred[1][2],inferred[2]
@@ -193,18 +198,18 @@ class Oracle:
                 raise Rejected('unknown constant')
             return self.environment[term[1]].type
         if tag in ('lam', 'pi'):
-            domain_sort = self.whnf(self.infer(term[1], context))
+            domain_sort=self.whnf(self.infer(term[1],context),context)
             if domain_sort[0] != 'sort':
                 raise Rejected('binder domain is not a type')
             body_type = self.infer(term[2], context + (term[1],))
             if tag == 'lam':
                 return ('pi', term[1], body_type)
-            body_sort = self.whnf(body_type)
+            body_sort=self.whnf(body_type,context+(term[1],))
             if body_sort[0] != 'sort':
                 raise Rejected('Pi codomain is not a type')
             # Lean imax on ground numeric levels: impredicative Prop.
             return ('sort', 0 if body_sort[1] == 0 else max(domain_sort[1], body_sort[1]))
-        fn_type = self.whnf(self.infer(term[1], context))
+        fn_type=self.whnf(self.infer(term[1],context),context)
         if fn_type[0] != 'pi' or not self.convert(self.infer(term[2], context), fn_type[1], context):
             raise Rejected('application type mismatch')
         return self.substitute(fn_type[2], term[2])

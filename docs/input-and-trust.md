@@ -32,9 +32,9 @@ The external exporter traverses actual Lean Expr trees and the environment's
 ConstantInfo. It retains applications and lambda terms requiring conversion;
 it does not call inferType, whnf, isDefEq, or any checker to label the result.
 Numeric level expressions are evaluated after syntactic universe parameter
-instantiation. Unresolved levels, lets, projections, literals, metavariables,
-inductive/constructor/recursor/quotient declarations are
-explicitly unsupported. Unsupported exporter records are report entries, never
+instantiation. Unresolved levels, lets, literals, metavariables and general
+inductive/constructor/recursor/quotient declarations are explicitly unsupported.
+The fixed primitive/projection exceptions are listed below. Unsupported exporter records are report entries, never
 accepted judgments. Metadata nodes are erased because they have no typing role.
 
 A successful check corresponds to the displayed *ground specialization* of the
@@ -124,3 +124,26 @@ proof-irrelevance fallback when structural bases differ. General Iff.rec and
 And.rec remain explicitly unsupported; the supported eliminators in this slice
 are the field projections. Ordinary projection definitions remain in the checked
 dependency closure. They are not replaced by unchecked environment assumptions.
+
+
+## Equality primitive slice
+
+`["builtin","Eq",u]`, `["builtin","Eq.refl",u]` and
+`["builtin","Eq.rec",u,v]` preserve concrete universe parameters. Eq.rec's
+order is **result universe, carrier universe**, matching Lean. Both parameters
+participate in syntax validation and conversion. Its full dependent type is
+constructed inside weighted transitions from a fixed compiled rule schema;
+input documents do not supply type certificates. Eq.ndrec, Eq.mp and other
+ordinary definitions are exported with checked bodies rather than admitted
+as new primitive axioms.
+
+Fully applied, well-typed Eq.rec reduces to its minor when the anchor and
+endpoint are definitionally equal. This includes constructor iota and Lean's
+K reduction with an opaque or neutral equality proof; it uses existing proof
+irrelevance and typed conversion. A hypothesis `a=b` does not by itself make
+distinct endpoints definitionally equal. The implementation relies on the
+checker's typed weak-head-normalization invariant, as does its existing
+conversion algorithm. No formal proof of that invariant or whole-compiler
+soundness is claimed. Internally derived head/arity registers track partial
+recursor applications; they are not input certificates or heap annotations.
+General indexed inductive definitions, HEq and quotient rules remain unsupported.

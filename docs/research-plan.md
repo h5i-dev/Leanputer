@@ -180,3 +180,13 @@ are not supported yet. Next actual priority is Eq family/refl/dependent recursor
 User explicitly approved feature-first; record model memory/time and fix sizing
 only when it blocks continued development. Compression/profiling/broadvalidation
 remain deferred. No graph unit-budget compression was applied.
+
+Eq family/refl/dependent recursor is implemented through syntax export,
+66-phase IR and fixed intrinsic schemas. Ground universe pairs are preserved
+in typing/conversion. Targeted weighted and actual Lean tests cover unequal
+recursor universe parameters, typed K conversion under an explicit equality
+hypothesis, and rejection of reflexivity at unequal endpoints. The native
+source/K/negative check is recorded in native-backend.md after completion.
+Next measured syntax blocker is let (16first failures in the old Eq130subset):
+preserve annotation/value/body and perform checking plus zeta in weights.
+No corpus-wide rerun or model compression campaign is scheduled in this phase.

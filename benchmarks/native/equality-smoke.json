@@ -1,0 +1,86 @@
+{
+  "results": [
+    {
+      "name": "Function.const_def@[1,1]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 1213
+    },
+    {
+      "name": "relative-K",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [
+        "A",
+        "a",
+        "q",
+        "P",
+        "h"
+      ],
+      "semantic_steps": 1241
+    },
+    {
+      "name": "wrong-refl-endpoint",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [
+        "A",
+        "a",
+        "b"
+      ],
+      "semantic_steps": 382
+    }
+  ],
+  "forward_seconds": 143.09889407899755,
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec"
+  ],
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 2934590462,
+  "weight_bytes": 5869180924,
+  "cuda_peak_allocated_bytes": 5917372416,
+  "host_process_peak_rss_bytes": 1777995776,
+  "hidden_size": 12288,
+  "native_layers": 64,
+  "boot_tokens": 48,
+  "applied_steps": 1538,
+  "format": "leanputer.native-checkpoint.v1",
+  "feature": "equality",
+  "config": {
+    "heap": 256,
+    "stack": 32,
+    "context": 16,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1536
+  },
+  "compile_seconds": 58.08807861000241,
+  "intermediate_size": 1024,
+  "device": "NVIDIA A10G",
+  "dtype": "bfloat16",
+  "validation_scope": "Three targeted stock-forward development cases; broad differential validation deferred",
+  "mathlib_population": {
+    "public_theorems": 857,
+    "modules": 4,
+    "ground_instances_per_source": 1,
+    "full_native_population_run": false
+  },
+  "syntax_reexport": {
+    "original_first_eq_blockers": 130,
+    "exported_candidates": 38,
+    "verified_proofs_from_this_subset": 1
+  },
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean_version": "4.31.0",
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "5.19.0"
+}

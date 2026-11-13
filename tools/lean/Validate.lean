@@ -22,6 +22,11 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "And.intro" then return .const ``And.intro []
     if name == "False.rec" && fields.size == 3 then
       return .const ``False.rec [numericLevel (← fields[2]!.getNat?)]
+    if fields.size == 3 then
+      if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
+      if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
+    if name == "Eq.rec" && fields.size == 4 then
+      return .const ``Eq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     throw "unsupported replay logical primitive"
   if tag == "proj" && fields.size == 4 then
     let family ← fields[1]!.getStr?
@@ -83,13 +88,13 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And] do
+  for name in [``False, ``Iff, ``And, ``Eq] do
     let some (.inductInfo info) := standard.find? name | throw (IO.userError "missing standard primitive")
     let mut ctors : List Lean.Constructor := []
     for ctor in info.ctors do
       let some constructor := standard.find? ctor | throw (IO.userError "missing standard constructor")
       ctors := ctors ++ [{name := ctor, type := constructor.type}]
-    let primitive : Lean.Declaration := .inductDecl [] info.numParams [{name, type := info.type, ctors}] false
+    let primitive : Lean.Declaration := .inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false
     basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => "Lean rejected primitive basis"))
   let mut records : Array Json := #[]
   for line in (← IO.FS.readFile input).splitOn "\n" do

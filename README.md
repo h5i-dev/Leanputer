@@ -3,21 +3,23 @@
 Leanputer compiles proof-checking logic into deterministic weights without
 training. The [new native path](docs/native-backend.md) executes a complete
 bounded STLC checker using stock `Qwen3_5ForCausalLM.forward`, with a small
-compiler-generated configuration and no pretrained backbone. The shared
-dependent checker still uses a custom sparse circuit/attention-RAM reference
-backend; its migration into native Transformer blocks is in progress. That
-custom backend is not a conventional Transformer result.
+compiler-generated configuration and no pretrained backbone. The shared dependent checker also runs through stock Qwen3.5 layers with
+active GatedDeltaNet cache and identity hidden-state feedback. Its generated
+dense configurations have grown substantially with feature support; sizes and
+timing are recorded in the native documentation. The custom sparse
+circuit/attention-RAM implementation remains a semantic reference backend.
 
 The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
 and acyclic axiom/definition/opaque dependencies. The native/shared IR now also
 implements False/False.rec and the Iff/And proposition structures with
-constructors and field projections as fixed kernel primitives. Targeted stock
+constructors and field projections, plus Eq/Eq.refl/dependent Eq.rec, as fixed
+kernel primitives. Targeted stock
 forward smokes pass; broader validation is pending. Numeric universes use
 Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
 Opaque dependency values are checked while their opacity is preserved. Symbolic
-universe constraints, general inductive/recursor declarations, quotient rules, lets and projections
-are not yet supported. The supported ground fragment is still experimental.
+universe constraints, general inductive/recursor declarations, quotient rules,
+lets and arbitrary structure projections are not yet supported. The supported ground fragment is still experimental.
 The tool does not claim a complete Lean kernel, formal soundness verification,
 or conference-level results from the current test count.
 
@@ -129,7 +131,7 @@ register-control FFNs, and attention-addressed gated rank-one writes. The defaul
 (`--execution cuda_graph --device cuda`) reuses the same forward operations and
 fixed schedule; it does not move semantic work into the host loop.
 
-[The initial mathlib evaluation](docs/mathlib-evaluation.md) retains all **857
+[The initial reference-backend mathlib evaluation](docs/mathlib-evaluation.md) retains all **857
 public theorem declarations from four pinned modules**. Four ground instances
 are exportable and accepted at heap2048/fuel16384; 853 are unsupported. This is
 4/857 (0.467%) for that population, with a 59.16-second fixed CUDA batch in an

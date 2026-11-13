@@ -211,7 +211,7 @@ def clearable_dims(g: Graph, traces: list[list[int]]) -> set[int]:
 
 def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
                 alloc: Alloc | None = None, keep: set[int] | None = None,
-                chip: Expr | None = None) -> dict:
+                chip: Expr | None = None, only_layer: int | None = None) -> dict:
     """Weights of the chip layers, named ``{prefix}layers.{first + i}.*``.
 
     With ``keep``, the MLP sublayer of the nodes named ``exit.*`` also clears every chip dim
@@ -237,6 +237,8 @@ def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
     assert chip is not None or not over, "an overlay needs the chip-token gate"
     one = Expr({ONE: 1})
     for L in range(g.n_layers()):
+        if only_layer is not None and L != only_layer:
+            continue
         p = f"{prefix}layers.{first + L}."
         qkv = torch.zeros(2 * nk * HD + nv * HD, h, dtype=f32)
         convw = torch.zeros(2 * nk * HD + nv * HD, 1, tc["linear_conv_kernel_dim"], dtype=f32)
