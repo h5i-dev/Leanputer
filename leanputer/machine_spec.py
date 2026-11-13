@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import EMPTY_ELIMINATOR, primitive_code
+from .primitives import PRIMITIVE_SCHEMAS, PROJECTION_FAMILIES, primitive_code
 
 
 class Outcome(IntEnum):
@@ -32,6 +32,7 @@ class Reason(IntEnum):
     FUEL = 10
     INDEX = 11
     INTERNAL = 12
+    EXPECT_STRUCTURE = 13
 
 
 class Op(IntEnum):
@@ -85,6 +86,16 @@ class Op(IntEnum):
     E_MAKE_APP = 47
     E_COMPARE = 48
     BUILTIN_TYPE = 49
+    I_PROJ = 50
+    I_PROJ_TYPE = 51
+    I_PROJ_FAMILY = 52
+    I_PROJ_HEAD = 53
+    I_PROJ_ARROW = 54
+    W_PROJ = 55
+    PROJ_FIELDS = 56
+    PROJ_HEAD = 57
+    PROJ_SELECT = 58
+    TREE_PROJ = 59
 
 
 @dataclass(frozen=True)
@@ -138,6 +149,8 @@ def prepare(config, term, claim, declarations=()):
             if expr[1] not in names:
                 raise ValueError(f'undeclared constant: {expr[1]}')
             v = names[expr[1]]
+        elif tag == 'proj':
+            a=visit(expr[3]);v=PROJECTION_FAMILIES[expr[1]]+expr[2]
         elif tag == 'builtin':
             v = primitive_code(expr)
             a = expr[2] if len(expr)==3 else 0
@@ -209,6 +222,11 @@ class SpecMachine:
         if resume is not None:
             self.tail(*resume)
 
+    def neutral_projection(self,original,base):
+        _,child,_,projection=self.node(original)
+        if child==base: self.ret(original)
+        else: self.allocate(Tag.PROJ,base,v=projection)
+
     def step(self):
         s, cfg = self.state, self.config
         r = s['regs']
@@ -226,12 +244,13 @@ class SpecMachine:
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                   Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
-                  Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE):
+                  Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE,
+                  Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                  Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF):
+                  Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ):
             pointers.append(result)
-        if op in (Op.CONV, Op.FALLBACK, Op.ETA):
+        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT):
             pointers.append(y)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
@@ -240,11 +259,13 @@ class SpecMachine:
                 self.tail(Op.ENV)
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
-                valid = 1 <= tag <= 7
+                valid = 1 <= tag <= 8
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
+                elif tag == Tag.PROJ:
+                    valid &= 0<a<i and b==0 and v<4
                 elif tag == Tag.BUILTIN:
-                    valid &= b==0 and v in (0,1) and (v==1 or a==0)
+                    valid &= b==0 and v in PRIMITIVE_SCHEMAS and (v==1 or a==0)
                 else:
                     valid &= a == b == 0
                 if tag == Tag.CONST:
@@ -256,12 +277,13 @@ class SpecMachine:
                 else:
                     r['scan'] += 1
         elif op == Op.BUILTIN_TYPE:
-            if x!=1 or not 0 <= y < len(EMPTY_ELIMINATOR) or z<=0 or z+y!=r['free']:
+            schema=PRIMITIVE_SCHEMAS.get(x,())
+            if not 0 <= y < len(schema) or z<=0 or z+y!=r['free']:
                 self.stop(Outcome.REJECT,Reason.SYNTAX)
             else:
-                tag,a,b,v = EMPTY_ELIMINATOR[y]
-                binary = tag in (Tag.PI,Tag.APP)
-                resume = (Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(EMPTY_ELIMINATOR) else None
+                tag,a,b,v=schema[y]
+                binary=tag in (Tag.PI,Tag.APP)
+                resume=(Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(schema) else None
                 self.allocate(tag,z+a if binary else 0,z+b if binary else 0,w if v is None else v,resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
@@ -316,10 +338,12 @@ class SpecMachine:
             elif tag == Tag.BUILTIN:
                 if v==0:
                     self.allocate(Tag.SORT,v=0)
-                elif a>=cfg.universe:
+                elif v==1 and a>=cfg.universe:
                     self.stop(Outcome.RESOURCE,Reason.UNIVERSE)
                 else:
                     self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a)
+            elif tag==Tag.PROJ:
+                self.call(Op.INFER,a,continuation=(Op.I_PROJ,x))
             elif tag in (Tag.LAM, Tag.PI):
                 self.call(Op.INFER, a, continuation=(Op.I_DOM, x))
             elif tag == Tag.APP:
@@ -328,6 +352,27 @@ class SpecMachine:
                 self.ret(s['constants'][v][1])
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
+        elif op==Op.I_PROJ:
+            self.call(Op.WHNF,result,continuation=(Op.I_PROJ_TYPE,x))
+        elif op==Op.I_PROJ_TYPE:
+            tag,a,b,_=self.node(result)
+            if tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            else: self.tail(Op.I_PROJ_FAMILY,a,x,b)
+        elif op==Op.I_PROJ_FAMILY:
+            tag,a,b,_=self.node(x)
+            if tag!=Tag.APP: self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            else: self.tail(Op.I_PROJ_HEAD,a,y,b,z)
+        elif op==Op.I_PROJ_HEAD:
+            tag,a,_,v=self.node(x); projection=self.node(y)[3]
+            expected=2 if projection<2 else 4
+            if tag!=Tag.BUILTIN or a or v!=expected:
+                self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            elif projection>=2: self.ret(w if projection%2 else z)
+            else:
+                domain,codomain=(z,w) if projection==0 else (w,z)
+                self.call(Op.SHIFT,codomain,0,1,continuation=(Op.I_PROJ_ARROW,domain))
+        elif op==Op.I_PROJ_ARROW:
+            self.allocate(Tag.PI,x,result)
         elif op == Op.I_DOM:
             self.call(Op.WHNF, result, continuation=(Op.I_BIND, x))
         elif op == Op.I_BIND:
@@ -367,7 +412,9 @@ class SpecMachine:
                 self.tail(Op.SUBST, x, y)
         elif op == Op.WHNF:
             tag, a, b, v = self.node(x)
-            if tag == Tag.APP:
+            if tag==Tag.PROJ:
+                self.call(Op.WHNF,a,continuation=(Op.W_PROJ,x))
+            elif tag == Tag.APP:
                 self.call(Op.WHNF, a, continuation=(Op.W_APP, x, b))
             elif tag == Tag.CONST:
                 if v >= r['decl']:
@@ -380,6 +427,25 @@ class SpecMachine:
                 self.ret(x)
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
+        elif op==Op.W_PROJ:
+            tag,a,b,_=self.node(result)
+            if tag==Tag.APP: self.tail(Op.PROJ_FIELDS,a,x,result,b)
+            else: self.neutral_projection(x,result)
+        elif op==Op.PROJ_FIELDS:
+            tag,a,b,_=self.node(x)
+            if tag==Tag.APP:
+                ctor=3 if self.node(y)[3]<2 else 5
+                self.call(Op.PROJ_HEAD,a,2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
+            else: self.neutral_projection(y,z)
+        elif op==Op.PROJ_HEAD:
+            tag,a,_,v=self.node(x)
+            if y:
+                if tag==Tag.APP: self.tail(Op.PROJ_HEAD,a,y-1,z)
+                else: self.ret(0)
+            else: self.ret(int(tag==Tag.BUILTIN and a==0 and v==z))
+        elif op==Op.PROJ_SELECT:
+            if result: self.tail(Op.WHNF,w if self.node(x)[3]%2 else z)
+            else: self.neutral_projection(x,y)
         elif op == Op.W_APP:
             tag, _, body, _ = self.node(result)
             if tag == Tag.LAM:
@@ -406,10 +472,16 @@ class SpecMachine:
                     self.tail(Op.SHIFT, y, 0, z)
                 else:
                     self.allocate(Tag.VAR, v=v-1)
+            elif tag==Tag.PROJ:
+                self.call(op,a,y,z,continuation=(Op.TREE_PROJ,x))
             elif tag in (Tag.PI, Tag.LAM, Tag.APP):
                 self.call(op, a, y, z, continuation=(Op.TREE_LEFT, x, y, z, op))
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
+        elif op==Op.TREE_PROJ:
+            _,a,_,v=self.node(x)
+            if a==result: self.ret(x)
+            else: self.allocate(Tag.PROJ,result,v=v)
         elif op == Op.TREE_LEFT:
             tag, _, b, _ = self.node(x)
             binder = int(tag in (Tag.PI, Tag.LAM))
@@ -438,6 +510,9 @@ class SpecMachine:
                 self.ret(1)
             elif tx != ty:
                 self.tail(Op.FALLBACK, x, result)
+            elif tx==Tag.PROJ:
+                if vx==vy: self.call(Op.CONV,ax,ay,continuation=(Op.C_AFTER_CHILD,x,result))
+                else: self.tail(Op.FALLBACK,x,result)
             elif tx in (Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN):
                 if vx == vy and (tx != Tag.BUILTIN or ax == ay):
                     self.ret(1)

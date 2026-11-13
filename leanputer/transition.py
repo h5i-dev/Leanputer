@@ -12,7 +12,7 @@ from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, MachineConfig, Op, Outcome,
 from .memory import AddressedRead, AddressedWrite
 from .state_layout import StateLayout, RegisterLayout
 from .dependent import Tag
-from .primitives import EMPTY_ELIMINATOR
+from .primitives import PRIMITIVE_SCHEMAS
 
 
 PORTS = [('hx', HEAP_FIELDS), ('hy', HEAP_FIELDS), ('hr', HEAP_FIELDS), ('hs', HEAP_FIELDS),
@@ -96,11 +96,11 @@ class RuleCompiler:
                       self.lt(self.r['decl_count'], self.r['decl']), self.lt(self.cfg.constants, self.r['decl_count']))
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                    Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
-                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE)
+                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF)
+                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
-                             (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA))):
+                             (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
             bad = self.OR(bad, self.AND(required, invalid))
@@ -163,6 +163,11 @@ class RuleCompiler:
             self.emit(good,r=self.r['free'])
             self.tail(good,*resume)
 
+    def neutral_projection(self,condition,original,node,base):
+        same=self.eq(node['a'],base)
+        self.ret(self.AND(condition,same),original)
+        self.allocate(self.AND(condition,self.NOT(same)),Tag.PROJ,base,v=node['v'])
+
     def rules(self):
         r, hx, hr, hs = self.r, self.hx, self.hr, self.hs
         x, y, z, w, result = (r[k] for k in ('x', 'y', 'z', 'w', 'r'))
@@ -176,22 +181,25 @@ class RuleCompiler:
                             self.NOT(self.eq(hs['b'], 0)), self.lt(hs['b'], r['scan']), self.eq(hs['v'], 0))
         atom_ok = self.AND(self.NOT(self.tag(hs,Tag.BUILTIN)),self.eq(hs['a'], 0), self.eq(hs['b'], 0),
                            self.OR(self.NOT(self.tag(hs, Tag.CONST)), self.lt(hs['v'], r['decl_count'])))
-        builtin_ok = self.AND(self.tag(hs,Tag.BUILTIN),self.eq(hs['b'],0),self.OR(self.eq(hs['v'],0),self.eq(hs['v'],1)),self.OR(self.eq(hs['v'],1),self.eq(hs['a'],0)))
-        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok)
+        builtin_ok = self.AND(self.tag(hs,Tag.BUILTIN),self.eq(hs['b'],0),self.OR(*(self.eq(hs['v'],code)for code in PRIMITIVE_SCHEMAS)),self.OR(self.eq(hs['v'],1),self.eq(hs['a'],0)))
+        projection_ok = self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.eq(hs['b'],0),self.lt(hs['v'],4))
+        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok,projection_ok)
         check = self.AND(op, more)
         self.stop(self.AND(check, self.NOT(valid)), Outcome.REJECT, Reason.SYNTAX)
         high = self.OR(self.AND(self.tag(hs,Tag.SORT),self.lt(self.cfg.universe,hs['v'])),self.AND(self.tag(hs,Tag.BUILTIN),self.eq(hs['v'],1),self.NOT(self.lt(hs['a'],self.cfg.universe))))
         self.stop(self.AND(check, valid, high), Outcome.RESOURCE, Reason.UNIVERSE)
         self.emit(self.AND(check, valid, self.NOT(high)), scan=self.add(r['scan'], 1))
         op = self.mode(Op.BUILTIN_TYPE)
-        valid = self.AND(self.eq(x,1),self.lt(y,len(EMPTY_ELIMINATOR)),self.NOT(self.eq(z,0)),self.eq(self.add(z,y),r['free']))
+        known=self.OR(*(self.AND(self.eq(x,code),self.lt(y,len(schema)))for code,schema in PRIMITIVE_SCHEMAS.items()))
+        valid=self.AND(known,self.NOT(self.eq(z,0)),self.eq(self.add(z,y),r['free']))
         self.stop(self.AND(op,self.NOT(valid)),Outcome.REJECT,Reason.SYNTAX)
-        for position,(tag,a,b,v) in enumerate(EMPTY_ELIMINATOR):
-            binary = tag in (Tag.PI,Tag.APP)
-            resume = (Op.BUILTIN_TYPE,x,self.add(y,1),z,w) if position+1<len(EMPTY_ELIMINATOR) else None
-            self.allocate(self.AND(op,valid,self.eq(y,position)),tag,
-                          self.add(z,a) if binary else 0,self.add(z,b) if binary else 0,
-                          w if v is None else v,resume=resume)
+        for code,schema in PRIMITIVE_SCHEMAS.items():
+            for position,(tag,a,b,v) in enumerate(schema):
+                binary=tag in (Tag.PI,Tag.APP)
+                resume=(Op.BUILTIN_TYPE,x,self.add(y,1),z,w) if position+1<len(schema) else None
+                self.allocate(self.AND(op,valid,self.eq(x,code),self.eq(y,position)),tag,
+                              self.add(z,a) if binary else 0,self.add(z,b) if binary else 0,
+                              w if v is None else v,resume=resume)
         # Environment and root-check orchestration.
         op = self.mode(Op.ENV)
         done = self.eq(r['decl'], r['decl_count'])
@@ -247,15 +255,31 @@ class RuleCompiler:
         empty = self.eq(hx['v'],0)
         level_ok = self.lt(hx['a'],self.cfg.universe)
         self.allocate(self.AND(primitive,empty),Tag.SORT,v=0)
-        self.stop(self.AND(primitive,self.NOT(empty),self.NOT(level_ok)),Outcome.RESOURCE,Reason.UNIVERSE)
-        self.tail(self.AND(primitive,self.NOT(empty),level_ok),Op.BUILTIN_TYPE,hx['v'],0,r['free'],hx['a'])
+        self.stop(self.AND(primitive,self.eq(hx['v'],1),self.NOT(level_ok)),Outcome.RESOURCE,Reason.UNIVERSE)
+        self.tail(self.AND(primitive,self.NOT(empty),self.OR(self.NOT(self.eq(hx['v'],1)),level_ok)),Op.BUILTIN_TYPE,hx['v'],0,r['free'],hx['a'])
+        self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.I_PROJ,x))
         self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.INFER, hx['a'], continuation=(Op.I_APP, hx['b']))
         const = self.AND(op, self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl']))
         self.ret(const, self.read['constant']['type'])
-        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN),
+        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN,Tag.PROJ),
                         self.AND(self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl'])))
         self.stop(self.AND(op, self.NOT(legal)), Outcome.REJECT, Reason.SYNTAX)
+        self.call(self.mode(Op.I_PROJ),Op.WHNF,result,continuation=(Op.I_PROJ_TYPE,x))
+        op=self.mode(Op.I_PROJ_TYPE);app=self.tag(hr,Tag.APP)
+        self.stop(self.AND(op,self.NOT(app)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+        self.tail(self.AND(op,app),Op.I_PROJ_FAMILY,hr['a'],x,hr['b'])
+        op=self.mode(Op.I_PROJ_FAMILY);app=self.tag(hx,Tag.APP)
+        self.stop(self.AND(op,self.NOT(app)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+        self.tail(self.AND(op,app),Op.I_PROJ_HEAD,hx['a'],y,hx['b'],z)
+        op=self.mode(Op.I_PROJ_HEAD);iff=self.lt(self.hy['v'],2);index=self.hy['v'][0]
+        expected=self.mux(iff,2,4)
+        valid=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['a'],0),self.eq(hx['v'],expected))
+        self.stop(self.AND(op,self.NOT(valid)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+        self.ret(self.AND(op,valid,self.NOT(iff)),self.mux(index,w,z))
+        self.call(self.AND(op,valid,iff),Op.SHIFT,self.mux(index,z,w),0,1,
+                  continuation=(Op.I_PROJ_ARROW,self.mux(index,w,z)))
+        self.allocate(self.mode(Op.I_PROJ_ARROW),Tag.PI,x,result)
         self.call(self.mode(Op.I_DOM), Op.WHNF, result, continuation=(Op.I_BIND, x))
         op, is_sort = self.mode(Op.I_BIND), self.tag(hr, Tag.SORT)
         self.stop(self.AND(op, self.NOT(is_sort)), Outcome.REJECT, Reason.EXPECT_SORT)
@@ -283,6 +307,7 @@ class RuleCompiler:
         self.tail(self.AND(op, good), Op.SUBST, x, y)
         # WHNF, delta unfolding and beta substitution.
         op = self.mode(Op.WHNF)
+        self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.WHNF,hx['a'],continuation=(Op.W_PROJ,x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.WHNF, hx['a'], continuation=(Op.W_APP, x, hx['b']))
         const = self.AND(op, self.tag(hx, Tag.CONST))
         available = self.lt(hx['v'], r['decl'])
@@ -291,7 +316,22 @@ class RuleCompiler:
         self.tail(self.AND(const, available, definition), Op.WHNF, self.read['constant']['value'])
         self.ret(self.AND(const, available, self.NOT(definition)), x)
         self.ret(self.AND(op, self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM,Tag.BUILTIN)), x)
-        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.BUILTIN))), Outcome.REJECT, Reason.SYNTAX)
+        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.BUILTIN,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
+        op=self.mode(Op.W_PROJ);app=self.tag(hr,Tag.APP)
+        self.tail(self.AND(op,app),Op.PROJ_FIELDS,hr['a'],x,result,hr['b'])
+        self.neutral_projection(self.AND(op,self.NOT(app)),x,hx,result)
+        op=self.mode(Op.PROJ_FIELDS);app=self.tag(hx,Tag.APP)
+        ctor=self.mux(self.lt(self.hy['v'],2),3,5)
+        self.call(self.AND(op,app),Op.PROJ_HEAD,hx['a'],2,ctor,continuation=(Op.PROJ_SELECT,y,z,hx['b'],w))
+        self.neutral_projection(self.AND(op,self.NOT(app)),y,self.hy,z)
+        op=self.mode(Op.PROJ_HEAD);more=self.NOT(self.eq(y,0));app=self.tag(hx,Tag.APP)
+        self.tail(self.AND(op,more,app),Op.PROJ_HEAD,hx['a'],self.sub(y,1),z)
+        self.ret(self.AND(op,more,self.NOT(app)),0)
+        matches=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['a'],0),self.eq(hx['v'],z))
+        self.ret(self.AND(op,self.NOT(more)),self.mux(matches,1,0))
+        op=self.mode(Op.PROJ_SELECT);good=self.NOT(self.eq(result,0))
+        self.tail(self.AND(op,good),Op.WHNF,self.mux(hx['v'][0],w,z))
+        self.neutral_projection(self.AND(op,self.NOT(good)),x,hx,y)
         op, lam = self.mode(Op.W_APP), self.tag(hr, Tag.LAM)
         self.call(self.AND(op, lam), Op.SUBST, hr['b'], y, continuation=(Op.W_BETA,))
         same = self.eq(result, hx['a'])
@@ -317,10 +357,14 @@ class RuleCompiler:
                 self.ret(self.AND(var, below), x)
                 self.tail(self.AND(var, equal), Op.SHIFT, y, 0, z)
                 self.allocate(self.AND(var, self.NOT(below), self.NOT(equal)), Tag.VAR, v=self.sub(hx['v'], 1))
+            self.call(self.AND(work,self.tag(hx,Tag.PROJ)),operation,hx['a'],y,z,continuation=(Op.TREE_PROJ,x))
             tree = self.tag(hx, Tag.PI, Tag.LAM, Tag.APP)
             self.call(self.AND(work, tree), operation, hx['a'], y, z,
                       continuation=(Op.TREE_LEFT, x, y, z, operation))
-            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP))), Outcome.REJECT, Reason.SYNTAX)
+            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
+        op=self.mode(Op.TREE_PROJ);same=self.eq(hx['a'],result)
+        self.ret(self.AND(op,same),x)
+        self.allocate(self.AND(op,self.NOT(same)),Tag.PROJ,result,v=hx['v'])
         op = self.mode(Op.TREE_LEFT)
         binder = self.tag(hx, Tag.PI, Tag.LAM)
         shift, subst = self.eq(w, Op.SHIFT), self.eq(w, Op.SUBST)
@@ -344,13 +388,17 @@ class RuleCompiler:
         work = self.AND(op, self.NOT(same))
         matching = self.eq(hx['tag'], hr['tag'])
         self.tail(self.AND(work, self.NOT(matching)), Op.FALLBACK, x, result)
+        projection=self.AND(work,matching,self.tag(hx,Tag.PROJ))
+        same_projection=self.eq(hx['v'],hr['v'])
+        self.call(self.AND(projection,same_projection),Op.CONV,hx['a'],hr['a'],continuation=(Op.C_AFTER_CHILD,x,result))
+        self.tail(self.AND(projection,self.NOT(same_projection)),Op.FALLBACK,x,result)
         atomic = self.AND(work, matching, self.tag(hx, Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN))
         equal_value = self.AND(self.eq(hx['v'],hr['v']),self.OR(self.NOT(self.tag(hx,Tag.BUILTIN)),self.eq(hx['a'],hr['a'])))
         self.ret(self.AND(atomic, equal_value), 1)
         self.tail(self.AND(atomic, self.NOT(equal_value)), Op.FALLBACK, x, result)
         self.call(self.AND(work, matching, self.tag(hx, Tag.PI, Tag.LAM, Tag.APP)), Op.CONV,
                   hx['a'], hr['a'], continuation=(Op.C_CHILD, x, result, hx['b'], hr['b']))
-        self.stop(self.AND(work, matching, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.CONST, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN))), Outcome.REJECT, Reason.SYNTAX)
+        self.stop(self.AND(work, matching, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.CONST, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
         op, good = self.mode(Op.C_CHILD), self.NOT(self.eq(result, 0))
         self.tail(self.AND(op, self.NOT(good)), Op.FALLBACK, x, y)
         binder = self.tag(hx, Tag.PI, Tag.LAM)

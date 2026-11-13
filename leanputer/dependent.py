@@ -28,9 +28,10 @@ class Tag(IntEnum):
     APP = 5
     CONST = 6
     BUILTIN = 7
+    PROJ = 8
 
 
-TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN}
+TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN, 'proj':Tag.PROJ}
 
 
 def parse_expr(value):
@@ -44,10 +45,15 @@ def parse_expr(value):
     if tag == 'const' and len(value) == 2 and isinstance(value[1], str) and value[1]:
         return (tag, value[1])
     if tag == 'builtin':
-        if len(value)==2 and value[1]=='False': return (tag,'False')
+        from .primitives import PRIMITIVE_CODES
+        if len(value)==2 and value[1] in PRIMITIVE_CODES and value[1]!='False.rec': return (tag,value[1])
         if len(value)==3 and value[1]=='False.rec' and type(value[2]) is int and value[2]>=0:
             return (tag,'False.rec',value[2])
         raise Unsupported('unsupported logical primitive')
+    if tag == 'proj':
+        if len(value)==4 and value[1] in ('Iff','And') and type(value[2]) is int and 0<=value[2]<2:
+            return (tag,value[1],value[2],parse_expr(value[3]))
+        raise Unsupported('unsupported structure projection')
     if tag in ('pi', 'lam', 'app') and len(value) == 3:
         return (tag, parse_expr(value[1]), parse_expr(value[2]))
     raise ValueError(f'malformed dependent {tag} expression')
@@ -96,6 +102,7 @@ class Oracle:
             return ('var', term[1] + (delta if term[1] >= cutoff else 0))
         if tag in ('sort', 'const', 'builtin'):
             return term
+        if tag=='proj': return (tag,term[1],term[2],self.shift(term[3],delta,cutoff))
         return (tag, self.shift(term[1], delta, cutoff),
                 self.shift(term[2], delta, cutoff + int(tag in ('pi', 'lam'))))
 
@@ -109,6 +116,7 @@ class Oracle:
             return ('var', index - int(index > depth))
         if tag in ('sort', 'const', 'builtin'):
             return term
+        if tag=='proj': return (tag,term[1],term[2],self.substitute(term[3],replacement,depth))
         return (tag, self.substitute(term[1], replacement, depth),
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
 
@@ -119,6 +127,12 @@ class Oracle:
             if declaration is None:
                 raise Rejected('unknown constant')
             return self.whnf(declaration.value) if declaration.value is not None and not declaration.opaque else term
+        if term[0]=='proj':
+            base=self.whnf(term[3]); head=base; arguments=[]
+            while head[0]=='app': arguments.insert(0,head[2]);head=head[1]
+            if head==('builtin',term[1]+'.intro') and len(arguments)==4:
+                return self.whnf(arguments[2+term[2]])
+            return ('proj',term[1],term[2],base)
         if term[0] == 'app':
             fn = self.whnf(term[1])
             if fn[0] == 'lam':
@@ -136,6 +150,8 @@ class Oracle:
                 extended = context + (left[1],) if left[0] in ('pi', 'lam') else context
                 if self.convert(left[2], right[2], extended):
                     return True
+        if left[0]==right[0]=='proj' and left[1:3]==right[1:3] and self.convert(left[3],right[3],context):
+            return True
         # Sort and Pi expressions cannot be proof terms or eta-expanded values.
         if left[0] in ('sort', 'pi') or right[0] in ('sort', 'pi'):
             return False
@@ -158,6 +174,14 @@ class Oracle:
         if tag == 'builtin':
             from .primitives import primitive_type
             return primitive_type(term)
+        if tag=='proj':
+            inferred=self.whnf(self.infer(term[3],context))
+            if inferred[0]!='app' or inferred[1][0]!='app' or inferred[1][1]!=('builtin',term[1]):
+                raise Rejected('projection family mismatch')
+            left,right=inferred[1][2],inferred[2]
+            if term[1]=='And': return (left,right)[term[2]]
+            domain,codomain=(left,right) if term[2]==0 else (right,left)
+            return ('pi',domain,self.shift(codomain,1))
         if tag == 'sort':
             return ('sort', term[1] + 1)
         if tag == 'var':

@@ -7,6 +7,7 @@ with identity hidden-state feedback and the stock cache. No host checker rules.
 from dataclasses import dataclass
 import json
 import time
+import resource
 
 import torch
 
@@ -16,6 +17,7 @@ from .native import emit_stock, ScratchResetCapacity
 from .native_vendor.qwenputer.expr import Expr
 from .native_vendor.qwenputer.ir import Graph, Target, Head, K, A_BIT, A_REF
 from .runner import parse_document
+from .primitives import PRIMITIVE_CODES
 from .state_layout import StateLayout, RegisterLayout
 from .transition import compile_addresses, RuleCompiler
 
@@ -91,6 +93,7 @@ class NativeMachine:
         device = next(self.model.parameters()).device
         if device.type=='cuda': torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction=False
         if device.type=='cuda': torch.cuda.synchronize()
+        if device.type=='cuda': torch.cuda.reset_peak_memory_stats(device)
         started = time.perf_counter()
         with torch.inference_mode():
             loaded = self.model(inputs_embeds=self.embeddings(torch.stack(boot,dim=1)), use_cache=True)
@@ -123,9 +126,12 @@ class NativeMachine:
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL))
                    for index,(document,judgment,r) in enumerate(zip(documents,parsed,registers))]
         return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
-                    primitive_basis=['False','False.rec'],
+                    primitive_basis=list(PRIMITIVE_CODES),
                     stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
                     parameters=sum(p.numel() for p in self.model.parameters()),
+                    weight_bytes=sum(p.numel()*p.element_size() for p in self.model.parameters()),
+                    cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(device) if device.type=='cuda' else None,
+                    host_process_peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
                     boot_tokens=len(boot),applied_steps=diagnostic_steps or self.config.fuel+2)
 

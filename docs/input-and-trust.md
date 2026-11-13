@@ -110,3 +110,17 @@ This slice has targeted native/reference/Lean smokes; final broad differential
 validation is deferred until architecture/feature implementation is complete,
 as requested. The nanoda syntax adapter has not yet been extended for these
 intrinsics; existing nanoda evidence applies to the earlier lambda-Pi fragment.
+
+## Fixed proposition structures
+
+The intrinsic catalog additionally contains `Iff`, `Iff.intro`, `And`, and
+`And.intro`, with their standard closed positive typing schemas. User-supplied
+arbitrary datatype declarations are not admitted. Projection syntax is
+`["proj","Iff",0,term]` (mp), index1(mpr), or `And` indices0/1(left/right).
+The weighted machine checks the projected term's inferred family and parameters,
+lifts dependent codomains, and reduces a projection of its matching constructor.
+Unary substitution/shift traverses the projected term. Conversion retains
+proof-irrelevance fallback when structural bases differ. General Iff.rec and
+And.rec remain explicitly unsupported; the supported eliminators in this slice
+are the field projections. Ordinary projection definitions remain in the checked
+dependency closure. They are not replaced by unchecked environment assumptions.

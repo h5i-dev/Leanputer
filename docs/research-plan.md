@@ -6,7 +6,7 @@ The baseline STLC circuit remains a comparison implementation.
 | Slice | Measurable acceptance criterion | State |
 | --- | --- | --- |
 | Shared execution substrate | Fixed FFNs, actual attention reads/writes, exhaustive bounded-address checks, exact CPU/CUDA, shared weights | Implemented/tested; backend numerical assumptions remain |
-| Dependent operational specification | Explicit heap/context/continuations, dependent lambda-Pi, capture avoidance, beta/delta/eta/proof irrelevance, ground Prop/universe rules and bounds | Implemented; 49 phases |
+| Dependent operational specification | Explicit heap/context/continuations, dependent lambda-Pi, capture avoidance, beta/delta/eta/proof irrelevance, ground Prop/universe rules and bounds | Implemented; expanded to60phases with proposition structures |
 | Compiled semantic transitions | Every phase matched by fixed weights, no host semantic work, adversarial/resource traces | Implemented/tested, no complete formal proof |
 | Real Lean input | Elaborated Expr, complete supported dependency closure, explicit unsupported, independent actual kernel replay | Implemented, quoted-name and unavailable-body boundary tests |
 | Corpus and evaluation | Real/generated/mutated/fuzz cases, reproducible reports, CPU/CUDA, trace mismatch minimization | Harness implemented; larger controlled runs in progress |
@@ -170,3 +170,13 @@ No new full857coverage result or broad differential campaign is claimed.
 Next implement Iff/And constructors, native projections and eliminators on this
 existing native lowering, then equality. Compiler residual liveness/dense-zero
 parameter overhead remains substantial and must not be called efficient.
+
+Iff/And checkpoint: fixed positive families/constructors and field projections
+implemented through real export,60-phase spec/compiled/native execution. Stock
+GPU Imp.swap accepts1232steps, Iff.mp/And.left fixtures accept, wrong-family
+projection rejects. Twelveof77old blockers now syntax-export; only Imp.swap
+new real theorem was checked natively in this slice. GeneralIff.rec/And.rec
+are not supported yet. Next actual priority is Eq family/refl/dependent recursor.
+User explicitly approved feature-first; record model memory/time and fix sizing
+only when it blocks continued development. Compression/profiling/broadvalidation
+remain deferred. No graph unit-budget compression was applied.

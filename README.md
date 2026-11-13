@@ -11,8 +11,9 @@ custom backend is not a conventional Transformer result.
 The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
 and acyclic axiom/definition/opaque dependencies. The native/shared IR now also
-implements the empty proposition False and its dependent eliminator as fixed
-kernel primitives, with targeted smokes pending broader validation. Numeric universes use
+implements False/False.rec and the Iff/And proposition structures with
+constructors and field projections as fixed kernel primitives. Targeted stock
+forward smokes pass; broader validation is pending. Numeric universes use
 Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
 Opaque dependency values are checked while their opacity is preserved. Symbolic
 universe constraints, general inductive/recursor declarations, quotient rules, lets and projections
@@ -138,7 +139,7 @@ limits, not a fraction of all mathlib or a GPU speedup claim. All four exported
 judgments have empty dependency environments and agree with Lean and nanoda.
 The sequential fixed-fuel design remains a major performance limitation.
 
-Exact reads rely on saturated float32 softmax underflow on the supported binary
+Custom reference-backend reads rely on saturated float32 softmax underflow on the supported binary
 address domain, verified at every address for tested CPU/CUDA capacities. ReLU
 logic relies on bounded exact integer arithmetic. This is not exact selection
 over real-number softmax and is not a backend-independent proof. Autocast is

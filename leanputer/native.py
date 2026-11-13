@@ -64,6 +64,7 @@ class ScratchResetCapacity(ValueError):
 
 def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
+    from transformers.initialization import no_init_weights
     results = result_dims
     keep = set(result_dims) | set(keep_dims or ())
     allocation = allocate(graph, None, keep, intermediate)
@@ -83,12 +84,14 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
                                    mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
     native_config = Qwen3_5TextConfig(**tc)
     native_config._attn_implementation = 'eager'
-    # Stock construction also initializes nonpersistent rotary/cache buffers.
-    # Its random parameters are all overwritten below by generated tensors.
-    model = Qwen3_5ForCausalLM(native_config)
+    # Stock initialization context avoids writing an unnecessary random copy
+    # of large dense weights; stock rotary/cache buffers still initialize.
+    with no_init_weights():
+        model = Qwen3_5ForCausalLM(native_config)
     # Every parameter is compiler-generated, including inactive native sublayers.
-    state = {name:torch.zeros(value.shape, dtype=torch.float32) for name, value in model.state_dict().items()}
-    state.update(emit_layers(graph, layout, tc, 0, 'model.', allocation))
+    state = emit_layers(graph, layout, tc, 0, 'model.', allocation)
+    for name,value in model.state_dict().items():
+        if name not in state: state[name]=torch.zeros(value.shape,dtype=torch.float32)
     if reset_layers:
         from .native_vendor.qwenputer.emit import row
         for unit, slot in enumerate(clear):

@@ -58,15 +58,18 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .app fn arg => return jsonArray [text "app", ← encodeExpr env fn, ← encodeExpr env arg]
   | .const name levels =>
     let values ← levels.mapM (fun level => (liftM (groundLevel level) : ExportM Nat))
-    if name == ``False && values.isEmpty then
-      return jsonArray [text "builtin",text "False"]
+    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro) && values.isEmpty then
+      return jsonArray [text "builtin",text name.toString]
     if name == ``False.rec && values.length == 1 then
       return jsonArray [text "builtin",text "False.rec",toJson values[0]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
   | .mdata _ inner => encodeExpr env inner
   | .letE .. => throw "unsupported let expression (no external zeta reduction)"
-  | .proj .. => throw "unsupported structure projection"
+  | .proj name index inner =>
+    if (name == ``Iff || name == ``And) && index < 2 then
+      return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
+    throw s!"unsupported structure projection {name}.{index}"
   | .lit .. => throw "unsupported literal"
   | .fvar .. => throw "unsupported free variable"
   | .mvar .. => throw "unsupported expression metavariable"

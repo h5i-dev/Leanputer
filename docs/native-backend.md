@@ -113,3 +113,23 @@ therefore exercised addresses above127. The generated configuration had
 forward took92.434s. This is larger and slower than desired, but is a standalone
 compiled model, not a downloaded pretrained backbone. It is one actual source
 smoke, not a new full-population coverage estimate.
+
+## Proposition-structure checkpoint
+
+The native IR now includes60phases, adding Iff/And fixed positive family and
+constructor rules, dependent field-projection typing, unary substitution/shift,
+projection iota reduction, neutral projections and conversion. A stock GPU
+four-case smoke accepted newly supported mathlib `Imp.swap@[1,1]` (1,232steps),
+actual Lean-exported Iff.mp/And.left fixtures, and rejected a wrong-family
+projection. No assumptions were introduced. The1538fixed forwards+35syntax
+boot records took132.535s. Generated model1,578,440,564BF16parameters
+(3,156,881,128weight bytes), hidden7168,59native layers. This large dense-zero
+parameter overhead is debt, not a demonstrated minimum architecture size.
+
+Re-exporting only77previously Iff/And-blocked rows yielded12new syntax-export
+candidates. This is not12new verified mathlib proofs or a full-population run.
+One sparse weighted fixture additionally forced constructor-projection reduction
+inside a dependent claim (1,330steps). Broad checks are deliberately deferred
+until the planned feature set is implemented. Kernel basis in current native
+reports lists the complete fixed intrinsic catalog; initial four-case log's
+False-only metadata label was stale and has been corrected in reporting code.

@@ -14,10 +14,22 @@ partial def expression (json : Json) : Except String Expr := do
   let tag ← fields[0]!.getStr?
   if tag == "builtin" then
     let name ← fields[1]!.getStr?
-    if name == "False" && fields.size == 2 then return .const ``False []
+    if fields.size == 2 then
+      if name == "False" then return .const ``False []
+      if name == "Iff" then return .const ``Iff []
+      if name == "Iff.intro" then return .const ``Iff.intro []
+      if name == "And" then return .const ``And []
+      if name == "And.intro" then return .const ``And.intro []
     if name == "False.rec" && fields.size == 3 then
       return .const ``False.rec [numericLevel (← fields[2]!.getNat?)]
     throw "unsupported replay logical primitive"
+  if tag == "proj" && fields.size == 4 then
+    let family ← fields[1]!.getStr?
+    let index ← fields[2]!.getNat?
+    let inner ← expression fields[3]!
+    if index < 2 && (family == "Iff" || family == "And") then
+      return .proj family.toName index inner
+    throw "unsupported replay projection"
   let expected := if tag == "var" || tag == "sort" || tag == "const" then 2 else 3
   if fields.size != expected then throw "malformed replay expression arity"
   match tag with
@@ -68,8 +80,17 @@ end LeanputerReplay
 def main (args : List String) : IO UInt32 := do
   let [input, output] := args | throw (IO.userError "usage: lean --run tools/lean/Validate.lean corpus.jsonl results.json")
   let environment ← mkEmptyEnvironment
-  let primitive : Lean.Declaration := .inductDecl [] 0 [{name := ``False, type := .sort .zero, ctors := []}] false
-  let basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl environment.toKernelEnv {} primitive).mapError (fun _ => "Lean rejected primitive basis"))
+  initSearchPath (← findSysroot)
+  let standard ← importModules #[{module := `Init}] {}
+  let mut basis := environment.toKernelEnv
+  for name in [``False, ``Iff, ``And] do
+    let some (.inductInfo info) := standard.find? name | throw (IO.userError "missing standard primitive")
+    let mut ctors : List Lean.Constructor := []
+    for ctor in info.ctors do
+      let some constructor := standard.find? ctor | throw (IO.userError "missing standard constructor")
+      ctors := ctors ++ [{name := ctor, type := constructor.type}]
+    let primitive : Lean.Declaration := .inductDecl [] info.numParams [{name, type := info.type, ctors}] false
+    basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => "Lean rejected primitive basis"))
   let mut records : Array Json := #[]
   for line in (← IO.FS.readFile input).splitOn "\n" do
     if line.isEmpty then continue
