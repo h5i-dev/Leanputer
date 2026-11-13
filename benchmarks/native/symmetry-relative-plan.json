@@ -1,0 +1,66 @@
+[
+  {
+    "name": "symmetry-prop-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 631,
+    "free": 82,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "symmetry-type-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 632,
+    "free": 83,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "symmetry-wrong-direction",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 918,
+    "free": 137,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "symmetry-field-relation-parameters",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 950,
+    "free": 145,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "symmetry-wrong-field-claim",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1097,
+    "free": 163,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "symmetry-family-guard",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 44,
+    "free": 10,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "symmetry-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 2011,
+    "free": 224,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "symmetry-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2123,
+    "free": 239,
+    "oracle": "REJECT"
+  }
+]

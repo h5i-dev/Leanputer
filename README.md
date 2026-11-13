@@ -23,6 +23,8 @@ constructors, projections and dependent recursors; True/True.intro/True.rec;
 Nonempty, Exists and Or with their fixed constructors and recursors; and
 Eq/refl/dependent Eq.rec and HEq with carrier/value K checks. Decidable provides its two constructors and dependent
 data recursor. Subtype includes dependent fields and typed record eta.
+Std.Symm retains a Sort-valued carrier and an actual binary relation, including
+Prop carriers, with targeted stock native confirmation.
 Bool includes its two nullary constructors and dependent data recursor.
 Option includes its zero/one-field constructors and dependent data recursor,
 with successor universes for its Type-valued carrier.
@@ -144,7 +146,10 @@ Using the shared reference checker
 `universe`, and `fuel`. Memory capacities are powers of two. A configuration
 change compiles new weights. The default is 128 heap cells, 32 continuations,
 32 context entries, 16 constants, maximum sort level 4, and 1,024 fuel steps.
-Every input passes a weighted canonical initializer, followed by exactly
+An optional `atom_pool: true` configuration reserves a validated prefix of
+canonical Var/Sort leaves for reuse inside weights. It trades a fixed syntax
+prefix for fewer runtime allocations; default false retains the original policy.
+Every shared-reference input passes a weighted canonical initializer, followed by exactly
 `fuel+1` shared transitions. Finished states absorb all further steps. This
 strict schedule avoids host semantic branching but wastes work on short proofs;
 reports distinguish applied steps from the steps each proof actually needs.
@@ -208,7 +213,7 @@ traces, seeded tests and external replay provide evidence, not formal soundness.
 
 
 The current complete syntax refresh retains all 857 selected public theorems:
-509 export and 348 remain unsupported. EXPORTED is not proof acceptance; a
+517 export and 340 remain unsupported. EXPORTED is not proof acceptance; a
 new full-population native check has not been run. The [complete syntax
 outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
 assumptions, input sizes and every unsupported row. Monoid is the largest current

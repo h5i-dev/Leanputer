@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Function.instSymmSwapProp@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7378,
+    "allocated": 730
+  },
+  {
+    "name": "Function.instSymmOnFun@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7532,
+    "allocated": 783
+  }
+]

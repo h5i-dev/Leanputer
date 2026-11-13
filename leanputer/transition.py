@@ -92,7 +92,7 @@ class RuleCompiler:
         self.active = self.AND(self.running, self.NOT(self.eq(fuel, 0)))
         self.emit(self.AND(self.running, self.eq(fuel, 0)), status=Outcome.RESOURCE, reason=Reason.FUEL)
         self.choices['fuel'].append((self.active, self.g.sub(fuel, self.g.const(1, len(fuel)))[0]))
-        bad = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
+        bad = self.OR(self.lt(self.r['free'], self.cfg.atom_pool_size+1)if self.cfg.atom_pool else self.eq(self.r['free'],0), self.lt(self.cfg.heap, self.r['free']),
                       self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['ctx']),
                       self.lt(self.r['decl_count'], self.r['decl']), self.lt(self.cfg.constants, self.r['decl_count']))
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
@@ -181,6 +181,19 @@ class RuleCompiler:
             self.emit(good,r=self.r['free'],head=0,arity=0)
             self.tail(good,*resume)
 
+    def allocate_atom(self,condition,tag,v,overflow=None):
+        if not self.cfg.atom_pool:
+            self.allocate(condition,tag,v=v,overflow=overflow);return
+        if overflow is not None:
+            self.stop(self.AND(condition,overflow),Outcome.RESOURCE,Reason.INDEX)
+            condition=self.AND(condition,self.NOT(overflow))
+        bound=self.cfg.atom_variables if tag==Tag.VAR else self.cfg.universe+1
+        in_pool=self.lt(v,bound)
+        reused=self.AND(condition,in_pool)
+        pointer=self.add(v,1 if tag==Tag.VAR else 1+self.cfg.atom_variables)
+        self.ret(reused,pointer)
+        self.allocate(self.AND(condition,self.NOT(in_pool)),tag,v=v)
+
     def neutral_projection(self,condition,original,node,base):
         same=self.eq(node['a'],base)
         self.ret(self.AND(condition,same),original)
@@ -207,6 +220,13 @@ class RuleCompiler:
         projection_ok = self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.eq(hs['b'],0),self.lt(hs['v'],PROJECTION_COUNT))
         let_ok=self.AND(self.tag(hs,Tag.LET),*(self.AND(self.NOT(self.eq(hs[field],0)),self.lt(hs[field],r['scan']))for field in ('a','b','v')))
         valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok,projection_ok,let_ok)
+        if self.cfg.atom_pool:
+            in_pool=self.lt(r['scan'],self.cfg.atom_pool_size+1)
+            variable=self.lt(r['scan'],self.cfg.atom_variables+1)
+            expected_tag=self.mux(variable,Tag.VAR,Tag.SORT)
+            expected_value=self.sub(r['scan'],self.mux(variable,1,1+self.cfg.atom_variables))
+            exact=self.AND(self.eq(hs['tag'],expected_tag),self.eq(hs['a'],0),self.eq(hs['b'],0),self.eq(hs['v'],expected_value))
+            valid=self.AND(valid,self.OR(self.NOT(in_pool),exact))
         check = self.AND(op, more)
         self.stop(self.AND(check, self.NOT(valid)), Outcome.REJECT, Reason.SYNTAX)
         high=self.OR(self.AND(self.tag(hs,Tag.SORT),self.lt(self.cfg.universe,hs['v'])),
@@ -294,11 +314,11 @@ class RuleCompiler:
         sort = self.AND(op, self.tag(hx, Tag.SORT))
         level_ok = self.lt(hx['v'], self.cfg.universe)
         self.stop(self.AND(sort, self.NOT(level_ok)), Outcome.RESOURCE, Reason.UNIVERSE)
-        self.allocate(self.AND(sort, level_ok), Tag.SORT, v=self.add(hx['v'], 1))
+        self.allocate_atom(self.AND(sort, level_ok), Tag.SORT, v=self.add(hx['v'], 1))
         self.allocate(self.AND(op,self.tag(hx,Tag.NAT)),Tag.BUILTIN,v=64)
         primitive = self.AND(op,self.tag(hx,Tag.BUILTIN))
         empty = self.eq(hx['v'],0)
-        self.allocate(self.AND(primitive,empty),Tag.SORT,v=0)
+        self.allocate_atom(self.AND(primitive,empty),Tag.SORT,v=0)
         packed=hx['a']
         self.tail(self.AND(primitive,self.NOT(empty)),Op.BUILTIN_TYPE,self.g.fit(hx['v'][:self.cfg.primitive_bits]+hx['b'][:self.cfg.universe_bits],self.width),0,r['free'],packed)
         self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.I_PROJ,x))
@@ -389,7 +409,7 @@ class RuleCompiler:
         self.stop(self.AND(op, self.NOT(is_sort)), Outcome.REJECT, Reason.EXPECT_SORT)
         maximum = self.mux(self.lt(x, hr['v']), hr['v'], x)
         universe = self.mux(self.eq(hr['v'], 0), 0, maximum)
-        self.allocate(self.AND(op, is_sort), Tag.SORT, v=universe)
+        self.allocate_atom(self.AND(op, is_sort), Tag.SORT, v=universe)
         self.call(self.mode(Op.I_APP), Op.WHNF, result, continuation=(Op.I_FUN, x))
         op, is_pi = self.mode(Op.I_FUN), self.tag(hr, Tag.PI)
         self.stop(self.AND(op, self.NOT(is_pi)), Outcome.REJECT, Reason.EXPECT_PI)
@@ -579,12 +599,12 @@ class RuleCompiler:
                 unchanged = self.lt(hx['v'], y)
                 self.ret(self.AND(var, unchanged), x)
                 total = self.add(hx['v'], z)
-                self.allocate(self.AND(var, self.NOT(unchanged)), Tag.VAR, v=total, overflow=self.lt(total, hx['v']))
+                self.allocate_atom(self.AND(var, self.NOT(unchanged)), Tag.VAR, v=total, overflow=self.lt(total, hx['v']))
             else:
                 below, equal = self.lt(hx['v'], z), self.eq(hx['v'], z)
                 self.ret(self.AND(var, below), x)
                 self.tail(self.AND(var, equal), Op.SHIFT, y, 0, z)
-                self.allocate(self.AND(var, self.NOT(below), self.NOT(equal)), Tag.VAR, v=self.sub(hx['v'], 1))
+                self.allocate_atom(self.AND(var, self.NOT(below), self.NOT(equal)), Tag.VAR, v=self.sub(hx['v'], 1))
             self.call(self.AND(work,self.tag(hx,Tag.PROJ)),operation,hx['a'],y,z,continuation=(Op.TREE_PROJ,x))
             continuation=Op.SHIFT_LET_A if operation==Op.SHIFT else Op.SUBST_LET_A
             self.call(self.AND(work,self.tag(hx,Tag.LET)),operation,hx['a'],y,z,continuation=(continuation,x,y,z))
@@ -717,7 +737,7 @@ class RuleCompiler:
         self.ret(self.AND(op, self.NOT(good)), 0)
         self.call(self.AND(op, good), Op.SHIFT, y, 0, 1, continuation=(Op.E_SHIFT, x))
         self.call(self.mode(Op.E_SHIFT), Op.E_VAR, 0, continuation=(Op.E_BUILD, x, result))
-        self.allocate(self.mode(Op.E_VAR), Tag.VAR, v=0)
+        self.allocate_atom(self.mode(Op.E_VAR), Tag.VAR, v=0)
         self.call(self.mode(Op.E_BUILD), Op.E_MAKE_APP, y, result, continuation=(Op.E_COMPARE, x))
         self.allocate(self.mode(Op.E_MAKE_APP), Tag.APP, x, y)
         op, room = self.mode(Op.E_COMPARE), self.lt(r['ctx'], self.cfg.context)

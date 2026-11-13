@@ -15,7 +15,7 @@ Research quality and formal soundness remain goals, not established labels.
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest119-primitive/116phase syntax refresh509EXPORTED348UNSUPPORTED; not509proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest122-primitive/116phase syntax refresh517EXPORTED340UNSUPPORTED; not517proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -373,3 +373,26 @@ has overlapping CPU work; it is not a speed comparison or population coverage.
 Same857syntax snapshot509EXPORTED348UNSUPPORTED remains separate from native proof
 checking. Continue Std.Symm and the minimum bounded atom allocation improvement
 needed to keep its real closures within1024heap; broad validation stays deferred.
+
+Std.Symm is implemented with namespace-preserving family lookup, Sort-valued
+carriers and uniform relation parameters. All119previous fixed schemas are
+unchanged. Weighted4cases2A2R131.318s and optional-pool4cases2A2R120.175s pass;
+three complete-state allocation checks cover corrupted prefix, full-heap reuse
+and overflow aliasing. Lean agrees on eight relative/two real/two new negatives.
+The optional pool reduces two real closures1150/1210→730/783nodes and
+7942/8115→7378/7532steps in Spec. At matched1024capacity metadata parameters stay
+2.805B; legacy sources exhaust heap, pooled sources accept and their retained
+false-conjunction mutation rejects. The2.048k legacy model9.341GB is metadata
+only, not a native baseline or matched-capacity downsizing result. Native17case confirmation passes10A7R at1024heap/f7600/pooltrue, including two
+new real sources. Same857syntaxsnapshot517EXPORTED340UNSUPPORTED remains separate.
+
+Std.Symm+pool checkpoint confirmed natively:17cases10A7R, all reasons/steps/heap
+counts match Spec. Function.instSymmSwapProp@[1] and Function.instSymmOnFun@[1,1]
+accept7378/7532steps,730/783nodes,Gamma4/noaxioms each; their false-conjunction
+mutation rejects7531steps/751nodes. Model2.805Bparams/5.609GBweights/H7168/L105,
+compile60.652s/fixedforward1186.776s at1024heap/f7600/pooltrue. Matched metadata
+parameters equal withpoolfalse/true; legacy resource baseline is Spec only.
+The larger legacy2048metadata plan was notexecuted. Continue Std.Commutative
+and IsMul/IsAddCommutative; their isolated131intrinsic prototype passes weighted,
+Lean and fourth-lane checks, with two Γ4getters fitting512heap. Broad validation
+and full-population native checking remain deferred.

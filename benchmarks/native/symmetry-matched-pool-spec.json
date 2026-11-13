@@ -1,0 +1,206 @@
+[
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "Function.instSymmSwapProp@[1]",
+    "status": "RESOURCE",
+    "reason": "HEAP",
+    "steps": 7009,
+    "allocated": 1023
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "Function.instSymmOnFun@[1,1]",
+    "status": "RESOURCE",
+    "reason": "HEAP",
+    "steps": 6773,
+    "allocated": 1023
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "Function.instSymmSwapProp@[1]-claim-and-False",
+    "status": "RESOURCE",
+    "reason": "HEAP",
+    "steps": 7022,
+    "allocated": 1023
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1213,
+    "allocated": 163
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1241,
+    "allocated": 122
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": false
+    },
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 383,
+    "allocated": 45
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "Function.instSymmSwapProp@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7378,
+    "allocated": 730
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "Function.instSymmOnFun@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7532,
+    "allocated": 783
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "Function.instSymmSwapProp@[1]-claim-and-False",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 7531,
+    "allocated": 751
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1131,
+    "allocated": 119
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1251,
+    "allocated": 129
+  },
+  {
+    "scope": "MATCHED_CAPACITY_SPEC_ONLY_NOT_NATIVE_BASELINE",
+    "config": {
+      "heap": 1024,
+      "stack": 32,
+      "context": 16,
+      "constants": 8,
+      "universe": 4,
+      "fuel": 7600,
+      "atom_pool": true
+    },
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 395,
+    "allocated": 56
+  }
+]

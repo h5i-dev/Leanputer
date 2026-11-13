@@ -12,7 +12,9 @@ def lawFamilies : List Name := ["Semigroup", "AddSemigroup", "CommMagma", "AddCo
 
 def cancellationFamilies : List Name := ["IsLeftCancelMul", "IsRightCancelMul", "IsLeftCancelAdd", "IsRightCancelAdd"].map String.toName
 
-def mathlibFamilies : List Name := lawFamilies ++ cancellationFamilies
+def relationFamilies : List Name := ["Std.Symm".toName]
+
+def fixedRecordFamilies : List Name := lawFamilies ++ cancellationFamilies ++ relationFamilies
 
 partial def expression (json : Json) : Except String Expr := do
   let fields ← json.getArr?
@@ -95,9 +97,9 @@ partial def expression (json : Json) : Except String Expr := do
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?),numericLevel (← fields[4]!.getNat?)]
     if (name == "HAdd.rec" || name == "HMul.rec") && fields.size == 6 then
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?),numericLevel (← fields[4]!.getNat?),numericLevel (← fields[5]!.getNat?)]
-    if mathlibFamilies.any (fun family => name.toName == family || name.toName == Name.str family "mk") && fields.size == 3 then
+    if fixedRecordFamilies.any (fun family => name.toName == family || name.toName == Name.str family "mk") && fields.size == 3 then
       return .const name.toName [numericLevel (← fields[2]!.getNat?)]
-    if mathlibFamilies.any (fun family => name.toName == Name.str family "rec") && fields.size == 4 then
+    if fixedRecordFamilies.any (fun family => name.toName == Name.str family "rec") && fields.size == 4 then
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "HEq.rec" && fields.size == 4 then
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
@@ -118,7 +120,7 @@ partial def expression (json : Json) : Except String Expr := do
     let inner ← expression fields[3]!
     if index < 2 && (family == "Iff" || family == "And" || family == "Subtype" || family == "PProd" || family == "Prod") then
       return .proj family.toName index inner
-    if (index < 2 && lawFamilies.contains family.toName) || (index == 0 && cancellationFamilies.contains family.toName) then
+    if (index < 2 && lawFamilies.contains family.toName) || (index == 0 && (cancellationFamilies ++ relationFamilies).contains family.toName) then
       return .proj family.toName index inner
     if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton" || family == "Zero" || family == "One" || family == "OfNat" || family == "LT" || family == "LE" || family == "Membership" || family == "HAdd" || family == "HMul") then
       return .proj family.toName index inner
@@ -157,7 +159,7 @@ def declaration (json : Json) : Except String Lean.Declaration := do
 
 def checkBasis (base : Lean.Kernel.Environment) (expr : Expr) : Except String Unit := do
   for name in expr.getUsedConstants do
-    if mathlibFamilies.any (fun family => name == family || name == Name.str family "mk" || name == Name.str family "rec") then
+    if fixedRecordFamilies.any (fun family => name == family || name == Name.str family "mk" || name == Name.str family "rec") then
       if (base.find? name).isNone then
         throw "UNSUPPORTED: missing mathlib replay basis; pass --module Mathlib.Algebra.Group.Defs inside lake env"
 
@@ -221,7 +223,7 @@ def main (args : List String) : IO UInt32 := do
     let primitive : Lean.Declaration := .inductDecl info.levelParams info.numParams [{name, type := info.type, ctors}] false
     basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} primitive).mapError (fun _ => s!"Lean rejected primitive basis {name}"))
   basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} .quotDecl).mapError (fun _ => "Lean rejected quotient basis"))
-  for name in LeanputerReplay.mathlibFamilies do
+  for name in LeanputerReplay.fixedRecordFamilies do
     let some (.inductInfo info) := standard.find? name | continue
     for dependency in info.type.getUsedConstants do
       basis ← IO.ofExcept (ensureDefinition standard basis name dependency)

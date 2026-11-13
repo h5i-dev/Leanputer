@@ -404,3 +404,27 @@ record with a field that can be invented from a neutral proof. Its singleton
 Prop recursor can eliminate into Sort, with data reduction on a genuine
 constructor. Constructor-spine checking retains both uniform parameters.
 Projection inference substitutes both the carrier and operation instance.
+
+Std.Symm is a fixed Prop class over α:Sort u and an actual relation
+r:α→α→Prop, with proof field ∀a b,r a b→r b a. Namespace components remain part
+of the family identity. Constructor, projection and singleton-Prop recursor
+rules preserve both uniform parameters and the direction of the relation.
+The same rules support carriers in Prop; they do not silently require Type.
+
+Optional `atom_pool: true` changes the internal heap representation. A fixed
+prefix contains Var indices 0..min(8,context)-1 and Sort levels 0..universe.
+The encoder writes this syntax-only prefix and reuses its leaf identities;
+compiled validation checks every tag, zero field and scalar before inference.
+The prefix must be present in the allocated heap. Its unused Var leaves do not
+supply bindings: inference still rejects an unbound root Var0.
+
+Standalone leaf creation inside weights returns the corresponding fixed pointer
+when in range, including when the heap is full. Overflow is checked before a
+wrapped scalar could alias a canonical pointer. Other atoms allocate normally.
+Primitive schema construction keeps its contiguous rows, including Var/Sort
+rows, so relative-pointer relocation stays valid. Runtime allocation only writes
+at free, beyond the immutable prefix. No host memoizer or inferred types enter
+this policy. It may save memory and change pointer-sharing/semantic step counts;
+the prefix adds some validation work to short proofs. Default false preserves
+the previous policy. This is an experimentally checked representation change,
+not a formal proof of compilation or whole-checker soundness.

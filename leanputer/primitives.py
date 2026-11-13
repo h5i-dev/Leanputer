@@ -50,6 +50,8 @@ for _index, (_family, _parent, _side) in enumerate((
     ONE_FIELD_RECORDS[_family]=dict(code=107+3*_index,projection=30+_index,
         constructor='mk',field='cancellation',data=False,type_carrier=True,
         parameters=2,parent=_parent,side=_side)
+ONE_FIELD_RECORDS['Std.Symm']=dict(code=119,projection=34,constructor='mk',
+    field='symmetry',data=False,type_carrier=False,parameters=2)
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
@@ -91,6 +93,13 @@ PRIMITIVE_UNIVERSES.update({'PUnit':1,'PUnit.unit':1,'PUnit.rec':2})
 REC_ARITIES.update({66:1,67:4,73:3})
 
 
+def primitive_family(name):
+    # A namespace is part of the family identity, e.g. Std.Symm, not a suffix.
+    if name in ONE_FIELD_RECORDS or name in TWO_FIELD_RECORDS or name in LAW_RECORDS:
+        return name
+    return name.rsplit('.',1)[0]
+
+
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
 
 
@@ -109,11 +118,11 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
-    if name.split('.')[0]in LAW_RECORDS:return _law_record_type(expression)
-    if name.split('.')[0] in TWO_FIELD_RECORDS:return _pair_type(expression)
+    if primitive_family(name)in LAW_RECORDS:return _law_record_type(expression)
+    if primitive_family(name) in TWO_FIELD_RECORDS:return _pair_type(expression)
     if name.startswith('PUnit'):return _unit_type(expression)
     if name in ('Nat','Nat.zero','Nat.succ','Nat.rec'):return _natural_type(expression)
-    if name.split('.')[0] in ONE_FIELD_RECORDS:return _one_record_type(expression)
+    if primitive_family(name) in ONE_FIELD_RECORDS:return _one_record_type(expression)
     if name.startswith('Option'):return _option_type(expression)
     if name.startswith('Bool'):return _bool_type(expression)
     if name.startswith('HEq'):return _heq_type(expression)
@@ -146,7 +155,7 @@ def primitive_type(expression):
         false = ('builtin','False')
         return pi(pi(false,('sort',expression[2])),pi(false,app(var(1),var(0))))
     if name in ('Iff','And'): return pi(sort,pi(sort,sort))
-    family = ('builtin',name.split('.')[0])
+    family = ('builtin',primitive_family(name))
     result = app(app(family,var(3)),var(2))
     if name=='And.intro': return pi(sort,pi(sort,pi(var(1),pi(var(1),result))))
     if name=='Iff.intro': return pi(sort,pi(sort,pi(pi(var(1),var(1)),pi(pi(var(1),var(3)),result))))
@@ -164,7 +173,7 @@ def _positive_type(expression):
     if name=='True.rec':
         return _close_schema(bind('motive',bind('motive_arg',('builtin','True'),('sort',expression[2])),
             bind('minor',apps(motive,('builtin','True.intro')),bind('major',('builtin','True'),apps(motive,major)))))
-    family=name.split('.')[0]
+    family=primitive_family(name)
     if family in ('And','Iff','Or'):
         ty=apps(('builtin',family),p,q)
         if name=='Or':return ('pi',sort,('pi',sort,sort))
@@ -313,10 +322,11 @@ def _option_type(expression):
 
 
 def _one_record_type(expression):
-    name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
+    name=expression[1];family=primitive_family(name);record=ONE_FIELD_RECORDS[family]
     if record['field']=='membership':return _membership_type(expression)
     if record['field']=='heterogeneous':return _heterogeneous_type(expression)
     if record['field']=='cancellation':return _cancellation_type(expression)
+    if record['field']=='symmetry':return _symmetry_type(expression)
     carrier=expression[3] if name.endswith('.rec') else expression[2]
     carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
     v=lambda n:('named',n)
@@ -343,7 +353,7 @@ def _one_record_type(expression):
 
 
 def _cancellation_type(expression):
-    name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
+    name=expression[1];family=primitive_family(name);record=ONE_FIELD_RECORDS[family]
     carrier=expression[3]if name.endswith('.rec')else expression[2]
     level=carrier+1 if carrier>=0 else ('succ',carrier)
     v=lambda n:('named',n)
@@ -369,8 +379,30 @@ def _cancellation_type(expression):
     return _close_schema(bind('alpha',('sort',level),bind('parent',parent_type,tail)))
 
 
+def _symmetry_type(expression):
+    name=expression[1];family=primitive_family(name)
+    carrier=expression[3]if name.endswith('.rec')else expression[2]
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,relation,field,motive,major=map(v,('alpha','relation','field','motive','major'))
+    relation_type=bind('left',alpha,bind('right',alpha,('sort',0)))
+    a,b=map(v,('left','right'))
+    symmetry=bind('left',alpha,bind('right',alpha,
+        bind('related',apps(relation,a,b),apps(relation,b,a))))
+    proof_type=apps(('builtin',family,carrier),alpha,relation)
+    if name==family:tail=('sort',0)
+    elif name.endswith('.mk'):tail=bind('field',symmetry,proof_type)
+    else:
+        ctor=apps(('builtin',family+'.mk',carrier),alpha,relation,field)
+        tail=bind('motive',bind('major',proof_type,('sort',expression[2])),
+            bind('minor',bind('field',symmetry,apps(motive,ctor)),
+            bind('major',proof_type,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',carrier),bind('relation',relation_type,tail)))
+
+
 def _pair_type(expression):
-    name=expression[1];family=name.split('.')[0];record=TWO_FIELD_RECORDS[family]
+    name=expression[1];family=primitive_family(name);record=TWO_FIELD_RECORDS[family]
     levels=expression[3:]if name.endswith('.rec')else expression[2:]
     u,v=levels
     successor=lambda level:level+1 if isinstance(level,int)and level>=0 else ('succ',level)
@@ -412,7 +444,7 @@ def _membership_type(expression):
 
 
 def _heterogeneous_type(expression):
-    name=expression[1];family=name.split('.')[0]
+    name=expression[1];family=primitive_family(name)
     levels=expression[3:]if name.endswith('.rec')else expression[2:]
     successor=lambda level:level+1 if level>=0 else ('succ',level)
     sorts=tuple(successor(level)for level in levels)
@@ -433,7 +465,7 @@ def _heterogeneous_type(expression):
 
 
 def _law_record_type(expression):
-    name=expression[1];family=name.split('.')[0];record=LAW_RECORDS[family]
+    name=expression[1];family=primitive_family(name);record=LAW_RECORDS[family]
     carrier=expression[3]if name.endswith('.rec')else expression[2]
     level=carrier+1 if carrier>=0 else ('succ',carrier)
     variable=lambda n:('named',n)

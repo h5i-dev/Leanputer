@@ -74,3 +74,13 @@ and constructor-only singleton-Prop data elimination. The119intrinsic slice pass
 with fullGamma6/noaxioms. Std.Symm is next, preserving Sort-level carriers and
 relation parameters; a bounded atom pool is being assessed to fit its sources
 within1024heap without dropping dependencies.
+
+Std.Symm and the optional authenticated atom pool now pass native17cases10A7R,
+including both real Γ4 symmetry instances and a false-conjunction mutation.
+The pool fits these sources in1024heap with the same matched model parameter
+count; legacy resource comparison is Spec only. Continue the three commutativity
+Prop classes, preserving their class/field distinction. The131intrinsic prototype
+passes minimal weighted/Lean/fourth-lane checks; native18confirmation is next.
+The larger8-bit catalog increases512heapword width10→11, while1024stays11;
+keep numeric overflow checks tied to the actual word limit. Nat.le is the next
+indexed Prop candidate after that coherent checkpoint.

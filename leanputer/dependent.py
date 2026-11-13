@@ -134,7 +134,7 @@ class Oracle:
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
 
     def whnf(self, term, context=()):
-        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
+        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_family
         self.tick()
         if term==('builtin','Nat.zero'):return ('nat',0)
         if term[0]=='let':
@@ -147,7 +147,7 @@ class Oracle:
         if term[0]=='proj':
             base=self.whnf(term[3],context); head=base; arguments=[]
             while head[0]=='app': arguments.insert(0,head[2]);head=head[1]
-            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
+            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_family
             record=ONE_FIELD_RECORDS.get(term[1])
             constructor=term[1]+('.'+record['constructor'] if record else '.mk' if term[1]=='Subtype' or term[1]in TWO_FIELD_RECORDS or term[1]in LAW_RECORDS else '.intro')
             if head[0]=='builtin' and head[1]==constructor and len(arguments)==(record.get('parameters',1)+1 if record else 3 if term[1]in LAW_RECORDS else 4):
@@ -190,21 +190,21 @@ class Oracle:
                         return self.whnf(arguments[2],context)
                     if ctor[0]=='builtin' and ctor[1]=='Option.some' and len(fields)==2:
                         return self.whnf(apps(arguments[3],fields[-1]),context)
-                if (name=='Subtype.rec' or name.split('.')[0]in TWO_FIELD_RECORDS) and name.endswith('.rec') and len(arguments)==5:
-                    family=name.split('.')[0]
+                if (name=='Subtype.rec' or primitive_family(name)in TWO_FIELD_RECORDS) and name.endswith('.rec') and len(arguments)==5:
+                    family=primitive_family(name)
                     return self.whnf(apps(arguments[3],('proj',family,0,arguments[4]),('proj',family,1,arguments[4])),context)
-                if name.split('.')[0]in LAW_RECORDS and name.endswith('.rec')and len(arguments)==4:
-                    family=name.split('.')[0]
+                if primitive_family(name)in LAW_RECORDS and name.endswith('.rec')and len(arguments)==4:
+                    family=primitive_family(name)
                     return self.whnf(apps(arguments[2],('proj',family,0,arguments[3]),('proj',family,1,arguments[3])),context)
-                from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
-                record=ONE_FIELD_RECORDS.get(name.split('.')[0])
+                from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_family
+                record=ONE_FIELD_RECORDS.get(primitive_family(name))
                 parameters=record.get('parameters',1)if record else 0
                 if record and name.endswith('.rec') and len(arguments)==parameters+3:
                     if record['data']:
-                        return self.whnf(apps(arguments[parameters+1],('proj',name.split('.')[0],0,arguments[parameters+2])),context)
+                        return self.whnf(apps(arguments[parameters+1],('proj',primitive_family(name),0,arguments[parameters+2])),context)
                     ctor=self.whnf(arguments[parameters+2],context);fields=[]
                     while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
-                    if ctor[0]=='builtin' and ctor[1]==name.split('.')[0]+'.'+record['constructor'] and len(fields)==parameters+1:
+                    if ctor[0]=='builtin' and ctor[1]==primitive_family(name)+'.'+record['constructor'] and len(fields)==parameters+1:
                         return self.whnf(apps(arguments[parameters+1],fields[-1]),context)
                 count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6,'Decidable.rec':5}.get(name)
                 if count and len(arguments)==count:
@@ -215,7 +215,7 @@ class Oracle:
                             return self.whnf(apps(arguments[2 if ctor[1]=='Decidable.isFalse' else 3],fields[1]),context)
                         if name in ('Quot.ind','Quot.lift') and ctor[1]=='Quot.mk' and len(fields)==3:
                             return self.whnf(apps(arguments[3],fields[2]),context)
-                        if name in ('And.rec','Iff.rec') and ctor[1]==name.split('.')[0]+'.intro' and len(fields)==4:
+                        if name in ('And.rec','Iff.rec') and ctor[1]==primitive_family(name)+'.intro' and len(fields)==4:
                             return self.whnf(apps(arguments[3],*fields[2:]),context)
                         if name=='Nonempty.rec' and ctor[1]=='Nonempty.intro' and len(fields)==2:
                             return self.whnf(apps(arguments[2],fields[1]),context)
@@ -251,7 +251,7 @@ class Oracle:
         if head[0]=='builtin' and head[1]=='Subtype' and len(arguments)==2:
             if self.convert(left_type,self.infer(right,context),context):
                 return self.convert(('proj','Subtype',0,left),('proj','Subtype',0,right),context)
-        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS
+        from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_family
         if left_type[0]=='builtin' and left_type[1]=='PUnit' and left_type[2]>0:
             return self.convert(left_type,self.infer(right,context),context)
         if head[0]=='builtin' and ((head[1]in TWO_FIELD_RECORDS and len(arguments)==2)or(head[1]in LAW_RECORDS and len(arguments)==1)):
@@ -283,7 +283,7 @@ class Oracle:
             return primitive_type(term)
         if tag=='proj':
             inferred=self.whnf(self.infer(term[3],context),context)
-            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_type
+            from .primitives import ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,LAW_RECORDS,primitive_family,primitive_type
             if term[1]in LAW_RECORDS:
                 head=inferred;parameters=[]
                 while head[0]=='app':parameters.insert(0,head[2]);head=head[1]

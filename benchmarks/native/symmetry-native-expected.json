@@ -1,0 +1,165 @@
+[
+  {
+    "name": "symmetry-prop-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 643,
+    "allocated_heap_nodes": 93,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-type-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 644,
+    "allocated_heap_nodes": 94,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-wrong-direction",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 848,
+    "allocated_heap_nodes": 99,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-field-relation-parameters",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 884,
+    "allocated_heap_nodes": 108,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-wrong-field-claim",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1013,
+    "allocated_heap_nodes": 114,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-family-guard",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 56,
+    "allocated_heap_nodes": 20,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 2023,
+    "allocated_heap_nodes": 232,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "symmetry-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2135,
+    "allocated_heap_nodes": 247,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "Function.instSymmSwapProp@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7378,
+    "allocated_heap_nodes": 730,
+    "environment_declarations": 4,
+    "assumptions": []
+  },
+  {
+    "name": "Function.instSymmOnFun@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 7532,
+    "allocated_heap_nodes": 783,
+    "environment_declarations": 4,
+    "assumptions": []
+  },
+  {
+    "name": "Function.instSymmSwapProp@[1]-claim-and-False",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 7531,
+    "allocated_heap_nodes": 751,
+    "environment_declarations": 4,
+    "assumptions": []
+  },
+  {
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1131,
+    "allocated_heap_nodes": 119,
+    "environment_declarations": 2,
+    "assumptions": []
+  },
+  {
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1251,
+    "allocated_heap_nodes": 129,
+    "environment_declarations": 5,
+    "assumptions": [
+      "A",
+      "a",
+      "q",
+      "P",
+      "h"
+    ]
+  },
+  {
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 395,
+    "allocated_heap_nodes": 56,
+    "environment_declarations": 3,
+    "assumptions": [
+      "A",
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "LeanputerUnits.data_eta@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 295,
+    "allocated_heap_nodes": 35,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsLeftCancelMul.mul_left_cancel@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5504,
+    "allocated_heap_nodes": 636,
+    "environment_declarations": 6,
+    "assumptions": []
+  },
+  {
+    "name": "pool-unbound-leaf",
+    "status": "REJECT",
+    "reason": "UNBOUND",
+    "steps": 24,
+    "allocated_heap_nodes": 15,
+    "environment_declarations": 0,
+    "assumptions": []
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "format": "leanputer.targeted-feature-protocol.v1",
+  "feature": "Std.Symm with authenticated optional canonical Var/Sort prefix",
+  "compiled_base": "b1a80c5",
+  "compiled_with_uncommitted_feature": true,
+  "source_sha256": {
+    "leanputer/primitives.py": "1dc453d7b8959afd3f64422d9e227f484bbb9472e4cb9047a9d762b5ab424d52",
+    "leanputer/dependent.py": "e8b363a0c3894c6244e82d7b378f19619c82d66301b29e3f157e725b6dc7157a",
+    "leanputer/machine_spec.py": "f61389eb5f5b3f751d838f3de874afa4841fadfb9a97b0663078afc2ad7e41bb",
+    "leanputer/transition.py": "cc084739338b2620243b4e31541d42dd3f636b3131d07518888556043c77db54",
+    "leanputer/native_machine.py": "db48247210a7f7afe72c0be81b19861c1288663c85b2a4da16926af753a61a2d",
+    "leanputer/native.py": "a4fd6647c6f10824283ab144f21973244d8156a889191d644fccacd5f891baef",
+    "leanputer/native_vendor/qwenputer/emit.py": "fa23bef6d7b195919c3868a565f1b8571676e200e790c431e2c092122276b7b5",
+    "leanputer/native_vendor/qwenputer/ir.py": "80531615df1bd7aa2de9193b153033978150c2fbb8594a53b1af80fca38bf3ee",
+    "tools/lean/Export.lean": "89974da0e0fb867d8bc710013bc4b44e87250c722d5d65a700d124ce75aabf65",
+    "tools/lean/Validate.lean": "9193e432da754d7969eb39d8fd6ec989b9c83a356cb0d08b3ee1ac6453b6187d"
+  },
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean": "4.31.0",
+  "torch": "2.8.0+cu128",
+  "transformers": "5.19.0",
+  "device": "NVIDIA A10G",
+  "dtype": "bfloat16",
+  "stock_forward_and_cache": true,
+  "custom_runtime_or_external_checker_at_inference": false,
+  "source_population": 857,
+  "syntax_exported": 517,
+  "syntax_unsupported": 340,
+  "full_population_native": "NOT_RUN",
+  "broad_differentials": "DEFERRED",
+  "targeted_native_cases": 17,
+  "new_actual_source_candidates": [
+    "Function.instSymmSwapProp@[1]",
+    "Function.instSymmOnFun@[1,1]"
+  ],
+  "dependency_policy": "Complete four-definition closures for both new sources, no axioms; false-conjunction mutation retains the entire original closure.",
+  "known_incompleteness": "Inherited distinct-neutral law-record conversion cycle remains. Atom-pool source correspondence and native numerical correctness remain provisional pending broad validation.",
+  "timing_scope": "Single development run. Compile timer excludes imports; forward timer includes syntax boot forward and fixed fuel+2 stock forwards plus final decode, excludes host parsing/boot materialization. No end-to-end cold or repeated steady measurement for this feature; overlapping CPU development means no controlled performance comparison.",
+  "command": "python -m leanputer.native_machine --input benchmarks/native/symmetry-input.jsonl --config benchmarks/native/symmetry-config.json --device cuda --batch-size 17 --report /mnt/scratch/symmetry-report.json",
+  "reference_replay": "Inside pinned mathlib lake env: lean --run tools/lean/Validate.lean INPUT OUTPUT --module Mathlib.Algebra.Group.Defs",
+  "allocation_policy": "atom_pool=true reserves Var0..7 and Sort0..4; compiled validation authenticates all prefix rows, standalone leaf allocation reuses fixed pointers, primitive schema blocks remain contiguous. Default false retains legacy allocation.",
+  "comparison_scope": "Matched1024 model metadata has equal 2,804,589,264 planned parameters with either allocation policy; legacy versus pool source resource outcomes compared only in Spec. Native legacy baseline not run. Legacy2048 metadata needs9,341,452,448 BF16bytes; smaller required capacity is not a matched-capacity size reduction."
+}

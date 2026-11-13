@@ -163,8 +163,10 @@ class MachineConfig:
     constants: int = 16
     universe: int = 4
     fuel: int = 1024
+    atom_pool: bool = False
 
     def __post_init__(self):
+        if type(self.atom_pool)is not bool:raise ValueError('atom_pool must be Boolean')
         for name in ('heap', 'stack', 'context', 'constants'):
             value = getattr(self, name)
             if type(value) is not int or value < 2 or value & (value-1):
@@ -173,6 +175,14 @@ class MachineConfig:
             raise ValueError('heap >= 16 and universe below heap-1 required')
         if type(self.fuel) is not int or self.fuel < 1:
             raise ValueError('positive fuel required')
+
+        if self.atom_pool_size>=self.heap:raise ValueError('atom pool must fit the heap')
+
+    @property
+    def atom_variables(self):return min(8,self.context)if self.atom_pool else 0
+
+    @property
+    def atom_pool_size(self):return self.atom_variables+self.universe+1 if self.atom_pool else 0
 
     @property
     def universe_bits(self):
@@ -205,6 +215,11 @@ def prepare(config, term, claim, declarations=()):
     if len(names) != len(declarations):
         raise ValueError('duplicate declaration names')
     heap, cache = [[0, 0, 0, 0]], {}
+    if config.atom_pool:
+        for tag,limit in ((Tag.VAR,config.atom_variables),(Tag.SORT,config.universe+1)):
+            for value in range(limit):
+                cache[('var'if tag==Tag.VAR else 'sort',value)]=len(heap)
+                heap.append([int(tag),0,0,value])
     def visit(expr):
         expr = parse_expr(expr)
         if expr in cache:
@@ -295,6 +310,18 @@ class SpecMachine:
         if resume is not None:
             self.tail(*resume)
 
+    def allocate_atom(self,tag,v):
+        # Only standalone leaves use this path. Fixed schema rows must stay
+        # contiguous for their relative-pointer relocation.
+        if self.config.atom_pool:
+            if v>=1<<self.config.word_bits:
+                self.stop(Outcome.RESOURCE,Reason.INDEX);return
+            if tag==Tag.VAR and v<self.config.atom_variables:
+                self.ret(1+v);return
+            if tag==Tag.SORT and v<=self.config.universe:
+                self.ret(1+self.config.atom_variables+v);return
+        self.allocate(tag,v=v)
+
     def neutral_projection(self,original,base):
         _,child,_,projection=self.node(original)
         if child==base: self.ret(original)
@@ -311,7 +338,7 @@ class SpecMachine:
         op, x, y, z, w, result = (r[k] for k in ('mode', 'x', 'y', 'z', 'w', 'r'))
         # Check address domains before any semantic read or update. The weighted
         # engine uses the same guards before interpreting an attention result.
-        if (not 1 <= r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['ctx'] > cfg.context
+        if (not cfg.atom_pool_size+1 <= r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['ctx'] > cfg.context
                 or not r['decl'] <= r['decl_count'] <= cfg.constants or (r['head']!=0 and r['head']not in REC_ARITIES) or r['arity']>=REC_ARITIES.get(r['head'],1)):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         pointers = []
@@ -346,6 +373,9 @@ class SpecMachine:
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
                 valid = 1 <= tag <= int(Tag.NAT)
+                if cfg.atom_pool and i<=cfg.atom_pool_size:
+                    expected=(int(Tag.VAR),0,0,i-1)if i<=cfg.atom_variables else (int(Tag.SORT),0,0,i-cfg.atom_variables-1)
+                    valid &= (tag,a,b,v)==expected
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
                 elif tag == Tag.PROJ:
@@ -437,10 +467,10 @@ class SpecMachine:
                 if v >= cfg.universe:
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
-                    self.allocate(Tag.SORT, v=v+1)
+                    self.allocate_atom(Tag.SORT, v=v+1)
             elif tag == Tag.BUILTIN:
                 if v==0:
-                    self.allocate(Tag.SORT,v=0)
+                    self.allocate_atom(Tag.SORT,v=0)
                 else:
                     self.tail(Op.BUILTIN_TYPE,v|(b<<cfg.primitive_bits),0,r['free'],a)
             elif tag==Tag.PROJ:
@@ -539,7 +569,7 @@ class SpecMachine:
             if tag != Tag.SORT:
                 self.stop(Outcome.REJECT, Reason.EXPECT_SORT)
             else:
-                self.allocate(Tag.SORT, v=0 if v == 0 else max(x, v))
+                self.allocate_atom(Tag.SORT, v=0 if v == 0 else max(x, v))
         elif op == Op.I_APP:
             self.call(Op.WHNF, result, continuation=(Op.I_FUN, x))
         elif op == Op.I_FUN:
@@ -745,13 +775,13 @@ class SpecMachine:
                     if v < y:
                         self.ret(x)
                     else:
-                        self.allocate(Tag.VAR, v=v+z)
+                        self.allocate_atom(Tag.VAR, v=v+z)
                 elif v < z:
                     self.ret(x)
                 elif v == z:
                     self.tail(Op.SHIFT, y, 0, z)
                 else:
-                    self.allocate(Tag.VAR, v=v-1)
+                    self.allocate_atom(Tag.VAR, v=v-1)
             elif tag==Tag.PROJ:
                 self.call(op,a,y,z,continuation=(Op.TREE_PROJ,x))
             elif tag==Tag.LET:
@@ -917,7 +947,7 @@ class SpecMachine:
         elif op == Op.E_SHIFT:
             self.call(Op.E_VAR, 0, continuation=(Op.E_BUILD, x, result))
         elif op == Op.E_VAR:
-            self.allocate(Tag.VAR, v=0)
+            self.allocate_atom(Tag.VAR, v=0)
         elif op == Op.E_BUILD:
             self.call(Op.E_MAKE_APP, y, result, continuation=(Op.E_COMPARE, x))
         elif op == Op.E_MAKE_APP:

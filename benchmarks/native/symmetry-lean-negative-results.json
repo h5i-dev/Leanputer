@@ -1,0 +1,6 @@
+[{"status": "REJECT",
+  "reason": "Lean kernel rejected target judgment",
+  "name": "Function.instSymmSwapProp@[1]-claim-and-False"},
+ {"status": "REJECT",
+  "reason": "Lean kernel rejected target judgment",
+  "name": "pool-unbound-leaf"}]

@@ -686,3 +686,31 @@ hostprocesspeakRSS1,810,632,704bytes. Overlapping CPU development and a single r
 preclude a controlled speed/throughput claim. Full native population NOT_RUN;
 syntax-only snapshot509EXPORTED348UNSUPPORTED/857 in11.247s is separate.
 Compact input/config/protocol/results are benchmarks/native/cancellation-*.
+
+Std.Symm adds a fixed Prop record over α:Sort u and an actual binary relation,
+including Prop carriers. Namespaces remain part of family identity. Its typed
+field reverses the relation arguments; it is not an unchecked supplied proof.
+The catalog has122intrinsics/116phases. Optional atom_pool uses a syntax-only
+canonical Var/Sort prefix, authenticated by compiled validation and reused by
+standalone leaf allocation. Fixed schema rows remain contiguous; default false
+preserves legacy allocation. Weighted checks verify corrupted-prefix rejection,
+full-heap reuse and overflow protection against wrapped canonical pointers.
+
+The stock CUDA17case batch passes10A7R, matching all outcomes/reasons/steps/heap
+counts. Function.instSymmSwapProp@[1] accepts7378steps/730allocatednodes and
+Function.instSymmOnFun@[1,1] accepts7532steps/783nodes; both check fullGamma4 with
+noaxioms. The retained-closure false-conjunction mutation rejects7531steps/751nodes.
+Eq3/PUniteta/cancellationgetter retain outcomes and unbound Var0 rejects despite
+the unused canonical Var prefix. At heap1024/s32/c16/k8/u4/f7600/pooltrue there
+are127boot tokens plus7602stockforwards. Model2,804,589,264BF16parameters,
+5,609,178,528weightbytes,H7168/L105/FFN1024; compile60.652s/fixedforward1186.776s,
+CUDAforwardpeak6,060,130,816bytes/hostpeakRSS1,793,028,096bytes. Overlapping CPU
+work and one run preclude controlled speed/throughput claims.
+
+Matched1024metadata has the same parameter count with either allocation policy.
+Spec-only legacy counterparts exhaust heap; pooled counterparts accept the two
+sources and reject the mutation. No native legacy baseline was run. A legacy2048
+metadata plan needs4.671Bparameters/9.341GB; this unexecuted larger capacity is not
+a matched-capacity downsizing comparison. Same857-source syntax snapshot517E340U
+in11.657s remains separate from proof acceptance. Full-population native checking
+and broad differentials are deferred. See benchmarks/native/symmetry-*.
