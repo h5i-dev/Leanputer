@@ -356,3 +356,16 @@ The [read-only raw declaration port smoke](../../benchmarks/kernel-environment-a
 verifies all four cache banks before [checked-environment/source transaction
 integration](environment-native.md). A separate raw cursor address is available;
 advancement and publication remain unfinished. Transport is not admission.
+
+## Current integration status (supersedes historical operation-stage notes above)
+
+The [ordinary source driver](environment-native.md) now scope/type/body checks
+dependencies before generating private signatures in weights, and checks its
+target without assuming it. Original schemes feed the SAME constant lookup and
+universe instantiation. [General checked delta](reduction-native.md) now unfolds
+source-permitted definition/theorem bodies on that environment. Raw-bank cursor
+advancement/publication and ordinary inference are implemented. Complete typed
+conversion and general inductive/recursor generation/restoration, Quot/literal/
+projection/K/eta services remain unfinished explicit GAPs. Ordinary native source
+evidence is distinct from earlier operation DONEs and offline inductive specs.
+No complete857-source native rerun/mathlib fraction is claimed.

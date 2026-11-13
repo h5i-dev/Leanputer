@@ -1,0 +1,83 @@
+"""Lower generic telescope WHNF and dependent shared-parameter reuse."""
+from .arena import Tag
+from .traversal_machine import (Mode, Task, Outcome, Reason, CALL_TELESCOPE_WHNF,
+    CALL_REUSE_WHNF, CALL_REUSE_CONVERT, CALL_REUSE_SUBSTITUTE,
+    CALL_REUSE_SCOPE_TYPE, CALL_REUSE_SCOPE_CANDIDATE, CALL_REUSE_OPEN, CALL_REUSE_FINISH)
+
+PRIVATE_PHASES=tuple(range(CALL_TELESCOPE_WHNF,CALL_REUSE_FINISH+1))
+
+
+def emit_rules(c):
+    r,n,f=c.r,c.read['node'],c.read['frame']
+    a,b,x,result=n['a'],n['b'],r['x'],r['r']
+    nonempty=c.NOT(c.eq(r['sp'],0));top=c.sub(r['sp'],1);room=c.lt(r['sp'],c.cfg.stack)
+    returning=c.AND(c.mode(Mode.RETURN),nonempty)
+    at=lambda phase:c.AND(returning,c.eq(f['phase'],phase))
+    c.emit(at(CALL_TELESCOPE_WHNF),sp=top,task=Task.OPEN_TELESCOPE,mode=Mode.TELESCOPE_READY,x=result,
+        limit=f['original'],bounded=f['depth'],open_tag=f['first'])
+    reusable=c.OR(*(at(p) for p in (CALL_REUSE_WHNF,CALL_REUSE_CONVERT,CALL_REUSE_SUBSTITUTE)))
+    c.emit(reusable,reuse_end=f['first'],reuse_whnf=f['second'],task=Task.CONSUME_PARAMETERS)
+    c.emit(c.OR(at(CALL_REUSE_WHNF),at(CALL_REUSE_CONVERT)),reuse_index=f['depth'])
+    c.emit(at(CALL_REUSE_WHNF),sp=top,mode=Mode.REUSE_BINDER,x=result)
+    converted=at(CALL_REUSE_CONVERT)
+    c.stop(c.AND(converted,c.eq(result,0)),Outcome.INVALID,Reason.TYPE_MISMATCH)
+    c.emit(c.AND(converted,c.NOT(c.eq(result,0))),sp=top,mode=Mode.REUSE_INSTANTIATE,x=f['original'])
+    c.emit(at(CALL_REUSE_SUBSTITUTE),sp=top,mode=Mode.REUSE_LOOP,x=result,reuse_index=c.add(f['depth'],1))
+    def replace(guard,phase,task,x,mode=Mode.WALK,**updates):
+        c.write('stack',guard,top,(phase,0,0,Task.PREPARE_REUSE,0,0))
+        c.emit(guard,task=task,x=x,mode=mode,depth=0,**updates)
+    replace(at(CALL_REUSE_SCOPE_TYPE),CALL_REUSE_SCOPE_CANDIDATE,Task.EXPR_SCOPE,r['reuse_root'])
+    replace(at(CALL_REUSE_SCOPE_CANDIDATE),CALL_REUSE_OPEN,Task.OPEN_TELESCOPE,r['root'],Mode.TELESCOPE,
+        bounded=1,limit=r['reuse_end'],open_tag=Tag.PI)
+    replace(at(CALL_REUSE_OPEN),CALL_REUSE_FINISH,Task.CONSUME_PARAMETERS,r['reuse_root'])
+    c.emit(at(CALL_REUSE_FINISH),sp=top,task=Task.PREPARE_REUSE,mode=Mode.RETURN)
+    def push(guard,phase,original=0,index=0,end=0,policy=0):
+        c.stop(c.AND(guard,c.NOT(room)),Outcome.RESOURCE,Reason.STACK)
+        valid=c.AND(guard,room)
+        c.write('stack',valid,r['sp'],(phase,original,index,r['task'],end,policy))
+        c.emit(valid,sp=c.add(r['sp'],1))
+        return valid
+    telescope=c.mode(Mode.TELESCOPE)
+    limit=c.AND(c.NOT(c.eq(r['bounded'],0)),c.eq(r['ctx'],r['limit']))
+    c.ret(c.AND(telescope,limit),x)
+    call=push(c.AND(telescope,c.NOT(limit)),CALL_TELESCOPE_WHNF,r['limit'],r['bounded'],r['open_tag'])
+    c.emit(call,task=Task.BETA_ZETA,mode=Mode.BETA_ZETA)
+    wrapper=c.AND(c.task(Task.PREPARE_REUSE),c.mode(Mode.WALK))
+    wide=c.g.add(c.g.fit(r['ctx'],c.width+1),c.g.fit(r['reuse_end'],c.width+1))
+    enough=c.NOT(c.g.lt(c.g.const(c.cfg.context,c.width+1),wide))
+    c.stop(c.AND(wrapper,c.NOT(enough)),Outcome.RESOURCE,Reason.CONTEXT)
+    call=push(c.AND(wrapper,enough),CALL_REUSE_SCOPE_TYPE)
+    c.emit(call,task=Task.EXPR_SCOPE,x=r['root'],depth=0,local_base=r['ctx'],reuse_base=r['ctx'],reuse_end=wide[:c.width])
+    active=c.task(Task.CONSUME_PARAMETERS)
+    entering=c.AND(active,c.mode(Mode.WALK))
+    valid=c.AND(c.NOT(c.lt(r['reuse_base'],r['local_base'])),c.NOT(c.lt(r['reuse_end'],r['reuse_base'])),c.NOT(c.lt(r['ctx'],r['reuse_end'])))
+    c.stop(c.AND(entering,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(entering,valid),mode=Mode.REUSE_LOOP,reuse_index=r['reuse_base'])
+    loop=c.AND(active,c.mode(Mode.REUSE_LOOP))
+    finished=c.eq(r['reuse_index'],r['reuse_end'])
+    c.ret(c.AND(loop,finished),x)
+    normalized=c.NOT(c.eq(r['reuse_whnf'],0))
+    call=push(c.AND(loop,c.NOT(finished),normalized),CALL_REUSE_WHNF,0,r['reuse_index'],r['reuse_end'],r['reuse_whnf'])
+    c.emit(call,task=Task.BETA_ZETA,mode=Mode.BETA_ZETA)
+    c.emit(c.AND(loop,c.NOT(finished),c.NOT(normalized)),mode=Mode.REUSE_BINDER)
+    binder=c.AND(active,c.mode(Mode.REUSE_BINDER))
+    stable=c.tag(Tag.SORT,Tag.LAM)
+    c.stop(c.AND(binder,c.NOT(c.tag(Tag.PI)),stable),Outcome.INVALID,Reason.EXPECT_PI)
+    c.stop(c.AND(binder,c.NOT(c.tag(Tag.PI)),c.NOT(stable)),Outcome.GAP,Reason.GAP_CONVERSION)
+    c.emit(c.AND(binder,c.tag(Tag.PI)),mode=Mode.REUSE_SELECT,reuse_body=x,reuse_domain=a)
+    c.emit(c.AND(active,c.mode(Mode.REUSE_SELECT)),mode=Mode.REUSE_RECORD,x=c.read['operand']['value'])
+    c.emit(c.AND(active,c.mode(Mode.REUSE_SUBST_SELECT)),mode=Mode.REUSE_SUBST_RECORD,x=c.read['operand']['value'])
+    record=c.AND(active,c.mode(Mode.REUSE_RECORD))
+    valid_pointer=lambda p:c.AND(c.NOT(c.eq(p,0)),c.lt(p,r['free']))
+    valid=c.AND(valid_pointer(a),valid_pointer(b))
+    c.stop(c.AND(record,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    call=push(c.AND(record,valid),CALL_REUSE_CONVERT,r['reuse_body'],r['reuse_index'],r['reuse_end'],r['reuse_whnf'])
+    c.emit(call,mode=Mode.WALK,task=Task.CONVERT_POSITIVE,x=r['reuse_domain'],peer=b)
+    instantiate=c.AND(active,c.mode(Mode.REUSE_INSTANTIATE))
+    c.stop(c.AND(instantiate,c.NOT(c.tag(Tag.PI))),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(instantiate,c.tag(Tag.PI)),mode=Mode.REUSE_SUBST_SELECT,reuse_body=b)
+    record=c.AND(active,c.mode(Mode.REUSE_SUBST_RECORD))
+    valid=valid_pointer(a)
+    c.stop(c.AND(record,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    call=push(c.AND(record,valid),CALL_REUSE_SUBSTITUTE,0,r['reuse_index'],r['reuse_end'],r['reuse_whnf'])
+    c.emit(call,mode=Mode.WALK,task=Task.INSTANTIATE_ONE,x=r['reuse_body'],substitution=a,depth=0)

@@ -94,6 +94,8 @@ class Task(IntEnum):
     LOAD_PARAMETERS = 34        # Raw symbolic scheme list -> checked unique scope slots.
     CHECK_NAME = 35             # Generic structured-name/profile guard, no library catalog.
     CHECK_SOURCE = 36           # Source transaction; required missing callbacks GAP.
+    CONSUME_PARAMETERS = 37     # Reuse derived Locals; dependent domain checking.
+    PREPARE_REUSE = 38          # Public operation wrapper, not source admission.
 
 
 
@@ -184,6 +186,14 @@ class Mode(IntEnum):
     SOURCE_COMMIT = 83
     SOURCE_SIGNATURE = 84
     SOURCE_LINK = 85
+    TELESCOPE_READY = 86
+    REUSE_LOOP = 87
+    REUSE_BINDER = 88
+    REUSE_SELECT = 89
+    REUSE_RECORD = 90
+    REUSE_INSTANTIATE = 91
+    REUSE_SUBST_SELECT = 92
+    REUSE_SUBST_RECORD = 93
 
 
 CALL_BETA_ZETA = 16
@@ -253,6 +263,14 @@ CALL_SOURCE_PROPOSITION = 79
 CALL_SOURCE_VALUE_SCOPE = 80
 CALL_SOURCE_VALUE_INFER = 81
 CALL_SOURCE_VALUE_CONVERT = 82
+CALL_TELESCOPE_WHNF = 83
+CALL_REUSE_WHNF = 84
+CALL_REUSE_CONVERT = 85
+CALL_REUSE_SUBSTITUTE = 86
+CALL_REUSE_SCOPE_TYPE = 87
+CALL_REUSE_SCOPE_CANDIDATE = 88
+CALL_REUSE_OPEN = 89
+CALL_REUSE_FINISH = 90
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -269,7 +287,8 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'lookup_type', 'convert_left_level', 'raw_index', 'env_head', 'env_next', 'query_symbol', 'env_ready', 'signature_type', 'parameter_vector', 'level_vector',
     'parameter_head', 'level_head', 'zip_count', 'zip_remaining', 'zip_symbol', 'zip_parameter_next', 'pending_scope', 'symbols_root', 'name_table_left', 'name_table_next',
     'name_second', 'name_part', 'name_length', 'name_index', 'target_index', 'kernel_zero', 'active_kind',
-    'active_symbol', 'active_parameters', 'active_type', 'active_value', 'active_extra', 'commit_scheme', 'commit_signature')
+    'active_symbol', 'active_parameters', 'active_type', 'active_value', 'active_extra', 'commit_scheme', 'commit_signature', 'pending_reuse', 'reuse_root', 'reuse_base', 'reuse_end',
+    'reuse_index', 'reuse_whnf', 'reuse_body', 'reuse_domain')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -368,7 +387,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -455,9 +474,9 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.SOURCE_LINK or r['task'] > Task.CHECK_SOURCE
+                or r['mode'] > Mode.REUSE_SUBST_RECORD or r['task'] > Task.PREPARE_REUSE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
-                or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
+                or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
@@ -475,9 +494,12 @@ class SpecMachine:
         from . import parameter_machine as parameters
         from . import name_machine as names
         from . import source_machine as source
+        from . import telescope_machine as telescope
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
-                if r['pending_open']:
+                if r['pending_reuse']:
+                    r.update(mode=Mode.WALK, task=Task.PREPARE_REUSE, x=r['root'], pending_reuse=0)
+                elif r['pending_open']:
                     r.update(mode=Mode.TELESCOPE, x=r['root'], task=Task.OPEN_TELESCOPE, depth=0, pending_open=0)
                 elif r['pending_fold']:
                     r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
@@ -493,7 +515,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in source.PRIVATE_PHASES:
+                if phase in telescope.PRIVATE_PHASES:
+                    telescope.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in source.PRIVATE_PHASES:
                     source.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in constant.PRIVATE_PHASES:
                     constant.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -593,7 +617,7 @@ class SpecMachine:
             tag == CellTag.VECTOR_CELL if r['mode'] == Mode.ENV_CELL else
             tag == (CellTag.VECTOR_CELL if r['mode'] in (Mode.VECTOR_CELL_LEFT, Mode.VECTOR_CELL_RIGHT) else CellTag.VECTOR) if r['task'] == Task.VECTOR_EQUAL else
             tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
-            tag == LOCAL_DECL_TAG if r['mode'] in (Mode.FOLD_RECORD, Mode.INFER_LOCAL_RECORD) else
+            tag == LOCAL_DECL_TAG if r['mode'] in (Mode.FOLD_RECORD, Mode.INFER_LOCAL_RECORD, Mode.REUSE_RECORD, Mode.REUSE_SUBST_RECORD) else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
             tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
             tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_CELL, Mode.CONST_RESULT) else
@@ -602,6 +626,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if telescope.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if source.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if names.step(self, tag, a, b, c, stop, ret, alloc):
@@ -854,7 +880,7 @@ class SpecMachine:
                 r.update(free=binder+1, fold_body=binder, ctx=r['ctx']-1,
                     mode=Mode.FOLD_SELECT, x=binder)
             return s
-        if r['mode'] == Mode.TELESCOPE:
+        if r['mode'] == Mode.TELESCOPE_READY:
             if r['bounded'] and r['ctx'] == r['limit']:
                 ret(r['x'])
             elif tag != r['open_tag']:

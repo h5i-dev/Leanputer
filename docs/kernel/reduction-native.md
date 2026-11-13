@@ -36,8 +36,8 @@ on the private caller task (inference/type or WHNF/allowed checked body).
 covers generic delta, opacity, application spines and symbolic universe zip.
 The preceding ordinary-source benchmark is pinned e0db573 with beta/zeta only.
 
-The subsequent generic binder integration must preserve two different source
-operations. Opening a telescope creates fresh private Locals and checks its
+The shared [native binder integration](../../benchmarks/kernel-dependent-telescope-stock/README.md)
+implements two different source operations. Opening a telescope creates fresh private Locals and checks its
 WHNF before every binder; a bounded prefix returns its tail without opening
 extra binders. Consuming a shared parameter telescope reuses the SAME previously
 derived Local records: expose Pi, compare its domain against that Local's type,

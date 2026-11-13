@@ -1,0 +1,2142 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 269,
+      "free": 34,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 14,
+      "depth": 0,
+      "task": 38,
+      "r": 14,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 0,
+      "limit": 1,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 15,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 33,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 14,
+      "reuse_base": 1,
+      "reuse_end": 1,
+      "reuse_index": 1,
+      "reuse_whnf": 1,
+      "reuse_body": 0,
+      "reuse_domain": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 37,
+      "free": 58,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 5,
+      "x": 10,
+      "depth": 0,
+      "task": 38,
+      "r": 10,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 48,
+      "limit": 5,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 39,
+      "left_tag": 5,
+      "left_a": 44,
+      "left_b": 39,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 15,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 33,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 14,
+      "reuse_base": 1,
+      "reuse_end": 5,
+      "reuse_index": 5,
+      "reuse_whnf": 1,
+      "reuse_body": 10,
+      "reuse_domain": 56
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 69,
+      "free": 56,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 4,
+      "x": 55,
+      "depth": 0,
+      "task": 38,
+      "r": 55,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 44,
+      "limit": 4,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 7,
+      "left_tag": 6,
+      "left_a": 34,
+      "left_b": 7,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 15,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 33,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 14,
+      "reuse_base": 1,
+      "reuse_end": 4,
+      "reuse_index": 4,
+      "reuse_whnf": 0,
+      "reuse_body": 52,
+      "reuse_domain": 48
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 59,
+      "free": 57,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 4,
+      "x": 56,
+      "depth": 0,
+      "task": 38,
+      "r": 56,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 45,
+      "limit": 4,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 7,
+      "left_tag": 6,
+      "left_a": 35,
+      "left_b": 7,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 16,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 34,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 15,
+      "reuse_base": 1,
+      "reuse_end": 4,
+      "reuse_index": 4,
+      "reuse_whnf": 1,
+      "reuse_body": 53,
+      "reuse_domain": 49
+    },
+    {
+      "mode": 1,
+      "status": 2,
+      "reason": 14,
+      "fuel": 203,
+      "free": 41,
+      "sp": 2,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 40,
+      "depth": 0,
+      "task": 37,
+      "r": 0,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 35,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 40,
+      "left_tag": 64,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 1,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 16,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 34,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 15,
+      "reuse_base": 1,
+      "reuse_end": 2,
+      "reuse_index": 1,
+      "reuse_whnf": 1,
+      "reuse_body": 15,
+      "reuse_domain": 7
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 325,
+      "free": 36,
+      "sp": 2,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 15,
+      "depth": 0,
+      "task": 28,
+      "r": 14,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 17,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 35,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 16,
+      "reuse_base": 1,
+      "reuse_end": 2,
+      "reuse_index": 0,
+      "reuse_whnf": 1,
+      "reuse_body": 0,
+      "reuse_domain": 0
+    },
+    {
+      "mode": 0,
+      "status": 3,
+      "reason": 7,
+      "fuel": 379,
+      "free": 34,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 14,
+      "depth": 0,
+      "task": 38,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 14,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 0,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 0,
+      "env_ready": 0,
+      "signature_type": 0,
+      "parameter_vector": 0,
+      "level_vector": 0,
+      "parameter_head": 15,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 33,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 0,
+      "kernel_zero": 0,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 14,
+      "reuse_base": 0,
+      "reuse_end": 8,
+      "reuse_index": 0,
+      "reuse_whnf": 1,
+      "reuse_body": 0,
+      "reuse_domain": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "prefix-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 33,
+      "semantic_steps": 115
+    },
+    {
+      "name": "prefix-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 57,
+      "semantic_steps": 347
+    },
+    {
+      "name": "raw-constructor-prefix",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 55,
+      "semantic_steps": 315
+    },
+    {
+      "name": "metadata-whnf-prefix",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 34,
+      "allocated_heap_nodes": 56,
+      "semantic_steps": 325
+    },
+    {
+      "name": "different-sort-domain",
+      "status": "INVALID",
+      "reason": "TYPE_MISMATCH",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 34,
+      "allocated_heap_nodes": 40,
+      "semantic_steps": 181
+    },
+    {
+      "name": "raw-free-local-rejected",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 59
+    },
+    {
+      "name": "physical-context-overflow",
+      "status": "RESOURCE",
+      "reason": "CONTEXT",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 33,
+      "semantic_steps": 5
+    }
+  ],
+  "forward_seconds": 42.6871881679981,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 3656,
+    "persistent_channels": 1263,
+    "subtract_handovers": 10587,
+    "head_clears": 49,
+    "logic_units_per_layer": 256,
+    "reset_layers": 5,
+    "graph": {
+      "layers": 80,
+      "dims": 14293,
+      "heads": 5,
+      "ffn_units": 17900,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 59,
+  "primitive_basis": [],
+  "semantic_program": "kernel.general-dependent-telescope.v1",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 677468896,
+  "weight_bytes": 1354937792,
+  "cuda_peak_allocated_bytes": 1432180736,
+  "host_process_peak_rss_bytes": 1756364800,
+  "hidden_size": 3776,
+  "native_layers": 81,
+  "boot_tokens": 36,
+  "applied_steps": 353,
+  "early_stop": true,
+  "halt_interval": 8,
+  "completion_flush_forwards": 1,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 256,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 384,
+    "word_bits": 9
+  },
+  "device": "cuda",
+  "compile_seconds": 16.196180187005666,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "prefix-0",
+      "parameters": 0,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "prefix-0",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "prefix-4",
+      "parameters": 4,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "prefix-4",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "raw-constructor-prefix",
+      "parameters": 3,
+      "normalize": false,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "raw-constructor-prefix",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "metadata-whnf-prefix",
+      "parameters": 3,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "metadata-whnf-prefix",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "mdata",
+            [
+              "pi",
+              0,
+              [
+                "sort",
+                [
+                  "succ",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "var",
+                  0
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "pi",
+                    0,
+                    [
+                      "var",
+                      1
+                    ],
+                    [
+                      "sort",
+                      [
+                        "zero"
+                      ]
+                    ]
+                  ],
+                  [
+                    "pi",
+                    0,
+                    [
+                      "app",
+                      [
+                        "var",
+                        0
+                      ],
+                      [
+                        "var",
+                        1
+                      ]
+                    ],
+                    [
+                      "sort",
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "u"
+                          }
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "different-sort-domain",
+      "parameters": 1,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "different-sort-domain",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "raw-free-local-rejected",
+      "parameters": 1,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "raw-free-local-rejected",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "local",
+              12
+            ],
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-telescope-reuse.v1",
+      "name": "physical-context-overflow",
+      "parameters": 8,
+      "normalize": true,
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "name": "physical-context-overflow",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "raw"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "app",
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "var",
+                      1
+                    ]
+                  ],
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "heap",
+      "row_bank": 1,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "constants",
+      "row_bank": 0,
+      "rows": 2,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "7 shared telescope operation probes: empty/four-dependent-binder prefixes, raw constructor and WHNF policies, mismatch/scope/resource; no supplied Local/type/uniformity answers; NOT source declaration admission",
+  "operation_group": "dependent-telescope",
+  "full_kernel_native_support": false
+}

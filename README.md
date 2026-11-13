@@ -16,7 +16,7 @@ model and exact output-cache comparison. It does **not** establish full
 declaration admission or mathlib coverage. The same stock controller now runs
 [typed universe normalization/equivalence](benchmarks/kernel-level-normalization-stock/README.md),
 source scheme instantiation, [conservative level comparison](benchmarks/kernel-level-geq-stock/README.md)
-and dependent telescope opening/folding. The
+and [dependent telescope opening/folding/parameter reuse](benchmarks/kernel-dependent-telescope-stock/README.md). The
 [typed inference core](benchmarks/kernel-inference-core-stock/README.md) calls
 those same weighted services. [Ordinary source transactions](benchmarks/kernel-source-transactions-stock/README.md)
 now check raw dependency types/bodies before generating a private environment,
