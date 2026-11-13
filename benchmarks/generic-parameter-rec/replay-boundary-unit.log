@@ -1,0 +1,6 @@
+test_independent_parameterized_kernel_replay (test_generic_parameter_rec.GenericParameterizedRecursorSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.295s
+
+OK

@@ -12,7 +12,7 @@ from leanputer.generic_transition import compile_machine
 
 FIXTURES=Path(__file__).parent/'fixtures'
 CFG=MachineConfig(heap=128,stack=16,context=8,constants=8,fuel=1536)
-EXPECTED=['ACCEPT','ACCEPT','UNSUPPORTED','REJECT','REJECT','UNSUPPORTED','REJECT','REJECT','UNSUPPORTED','ACCEPT','RESOURCE']
+EXPECTED=['ACCEPT','ACCEPT','RESOURCE','REJECT','REJECT','UNSUPPORTED','REJECT','REJECT','UNSUPPORTED','ACCEPT','RESOURCE']
 
 
 def load(name):return[json.loads(line)for line in(FIXTURES/name).read_text().splitlines()]

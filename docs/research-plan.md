@@ -8,8 +8,10 @@ ground-universe inductive families with checked uniform type parameters and
 direct strictly-positive self-reference),
 validated carrier/universe/positivity bounds and data-derived dependent recursor
 types/reductions. Nullary Prop families enforce elimination restrictions and singletonK.
-Parameterized recursors/projections are the next implementation slice; family
-and constructor support must not be reported as full eliminator support.
+Parameterized recursors now pass the focused stock15batch10A3R1U1Resource,
+including two parameters/direct recursion/Prop parameters and scoped-free-variable
+rejection. Parameterized projections remain the next slice. Full generic indexed
+elimination and multiple/dependent stored fields remain unsupported.
 Syntax-only actual source export retains full closures. Function.mt now has a
 targeted generic native result (Γ3/noaxioms), not a population coverage estimate.
 No completion percentage is established. Existing checkpoints are preserved.

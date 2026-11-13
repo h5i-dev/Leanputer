@@ -14,7 +14,8 @@ renamings. The initial class is ground-universe declarations with uniform type p
 constructor in positive numeric Sorts; each field is an earlier checked carrier
 a type parameter, or a direct uniform recursive occurrence. It also supports nullary Prop families with checked
 elimination restrictions. Zero-parameter single-field projections use validated constructor
-data, including neutral comparison and substitution. Parameterized recursors/projections, term parameters, indices and Prop constructor fields remain
+data, including neutral comparison and substitution. Parameterized recursors are derived and checked; parameterized projections,
+term parameters, indices and Prop constructor fields remain
 unsupported. The checker derives dependent recursor types inside weights and
 performs generic constructor iota reduction. This is experimental, with no
 whole-checker soundness proof or generic mathlib coverage claim.
@@ -49,7 +50,7 @@ Tally type, with no Nat-specific compilation. The
 [recursive stock batch](benchmarks/generic-recursive/README.md) yielded
 9ACCEPT/3REJECT/2UNSUPPORTED/1RESOURCE using445.0M BF16 parameters
 (890.1MB weights) and143.97s GPU execution at1408fuel. Raw literals, general inductives,
-Eq and general parameterized elimination still require
+Eq and general indexed elimination still require
 further generic rules.
 
 The remainder documents the **historical per-name catalog backend**, retained

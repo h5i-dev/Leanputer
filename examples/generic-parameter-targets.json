@@ -10,5 +10,21 @@
   {
     "name": "LeanputerGenericParameters.option_rec_boundary",
     "levels": []
+  },
+  {
+    "name": "LeanputerGenericParameters.two_parameter_rec",
+    "levels": []
+  },
+  {
+    "name": "LeanputerGenericParameters.recursive_parameter_iota",
+    "levels": []
+  },
+  {
+    "name": "LeanputerGenericParameters.parameterized_none",
+    "levels": []
+  },
+  {
+    "name": "LeanputerGenericParameters.prop_parameter_rec",
+    "levels": []
   }
 ]

@@ -1,0 +1,7 @@
+test_independent_parameterized_kernel_replay (test_generic_parameter_rec.GenericParameterizedRecursorSmoke) ... ok
+test_weighted_types_reduction_and_scope (test_generic_parameter_rec.GenericParameterizedRecursorSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 104.959s
+
+OK

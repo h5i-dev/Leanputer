@@ -15,7 +15,7 @@ def check_documents(model,documents,backend='native',batch_size=16):
     records=[];pending=[];positions=[];batches=[];started=time.perf_counter()
     for i,document in enumerate(documents):
         name=document.get('name',str(i))if isinstance(document,dict)else str(i)
-        record=dict(name=name)
+        record=dict(name=name,admitted_declarations=None)
         if isinstance(document,dict) and 'provenance' in document:
             record['provenance']=document['provenance']
         if isinstance(document,dict) and document.get('format')=='leanputer.generic.v1' and document.get('status')=='UNSUPPORTED':
@@ -49,14 +49,14 @@ def check_documents(model,documents,backend='native',batch_size=16):
                 r=model.layout.decode(bitsrow.tolist())['regs']
                 status='UNSUPPORTED'if r['reason']==Reason.UNSUPPORTED_DECLARATION else Outcome(r['status']).name
                 results.append(dict(name=document.get('name','unnamed'),status=status,reason=Reason(r['reason']).name,
-                                    semantic_steps=model.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL),allocated_heap_nodes=r['free']-1))
+                                    semantic_steps=model.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL),allocated_heap_nodes=r['free']-1,admitted_declarations=r['decl']))
         indices=positions[start:start+batch_size]
         for i,r in zip(indices,results):records[i].update(r)
         batches.append(dict(input_positions=indices,**result))
     return dict(format='leanputer.generic-report.v1',semantic_program=program.program_name,primitive_basis=[],
                 config=asdict(model.config),results=records,counts=dict(Counter(r['status']for r in records)),
                 syntax_seconds=syntax_seconds,batches=batches,total_check_seconds=time.perf_counter()-started,
-                validation_scope='Restricted uniform type-parameter family/constructor admission, zero-parameter direct recursion/projections, and nullary Prop; no full Lean/general inductive soundness claim')
+                validation_scope='Restricted uniform type-parameter zero/one-field inductives with direct recursion, zero-parameter projections, and nullary Prop; no full Lean/general inductive soundness claim')
 
 
 def main(argv=None):

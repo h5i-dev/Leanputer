@@ -148,6 +148,19 @@ class Op(IntEnum):
     G_U_ARG = 109
     G_U_REST = 110
     G_FIELD_UNIFORM = 111
+    R_PARAMS = 112
+    G_FAPP = 113
+    G_FVAR = 114
+    G_FNEXT = 115
+    G_R_MAJOR = 116
+    G_CTSTRIP = 117
+    G_CAPP_BEGIN = 118
+    G_CAPP = 119
+    G_CVAR = 120
+    G_CNEXT = 121
+    G_RDOM = 122
+    G_RTCSTRIP = 123
+    G_HEADWALK = 124
 
 
 @dataclass(frozen=True)
@@ -175,7 +188,7 @@ class MachineConfig:
 
 
 REGISTERS = ('mode', 'x', 'y', 'z', 'w', 'r', 'ctx', 'sp', 'free', 'scan',
-             'decl', 'decl_count', 'term', 'claim', 'fuel', 'status', 'reason', 'head', 'arity', 'gi', 'gf', 'gm', 'gt', 'gc', 'ga', 'gb', 'gj', 'gp', 'permit')
+             'decl', 'decl_count', 'term', 'claim', 'fuel', 'status', 'reason', 'head', 'arity', 'gi', 'gf', 'gm', 'gt', 'gc', 'ga', 'gb', 'gj', 'gp', 'permit', 'gann')
 HEAP_FIELDS = ('tag', 'a', 'b', 'v')
 FRAME_FIELDS = ('mode', 'x', 'y', 'z', 'w', 'ctx')
 CONST_FIELDS=('kind','type','value','owner','info','parameters')
@@ -293,7 +306,7 @@ class SpecMachine:
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if r['head']:
             headrow=s['constants'][r['head']-1]
-            if headrow[0]!=3 or r['arity']>=headrow[4]+2:
+            if headrow[0]!=3 or r['arity']>=headrow[4]+headrow[5]+2:
                 self.stop(Outcome.REJECT,Reason.SYNTAX);return s
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
@@ -305,10 +318,10 @@ class SpecMachine:
             pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA):
             pointers.append(y)
-        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE,Op.G_RFIELD,Op.G_RECARG,Op.G_PARAMS,Op.G_UNIFORM,Op.G_FIELD_UNIFORM,Op.G_CTOR_SORT,Op.G_CTOR_SORT_DONE,Op.G_PARAM_LOOP,Op.G_PARAM_DOMAIN,Op.G_CTOR_BODY,Op.G_U_NODE,Op.G_U_ARG,Op.G_U_REST):pointers.append(x)
+        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE,Op.G_RFIELD,Op.G_RECARG,Op.G_PARAMS,Op.G_UNIFORM,Op.G_FIELD_UNIFORM,Op.G_CTOR_SORT,Op.G_CTOR_SORT_DONE,Op.G_PARAM_LOOP,Op.G_PARAM_DOMAIN,Op.G_CTOR_BODY,Op.G_U_NODE,Op.G_U_ARG,Op.G_U_REST,Op.R_PARAMS,Op.G_CTSTRIP,Op.G_RTCSTRIP,Op.G_HEADWALK):pointers.append(x)
         if op==Op.G_AFTER:pointers.extend((x,y,z))
         if op==Op.G_MAJOR:pointers.append(y)
-        if op in (Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD,Op.G_IH0,Op.G_IH1,Op.G_IH2,Op.G_IH3,Op.G_RECAPPLY,Op.G_IH_APP,Op.G_IH_FINISH,Op.G_CTOR_SORT,Op.G_CTOR_SORT_DONE):pointers.append(result)
+        if op in (Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD,Op.G_IH0,Op.G_IH1,Op.G_IH2,Op.G_IH3,Op.G_RECAPPLY,Op.G_IH_APP,Op.G_IH_FINISH,Op.G_CTOR_SORT,Op.G_CTOR_SORT_DONE,Op.G_FVAR,Op.G_FNEXT,Op.G_R_MAJOR,Op.G_CAPP_BEGIN,Op.G_CVAR,Op.G_CNEXT,Op.G_RDOM):pointers.append(result)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -344,7 +357,7 @@ class SpecMachine:
                 elif kind==5:
                     if parameters or value or owner>=r['decl'] or s['constants'][owner][0]!=3 or owner+s['constants'][owner][4]>=r['decl']:
                         self.stop(Outcome.REJECT,Reason.DECLARATION)
-                    elif s['constants'][owner][5]:self.stop(Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
+                    elif s['constants'][owner][4]+s['constants'][owner][5]+2>=1<<cfg.word_bits:self.stop(Outcome.RESOURCE,Reason.INDEX)
                     elif info>=cfg.universe:self.stop(Outcome.RESOURCE,Reason.UNIVERSE)
                     else:self.call(Op.INFER,ty,continuation=(Op.G_REC,))
                 elif parameters or owner or info or (kind and not 0<value<r['free']) or (kind==0 and value):self.stop(Outcome.REJECT,Reason.DECLARATION)
@@ -427,13 +440,26 @@ class SpecMachine:
         elif op==Op.G_REC:self.call(Op.WHNF,result,continuation=(Op.G_R0,))
         elif op==Op.G_R0:
             if self.node(result)[0]!=Tag.SORT:self.stop(Outcome.REJECT,Reason.EXPECT_SORT)
-            else:self.tail(Op.G_ELIM,s['constants'][s['constants'][r['decl']][3]][1])
+            else:r['gp']=r['ctx']=0;self.tail(Op.R_PARAMS,s['constants'][r['decl']][1],s['constants'][s['constants'][r['decl']][3]][1])
+        elif op==Op.R_PARAMS:
+            owner=s['constants'][s['constants'][r['decl']][3]]
+            if r['gp']==owner[5]:r['gann']=x;self.tail(Op.G_ELIM,y)
+            elif self.node(x)[0]!=Tag.PI or self.node(y)[0]!=Tag.PI or self.node(x)[1]!=self.node(y)[1]:self.stop(Outcome.REJECT,Reason.DECLARATION)
+            else:
+                if r['ctx']>=cfg.context:self.stop(Outcome.RESOURCE,Reason.CONTEXT)
+                else:
+                    s['context'][r['ctx']][0]=self.node(x)[1];r['ctx']+=1;r['gp']+=1;self.tail(Op.R_PARAMS,self.node(x)[2],self.node(y)[2])
         elif op==Op.G_ELIM:
             owner=s['constants'][s['constants'][r['decl']][3]]
             if self.node(x)[3]==0 and s['constants'][r['decl']][4]>0 and owner[4]>1:self.stop(Outcome.REJECT,Reason.DECLARATION)
             else:self.allocate(Tag.CONST,v=s['constants'][r['decl']][3],resume=(Op.G_R1,))
         elif op==Op.G_R1:
-            r['gf']=result;self.allocate(Tag.SORT,v=s['constants'][r['decl']][4],resume=(Op.G_R2,))
+            r['gf']=result;r['gp']=s['constants'][s['constants'][r['decl']][3]][5];self.tail(Op.G_FAPP)
+        elif op==Op.G_FAPP:
+            if r['gp']==0:self.allocate(Tag.SORT,v=s['constants'][r['decl']][4],resume=(Op.G_R2,))
+            else:self.allocate(Tag.VAR,v=r['gp']-1,resume=(Op.G_FVAR,))
+        elif op==Op.G_FVAR:self.allocate(Tag.APP,r['gf'],result,resume=(Op.G_FNEXT,))
+        elif op==Op.G_FNEXT:r['gf']=result;r['gp']-=1;self.tail(Op.G_FAPP)
         elif op==Op.G_R2:self.allocate(Tag.PI,r['gf'],result,resume=(Op.G_R3,))
         elif op==Op.G_R3:
             r['gm']=result;owner=s['constants'][r['decl']][3]
@@ -441,20 +467,36 @@ class SpecMachine:
         elif op==Op.G_R4:r['gc']=result;self.allocate(Tag.VAR,v=0,resume=(Op.G_R5,))
         elif op==Op.G_R5:self.allocate(Tag.APP,r['gc'],result,resume=(Op.G_R6,))
         elif op==Op.G_R6:
-            self.allocate(Tag.PI,r['gf'],result,resume=(Op.G_RLOOP,))
-            r['gi']=s['constants'][s['constants'][r['decl']][3]][4]
+            owner=s['constants'][s['constants'][r['decl']][3]];r['gi']=owner[4]
+            if owner[5]:self.call(Op.SHIFT,r['gf'],0,owner[4]+1,continuation=(Op.G_R_MAJOR,result))
+            else:self.allocate(Tag.PI,r['gf'],result,resume=(Op.G_RLOOP,))
+        elif op==Op.G_R_MAJOR:self.allocate(Tag.PI,result,x,resume=(Op.G_RLOOP,))
         elif op==Op.G_RLOOP:
             r['gt']=result
             if r['gi']==0:self.allocate(Tag.PI,r['gm'],result,resume=(Op.G_RDONE,))
-            else:self.tail(Op.G_RCTYPE,s['constants'][s['constants'][r['decl']][3]+r['gi']][1])
+            else:r['gp']=0;self.tail(Op.G_CTSTRIP,s['constants'][s['constants'][r['decl']][3]+r['gi']][1])
+        elif op==Op.G_CTSTRIP:
+            if r['gp']==s['constants'][s['constants'][r['decl']][3]][5]:self.tail(Op.G_RCTYPE,x)
+            elif self.node(x)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.INTERNAL)
+            else:r['gp']+=1;self.tail(Op.G_CTSTRIP,self.node(x)[2])
         elif op==Op.G_RCTYPE:
             if self.node(x)[0]==Tag.PI:
-                r['ga']=self.node(x)[1];self.tail(Op.G_RFIELD,r['ga'])
+                if s['constants'][s['constants'][r['decl']][3]][5]:self.call(Op.SHIFT,self.node(x)[1],0,r['gi'],continuation=(Op.G_RDOM,))
+                else:r['ga']=self.node(x)[1];self.tail(Op.G_RFIELD,r['ga'])
             else:
-                r['ga']=r['gj']=0;self.allocate(Tag.CONST,v=s['constants'][r['decl']][3]+r['gi'],resume=(Op.G_RC1,))
+                r['ga']=r['gj']=0;self.allocate(Tag.CONST,v=s['constants'][r['decl']][3]+r['gi'],resume=(Op.G_CAPP_BEGIN,))
+        elif op==Op.G_RDOM:r['ga']=result;self.tail(Op.G_RFIELD,result)
         elif op==Op.G_RFIELD:
-            r['gj']=int(self.node(x)[0]==Tag.CONST and self.node(x)[3]==s['constants'][r['decl']][3])
-            self.allocate(Tag.CONST,v=s['constants'][r['decl']][3]+r['gi'],resume=(Op.G_RC1,))
+            if self.node(x)[0]==Tag.APP:self.tail(Op.G_RFIELD,self.node(x)[1])
+            else:
+                r['gj']=int(self.node(x)[0]==Tag.CONST and self.node(x)[3]==s['constants'][r['decl']][3])
+                self.allocate(Tag.CONST,v=s['constants'][r['decl']][3]+r['gi'],resume=(Op.G_CAPP_BEGIN,))
+        elif op==Op.G_CAPP_BEGIN:r['gc']=result;r['gp']=s['constants'][s['constants'][r['decl']][3]][5];self.tail(Op.G_CAPP)
+        elif op==Op.G_CAPP:
+            if r['gp']==0:self.tail(Op.G_RC1)
+            else:self.allocate(Tag.VAR,v=r['gp']-1+r['gi']+int(bool(r['ga']))+r['gj'],resume=(Op.G_CVAR,))
+        elif op==Op.G_CVAR:self.allocate(Tag.APP,r['gc'],result,resume=(Op.G_CNEXT,))
+        elif op==Op.G_CNEXT:r['gc']=result;r['gp']-=1;self.tail(Op.G_CAPP)
         elif op==Op.G_RC1:
             r['gc']=result;self.allocate(Tag.VAR,v=r['gi']+r['gj'] if r['ga'] else r['gi']-1,resume=(Op.G_RC2,))
         elif op==Op.G_RC2:
@@ -471,7 +513,7 @@ class SpecMachine:
         elif op==Op.G_IH3:self.allocate(Tag.PI,r['ga'],result,resume=(Op.G_RC3,))
         elif op==Op.G_RC3:self.allocate(Tag.PI,result,r['gt'],resume=(Op.G_RNEXT,))
         elif op==Op.G_RNEXT:r['gi']-=1;self.tail(Op.G_RLOOP)
-        elif op==Op.G_RDONE:self.call(Op.CONV,result,s['constants'][r['decl']][1],continuation=(Op.ENV_EQ,))
+        elif op==Op.G_RDONE:self.call(Op.CONV,result,r['gann'],continuation=(Op.ENV_EQ,))
         elif op in (Op.TYPE, Op.ROOT_TYPE):
             cont = (Op.VALUE, x, y, z) if op == Op.TYPE else (Op.ROOT_TERM,)
             self.call(Op.WHNF, result, continuation=cont)
@@ -493,7 +535,7 @@ class SpecMachine:
             elif op == Op.FINISH:
                 self.stop(Outcome.ACCEPT)
             else:
-                r['decl'] += 1; self.tail(Op.ENV)
+                r['decl'] += 1;r['ctx']=0; self.tail(Op.ENV)
         elif op == Op.RET:
             if not r['sp']:
                 self.stop(Outcome.REJECT, Reason.INTERNAL)
@@ -595,33 +637,43 @@ class SpecMachine:
         elif op == Op.W_APP:
             tag,a,b,_=self.node(result)
             if tag==Tag.LAM:self.call(Op.SUBST,b,y,continuation=(Op.W_BETA,))
-            elif r['head'] and r['arity']+1==s['constants'][r['head']-1][4]+2:
+            elif r['head'] and r['arity']+1==s['constants'][r['head']-1][4]+s['constants'][r['head']-1][5]+2:
                 self.call(Op.G_MAJOR,result,y,r['head']-1,s['constants'][r['head']-1][4],continuation=(Op.G_AFTER,x,result,y))
             else:
                 head=r['head'];arity=r['arity']+1 if head else 0
                 if result==self.node(x)[1]:self.ret(x,head,arity)
                 else:self.allocate(Tag.APP,result,y,head=head,arity=arity)
         elif op==Op.G_MAJOR:
-            r['ga']=z;self.tail(Op.G_MTYPE,s['constants'][z][1],x,y,w)
+            r['ga']=z;r['gp']=s['constants'][z][5];self.tail(Op.G_MTYPE,s['constants'][z][1],x,y,w)
         elif op==Op.G_MTYPE:
-            if self.node(x)[3]==0 and w==1:self.tail(Op.G_PICK,y,0)
-            else:self.call(Op.WHNF,z,continuation=(Op.G_CHOOSE,y,r['ga'],w))
+            if self.node(x)[0]==Tag.PI:self.tail(Op.G_MTYPE,self.node(x)[2],y,z,w)
+            elif self.node(x)[3]==0 and w==1:self.tail(Op.G_PICK,y,0)
+            else:self.call(Op.WHNF,z,continuation=(Op.G_CHOOSE,y,r['ga'],w,r['gp']))
         elif op==Op.G_CHOOSE:
-            tag,a,b,_=self.node(result);r['ga']=b if tag==Tag.APP else 0;r['gf']=y
-            self.tail(Op.G_CHEAD,a if tag==Tag.APP else result,x,y,z)
+            tag,a,b,_=self.node(result);r['ga']=b if tag==Tag.APP else 0;r['gf']=y;r['gp']=w;r['gj']=0
+            self.tail(Op.G_HEADWALK,result,x,y,z)
+        elif op==Op.G_HEADWALK:
+            if self.node(x)[0]==Tag.APP:r['gj']+=1;self.tail(Op.G_HEADWALK,self.node(x)[1],y,z,w)
+            else:self.tail(Op.G_CHEAD,x,y,z,w)
         elif op==Op.G_CHEAD:
             tag,_,_,index=self.node(x)
             row=s['constants'][index]if tag==Tag.CONST and index<r['decl']else None
-            if row and row[0]==4 and row[3]==z and row[4]<w:
-                self.tail(Op.G_CCHECK,row[1],y,w-1-row[4],r['ga'])
+            if row and row[0]==4 and row[3]==z and row[4]<w and r['gp']<=r['gj']<=r['gp']+1:
+                self.tail(Op.G_RTCSTRIP,row[1],y,w-1-row[4],r['ga'] if r['gj']>r['gp']else 0)
             else:self.ret(0)
+        elif op==Op.G_RTCSTRIP:
+            if r['gp']==0:self.tail(Op.G_CCHECK,x,y,z,w)
+            elif self.node(x)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.INTERNAL)
+            else:r['gp']-=1;self.tail(Op.G_RTCSTRIP,self.node(x)[2],y,z,w)
         elif op==Op.G_CCHECK:
             if (self.node(x)[0]==Tag.PI)!=bool(w):self.ret(0)
             elif w:self.tail(Op.G_RECARG,self.node(x)[1],y,z,w)
             else:self.call(Op.G_PICK,y,z,continuation=(Op.G_APPLY,w))
         elif op==Op.G_RECARG:
-            recursive=self.node(x)[0]==Tag.CONST and self.node(x)[3]==r['gf']
-            self.call(Op.G_PICK,y,z,continuation=(Op.G_RECAPPLY,y,w)if recursive else(Op.G_APPLY,w))
+            if self.node(x)[0]==Tag.APP:self.tail(Op.G_RECARG,self.node(x)[1],y,z,w)
+            else:
+                recursive=self.node(x)[0]==Tag.CONST and self.node(x)[3]==r['gf']
+                self.call(Op.G_PICK,y,z,continuation=(Op.G_RECAPPLY,y,w)if recursive else(Op.G_APPLY,w))
         elif op==Op.G_RECAPPLY:self.allocate(Tag.APP,result,y,resume=(Op.G_IH_APP,x,y))
         elif op==Op.G_IH_APP:
             r['gc']=result;self.allocate(Tag.APP,x,y,resume=(Op.G_IH_FINISH,))

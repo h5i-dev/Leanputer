@@ -195,7 +195,7 @@ class NativeMachine:
                               for name,s in self.register_layout.slices.items()})
         results = [dict(name=document.get('name',str(index)),status=('UNSUPPORTED'if self.program and r['reason']==self.program.Reason.UNSUPPORTED_DECLARATION else outcome_class(r['status']).name),
                         reason=reason_class(r['reason']).name,assumptions=get_assumptions(judgment[2]),
-                        environment_declarations=len(judgment[2]),input_heap_nodes=initial_state['regs']['free']-1,
+                        environment_declarations=len(judgment[2]),admitted_declarations=r['decl'],input_heap_nodes=initial_state['regs']['free']-1,
                         allocated_heap_nodes=r['free']-1,
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==reason_class.FUEL))
                    for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]

@@ -24,11 +24,11 @@ fields, indices, term parameters and other recursive shapes are unsupported. Fun
 applications cannot smuggle negative occurrences into this class. Positivity
 is checked by this restricted AST shape; it is not a supplied flag.
 
-Recursors currently support zero-parameter families; parameterized recursors
-and projections explicitly return UNSUPPORTED. The parameter admission slice
-checks families/constructors first, without claiming their eliminators.
+Recursors support the checked uniform type parameters, including direct
+recursive fields and Prop-valued type parameters. Parameterized projections
+remain explicitly UNSUPPORTED; zero-parameter projections are supported.
 
-A supported recursor supplies a family reference, ground result universe and claimed
+A recursor supplies a family reference, ground result universe and claimed
 type. The checker constructs the expected dependent type inside weights:
 `(motive : F → Sort v) → minor₀ → … → (x : F) → motive x`.
 A nullary minor is `motive c`; a one-field minor is
@@ -100,9 +100,8 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The next milestone is derived parameterized recursor types/reduction and
-parameterized projections, then a reusable constructor-telescope interpreter
-for multiple fields and indexed admission. Direct-self
+The next milestone is parameterized projections, then a reusable constructor-
+telescope interpreter for multiple fields and indexed admission. Direct-self
 recursion is implemented; nested/functional recursion remains unsupported. No per-name constructors should be added to obtain them.
 
 
@@ -178,5 +177,22 @@ Declaration memory now has six words per row: kind,type,value,owner,info,paramet
 The existing stock boot/value heads already fit that width; native forward/cache
 is unchanged. This metadata is checked from syntax, not an assumed typing result.
 Actual Option and arbitrary two-parameter constructors are supported, while
-parameterized Option.rec is explicitly unsupported. A valid nine-parameter
+parameterized Option.rec is supported after the recursor checkpoint. A valid nine-parameter
 example exceeds context8 and reports RESOURCE; it is not rejected as false.
+
+
+The [parameterized recursor checkpoint](../benchmarks/generic-parameter-rec/README.md)
+checks matching parameter prefixes, derives the expected tail under a scoped
+parameter context, shifts field types and constructor arguments by their real
+binder depths, and counts parameter arguments at reduction. Runtime head walks
+separate parameters from the stored field; recursive calls retain the entire
+parameterized prefix. Prop-valued type parameters are covered without admitting
+Prop-family fields. The temporary parameter context is cleared before ordinary
+checking resumes; a closed free-variable probe rejects as UNBOUND.
+
+Reports distinguish `environment_declarations` in the input from
+`admitted_declarations` read from weighted control. An invalid recursor signature
+can stop after6of7declarations; a bad proof can reject after7of7. Unsupported
+preparation rows keep unknown counts as null rather than assuming an empty or
+trusted environment. Larger scope does not imply matched speed or capacity:
+the parameterized batch uses256heap cells and2816fuel.
