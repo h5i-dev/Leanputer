@@ -4,6 +4,7 @@ This module is preparation/testing code. Its infer/convert/reduction functions
 are never used by the compiled transition engine's runtime checking path.
 """
 from dataclasses import dataclass
+from functools import reduce
 from enum import IntEnum
 
 
@@ -151,8 +152,25 @@ class Oracle:
                 return self.whnf(self.substitute(fn[2], term[2]),context)
             result=('app',fn,term[2]);head=result;arguments=[]
             while head[0]=='app':arguments.insert(0,head[2]);head=head[1]
-            if head[0]=='builtin' and head[1]=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
-                return self.whnf(arguments[3],context)
+            if head[0]=='builtin':
+                name=head[1]
+                apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+                if name=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
+                    return self.whnf(arguments[3],context)
+                if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
+                count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6}.get(name)
+                if count and len(arguments)==count:
+                    major=self.whnf(arguments[-1],context);ctor=major;fields=[]
+                    while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
+                    if ctor[0]=='builtin':
+                        if name in ('And.rec','Iff.rec') and ctor[1]==name.split('.')[0]+'.intro' and len(fields)==4:
+                            return self.whnf(apps(arguments[3],*fields[2:]),context)
+                        if name=='Nonempty.rec' and ctor[1]=='Nonempty.intro' and len(fields)==2:
+                            return self.whnf(apps(arguments[2],fields[1]),context)
+                        if name=='Exists.rec' and ctor[1]=='Exists.intro' and len(fields)==4:
+                            return self.whnf(apps(arguments[3],*fields[2:]),context)
+                        if name=='Or.rec' and ctor[1] in ('Or.inl','Or.inr') and len(fields)==3:
+                            return self.whnf(apps(arguments[3 if ctor[1]=='Or.inl' else 4],fields[2]),context)
             return result
         return term
 

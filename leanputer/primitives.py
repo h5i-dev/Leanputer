@@ -2,14 +2,20 @@
 
 Only the named propositions/constructors below are intrinsic. Their closed
 schemas are checker rules compiled into weights. General datatype declarations
-and general structure recursors remain unsupported.
+and recursors outside this catalog remain unsupported.
 """
 
 from functools import reduce
 
-PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8,'True':9,'True.intro':10}
-PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2}
+PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8,'True':9,'True.intro':10,
+                   'True.rec':11,'And.rec':12,'Iff.rec':13,'Nonempty':14,'Nonempty.intro':15,'Nonempty.rec':16,
+                   'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23}
+PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
+                       'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1}
 PROJECTION_FAMILIES = {'Iff':0,'And':2}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6}
+REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22)}
+REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3}
 
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
@@ -29,6 +35,8 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name in ('True.rec','And.rec','Iff.rec','Nonempty','Nonempty.intro','Nonempty.rec','Exists','Exists.intro','Exists.rec','Or','Or.inl','Or.inr','Or.rec'):
+        return _positive_type(expression)
     if name in ('Eq','Eq.refl','Eq.rec'):
         variable=lambda n:('named',n)
         binder=lambda n,t,b:('bind',n,t,b)
@@ -58,6 +66,48 @@ def primitive_type(expression):
     if name=='And.intro': return pi(sort,pi(sort,pi(var(1),pi(var(1),result))))
     if name=='Iff.intro': return pi(sort,pi(sort,pi(pi(var(1),var(1)),pi(pi(var(1),var(3)),result))))
     raise ValueError('unknown intrinsic typing rule')
+
+
+def _positive_type(expression):
+    """Closed schemas for this fixed nonrecursive positive primitive catalog."""
+    name=expression[1];sort=('sort',0)
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    builtin=lambda n:('builtin',n)+tuple(expression[2:]) if n.startswith(('Nonempty','Exists')) else ('builtin',n)
+    alpha,p,q,motive,major=map(v,('alpha','p','q','motive','major'))
+    if name=='True.rec':
+        return _close_schema(bind('motive',bind('motive_arg',('builtin','True'),('sort',expression[2])),
+            bind('minor',apps(motive,('builtin','True.intro')),bind('major',('builtin','True'),apps(motive,major)))))
+    family=name.split('.')[0]
+    if family in ('And','Iff','Or'):
+        ty=apps(('builtin',family),p,q)
+        if name=='Or':return ('pi',sort,('pi',sort,sort))
+        if name in ('Or.inl','Or.inr'):
+            field=p if name=='Or.inl' else q
+            return _close_schema(bind('p',sort,bind('q',sort,bind('field',field,ty))))
+        result_sort=('sort',expression[2]) if family!='Or' else sort
+        motive_type=bind('motive_arg',ty,result_sort)
+        if family=='Or':
+            left=bind('left',p,apps(motive,apps(('builtin','Or.inl'),p,q,v('left'))))
+            right=bind('right',q,apps(motive,apps(('builtin','Or.inr'),p,q,v('right'))))
+            tail=bind('minor_left',left,bind('minor_right',right,bind('major',ty,apps(motive,major))))
+        else:
+            left=p if family=='And' else bind('left_arg',p,q)
+            right=q if family=='And' else bind('right_arg',q,p)
+            minor=bind('left',left,bind('right',right,apps(motive,apps(('builtin',family+'.intro'),p,q,v('left'),v('right')))))
+            tail=bind('minor',minor,bind('major',ty,apps(motive,major)))
+        return _close_schema(bind('p',sort,bind('q',sort,bind('motive',motive_type,tail))))
+    carrier_sort=('sort',expression[2])
+    ty=apps(builtin(family),alpha,*([p]if family=='Exists' else []))
+    pred=bind('pred_arg',alpha,sort)
+    wrap=lambda tail:bind('alpha',carrier_sort,bind('p',pred,tail) if family=='Exists' else tail)
+    if name==family:return _close_schema(wrap(sort))
+    ctor=apps(builtin(family+'.intro'),alpha,*([p]if family=='Exists' else []),v('witness'),*([v('evidence')]if family=='Exists' else []))
+    fields=lambda tail:bind('witness',alpha,bind('evidence',apps(p,v('witness')),tail) if family=='Exists' else tail)
+    if name==family+'.intro':return _close_schema(wrap(fields(ty)))
+    minor=fields(apps(motive,ctor))
+    return _close_schema(wrap(bind('motive',bind('motive_arg',ty,sort),bind('minor',minor,bind('major',ty,apps(motive,major))))))
 
 
 def type_schema(expression):

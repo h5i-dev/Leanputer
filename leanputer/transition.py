@@ -12,7 +12,7 @@ from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, MachineConfig, Op, Outcome,
 from .memory import AddressedRead, AddressedWrite
 from .state_layout import StateLayout, RegisterLayout
 from .dependent import Tag
-from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES
+from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES,REC_ARITIES,REC_CONSTRUCTORS,REC_MAJOR_ARITIES
 
 
 PORTS = [('hx', HEAP_FIELDS), ('hy', HEAP_FIELDS), ('hr', HEAP_FIELDS), ('hs', HEAP_FIELDS),
@@ -98,16 +98,19 @@ class RuleCompiler:
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                    Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
                    Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
-                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END)
+                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
+                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
-                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END)
+                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
-                             (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT))):
+                             (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
+                                           Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
             bad = self.OR(bad, self.AND(required, invalid))
-        bad=self.OR(bad,self.AND(self.NOT(self.eq(self.r['head'],0)),self.NOT(self.eq(self.r['head'],8))),self.lt(5,self.r['arity']),self.AND(self.eq(self.r['head'],0),self.NOT(self.eq(self.r['arity'],0))))
+        known_head=self.OR(self.eq(self.r['head'],0),*(self.eq(self.r['head'],code)for code in REC_ARITIES))
+        bad=self.OR(bad,self.NOT(known_head),self.lt(5,self.r['arity']),self.AND(self.eq(self.r['head'],0),self.NOT(self.eq(self.r['arity'],0))))
         self.stop(self.AND(self.active, bad), Outcome.REJECT, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(bad))
 
@@ -341,8 +344,8 @@ class RuleCompiler:
         definition = self.eq(self.read['constant']['kind'], 1)
         self.tail(self.AND(const, available, definition), Op.WHNF, self.read['constant']['value'])
         self.ret(self.AND(const, available, self.NOT(definition)), x)
-        eq_head=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],8))
-        self.ret(self.AND(op,self.tag(hx,Tag.VAR,Tag.SORT,Tag.PI,Tag.LAM,Tag.BUILTIN)),x,head=self.mux(eq_head,8,0))
+        rec_head=self.AND(self.tag(hx,Tag.BUILTIN),self.OR(*(self.eq(hx['v'],code)for code in REC_ARITIES)))
+        self.ret(self.AND(op,self.tag(hx,Tag.VAR,Tag.SORT,Tag.PI,Tag.LAM,Tag.BUILTIN)),x,head=self.mux(rec_head,hx['v'],0))
         self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.BUILTIN,Tag.PROJ,Tag.LET))), Outcome.REJECT, Reason.SYNTAX)
         op=self.mode(Op.W_PROJ);app=self.tag(hr,Tag.APP)
         self.tail(self.AND(op,app),Op.PROJ_FIELDS,hr['a'],x,result,hr['b'])
@@ -362,13 +365,17 @@ class RuleCompiler:
         op, lam = self.mode(Op.W_APP), self.tag(hr, Tag.LAM)
         self.call(self.AND(op, lam), Op.SUBST, hr['b'], y, continuation=(Op.W_BETA,))
         same=self.eq(result,hx['a'])
-        equality=self.AND(op,self.NOT(lam),self.eq(r['head'],8))
-        full=self.eq(r['arity'],5)
-        self.call(self.AND(equality,full),Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
-        partial=self.AND(equality,self.NOT(full))
-        self.ret(self.AND(partial,same),x,head=8,arity=self.add(r['arity'],1))
-        self.allocate(self.AND(partial,self.NOT(same)),Tag.APP,result,y,head=8,arity=self.add(r['arity'],1))
-        normal=self.AND(op,self.NOT(lam),self.NOT(self.eq(r['head'],8)))
+        for head,arity in REC_ARITIES.items():
+            recursor=self.AND(op,self.NOT(lam),self.eq(r['head'],head))
+            full=self.eq(r['arity'],arity-1)
+            complete=self.AND(recursor,full)
+            if head==8:self.call(complete,Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
+            elif head==11:self.tail(complete,Op.WHNF,hr['b'])
+            else:self.call(complete,Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
+            partial=self.AND(recursor,self.NOT(full))
+            self.ret(self.AND(partial,same),x,head=head,arity=self.add(r['arity'],1))
+            self.allocate(self.AND(partial,self.NOT(same)),Tag.APP,result,y,head=head,arity=self.add(r['arity'],1))
+        normal=self.AND(op,self.NOT(lam),self.eq(r['head'],0))
         self.ret(self.AND(normal,same),x)
         self.allocate(self.AND(normal,self.NOT(same)),Tag.APP,result,y)
         for operation in (Op.EQ_REC,Op.EQ_MINOR,Op.EQ_ANCHOR,Op.EQ_INDEX):
@@ -385,6 +392,30 @@ class RuleCompiler:
         same_fn=self.eq(hx['a'],y)
         self.ret(self.AND(phase,self.NOT(good),same_fn),x)
         self.allocate(self.AND(phase,self.NOT(good),self.NOT(same_fn)),Tag.APP,y,z)
+        self.call(self.mode(Op.REC_MAJOR),Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
+        phase=self.mode(Op.REC_SPINE);app=self.tag(hr,Tag.APP)
+        self.ret(self.AND(phase,self.NOT(app)),0)
+        for head,count in REC_MAJOR_ARITIES.items():
+            self.call(self.AND(phase,app,self.eq(y,head)),Op.REC_SCAN,hr['a'],count-1,
+                      continuation=(Op.REC_SELECT,x,y,hr['b'],hr['a']))
+        phase=self.mode(Op.REC_SCAN);done=self.eq(y,0);app=self.tag(hx,Tag.APP)
+        self.ret(self.AND(phase,done),x)
+        self.ret(self.AND(phase,self.NOT(done),self.NOT(app)),0)
+        self.tail(self.AND(phase,self.NOT(done),app),Op.REC_SCAN,hx['a'],self.sub(y,1))
+        phase=self.mode(Op.REC_SELECT);matches=[]
+        for head,constructors in REC_CONSTRUCTORS.items():
+            match=self.AND(phase,self.eq(y,head),self.tag(hr,Tag.BUILTIN),self.OR(*(self.eq(hr['v'],ctor)for ctor in constructors)))
+            matches.append(match)
+            if head==16:self.tail(match,Op.REC_APPLY,hx['b'],z)
+            elif head in (12,13,19):self.tail(match,Op.REC_FIELDS,w,hx['b'],z)
+            else:
+                right=self.eq(hr['v'],22)
+                self.tail(self.AND(match,right),Op.REC_APPLY,hx['b'],z)
+                self.tail(self.AND(match,self.NOT(right)),Op.REC_PICK,hx['a'],z)
+        self.ret(self.AND(phase,self.NOT(self.OR(*matches))),0)
+        self.allocate(self.mode(Op.REC_FIELDS),Tag.APP,y,hx['b'],resume=(Op.REC_APPLY,r['free'],z))
+        self.tail(self.mode(Op.REC_PICK),Op.REC_APPLY,hx['b'],y)
+        self.allocate(self.mode(Op.REC_APPLY),Tag.APP,x,y,resume=(Op.W_BETA,))
         self.tail(self.mode(Op.W_BETA), Op.WHNF, result)
         # Capture-avoiding structural shift/substitution with explicit frames.
         for operation in (Op.SHIFT, Op.SUBST):

@@ -15,7 +15,9 @@ high proof throughput or broad correctness.
 The supported ground-universe fragment includes Sort, de Bruijn variables,
 dependent Pi, annotated Lam, App, checked acyclic dependencies and let
 expressions. Fixed kernel primitives provide False and its eliminator, Iff/And
-constructors and projections, True/True.intro, and Eq/refl/dependent Eq.rec.
+constructors, projections and dependent recursors; True/True.intro/True.rec;
+Nonempty, Exists and Or with their fixed constructors and recursors; and
+Eq/refl/dependent Eq.rec.
 Numeric universes use Lean's impredicative Prop rule. Conversion includes
 beta/delta/zeta, function eta and definitional proof irrelevance. Opaque values
 are checked while opacity is preserved.

@@ -220,3 +220,23 @@ units reduce4.021B→668.6Mparameters(6.013x),hidden13312→2560,layers81→70.
 GPUforward372.825→315.196s(only1.183x); high-throughput execution remains
 unsolved. Eq retention and small matched CPU/GPU fixtures finish the targeted
 checkpoint, then resume preserved positive-construct work. No broad campaign.
+
+
+After downsizing checkpoint 9c66c72, positive-construct expansion resumes on
+compact stock layers. Nonempty/Exists/Or with dependent Prop elimination and
+True/And/Iff recursors are implemented in an 81-phase IR. Six exported recursor
+types plus five iota and two negative cases pass targeted weighted checking.
+A prototype neutral And/Iff data reduction failed an actual Lean check and was
+removed before checkpoint; the retained constructor-only rules match that
+boundary. Native smoke is two small new mathlib proofs plus relative feature
+fixtures; 37/80 syntax re-exports are candidates only. Subsequent Quot support
+is under design because it blocks funext/let-dependent closures; Quot.sound
+must remain a genuine explicitly reported axiom dependency, not a fabricated
+replacement. Broader differential/coverage evaluation remains deferred.
+
+Positive checkpoint native10cases passed8A2R:two new actual mathlib judgments
+BEx.intro@[1]/exists_apply_eq@[1,1],both noaxioms;relativecases preserve
+explicitassumptions. Model802.35M BF16params/H3072/70layers,318.306s for
+3074forwards at512heap. Full native857coverage stillunmeasured. Nextfixed
+quotientprimitives are chosen to unlock funext-dependent closures; no broader
+differential campaign or renewed layout tuning is planned now.

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code
+from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES
 
 
 class Outcome(IntEnum):
@@ -110,6 +110,13 @@ class Op(IntEnum):
     SHIFT_LET_B = 71
     SUBST_LET_B = 72
     LET_END = 73
+    REC_SPINE = 74
+    REC_SCAN = 75
+    REC_SELECT = 76
+    REC_FIELDS = 77
+    REC_PICK = 78
+    REC_APPLY = 79
+    REC_MAJOR = 80
 
 
 @dataclass(frozen=True)
@@ -260,19 +267,21 @@ class SpecMachine:
         # Check address domains before any semantic read or update. The weighted
         # engine uses the same guards before interpreting an attention result.
         if (not 1 <= r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['ctx'] > cfg.context
-                or not r['decl'] <= r['decl_count'] <= cfg.constants or r['head']not in(0,8) or r['arity']>5 or (r['head']==0 and r['arity']!=0)):
+                or not r['decl'] <= r['decl_count'] <= cfg.constants or (r['head']!=0 and r['head']not in REC_ARITIES) or r['arity']>5 or (r['head']==0 and r['arity']!=0)):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                   Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE,
                   Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
-                  Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
+                  Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
+                  Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
-        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT):
+        if op==Op.REC_SPINE:pointers.append(result)
+        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK):
             pointers.append(y)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
@@ -461,7 +470,7 @@ class SpecMachine:
                 else:
                     self.ret(x)
             elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.BUILTIN):
-                self.ret(x,8 if tag==Tag.BUILTIN and v==8 else 0)
+                self.ret(x,v if tag==Tag.BUILTIN and v in REC_ARITIES else 0)
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
         elif op==Op.W_PROJ:
@@ -487,11 +496,15 @@ class SpecMachine:
             tag, _, body, _ = self.node(result)
             if tag == Tag.LAM:
                 self.call(Op.SUBST, body, y, continuation=(Op.W_BETA,))
-            elif r['head']==8:
-                if r['arity']==5:
-                    self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
-                elif result==self.node(x)[1]: self.ret(x,8,r['arity']+1)
-                else: self.allocate(Tag.APP,result,y,head=8,arity=r['arity']+1)
+            elif r['head'] in REC_ARITIES:
+                head=r['head']
+                if r['arity']<REC_ARITIES[head]-1:
+                    if result==self.node(x)[1]:self.ret(x,head,r['arity']+1)
+                    else:self.allocate(Tag.APP,result,y,head=head,arity=r['arity']+1)
+                elif head==8:self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
+                elif head==11:self.tail(Op.WHNF,self.node(result)[2])
+                else:
+                    self.call(Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
             elif result == self.node(x)[1]:
                 self.ret(x)
             else:
@@ -509,6 +522,30 @@ class SpecMachine:
             if result: self.tail(Op.WHNF,result)
             elif self.node(x)[1]==y: self.ret(x)
             else: self.allocate(Tag.APP,y,z)
+        elif op==Op.REC_MAJOR:
+            self.call(Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
+        elif op==Op.REC_SPINE:
+            # Entered with normalized major in r, saved partial fn/head in x/y.
+            tag,a,b,_=self.node(result)
+            if tag!=Tag.APP:self.ret(0)
+            else:self.call(Op.REC_SCAN,a,REC_MAJOR_ARITIES[y]-1,continuation=(Op.REC_SELECT,x,y,b,a))
+        elif op==Op.REC_SCAN:
+            if y==0:self.ret(x)
+            elif self.node(x)[0]!=Tag.APP:self.ret(0)
+            else:self.tail(Op.REC_SCAN,self.node(x)[1],y-1)
+        elif op==Op.REC_SELECT:
+            ctor=self.node(result)[3] if result and self.node(result)[0]==Tag.BUILTIN else -1
+            if ctor not in REC_CONSTRUCTORS[y]:self.ret(0)
+            elif y==16:self.tail(Op.REC_APPLY,self.node(x)[2],z)
+            elif y in (12,13,19):self.tail(Op.REC_FIELDS,w,self.node(x)[2],z)
+            elif ctor==22:self.tail(Op.REC_APPLY,self.node(x)[2],z)
+            else:self.tail(Op.REC_PICK,self.node(x)[1],z)
+        elif op==Op.REC_FIELDS:
+            self.allocate(Tag.APP,y,self.node(x)[2],resume=(Op.REC_APPLY,r['free'],z))
+        elif op==Op.REC_PICK:
+            self.tail(Op.REC_APPLY,self.node(x)[2],y)
+        elif op==Op.REC_APPLY:
+            self.allocate(Tag.APP,x,y,resume=(Op.W_BETA,))
         elif op == Op.W_BETA:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):

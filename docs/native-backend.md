@@ -207,3 +207,36 @@ and GPU allocated peak8.169GB→1.389GB. Compile81.135→11.346s; fixed forward
 retains the baseline compiler for reproduction. See native-downsizing.md for
 exact inputs, dimensions, costs, numerical scope and remaining architectural
 debt. No semantic phase or capacity was removed.
+
+
+## Positive recursor feature work
+
+On the compact compiler, the next fixed slice implements Nonempty, Exists and
+Or families/constructors plus their Prop-valued dependent recursors; True,
+And and Iff recursors are also added. The semantic IR now has 81 phases.
+Ordinary definitions such as recOn/casesOn remain checked dependencies.
+Constructor iota dispatch runs inside weights; neutral And/Iff majors stay
+neutral, including when a recursor returns data. True's K-like unit rule is
+separate. A first prototype wrongly expanded neutral And/Iff proofs; an actual
+Lean adversarial check caught it before any feature checkpoint, and the
+constructor-only implementation replaces it.
+
+A focused weighted CPU test of six actual closed recursor types, five iota
+cases and two required rejections passed. The two negative cases prohibit
+large Or elimination and neutral And data reduction. Native GPU bring-up
+checks two newly exportable real mathlib proofs and these feature paths, with
+explicit assumptions for relative fixtures. Re-exporting only 80 previously
+blocked rows produced 37 syntax candidates; this is not 37 accepted proofs or
+a new full-population coverage estimate.
+
+Positive recursor stock GPU smoke passed 8 A / 2 R. New actual mathlib
+BEx.intro@[1] accepts in 2,769 steps, exists_apply_eq@[1,1] in 1,834, both with
+no axiom assumptions. Relative fixtures exercise both Or branches, Nonempty,
+Exists and And constructor reduction; neutral And data reduction and large
+Or elimination reject. The closed True K fixture accepts. Configuration
+heap512/stack32/context16/constants8/fuel3072,61boot records,3074forwards:
+318.306s forward,15.113s compile,802,346,762BF16parameters/1,604,693,524bytes,
+hidden3072/70layers,peak CUDA1,720,345,088bytes/host1,710,448,640bytes.
+This feature-superset development batch differs from the earlier downsizing
+comparison and is not a matched speedup claim. Evidence and exact inputs:
+benchmarks/native/positive-{smoke.json,input.jsonl,config.json}.

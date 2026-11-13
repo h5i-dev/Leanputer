@@ -58,10 +58,12 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .app fn arg => return jsonArray [text "app", ← encodeExpr env fn, ← encodeExpr env arg]
   | .const name levels =>
     let values ← levels.mapM (fun level => (liftM (groundLevel level) : ExportM Nat))
-    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro || name == ``True || name == ``True.intro) && values.isEmpty then
+    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro || name == ``True || name == ``True.intro || name == ``Or || name == ``Or.inl || name == ``Or.inr || name == ``Or.rec) && values.isEmpty then
       return jsonArray [text "builtin",text name.toString]
-    if name == ``False.rec && values.length == 1 then
-      return jsonArray [text "builtin",text "False.rec",toJson values[0]!]
+    if (name == ``False.rec || name == ``True.rec || name == ``And.rec || name == ``Iff.rec ||
+        name == ``Nonempty || name == ``Nonempty.intro || name == ``Nonempty.rec ||
+        name == ``Exists || name == ``Exists.intro || name == ``Exists.rec) && values.length == 1 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if name == ``Eq.rec && values.length == 2 then

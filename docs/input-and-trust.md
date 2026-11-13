@@ -120,9 +120,8 @@ arbitrary datatype declarations are not admitted. Projection syntax is
 The weighted machine checks the projected term's inferred family and parameters,
 lifts dependent codomains, and reduces a projection of its matching constructor.
 Unary substitution/shift traverses the projected term. Conversion retains
-proof-irrelevance fallback when structural bases differ. General Iff.rec and
-And.rec remain explicitly unsupported; the supported eliminators in this slice
-are the field projections. Ordinary projection definitions remain in the checked
+proof-irrelevance fallback when structural bases differ. Fixed Iff.rec and And.rec rules are described below; recursors outside
+the explicit catalog remain unsupported. Ordinary projection definitions remain in the checked
 dependency closure. They are not replaced by unchecked environment assumptions.
 
 
@@ -161,4 +160,31 @@ for body. Weak-head normalization performs zeta by the same weighted substitutio
 No external zeta reduction or inferred body type is supplied by preparation.
 
 `["builtin","True"]` and `["builtin","True.intro"]` add the fixed positive
-rules True:Prop and True.intro:True. General True.rec is not part of this slice.
+rules True:Prop and True.intro:True. True.rec is now supported with its fixed dependent type and K-like unit rule.
+
+
+## Fixed positive families and recursors
+
+The catalog now includes Nonempty/Nonempty.intro/Nonempty.rec and
+Exists/Exists.intro/Exists.rec, each with one ground carrier universe, plus
+Or/Or.inl/Or.inr/Or.rec with no universe parameters. True.rec, And.rec and
+Iff.rec have one ground result universe. These are fixed built-in schemas,
+not user-supplied inductive declarations or inferred input certificates.
+
+Nonempty.rec, Exists.rec and Or.rec motives land in Prop. Eliminating these
+propositions into arbitrary data is rejected. And.rec and Iff.rec may target
+Sort u, and their matching constructor arguments select the minor's fields
+in order. The machine normalizes the major premise, checks its constructor
+spine, and applies the appropriate minor. A neutral major stays neutral.
+In particular, **an opaque And/Iff proof does not trigger data reduction**.
+A targeted regression preserves this actual Lean behavior. True.rec has a
+separate K-like unit rule, consistent with Lean's primitive recursor metadata.
+
+Proof irrelevance remains a typed conversion fallback; it does not license
+arbitrary recursor reduction in data-valued contexts. The native controller
+implements all 81 phases from the same semantic IR. Type aliases from actual
+Lean exports exercise each closed schema; focused iota/negative cases exercise
+field order, Or branch choice, the Prop elimination boundary and opaque majors.
+General recursive, indexed, mutual or user inductive definitions remain outside
+this fixed catalog. The nanoda intrinsic adapter is still deferred; no new
+nanoda evidence is claimed for these constructs.

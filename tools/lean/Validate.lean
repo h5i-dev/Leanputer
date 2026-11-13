@@ -18,12 +18,26 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "False" then return .const ``False []
       if name == "True" then return .const ``True []
       if name == "True.intro" then return .const ``True.intro []
+      if name == "Or" then return .const ``Or []
+      if name == "Or.inl" then return .const ``Or.inl []
+      if name == "Or.inr" then return .const ``Or.inr []
+      if name == "Or.rec" then return .const ``Or.rec []
       if name == "Iff" then return .const ``Iff []
       if name == "Iff.intro" then return .const ``Iff.intro []
       if name == "And" then return .const ``And []
       if name == "And.intro" then return .const ``And.intro []
-    if name == "False.rec" && fields.size == 3 then
-      return .const ``False.rec [numericLevel (← fields[2]!.getNat?)]
+    if fields.size == 3 then
+      let level := numericLevel (← fields[2]!.getNat?)
+      if name == "False.rec" then return .const ``False.rec [level]
+      if name == "True.rec" then return .const ``True.rec [level]
+      if name == "And.rec" then return .const ``And.rec [level]
+      if name == "Iff.rec" then return .const ``Iff.rec [level]
+      if name == "Nonempty" then return .const ``Nonempty [level]
+      if name == "Nonempty.intro" then return .const ``Nonempty.intro [level]
+      if name == "Nonempty.rec" then return .const ``Nonempty.rec [level]
+      if name == "Exists" then return .const ``Exists [level]
+      if name == "Exists.intro" then return .const ``Exists.intro [level]
+      if name == "Exists.rec" then return .const ``Exists.rec [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -92,7 +106,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or] do
     let some (.inductInfo info) := standard.find? name | throw (IO.userError "missing standard primitive")
     let mut ctors : List Lean.Constructor := []
     for ctor in info.ctors do
