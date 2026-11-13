@@ -116,6 +116,8 @@ class Op(IntEnum):
     G_CHEAD = 77
     G_CCHECK = 78
     G_APPLY = 79
+    G_ELIM = 80
+    G_MTYPE = 81
 
 
 @dataclass(frozen=True)
@@ -270,7 +272,7 @@ class SpecMachine:
             pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA):
             pointers.append(y)
-        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK):pointers.append(x)
+        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE):pointers.append(x)
         if op==Op.G_AFTER:pointers.extend((x,y,z))
         if op==Op.G_MAJOR:pointers.append(y)
         if op in (Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY):pointers.append(result)
@@ -311,7 +313,7 @@ class SpecMachine:
                 else:self.call(Op.INFER,ty,continuation=(Op.TYPE,ty,value,kind))
         elif op==Op.G_FAMILY:
             kind,ty,value,owner,count=s['constants'][r['decl']];tag,a,b,level=self.node(x)
-            if tag!=Tag.SORT or level==0:self.stop(Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
+            if tag!=Tag.SORT:self.stop(Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
             elif level>=cfg.universe:self.stop(Outcome.RESOURCE,Reason.UNIVERSE)
             elif value or owner!=r['decl'] or count>=cfg.constants or r['decl']+count>=r['decl_count']:self.stop(Outcome.REJECT,Reason.DECLARATION)
             else:r['gi']=0;r['gm']=level;self.tail(Op.G_CTOR)
@@ -323,7 +325,9 @@ class SpecMachine:
                 if kind!=4 or value or owner!=r['decl'] or ordinal!=r['gi'] or not 0<ty<r['free']:self.stop(Outcome.REJECT,Reason.DECLARATION)
                 else:self.tail(Op.G_CTOR_TYPE,ty)
         elif op==Op.G_CTOR_TYPE:
-            if self.node(x)[0]==Tag.PI:self.tail(Op.G_FIELD_DOMAIN,self.node(x)[1],self.node(x)[2])
+            if self.node(x)[0]==Tag.PI:
+                if r['gm']==0:self.stop(Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
+                else:self.tail(Op.G_FIELD_DOMAIN,self.node(x)[1],self.node(x)[2])
             elif tuple(self.node(x))!=(int(Tag.CONST),0,0,r['decl']):self.stop(Outcome.REJECT,Reason.DECLARATION)
             else:r['gi']+=1;self.tail(Op.G_CTOR)
         elif op==Op.G_FIELD_DOMAIN:
@@ -342,6 +346,10 @@ class SpecMachine:
         elif op==Op.G_REC:self.call(Op.WHNF,result,continuation=(Op.G_R0,))
         elif op==Op.G_R0:
             if self.node(result)[0]!=Tag.SORT:self.stop(Outcome.REJECT,Reason.EXPECT_SORT)
+            else:self.tail(Op.G_ELIM,s['constants'][s['constants'][r['decl']][3]][1])
+        elif op==Op.G_ELIM:
+            owner=s['constants'][s['constants'][r['decl']][3]]
+            if self.node(x)[3]==0 and s['constants'][r['decl']][4]>0 and owner[4]>1:self.stop(Outcome.REJECT,Reason.DECLARATION)
             else:self.allocate(Tag.CONST,v=s['constants'][r['decl']][3],resume=(Op.G_R1,))
         elif op==Op.G_R1:
             r['gf']=result;self.allocate(Tag.SORT,v=s['constants'][r['decl']][4],resume=(Op.G_R2,))
@@ -483,7 +491,11 @@ class SpecMachine:
                 head=r['head'];arity=r['arity']+1 if head else 0
                 if result==self.node(x)[1]:self.ret(x,head,arity)
                 else:self.allocate(Tag.APP,result,y,head=head,arity=arity)
-        elif op==Op.G_MAJOR:self.call(Op.WHNF,y,continuation=(Op.G_CHOOSE,x,z,w))
+        elif op==Op.G_MAJOR:
+            r['ga']=z;self.tail(Op.G_MTYPE,s['constants'][z][1],x,y,w)
+        elif op==Op.G_MTYPE:
+            if self.node(x)[3]==0 and w==1:self.tail(Op.G_PICK,y,0)
+            else:self.call(Op.WHNF,z,continuation=(Op.G_CHOOSE,y,r['ga'],w))
         elif op==Op.G_CHOOSE:
             tag,a,b,_=self.node(result);r['ga']=b if tag==Tag.APP else 0
             self.tail(Op.G_CHEAD,a if tag==Tag.APP else result,x,y,z)

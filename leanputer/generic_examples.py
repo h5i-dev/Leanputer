@@ -47,7 +47,7 @@ def focused_cases():
     prop=deepcopy(base);prop['environment'][0]['type']=['sort',0]
     return [(base,'ACCEPT'),(renamed,'ACCEPT'),(three,'ACCEPT'),(wrong_branch,'REJECT'),
             (wrong_result,'REJECT'),(wrong_ordinal,'REJECT'),(wrong_rec,'REJECT'),
-            (fields,'UNSUPPORTED'),(indexed,'UNSUPPORTED'),(prop,'UNSUPPORTED')]
+            (fields,'UNSUPPORTED'),(indexed,'UNSUPPORTED'),(prop,'REJECT')]
 
 
 def unary_environment(name='Parcel', carrier='Carrier', constructors=('empty','wrap'), result_level=1):

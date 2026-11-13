@@ -11,7 +11,8 @@ Its compiler takes resource bounds only. Family names, constructor blocks and
 claimed recursor signatures are input data, validated by fixed weighted rules.
 One stock model checks two- and three-constructor enums, including arbitrary
 renamings. The initial class is monomorphic, nonrecursive inductives with zero or one independent field per
-constructor in positive numeric Sorts; parameters, indices and Prop families are explicitly
+constructor in positive numeric Sorts, plus nullary Prop families with checked
+elimination restrictions. Parameters, indices and Prop constructor fields remain
 unsupported. The checker derives dependent recursor types inside weights and
 performs generic constructor iota reduction. This is experimental, with no
 whole-checker soundness proof or generic mathlib coverage claim.
@@ -24,7 +25,7 @@ whole-checker soundness proof or generic mathlib coverage claim.
 # --backend native --device cuda
 ```
 
-The focused ten-case stock run produced 3 ACCEPT, 4 REJECT and 3 UNSUPPORTED
+The first nullary-only ten-case stock run produced 3 ACCEPT, 4 REJECT and 3 UNSUPPORTED
 outcomes using 362,579,464 BF16 parameters (725,158,928 weight bytes).
 Compilation took 6.58s and fixed-fuel checking took 108.39s on the A10G.
 These are small declaration/proof fixtures, not real mathlib throughput.
@@ -35,6 +36,14 @@ A syntax-only generic Lean exporter is available with
 [the declaration format and source example](docs/generic-kernel.md).
 The independent Lean replay constructs actual inductives and checks their generated recursors.
 It is an evaluation tool, never invoked by inference.
+
+Generic Prop support also checks actual mathlib `Function.mt` with all three
+input dependencies checked and no axioms. Its False-claim mutation rejects.
+This is one targeted source smoke; the complete857source population has not been
+checked with this backend. The [eleven-case Prop evidence](benchmarks/generic-prop/README.md)
+reports6ACCEPT/4REJECT/1UNSUPPORTED using412.1M BF16 parameters and105.85s GPU
+forward time. General inductives, Eq and parameterized structures still require
+further generic rules.
 
 The remainder documents the **historical per-name catalog backend**, retained
 for reproducibility. Its syntax-export counts and feature list do not describe

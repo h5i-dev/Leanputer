@@ -94,11 +94,11 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
     let _ ← ensureDeclaration env ctor.induct levels
     modify fun s => {s with visiting := s.visiting.erase specialized}
   | .recInfo recursor =>
-    if recursor.all.length != 1 || levels.length != 1 then throw "unsupported recursor universe/family shape"
+    if recursor.all.length != 1 || levels.length > 1 then throw "unsupported recursor universe/family shape"
     let family ← ensureDeclaration env recursor.all[0]! []
     let ty ← encodeExpr env (instantiate info.type)
     let row := Json.mkObj [("kind",text "recursor"),("name",text specialized),("type",ty),
-      ("family",text family),("level",toJson levels[0]!)]
+      ("family",text family),("level",toJson (levels.headD 0))]
     modify fun s => {s with declarations := s.declarations.push row, complete := s.complete.insert specialized, visiting := s.visiting.erase specialized}
   | _ =>
     let (value?, kind) ← match info with

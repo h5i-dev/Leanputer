@@ -49,7 +49,9 @@ def replay (base : Lean.Kernel.Environment) (document : Json) : Except String Un
       let family ← entry.getObjValAs? String "family"
       let result ← entry.getObjValAs? Nat "level"
       let actualRecursor := Name.str (userName family) "rec"
-      env ← add env (.defnDecl {name := userName name, levelParams := [], type := type, value := .const actualRecursor [level result], hints := .abbrev, safety := .safe})
+      let some recursor := env.find? actualRecursor | throw "missing generated recursor"
+      let levels := if recursor.levelParams.isEmpty then [] else [level result]
+      env ← add env (.defnDecl {name := userName name, levelParams := [], type := type, value := .const actualRecursor levels, hints := .abbrev, safety := .safe})
       i := i+1
     else if kind == "constructor" then throw "orphan constructor"
     else if kind == "axiom" then

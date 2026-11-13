@@ -6,12 +6,13 @@ data, not in generated semantic branches. Its syntax-export counts do not
 measure generic kernel coverage.
 
 The new path supports monomorphic nonrecursive inductives in positive numeric
-Sorts, with zero or one independent field per constructor. Bool-shaped and three-way enums must use one identical compiled
+Sorts, with zero or one independent field per constructor, and nullary Prop
+families. Bool-shaped and three-way enums must use one identical compiled
 model. The compilation API takes bounds only; declaration names, constructor
 counts and recursor signatures arrive as input data.
 
 An inductive header supplies its type and constructor count. Fixed weighted
-rules require a literal positive Sort, a complete contiguous constructor block,
+rules require a literal Sort, a complete contiguous constructor block,
 correct owners and ordinals, and each constructor's literal result type equal
 to its own family. A field domain must be a literal reference to an earlier
 checked carrier whose type is a literal Sort no higher than the family Sort. Parameters, multiple/dependent fields, indices and recursive occurrences are
@@ -28,8 +29,11 @@ It checks the supplied type and compares it with this derived type. Arity and
 minor selection come from validated family/constructor data. Generic iota
 reduction checks the major's constructor owner and selects its corresponding
 minor and applies its actual field when present; neither constructor names nor user-provided reduction answers are used.
-Prop inductives are outside this first admission class, so their elimination
-restrictions are not silently bypassed.
+Nullary Prop families can eliminate into Prop with any constructor count.
+Large elimination is admitted only for empty or singleton families. Singleton
+K reduction selects the sole minor even on a neutral proof major. These rules
+come from validated sort/count data, not family names. Prop constructor fields
+remain explicitly unsupported; no proof/data elimination flag is trusted.
 
 The reusable foundation is the catalog-free dependent core at `4da2515`:
 Sort/Pi/Lam/App, de Bruijn operations, beta/delta, typed proof irrelevance and
@@ -81,7 +85,7 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The active milestone after this slice is generic Prop admission/elimination and
+The active milestone after this slice is generic one-field projections and
 uniform parameters, then multiple/dependent fields and recursive/indexed
 admission with real positivity and elimination checks. No per-name constructors should be added to obtain them.
 
@@ -107,3 +111,10 @@ The source smoke contains three real elaborated declarations using Bool, a
 three-way enum and a mixed nullary/one-field datatype. Complete checked closures
 contain4/5/7declarations, with no axiom assumptions. These are explicit development
 sources, not a mathlib sample or a population coverage estimate.
+
+
+The [Prop checkpoint](../benchmarks/generic-prop/README.md) also checks an actual
+mathlib source target, `Function.mt@[]`, through a three-declaration closure
+containing the empty Prop family, an ordinary negation definition and a checked
+opaque theorem body. No names receive special compilation rules. This targeted
+1/1 smoke is not a full857population result or a generic coverage estimate.

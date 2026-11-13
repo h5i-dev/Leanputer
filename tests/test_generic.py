@@ -33,6 +33,11 @@ def metadata_cases():
     return cases
 
 
+def prop_cases():
+    docs = [json.loads(line) for line in (Path(__file__).parent/'fixtures/generic-prop.jsonl').read_text().splitlines()]
+    return list(zip(docs, ['ACCEPT']*3+['REJECT']*2+['UNSUPPORTED','ACCEPT']))
+
+
 class GenericDeclarationSmoke(unittest.TestCase):
     def test_renaming_is_identical_input_state(self):
         first, renamed = [prepare(CFG, *parse_document(row)) for row, _ in focused_cases()[:2]]
@@ -42,7 +47,7 @@ class GenericDeclarationSmoke(unittest.TestCase):
     def test_focused_weighted_transitions_and_metadata_guards(self):
         torch.set_num_threads(1)
         model = compile_machine(CFG)
-        cases = focused_cases() + unary_cases() + metadata_cases()
+        cases = focused_cases() + unary_cases() + metadata_cases() + prop_cases()
         states = [prepare(CFG, *parse_document(row)) for row, _ in cases]
         refs = [SpecMachine(CFG, state) for state in states]
         bits = model.initializer(torch.cat([model.layout.encode(s) for s in states]))
@@ -62,7 +67,7 @@ class GenericDeclarationSmoke(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as tmp:
             source, output = Path(tmp)/'input.jsonl', Path(tmp)/'output.json'
-            cases = focused_cases() + unary_cases()
+            cases = focused_cases() + unary_cases() + prop_cases()
             source.write_text(''.join(json.dumps(d)+'\n' for d, _ in cases))
             subprocess.run(['lean', '--run', str(root/'tools/lean/ValidateGeneric.lean'),
                             str(source), str(output)], cwd=root, check=True, capture_output=True, timeout=60)

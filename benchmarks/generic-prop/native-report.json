@@ -1,0 +1,314 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.nonrecursive-and-nullary-prop.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "results": [
+    {
+      "name": "LeanputerGenericProp.singleton_k@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.singleton_k",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "singleton_k"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 63,
+      "semantic_steps": 680
+    },
+    {
+      "name": "LeanputerGenericProp.from_empty@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.from_empty",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "from_empty"
+          }
+        ]
+      },
+      "environment_declarations": 5,
+      "assumptions": [],
+      "input_heap_nodes": 16,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 33,
+      "semantic_steps": 326
+    },
+    {
+      "name": "LeanputerGenericProp.choose_proof@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.choose_proof",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "choose_proof"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 26,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 669
+    },
+    {
+      "name": "forbidden-large-elimination-2",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 16,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 22,
+      "semantic_steps": 153
+    },
+    {
+      "name": "forbidden-large-elimination-3",
+      "environment_declarations": 5,
+      "assumptions": [],
+      "input_heap_nodes": 20,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 27,
+      "semantic_steps": 191
+    },
+    {
+      "name": "unsupported-prop-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.singleton_k",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "singleton_k"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 30,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 30,
+      "semantic_steps": 42
+    },
+    {
+      "name": "Function.mt@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "Function.mt",
+        "source_name_parts": [
+          {
+            "str": "Function"
+          },
+          {
+            "str": "mt"
+          }
+        ]
+      },
+      "environment_declarations": 3,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 90,
+      "semantic_steps": 805
+    },
+    {
+      "name": "LeanputerGeneric.bool_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.bool_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "bool_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 812
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ]
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 966
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]-wrong-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ],
+        "mutation": "replace constructor field red with blue without changing proof"
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 1009
+    },
+    {
+      "name": "Function.mt@[]-claim-False",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "Function.mt",
+        "source_name_parts": [
+          {
+            "str": "Function"
+          },
+          {
+            "str": "mt"
+          }
+        ],
+        "mutation": "replace claim with False, retain complete environment and term"
+      },
+      "environment_declarations": 3,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 79,
+      "semantic_steps": 554
+    }
+  ],
+  "counts": {
+    "ACCEPT": 6,
+    "REJECT": 4,
+    "UNSUPPORTED": 1
+  },
+  "syntax_seconds": 0.0022126669937279075,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "forward_seconds": 105.84893016399292,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 1549,
+        "persistent_channels": 375,
+        "subtract_handovers": 6115,
+        "head_clears": 320,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 68,
+          "dims": 7985,
+          "heads": 11,
+          "ffn_units": 9306,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 25,
+      "primitive_basis": [],
+      "semantic_program": "generic.nonrecursive-and-nullary-prop.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 412057800,
+      "weight_bytes": 824115600,
+      "cuda_peak_allocated_bytes": 925078016,
+      "host_process_peak_rss_bytes": 1694003200,
+      "hidden_size": 1600,
+      "native_layers": 69,
+      "boot_tokens": 46,
+      "applied_steps": 1058
+    }
+  ],
+  "total_check_seconds": 106.50233154499438,
+  "validation_scope": "Restricted positive-Sort zero/one-field and nullary Prop inductives; no full Lean/general inductive soundness claim",
+  "backend": "native",
+  "device": "cuda",
+  "compile_seconds": 8.066208352000103,
+  "cold_compile_and_check_seconds": 114.56856567700743
+}
