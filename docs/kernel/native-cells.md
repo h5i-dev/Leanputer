@@ -56,11 +56,13 @@ Standalone operation entry points produce DONE/INVALID, not theorem acceptance.
 They do not run full source environment admission. Expression-wide raw universe substitution traverses all twelve Expr tags,
 calling the same level operation for Sort and every Const universe argument.
 A length-driven vector loop uses private value/return frames; its empty and
-unchanged paths retain original syntax. Symbolic normalization, conversion and
-checked-environment callers still need integrated lowering.
+unchanged paths retain original syntax. Canonical symbolic normalization/equivalence now reuse those same services.
+Conservative universe geq, conversion and checked-environment callers still
+need integrated lowering.
 
 Additional raw `level_roots` can be transported as operation operands without
 fabricating declaration types or binding answers. The shared consumers now
 include structural equality, symbolic nonzero, checked successor separation and
 complete smart Max/IMax constructors. These remain operation services; canonical
-normalization, full inference and source admission are unfinished.
+normalization/equivalence are integrated; full inference and source admission
+are unfinished.

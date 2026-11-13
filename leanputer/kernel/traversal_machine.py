@@ -62,6 +62,10 @@ class Task(IntEnum):
     LEVEL_INSTANTIATE = 19      # Source substitution: changed Max/IMax use smart constructors.
     EXPR_LEVEL_INSTANTIATE = 20 # Same source operation throughout expression syntax.
     LEVEL_ORDER = 21            # Total structural base order, successor offsets last.
+    LEVEL_NORMALIZE = 22        # Generic canonical normalization of all levels.
+    LEVEL_MERGE = 23            # Internal: merge two normalized Max chains.
+    LEVEL_NORMAL_SUCC = 24      # Internal: distribute one Succ over normalized Max.
+    LEVEL_EQUIVALENT = 25       # Normalize both sides, then shared structural ==.
 
 
 
@@ -96,6 +100,12 @@ class Mode(IntEnum):
     IMAX_RIGHT = 27
     ORDER_READ_LEFT = 28
     ORDER_READ_RIGHT = 29
+    NORMAL_IMAX_RESULT = 30
+    MERGE_LEFT = 31
+    MERGE_RIGHT = 32
+    MERGE_RECORD = 33
+    MERGE_FOLD = 34
+    MERGE_FINISH = 35
 
 
 CALL_BETA_ZETA = 16
@@ -117,6 +127,11 @@ CALL_ORDER_RIGHT_OFFSET = 31
 CALL_ORDER_BASE_COMPARE = 32
 CALL_ORDER_FIRST = 33
 CALL_ORDER_SECOND = 34
+CALL_NORMAL_IMAX = 35
+CALL_MERGE_ORDER = 36
+CALL_MERGE_OFFSET = 37
+CALL_EQUIVALENT_LEFT = 38
+CALL_EQUIVALENT_RIGHT = 39
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -128,7 +143,8 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'vec_length', 'vec_left', 'vec_build', 'vec_head', 'vec_changed', 'vector_result',
     'peer', 'left_tag', 'left_a', 'left_b', 'level_offset', 'pending_compare',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
-    'order_same_base')
+    'order_same_base', 'merge_l', 'merge_r', 'merge_hl', 'merge_tl', 'merge_hr', 'merge_tr',
+    'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -227,7 +243,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -314,7 +330,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.ORDER_READ_RIGHT or r['task'] > Task.LEVEL_ORDER
+                or r['mode'] > Mode.MERGE_FINISH or r['task'] > Task.LEVEL_EQUIVALENT
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['vec_changed'] > 1 or r['pending_compare'] > 1 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
@@ -324,6 +340,7 @@ class SpecMachine:
         if uses_arguments and r['arg_base']+r['count'] > cfg.context:
             stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
+        from . import level_normalize_machine as normalization
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_open']:
@@ -337,7 +354,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase == CALL_BETA_ZETA:
+                if phase in normalization.PRIVATE_PHASES:
+                    normalization.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase == CALL_BETA_ZETA:
                     r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA, x=r['r'], depth=0, task=Task.BETA_ZETA)
                 elif phase == CALL_TELESCOPE:
                     r.update(sp=r['sp']-1, mode=Mode.TELESCOPE, x=r['r'], depth=0, task=Task.OPEN_TELESCOPE)
@@ -409,8 +428,9 @@ class SpecMachine:
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
-        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER)
-        valid_tag = (tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
+        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT)
+        valid_tag = (tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
+            tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
             tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
             tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_CELL, Mode.CONST_RESULT) else
@@ -419,6 +439,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if normalization.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if r['task'] == Task.LEVEL_ORDER:
             if r['mode'] == Mode.WALK:
                 if not 0 < r['peer'] < r['free']: stop(Outcome.INVALID, Reason.SYNTAX)
@@ -722,8 +744,8 @@ class SpecMachine:
             return s
         # Children have exactly the increments in arena.children, but no host
         # walk or supplied traversal schedule drives the actual transition.
-        child_list = (((a, b) if tag in (CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX) else
-                       (a,) if tag == CellTag.LEVEL_SUCC else ()) if level_task else
+        child_list = (((a, b) if tag == CellTag.LEVEL_MAX or tag == CellTag.LEVEL_IMAX and task != Task.LEVEL_NORMAL_SUCC else
+                       (a,) if tag == CellTag.LEVEL_SUCC and task != Task.LEVEL_NORMAL_SUCC else ()) if level_task else
                       (a, b, c) if tag == Tag.LET else (a, b) if tag in (Tag.APP, Tag.PI, Tag.LAM)
                       else (c,) if tag == Tag.PROJ else (a,) if tag == Tag.MDATA else ())
         if r['mode'] == Mode.WALK and task in (Task.EXPR_LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_INSTANTIATE):
@@ -767,7 +789,9 @@ class SpecMachine:
             else:
                 refs = [first, second][:phase-1]+[r['r']]
                 r['sp'] -= 1
-                if tuple(refs) == child_list:
+                if task == Task.LEVEL_NORMALIZE:
+                    normalization.finish(self, tag, refs)
+                elif tuple(refs) == child_list:
                     ret(original)
                 elif task == Task.LEVEL_INSTANTIATE and tag in (CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX):
                     r.update(mode=Mode.WALK, x=refs[0], peer=refs[1],
@@ -787,6 +811,8 @@ class SpecMachine:
             else:
                 s['stack'][r['sp']] = [1, r['x'], depth, task, 0, 0]
                 r.update(sp=r['sp']+1, mode=Mode.WALK, x=child_list[0])
+        elif task == Task.LEVEL_NORMAL_SUCC:
+            alloc((CellTag.LEVEL_SUCC, r['x'], 0, 0))
         elif task == Task.ABSTRACT_ONE and tag == Tag.LOCAL and a == r['abstract_uid']:
             alloc((Tag.BVAR, depth, 0, 0))
         elif level_scope and tag == CellTag.LEVEL_PARAM:

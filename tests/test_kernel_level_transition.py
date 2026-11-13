@@ -161,6 +161,29 @@ def ordering_cases():
         name=f'level-order-{i}', level=left, right=right) for i, (left, right) in enumerate(probes)]
 
 
+def normalization_cases():
+    z = ['zero']
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    one, two = ['succ', z], ['succ', ['succ', z]]
+    levels = [
+        ['succ', ['max', v, ['succ', u]]],
+        ['max', one, ['max', ['succ', u], u]],
+        ['max', two, u],
+        ['imax', ['max', v, u], ['succ', w]],
+        ['imax', ['max', ['succ', u], u], v],
+        ['max', z, z]]
+    docs = [dict(format='leanputer.kernel-level-operation.v1', operation='normalize',
+        name=f'level-normalize-{i}', level=level) for i, level in enumerate(levels)]
+    equations = [
+        (['max', u, v], ['max', v, u]),
+        (['succ', ['max', u, v]], ['max', ['succ', u], ['succ', v]]),
+        (['imax', u, v], ['max', u, v]),
+        (['max', two, ['succ', u]], ['succ', u])]
+    docs.extend(dict(format='leanputer.kernel-level-operation.v1', operation='equivalent',
+        name=f'level-equivalent-{i}', level=left, right=right) for i, (left, right) in enumerate(equations))
+    return docs
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -228,6 +251,48 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_normalizer_physical_exhaustion_is_not_a_semantic_answer(self):
+        probes = [(normalization_cases()[0], dict(heap=128, stack=16, fuel=128), 'heap'),
+                  (normalization_cases()[6], dict(heap=128, stack=2, fuel=128), 'stack'),
+                  (normalization_cases()[0], dict(heap=128, stack=16, fuel=3), 'fuel')]
+        for doc, capacities, resource in probes:
+            cfg = spec.MachineConfig(context=8, constants=2, word_bits=8, **capacities)
+            state = program.prepare(cfg, *program.parse_document(doc))
+            if resource == 'heap': state['regs']['free'] = cfg.heap
+            circuit = CircuitHarness(cfg)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (resource, step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(state['regs']['status'], spec.Outcome.RESOURCE)
+            self.assertEqual(state['regs']['reason'], getattr(spec.Reason, resource.upper()))
+            self.assertEqual(circuit.step(state), state)
+
+    def test_complete_canonical_normalization_and_equivalence(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=1024, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in normalization_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            levels = LevelOps(source.arena)
+            if arguments['operation'] == 'normalize':
+                expected = levels.normalize(arguments['root_level'])
+                decoded, _ = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), source.arena)
+                self.assertEqual(decoded[state['regs']['r']], expected, doc['name'])
+            else:
+                expected = int(levels.equal(arguments['root_level'], arguments['peer']))
+                self.assertEqual(state['regs']['r'], expected, doc['name'])
+            self.assertEqual(state['regs']['sp'], 0)
 
     def test_total_structural_base_order_and_offsets(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)

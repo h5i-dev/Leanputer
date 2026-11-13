@@ -38,3 +38,5 @@ throughput claim, weight artifacts or broad campaign.
 Ordering/instantiation completion is not native proof/declaration acceptance.
 Full canonical normalization/equivalence, inference and source admission are still
 unfinished. No added native mathlib theorem coverage or formal-verification claim.
+
+Evidence is pinned to `c8affa8`; later shared programs add operations.

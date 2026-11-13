@@ -4,11 +4,11 @@ Stock Qwen3.5/GatedDeltaNet emission is provided by native_machine. This module
 has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
-from . import level_constructor_rules, level_order_rules
+from . import level_constructor_rules, level_order_rules, level_normalize_rules
 from .arena import Tag
 from .native_cells import CellTag, VectorKind
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
-    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, VECTOR_VALUE, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND, LOCAL_DECL_TAG,
+    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, CALL_NORMAL_IMAX, VECTOR_VALUE, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND, LOCAL_DECL_TAG,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
     program_name, constant_fields, first_banks, second_banks, primitive_basis)
 
@@ -66,7 +66,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.ORDER_READ_RIGHT, self.r['mode']), self.lt(Task.LEVEL_ORDER, self.r['task']),
+            self.lt(Mode.MERGE_FINISH, self.r['mode']), self.lt(Task.LEVEL_EQUIVALENT, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.lt(1, self.r['vec_changed']), self.lt(1, self.r['pending_compare']), self.lt(1, self.r['order_same_base']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
@@ -83,9 +83,10 @@ class RuleCompiler:
         internal_record = self.eq(self.r['mode'], Mode.FOLD_RECORD)
         binding_record = self.eq(self.r['mode'], Mode.LEVEL_BINDING)
         vector_header = self.eq(self.r['mode'], Mode.CONST_VECTOR)
-        vector_cell = self.OR(self.eq(self.r['mode'], Mode.CONST_CELL), self.eq(self.r['mode'], Mode.CONST_RESULT))
+        merge_cell = self.eq(self.r['mode'], Mode.MERGE_FOLD)
+        vector_cell = self.OR(merge_cell, self.eq(self.r['mode'], Mode.CONST_CELL), self.eq(self.r['mode'], Mode.CONST_RESULT))
         level_scope = self.OR(*(self.eq(self.r['task'], task) for task in
-            (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER)))
+            (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT)))
         expression_tag_bad = self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
         level_tag_bad = self.OR(self.lt(self.read['node']['tag'], CellTag.LEVEL_ZERO), self.lt(CellTag.LEVEL_PARAM, self.read['node']['tag']))
         tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
@@ -178,7 +179,7 @@ class RuleCompiler:
         self.ret(self.AND(or_return, self.NOT(self.eq(result, 0))), 1)
         self.emit(self.AND(or_return, self.eq(result, 0)), mode=Mode.WALK, x=frame['original'], task=Task.LEVEL_NOT_ZERO)
         private_phase = self.OR(*(self.eq(frame['phase'], value) for value in
-            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES))
+            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES+level_normalize_rules.PRIVATE_PHASES))
         self.emit(self.AND(returning, nonempty, self.NOT(private_phase)), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
 
@@ -221,6 +222,7 @@ class RuleCompiler:
 
         level_constructor_rules.emit_rules(self)
         level_order_rules.emit_rules(self)
+        level_normalize_rules.emit_rules(self)
 
         sorting = self.mode(Mode.SORT_RESULT)
         self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
@@ -381,12 +383,12 @@ class RuleCompiler:
         self.ret(self.AND(last, self.NOT(self.task(Task.LEVEL_SCOPE))), x)
         self.emit(self.AND(missing, self.NOT(self.eq(r['i'], 0))), i=self.sub(r['i'], 1))
 
-        level_task = self.OR(self.task(Task.LEVEL_SCOPE), self.task(Task.LEVEL_SUBSTITUTE), self.task(Task.LEVEL_INSTANTIATE))
+        level_task = self.OR(*(self.task(t) for t in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.LEVEL_NORMALIZE, Task.LEVEL_NORMAL_SUCC)))
         binary = self.OR(self.tag(Tag.APP, Tag.PI, Tag.LAM),
-            self.AND(level_task, self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX)))
+            self.AND(level_task, self.OR(self.tag(CellTag.LEVEL_MAX), self.AND(self.tag(CellTag.LEVEL_IMAX), self.NOT(self.task(Task.LEVEL_NORMAL_SUCC))))))
         let = self.tag(Tag.LET)
         unary = self.OR(self.tag(Tag.PROJ, Tag.MDATA),
-            self.AND(level_task, self.tag(CellTag.LEVEL_SUCC)))
+            self.AND(level_task, self.tag(CellTag.LEVEL_SUCC), self.NOT(self.task(Task.LEVEL_NORMAL_SUCC))))
         branch = self.OR(binary, let, unary)
         walking = self.mode(Mode.WALK)
         expression_level = self.AND(walking, self.OR(self.task(Task.EXPR_LEVEL_SUBSTITUTE), self.task(Task.EXPR_LEVEL_INSTANTIATE)))
@@ -401,7 +403,7 @@ class RuleCompiler:
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
         walking = self.AND(walking, self.NOT(intercepted),
-            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER))))
+            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT))))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)
@@ -430,14 +432,20 @@ class RuleCompiler:
         self.emit(another, mode=Mode.WALK, x=self.mux(first_phase, b, c), depth=next_depth)
 
         finish = self.AND(resuming, phase_valid, self.eq(frame['phase'], child_count))
-        self.emit(finish, sp=top)
+        normal = self.task(Task.LEVEL_NORMALIZE)
+        normal_imax = self.AND(finish, normal, self.tag(CellTag.LEVEL_IMAX))
+        self.emit(self.AND(finish, self.NOT(normal_imax)), sp=top)
+        self.write('stack', normal_imax, top, (CALL_NORMAL_IMAX, 0, 0, Task.LEVEL_NORMALIZE, 0, 0))
+        self.emit(normal_imax, mode=Mode.WALK, task=Task.LEVEL_IMAX, x=frame['first'], peer=result)
+        self.emit(self.AND(finish, normal, self.tag(CellTag.LEVEL_MAX)), mode=Mode.WALK, task=Task.LEVEL_MERGE, x=frame['first'], peer=result)
+        self.emit(self.AND(finish, normal, self.tag(CellTag.LEVEL_SUCC)), mode=Mode.WALK, task=Task.LEVEL_NORMAL_SUCC, x=result)
         first, second = frame['first'], frame['second']
         unchanged = self.OR(
             self.AND(unary, self.eq(result, self.mux(self.tag(Tag.PROJ), c, a))),
             self.AND(binary, self.eq(first, a), self.eq(result, b)),
             self.AND(let, self.eq(first, a), self.eq(second, b), self.eq(result, c)))
-        self.ret(self.AND(finish, unchanged), x)
-        rebuild = self.AND(finish, self.NOT(unchanged))
+        self.ret(self.AND(finish, unchanged, self.NOT(normal)), x)
+        rebuild = self.AND(finish, self.NOT(unchanged), self.NOT(normal))
         source_construct = self.AND(rebuild, self.task(Task.LEVEL_INSTANTIATE), self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX))
         self.emit(source_construct, mode=Mode.WALK, x=first, peer=result,
             task=self.mux(self.tag(CellTag.LEVEL_MAX), Task.LEVEL_MAX, Task.LEVEL_IMAX))
@@ -448,6 +456,8 @@ class RuleCompiler:
         self.alloc(self.AND(rebuild, self.tag(CellTag.LEVEL_SUCC)), (node['tag'], result, 0, 0))
 
         leaf = self.AND(walking, self.NOT(branch))
+        normal_successor = self.AND(leaf, self.task(Task.LEVEL_NORMAL_SUCC))
+        self.alloc(normal_successor, (CellTag.LEVEL_SUCC, x, 0, 0))
         scope_bad = self.AND(leaf, self.task(Task.VARIABLE_SCOPE),
             self.OR(self.tag(Tag.LOCAL), self.AND(self.tag(Tag.BVAR), self.NOT(self.lt(a, depth)))))
         self.stop(scope_bad, Outcome.INVALID, Reason.SCOPE)
@@ -489,7 +499,7 @@ class RuleCompiler:
             self.AND(self.tag(Tag.CONST), self.task(Task.OCCURS)),
             self.AND(self.tag(CellTag.LEVEL_PARAM), self.task(Task.LEVEL_SCOPE))), self.NOT(self.eq(r['count'], 0)))
         self.emit(searching, mode=Mode.FIND, i=self.sub(r['count'], 1))
-        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one), self.NOT(unbound_level), self.NOT(substitute_level)), x)
+        self.ret(self.AND(leaf, self.NOT(normal_successor), self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one), self.NOT(unbound_level), self.NOT(substitute_level)), x)
 
     def finish(self, memory_update='attention_delta', target=None):
         if memory_update != 'attention_delta':

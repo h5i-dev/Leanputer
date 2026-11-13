@@ -229,8 +229,8 @@ semantics to invent from examples.
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities; `environment.py`: private overlay/rechecking and atomic publication (spec) | integrated native ABI/lowering |
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
-| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic-level scope/raw substitution and typed telescope calls, with argument windows | normalization, expression-wide instantiation, checked-environment callers and full weighted admission; see [native-cells.md](native-cells.md) |
-| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta, Pi/Lam telescope opening/folding through shared substitution/abstraction/private calls | lower symbolic levels/full scopes; connect checking/generation callers and full kernel |
+| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic scope, raw/source all-Expr instantiation, constructors, normalization/equivalence and typed telescope calls, with argument windows | conservative universe geq, checked-environment callers and full weighted admission; see [native-cells.md](native-cells.md) |
+| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta, Pi/Lam telescope opening/folding through shared substitution/abstraction/private calls | connect full scopes, checking/generation callers and full kernel |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
@@ -316,9 +316,16 @@ The [shared symbolic constructor smoke](../../benchmarks/kernel-level-constructo
 checks structural comparison (including duplicate runtime allocations), nonzero,
 offset and complete smart Max/IMax operations inside the stock controller.
 The [level algorithm map](level-services.md) distinguishes these reusable rules
-from full canonical normalization/equivalence and typed admission still pending.
+from the subsequent normalization/equivalence integration and typed admission still pending.
 
 The [source instantiation/order smoke](../../benchmarks/kernel-source-instantiation-stock/README.md)
 connects changed Max/IMax updates to the SAME constructor services in standalone
 levels and all-Expr schemes. The generic base/offset-last order is lowered for
-canonical merging; complete normalization/equivalence and admission remain pending.
+canonical merging; normalization/equivalence now use that comparator. Admission
+remains unfinished.
+
+The [ten-operation canonicalization smoke](../../benchmarks/kernel-level-normalization-stock/README.md)
+verifies complete symbolic normalization/equivalence through the shared services,
+with no host sort/equality answers. Conservative geq, typed inference/conversion
+and integrated admission remain gaps. No native source theorem coverage follows
+from operation DONE.

@@ -38,7 +38,7 @@ def parse_document(document):
             source.arena.word(limit)
         return source, dict(root=root, open_tag=kinds[open_kind], fold_tag=kinds[fold_kind], limit=limit), source.declarations
     operation = document.get('operation')
-    if document.get('format') != 'leanputer.kernel-level-operation.v1' or operation not in ('scope', 'substitute_raw', 'substitute_raw_equal', 'equal', 'not_zero', 'offset', 'max', 'imax', 'instantiate', 'compare'):
+    if document.get('format') != 'leanputer.kernel-level-operation.v1' or operation not in ('scope', 'substitute_raw', 'substitute_raw_equal', 'equal', 'not_zero', 'offset', 'max', 'imax', 'instantiate', 'compare', 'normalize', 'equivalent'):
         raise KernelError('expected symbolic level-scope operation')
     codec = SyntaxCodec()
     # This is a raw operation argument capsule, not a dummy admitted proof.
@@ -51,7 +51,7 @@ def parse_document(document):
     else:
         parameters = tuple(codec.symbols.intern(name) for name in document.get('parameters', ()))
     level = codec.level(document['level'])
-    peer = codec.level(document['right']) if operation in ('equal', 'substitute_raw_equal', 'max', 'imax', 'compare') else None
+    peer = codec.level(document['right']) if operation in ('equal', 'substitute_raw_equal', 'max', 'imax', 'compare', 'equivalent') else None
     sort = codec.arena.mk(Tag.SORT, level)
     symbol = codec.symbols.intern([{'str': '_level_operation'}])
     target = RawDeclaration('definition', symbol, parameters, sort, None)
@@ -65,7 +65,7 @@ def prepare(config, source, level, _declarations=()):
     operation = level.get('operation') if isinstance(level, dict) else 'scope'
     expression = operation in ('expr_substitute_raw', 'expr_instantiate')
     substitute = operation in ('substitute_raw', 'substitute_raw_equal', 'expr_substitute_raw', 'instantiate', 'expr_instantiate')
-    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare')
+    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare', 'equivalent', 'normalize')
     telescope = isinstance(level, dict) and not (substitute or service)
     peer = level.get('peer') if isinstance(level, dict) else None
     bindings = level['bindings'] if substitute else ()
@@ -88,7 +88,7 @@ def prepare(config, source, level, _declarations=()):
         root = packed.expression_map[raw_root]
     else:
         root = packed.level_map[level['root_level'] if substitute or service else level]
-    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER}[operation] if service else
+    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER, 'normalize': Task.LEVEL_NORMALIZE, 'equivalent': Task.LEVEL_EQUIVALENT}[operation] if service else
             Task.VARIABLE_SCOPE if telescope else Task.EXPR_LEVEL_INSTANTIATE if operation == 'expr_instantiate' else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_INSTANTIATE if operation == 'instantiate' else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
     state['regs'].update(mode=int(Mode.WALK), task=int(task),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
@@ -113,5 +113,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.typed-symbolic-services.v7'
+program_name = 'kernel.typed-symbolic-services.v8'
 primitive_basis = ()

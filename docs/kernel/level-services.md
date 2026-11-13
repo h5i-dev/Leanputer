@@ -16,8 +16,9 @@ distributes outer successors, then right-folds the smart Max constructor.
 Equivalence compares normalized structures. The pinned conservative greater-
 or-equal predicate follows its own Max/IMax/offset recursive rules; it must not
 be replaced by an unrelated sampled/numeric universe comparison. This full
-normalization/equivalence/order target already has an executable development
-spec in `levels.py`, but its stock integration remains unfinished.
+normalization/equivalence/order target has an executable development spec in
+`levels.py`. Stock normalization/equivalence is now integrated as described below;
+conservative is_geq remains unfinished in weights.
 
 The shared weighted service now provides structural comparison, necessarily-
 nonzero, successor separation and both COMPLETE smart constructors:
@@ -46,8 +47,8 @@ A raw-substitution-then-comparison wrapper exercises allocation of duplicate
 structures and calls the same comparator, without requiring input hash-consing.
 
 Standalone wrappers return operation DONE/INVALID/RESOURCE. They do not run
-proof/declaration admission. Canonical normalization/equivalence, dependent
-inference and checked environment callers are subsequent integration work.
+proof/declaration admission. Conservative universe geq, dependent inference and
+checked environment callers are subsequent integration work.
 There is no additional native source theorem/mathlib coverage from these
 operator contracts, and no full-kernel or formal-verification claim.
 
@@ -59,4 +60,22 @@ is also weighted and handles arbitrary nested Max/IMax bases with private pair
 continuations. Its stable symbol-ID ordering can differ from Lean host name
 ordering; canonicalization/equality must use the SAME order consistently within
 an artifact. [Focused stock evidence](../../benchmarks/kernel-source-instantiation-stock/README.md).
-Canonical normalization and equivalence are still subsequent integrations.
+Canonical normalization and equivalence now call these SAME shared operations.
+
+The complete weighted normalizer now traverses all five admitted level tags
+bottom-up. Normalized Max arguments use a reusable merge of sorted right chains
+instead of host buffers/sort: structural-base matches retain the largest offset,
+a deferred explicit argument is retained only when no nonexplicit offset
+subsumes it, and a private reverse list reconstructs the canonical chain.
+This is an implementation of the complete flatten/sort/deduplicate algorithm,
+not a bound on argument count. Successor distribution preserves that order and
+calls the same all-tag walker. IMax normalizes its children, calls the same smart
+constructor and merges any resulting Max. Equivalence normalizes both sides
+then calls the same structural comparator, including duplicate native DAGs.
+No expected normal forms/equivalence answers enter native input.
+
+[Focused stock normalization evidence](../../benchmarks/kernel-level-normalization-stock/README.md)
+checks exact registers/cache and independently reconstructed outputs at the SAME
+physical capacities/fuel as earlier services. HEAP/STACK/FUEL exhaustion remains
+RESOURCE, never a negative semantic answer. Conservative source `is_geq_core`
+and typed checking/environment/admission callers remain unfinished in weights.
