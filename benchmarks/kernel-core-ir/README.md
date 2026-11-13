@@ -57,3 +57,21 @@ generation/restoration and complete conversion/primitives remain unfinished.
 Composed stock validation is deferred until a genuine core caller is wired;
 no separate GPU campaign for these helpers, saved weights, model-size/speed or
 new proof-acceptance claim. Physical bounds remain explicit.
+
+The next general descriptor module has focused IR evidence (39.775s): five
+cases produce no descriptor, direct recursion, one functional binder, two
+dependent functional binders with two indices, and a nonrecursive function.
+Every state matches the transition reference. The independent source descriptor
+is compared field by field, renaming ONLY the caller Local namespace: functional
+Locals must already have been abstracted into the correct de Bruijn positions.
+The dependent prefix P z and index referring to the earlier functional argument
+exercise multi-Local abstraction. No host-built descriptor enters the model.
+
+This adds reusable Local-window abstraction and counted immutable-list reversal.
+Output-only166/167 remain private. Constructor typing/positivity and later
+recursor generation/outer-scope abstraction are separate requirements. There is
+still no new composed stock/full-source admission evidence for these modules.
+
+```bash
+.venv/bin/python -m unittest tests.test_kernel_recursive_argument_transition -v
+```

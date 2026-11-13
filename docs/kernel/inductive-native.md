@@ -138,3 +138,18 @@ directly to this core and report their core rejection as a Lean declaration
 rejection; the missing prior transformation must remain an implementation gap.
 Functional recursive descriptor generation, full nested lowering, recursor
 generation/restoration and complete conversion/primitives remain unfinished.
+
+Functional recursive-descriptor lowering uses two additional generic services.
+Local-window abstraction copies UIDs from derived Local/type records into a dead
+context window past the live end, invokes the SAME multi-Local abstraction, and
+restores the caller's level/count/window state. A private counted-list reversal
+builds immutable object-reference vectors. The descriptor loop normalizes, opens
+arbitrary dependent Pi prefixes, abstracts each domain over preceding functional
+Locals, validates the terminal current-family application, then abstracts its
+indices over the complete functional prefix. Output-only166 references
+`(familySignature,prefixVector,indexVector)`; prefix record167 holds
+`(domain,binderInfo,0)`. Both vectors are generated in weights. A nonrecursive
+argument returns0. Caller constructor Locals remain in scope; the later generic
+recursor builder must abstract them before any declaration publication. This
+operation alone is neither positivity nor admission and does not bypass nested
+specialization/type checking.

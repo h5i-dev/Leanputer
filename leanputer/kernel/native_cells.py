@@ -37,6 +37,8 @@ class CellTag(IntEnum):
     CHECKED_RECURSOR = 163
     CHECKED_RULE = 164
     CHECKED_SCHEME = 165          # Output-only (uparams,kind,payload), never packed.
+    RECURSIVE_ARGUMENT = 166      # Output-only (familySig,prefixVector,indexVector).
+    PREFIX_BINDER = 167           # Output-only (abstractDomain,binderInfo,0).
 
 
 class VectorKind(IntEnum):

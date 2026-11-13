@@ -20,7 +20,7 @@ until weighted checking and atomic publication derive checked records.
 | 80..82 | String/numeral name segments and `(symbolID,nameVector,0)` entries |
 | 88 | Raw symbolic-substitution argument `(parameterSymbol,levelPointer,0)` |
 | 96..100 | Raw family/constructor/recursor-claim/block records |
-| 160..165 | Reserved checked signature/family/constructor/recursor/rule records; never input answers |
+| 160..167 | Output-only signature/family/constructor/recursor/rule/scheme/recursive-template records; never input answers |
 
 Vector roles distinguish object references, level references, 16-bit natural
 limbs, UTF-8 bytes and symbol IDs. This distinction is necessary: the syntax
@@ -83,3 +83,11 @@ covers weighted cursor advancement/checking/publication. Raw type claims become
 checked signatures only after all required type/body checks.
 The [checked environment integration contract](environment-native.md) reserves
 output-only signature/scheme records and separates raw-item/admitted counts.
+
+The new recursive-template IR uses166 `(familySignature,prefixVector,indexVector)`
+and167 `(abstractDomain,binderInfo,0)`. Prefix/index vectors and fresh-Local
+abstraction are derived by weighted operations. These records may retain
+caller constructor Locals until the later generic recursor builder abstracts
+the surrounding scope. They are private analysis outputs, not publishable raw
+input assumptions. Composed stock validation of these new services is pending;
+last header stock evidence remains pinned8758019.
