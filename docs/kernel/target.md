@@ -389,3 +389,9 @@ These later modules are not covered by the pinned stock report. The complete
 source generation/restoration/reduction algorithms above remain the target,
 not a supported shape/name catalog. Physical capacities and conservative GAPs
 are reported separately from proof rejection and accepted source theorems.
+
+The complete nested-native [data/queue/restoration map](nested-native.md) fixes
+original-block provenance, whole-mutual specialization, FIFO growth, fixed
+replacement callbacks, fresh-name operations and atomic publication before
+further lowering. The first shared origin-registry lookup has focused IR tests;
+this is data traversal, not original-source admission.
