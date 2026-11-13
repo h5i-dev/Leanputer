@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--device',choices=('cpu','cuda'),default='cuda')
     parser.add_argument('--report',type=Path,required=True)
     args=parser.parse_args();torch.set_num_threads(1)
-    cfg=MachineConfig(heap=256,stack=16,context=8,constants=2,fuel=768,word_bits=9)
+    cfg=MachineConfig(heap=256,stack=16,context=8,constants=2,fuel=1024,word_bits=9)
     run_smoke(cfg,native_cases(),program,args.device,args.report,'typed-inductive-core',
         '2 raw CORE block operations: actual Eq header/constructor and functional recursive field; '
         'weighted scope/type/universe/positivity/recursive descriptor checks then GAP_RECURSOR_GENERATION; '

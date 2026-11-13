@@ -113,6 +113,7 @@ class Task(IntEnum):
     GET_NAME_PATH = 49         # Raw structured-name lookup, no profile/admission answer.
     CHECK_RECURSOR_NAME = 50   # Source mk_rec_name relation over arbitrary raw names.
     CHECK_CORE_NAMES = 51      # Validate all derived recursor-name/namespace claims.
+    DECLARE_CONSTRUCTORS = 52  # Private signatures from fully checked pending records.
 
 
 
@@ -279,6 +280,21 @@ class Mode(IntEnum):
     CORE_NAME_RAW_FAMILY = 159
     CORE_NAME_AUX = 160
     CORE_NAME_STORE = 161
+    DECL_CTOR_NAME = 162
+    DECL_CTOR_FAMILY_SIGNATURE = 163
+    DECL_CTOR_FAMILY_SCHEME = 164
+    DECL_CTOR_FAMILY_METADATA = 165
+    DECL_CTOR_RAW_FAMILY = 166
+    DECL_CTOR_AUX = 167
+    DECL_CTOR_VECTOR = 168
+    DECL_CTOR_CELL = 169
+    DECL_CTOR_RAW = 170
+    DECL_CTOR_PENDING = 171
+    DECL_CTOR_ANALYSIS = 172
+    DECL_CTOR_STORE_INFO = 173
+    DECL_CTOR_STORE_SCHEME = 174
+    DECL_CTOR_STORE_SIGNATURE = 175
+    DECL_CTOR_LINK = 176
 
 
 CALL_BETA_ZETA = 16
@@ -414,6 +430,8 @@ CALL_CORE_NAME_PROFILE = 145
 CALL_CORE_NAME_RELATION = 146
 CALL_CORE_NAME_DECLARATION = 147
 CALL_CORE_NAME_PENDING = 148
+CALL_SOURCE_DECLARE_CONSTRUCTORS = 149
+CALL_DECLARE_CTOR_LOOKUP = 150
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -451,7 +469,10 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'name_parent_symbol', 'name_candidate_symbol', 'recname_parent_path', 'recname_candidate_path',
     'recname_length', 'recname_head', 'recname_remaining', 'recname_right', 'recname_next_left', 'recname_next_right',
     'recname_part_left', 'recname_part_right', 'recname_part_tag', 'recname_part_value', 'recname_byte_index',
-    'core_names_remaining', 'core_rec_names', 'core_name_next', 'core_name_family', 'core_name_family_symbol', 'core_name_symbol')
+    'core_names_remaining', 'core_rec_names', 'core_name_next', 'core_name_family', 'core_name_family_symbol', 'core_name_symbol',
+    'decl_ctor_families', 'core_ctor_declared', 'decl_ctor_family', 'decl_ctor_name_next', 'decl_ctor_remaining',
+    'decl_ctor_ordinal', 'decl_ctor_next', 'decl_ctor_symbol', 'decl_ctor_type', 'decl_ctor_fields',
+    'decl_ctor_info', 'decl_ctor_scheme', 'decl_ctor_signature')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -550,7 +571,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -637,7 +658,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.CORE_NAME_STORE or r['task'] > Task.CHECK_CORE_NAMES
+                or r['mode'] > Mode.DECL_CTOR_LINK or r['task'] > Task.DECLARE_CONSTRUCTORS
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -670,6 +691,7 @@ class SpecMachine:
         from . import constructor_machine as constructor
         from . import recursor_name_machine as recursor_name
         from . import core_names_machine as core_names
+        from . import declare_constructors_machine as declare_constructors
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -690,7 +712,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in core_names.PRIVATE_PHASES:
+                if phase in declare_constructors.PRIVATE_PHASES:
+                    declare_constructors.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in core_names.PRIVATE_PHASES:
                     core_names.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in recursor_name.PRIVATE_PHASES:
                     recursor_name.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -798,6 +822,8 @@ class SpecMachine:
             environment.step(self, 0, 0, 0, 0, stop, ret, alloc)
             return s
         if formal_levels.step(self, 0, 0, 0, 0, stop, ret, alloc): return s
+        if r['task'] == Task.DECLARE_CONSTRUCTORS and r['mode'] in (Mode.WALK,Mode.DECL_CTOR_STORE_INFO,Mode.DECL_CTOR_STORE_SCHEME,Mode.DECL_CTOR_STORE_SIGNATURE,Mode.DECL_CTOR_LINK):
+            declare_constructors.step(self, 0, 0, 0, 0, stop, ret, alloc); return s
         if r['task'] == Task.CHECK_CORE_NAMES and r['mode'] in (Mode.WALK, Mode.CORE_NAME_STORE):
             core_names.step(self, 0, 0, 0, 0, stop, ret, alloc); return s
         if r['task'] == Task.CHECK_RECURSOR_NAME and r['mode'] == Mode.WALK:
@@ -827,7 +853,12 @@ class SpecMachine:
         core_name_tag = {Mode.CORE_NAME_CELL:CellTag.VECTOR_CELL,Mode.CORE_NAME_SIGNATURE:CellTag.CHECKED_SIGNATURE,
             Mode.CORE_NAME_SCHEME:CellTag.CHECKED_SCHEME,Mode.CORE_NAME_METADATA:CellTag.CHECKED_FAMILY,
             Mode.CORE_NAME_RAW_FAMILY:CellTag.RAW_FAMILY,Mode.CORE_NAME_AUX:CellTag.RAW_FAMILY_AUX}.get(r['mode'])
-        valid_tag = (tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
+        decl_ctor_tag = {Mode.DECL_CTOR_NAME:CellTag.VALIDATED_RECURSOR_NAME,Mode.DECL_CTOR_FAMILY_SIGNATURE:CellTag.CHECKED_SIGNATURE,
+            Mode.DECL_CTOR_FAMILY_SCHEME:CellTag.CHECKED_SCHEME,Mode.DECL_CTOR_FAMILY_METADATA:CellTag.CHECKED_FAMILY,
+            Mode.DECL_CTOR_RAW_FAMILY:CellTag.RAW_FAMILY,Mode.DECL_CTOR_AUX:CellTag.RAW_FAMILY_AUX,Mode.DECL_CTOR_VECTOR:CellTag.VECTOR,
+            Mode.DECL_CTOR_CELL:CellTag.VECTOR_CELL,Mode.DECL_CTOR_RAW:CellTag.RAW_CONSTRUCTOR,Mode.DECL_CTOR_PENDING:CellTag.PENDING_CONSTRUCTOR,
+            Mode.DECL_CTOR_ANALYSIS:CellTag.CONSTRUCTOR_ANALYSIS}.get(r['mode'])
+        valid_tag = (tag == decl_ctor_tag if r['task'] == Task.DECLARE_CONSTRUCTORS else tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
             tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
             tag == CellTag.CHECKED_FAMILY if r['mode'] == Mode.APP_METADATA else
             tag == CellTag.CHECKED_SCHEME if r['mode'] in (Mode.CONST_SCHEME, Mode.APP_SCHEME) else
@@ -847,6 +878,8 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if declare_constructors.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if core_names.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if recursor_name.step(self, tag, a, b, c, stop, ret, alloc):

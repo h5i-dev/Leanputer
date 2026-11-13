@@ -206,3 +206,13 @@ remains a claim compared against the GENERATED recursor scheme. The raw block
 format already carries the recursor-name claim; no host expected-name/type
 answer is inserted. Generic fresh-name interning for nested specialization is
 still a separate subsequent operation.
+
+Private constructor declaration walks verified family/name records and each
+ORIGINAL raw constructor vector, deriving source ctor ordinals by a counter.
+It looks up the fully checked pending ctor record, verifies its owner/type
+association, then creates constructor162 `(familySignature,fieldVector,ordinal)`,
+scheme165 `(universeParams,CTOR_KIND,constructorInfo)` and signature160. Only
+now may these constructor types enter the PRIVATE typing head. Committed Γ and
+raw input cursor stay unchanged until all generation/restoration is complete.
+Result arguments/typed field snapshots remain in pending analysis for the
+recursor builder; none are input-derived checking answers.
