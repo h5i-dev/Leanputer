@@ -15,6 +15,7 @@ partial def expr (j : Json) : Except String Expr := do
   if tag == "var" && a.size == 2 then return .bvar (← a[1]!.getNat?)
   if tag == "sort" && a.size == 2 then return .sort (level (← a[1]!.getNat?))
   if tag == "const" && a.size == 2 then return .const (userName (← a[1]!.getStr?)) []
+  if tag == "proj" && a.size == 4 then return .proj (userName (← a[1]!.getStr?)) (← a[2]!.getNat?) (← expr a[3]!)
   if a.size != 3 then throw "unsupported expression"
   if tag == "app" then return .app (← expr a[1]!) (← expr a[2]!)
   if tag == "pi" then return .forallE `x (← expr a[1]!) (← expr a[2]!) .default

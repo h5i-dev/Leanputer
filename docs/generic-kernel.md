@@ -62,7 +62,8 @@ The native facade still imports its historical default for backward compatibilit
 that catalog is not compiled when the generic program is selected.
 
 Input format `leanputer.generic.v1` carries ordered `environment`, `term` and
-`claim` fields. Expressions are tagged arrays: var, sort, const, pi, lam, app.
+`claim` fields. Expressions are tagged arrays: var, sort, const, pi, lam, app, and
+`["proj", familyName, 0, inner]` for the restricted one-field projection.
 Declaration kinds are axiom, definition, opaque, inductive, constructor, recursor.
 Inductive rows carry `constructors`; following constructor rows carry `family`
 and zero-based `index`; recursor rows carry `family` and ground result `level`.
@@ -85,9 +86,9 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The active milestone after this slice is generic one-field projections and
-uniform parameters, then multiple/dependent fields and recursive/indexed
-admission with real positivity and elimination checks. No per-name constructors should be added to obtain them.
+The active milestone after this slice is direct strictly-positive recursive
+fields with derived induction hypotheses, then uniform parameters,
+multiple/dependent fields and indexed admission. No per-name constructors should be added to obtain them.
 
 
 Actual elaborated Lean input is available through:
@@ -118,3 +119,13 @@ mathlib source target, `Function.mt@[]`, through a three-declaration closure
 containing the empty Prop family, an ordinary negation definition and a checked
 opaque theorem body. No names receive special compilation rules. This targeted
 1/1 smoke is not a full857population result or a generic coverage estimate.
+
+
+Generic projection support is restricted to a validated positive-Sort family
+with one constructor and one independent field. Inference checks the projected
+term has that family and returns the constructor domain. Reduction checks the
+actual constructor owner/ordinal and unary shape before selecting its field.
+Neutral projections compare the record terms, with proof/eta fallback; identical
+field identities alone do not establish equality. Projection syntax participates
+in de Bruijn shift/substitution. Other projection indices are UNSUPPORTED.
+This does not implement generic record eta or arbitrary structure inheritance.

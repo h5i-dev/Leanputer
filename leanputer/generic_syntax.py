@@ -6,7 +6,7 @@ class Unsupported(ValueError): pass
 class Exhausted(ValueError): pass
 
 class Tag(IntEnum):
-    EMPTY=0; VAR=1; SORT=2; PI=3; LAM=4; APP=5; CONST=6
+    EMPTY=0; VAR=1; SORT=2; PI=3; LAM=4; APP=5; CONST=6; PROJ=7
 TAGS={name.lower():tag for name,tag in Tag.__members__.items()if tag!=Tag.EMPTY}
 
 
@@ -15,6 +15,8 @@ def parse_expr(value):
     tag=value[0]
     if tag in ('var','sort') and len(value)==2 and type(value[1])is int and value[1]>=0:return tuple(value)
     if tag=='const' and len(value)==2 and isinstance(value[1],str)and value[1]:return tuple(value)
+    if tag=='proj' and len(value)==4 and isinstance(value[1],str) and value[1] and type(value[2])is int and value[2]>=0:
+        return(tag,value[1],value[2],parse_expr(value[3]))
     if tag in ('pi','lam','app')and len(value)==3:return(tag,parse_expr(value[1]),parse_expr(value[2]))
     if tag not in TAGS:raise Unsupported('generic expression form: '+str(tag))
     raise ValueError('malformed generic expression')

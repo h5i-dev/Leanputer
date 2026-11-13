@@ -118,6 +118,15 @@ class Op(IntEnum):
     G_APPLY = 79
     G_ELIM = 80
     G_MTYPE = 81
+    P_TYPE = 82
+    P_FAMILY = 83
+    P_DOMAIN = 84
+    P_VALUE = 85
+    P_HEAD = 86
+    P_CHECK = 87
+    P_DONE = 88
+    P_REBUILD = 89
+    P_CONV_DONE = 90
 
 
 @dataclass(frozen=True)
@@ -168,7 +177,10 @@ def prepare(config, term, claim, declarations=()):
         a = b = v = 0
         if tag in ('pi', 'lam', 'app'):
             a, b = visit(expr[1]), visit(expr[2])
-        elif tag == 'const':
+        elif tag in ('const','proj'):
+            if tag=='proj':
+                a,b=visit(expr[3]),expr[2]
+                if b>=1<<config.word_bits:raise Exhausted('projection scalar encoding capacity')
             if expr[1] not in names:
                 raise ValueError(f'undeclared constant: {expr[1]}')
             v = names[expr[1]]
@@ -272,10 +284,10 @@ class SpecMachine:
             pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA):
             pointers.append(y)
-        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE):pointers.append(x)
+        if op in (Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE):pointers.append(x)
         if op==Op.G_AFTER:pointers.extend((x,y,z))
         if op==Op.G_MAJOR:pointers.append(y)
-        if op in (Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY):pointers.append(result)
+        if op in (Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD):pointers.append(result)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -283,15 +295,19 @@ class SpecMachine:
                 self.tail(Op.ENV)
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
-                valid = 1 <= tag <= 6
+                valid = 1 <= tag <= 7
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
+                elif tag==Tag.PROJ:
+                    valid &= 0<a<i
                 else:
                     valid &= a == b == 0
-                if tag == Tag.CONST:
+                if tag in (Tag.CONST,Tag.PROJ):
                     valid &= v < r['decl_count']
                 if not valid:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
+                elif tag==Tag.PROJ and b!=0:
+                    self.stop(Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
                 elif tag == Tag.SORT and v > cfg.universe:
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
@@ -425,10 +441,23 @@ class SpecMachine:
                 self.call(Op.INFER, a, continuation=(Op.I_DOM, x))
             elif tag == Tag.APP:
                 self.call(Op.INFER, a, continuation=(Op.I_APP, b))
+            elif tag==Tag.PROJ:
+                self.call(Op.INFER,a,continuation=(Op.P_TYPE,x))
             elif tag == Tag.CONST and v < r['decl']:
                 self.ret(s['constants'][v][1])
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
+        elif op==Op.P_TYPE:self.call(Op.WHNF,result,continuation=(Op.P_FAMILY,x))
+        elif op==Op.P_FAMILY:
+            family=self.node(x)[3];row=s['constants'][family]
+            if self.node(result)[0]!=Tag.CONST or self.node(result)[3]!=family:
+                self.stop(Outcome.REJECT,Reason.CONVERSION)
+            elif family>=r['decl'] or row[0]!=3 or row[4]!=1:
+                self.stop(Outcome.REJECT,Reason.DECLARATION)
+            else:self.tail(Op.P_DOMAIN,s['constants'][family+1][1])
+        elif op==Op.P_DOMAIN:
+            if self.node(x)[0]!=Tag.PI:self.stop(Outcome.REJECT,Reason.DECLARATION)
+            else:self.ret(self.node(x)[1])
         elif op == Op.I_DOM:
             self.call(Op.WHNF, result, continuation=(Op.I_BIND, x))
         elif op == Op.I_BIND:
@@ -470,6 +499,9 @@ class SpecMachine:
             tag, a, b, v = self.node(x)
             if tag == Tag.APP:
                 self.call(Op.WHNF, a, continuation=(Op.W_APP, x, b))
+            elif tag==Tag.PROJ:
+                if v>=r['decl'] or s['constants'][v][0]!=3 or s['constants'][v][4]!=1:self.stop(Outcome.REJECT,Reason.DECLARATION)
+                else:self.call(Op.WHNF,a,continuation=(Op.P_VALUE,x))
             elif tag == Tag.CONST:
                 if v >= r['decl']:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
@@ -519,6 +551,26 @@ class SpecMachine:
             if result:self.tail(Op.WHNF,result)
             elif self.node(x)[1]==y:self.ret(x)
             else:self.allocate(Tag.APP,y,z)
+        elif op==Op.P_VALUE:
+            tag,a,b,_=self.node(result)
+            if tag==Tag.APP:self.call(Op.P_HEAD,a,b,self.node(x)[3],continuation=(Op.P_DONE,x,result))
+            elif self.node(x)[1]==result:self.ret(x)
+            else:self.allocate(Tag.PROJ,result,v=self.node(x)[3])
+        elif op==Op.P_HEAD:
+            tag,_,_,index=self.node(x);row=s['constants'][index]if tag==Tag.CONST and index<r['decl']else None
+            if row and row[0]==4 and row[3]==z and row[4]==0:self.tail(Op.P_CHECK,row[1],y)
+            else:self.ret(0)
+        elif op==Op.P_CHECK:self.ret(y if self.node(x)[0]==Tag.PI else 0)
+        elif op==Op.P_DONE:
+            if result:self.tail(Op.WHNF,result)
+            elif self.node(x)[1]==y:self.ret(x)
+            else:self.allocate(Tag.PROJ,y,v=self.node(x)[3])
+        elif op==Op.P_REBUILD:
+            if self.node(x)[1]==result:self.ret(x)
+            else:self.allocate(Tag.PROJ,result,v=self.node(x)[3])
+        elif op==Op.P_CONV_DONE:
+            if result:self.ret(1)
+            else:self.tail(Op.FALLBACK,x,y)
         elif op == Op.W_BETA:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):
@@ -537,6 +589,7 @@ class SpecMachine:
                     self.tail(Op.SHIFT, y, 0, z)
                 else:
                     self.allocate(Tag.VAR, v=v-1)
+            elif tag==Tag.PROJ:self.call(op,a,y,z,continuation=(Op.P_REBUILD,x))
             elif tag in (Tag.PI, Tag.LAM, Tag.APP):
                 self.call(op, a, y, z, continuation=(Op.TREE_LEFT, x, y, z, op))
             else:
@@ -569,6 +622,9 @@ class SpecMachine:
                 self.ret(1)
             elif tx != ty:
                 self.tail(Op.FALLBACK, x, result)
+            elif tx==Tag.PROJ:
+                if vx==vy:self.call(Op.CONV,ax,ay,continuation=(Op.P_CONV_DONE,x,result))
+                else:self.tail(Op.FALLBACK,x,result)
             elif tx in (Tag.VAR, Tag.SORT, Tag.CONST):
                 if vx == vy:
                     self.ret(1)

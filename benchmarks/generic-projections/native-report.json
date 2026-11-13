@@ -1,0 +1,372 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.onefield-projections.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "results": [
+    {
+      "name": "LeanputerGenericRecords.projection_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 22,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 341
+    },
+    {
+      "name": "LeanputerGenericRecords.projection_beta@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_beta",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_beta"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 24,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 451
+    },
+    {
+      "name": "wrong-projected-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "wrong-projected-field"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 23,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 36,
+      "semantic_steps": 385
+    },
+    {
+      "name": "wrong-projection-family-in-checked-getter",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "wrong-projection-family-in-checked-getter"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 22,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 23,
+      "semantic_steps": 72
+    },
+    {
+      "name": "unsupported-second-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "unsupported-second-field"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 22,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 22,
+      "semantic_steps": 7
+    },
+    {
+      "name": "projection-of-nonrecord-enum",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "projection-of-nonrecord-enum"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 10,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 12,
+      "semantic_steps": 94
+    },
+    {
+      "name": "neutral-projection-different-record",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "neutral-projection-different-record"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 24,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 42,
+      "semantic_steps": 478
+    },
+    {
+      "name": "neutral-projection-same-record",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "neutral-projection-same-record"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 25,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 403
+    },
+    {
+      "name": "renamed-projection-datatype",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "EntirelyDifferent.projection_iota",
+        "source_name_parts": [
+          {
+            "str": "EntirelyDifferent"
+          },
+          {
+            "str": "projection_iota"
+          }
+        ],
+        "mutation": "renamed-projection-datatype"
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 22,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 341
+    },
+    {
+      "name": "LeanputerGenericProp.singleton_k@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.singleton_k",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "singleton_k"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 63,
+      "semantic_steps": 680
+    },
+    {
+      "name": "Function.mt@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "Function.mt",
+        "source_name_parts": [
+          {
+            "str": "Function"
+          },
+          {
+            "str": "mt"
+          }
+        ]
+      },
+      "environment_declarations": 3,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 90,
+      "semantic_steps": 805
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ]
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 966
+    }
+  ],
+  "counts": {
+    "ACCEPT": 7,
+    "REJECT": 4,
+    "UNSUPPORTED": 1
+  },
+  "syntax_seconds": 0.0019154220062773675,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "forward_seconds": 107.7509038260032,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 1603,
+        "persistent_channels": 375,
+        "subtract_handovers": 6211,
+        "head_clears": 320,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 68,
+          "dims": 8135,
+          "heads": 11,
+          "ffn_units": 9462,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 26,
+      "primitive_basis": [],
+      "semantic_program": "generic.onefield-projections.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 428535560,
+      "weight_bytes": 857071120,
+      "cuda_peak_allocated_bytes": 957429248,
+      "host_process_peak_rss_bytes": 1705431040,
+      "hidden_size": 1664,
+      "native_layers": 69,
+      "boot_tokens": 46,
+      "applied_steps": 1058
+    }
+  ],
+  "total_check_seconds": 108.45513576400117,
+  "validation_scope": "Restricted positive-Sort zero/one-field and nullary Prop inductives; no full Lean/general inductive soundness claim",
+  "backend": "native",
+  "device": "cuda",
+  "compile_seconds": 7.305503569004941,
+  "cold_compile_and_check_seconds": 115.76065936300438
+}

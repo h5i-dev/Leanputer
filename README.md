@@ -12,7 +12,8 @@ claimed recursor signatures are input data, validated by fixed weighted rules.
 One stock model checks two- and three-constructor enums, including arbitrary
 renamings. The initial class is monomorphic, nonrecursive inductives with zero or one independent field per
 constructor in positive numeric Sorts, plus nullary Prop families with checked
-elimination restrictions. Parameters, indices and Prop constructor fields remain
+elimination restrictions. Single-field projections use validated constructor
+data, including neutral comparison and substitution. Parameters, indices and Prop constructor fields remain
 unsupported. The checker derives dependent recursor types inside weights and
 performs generic constructor iota reduction. This is experimental, with no
 whole-checker soundness proof or generic mathlib coverage claim.

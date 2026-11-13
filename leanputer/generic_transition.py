@@ -31,6 +31,7 @@ def compile_addresses(layout,optimized=True,target=None):
     out=list(g.sub(r['ctx'],node_v,borrow_in=True)[0][:cfg.context.bit_length()-1])
     cwidth=cfg.constants.bit_length()-1
     ctor_address=g.mux(g.eq(r['mode'],g.const(Op.G_CTOR,width)),g.add(g.add(r['decl'],g.const(1,width)),r['gi']),g.add(owner,r['gi']))
+    ctor_address=g.mux(g.eq(r['mode'],g.const(Op.P_FAMILY,width)),g.add(node_v,g.const(1,width)),ctor_address)
     for address in(node_v,owner,ctor_address,g.sub(r['head'],g.const(1,width))[0]):out.extend(address[:cwidth])
     return first,g.compile(out,target=target)
 
@@ -77,9 +78,9 @@ class RuleCompiler:
                       self.lt(self.r['decl_count'], self.r['decl']), self.lt(self.cfg.constants, self.r['decl_count']))
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                    Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
-                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_AFTER,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE)
+                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_AFTER,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF,Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY)
+                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF,Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA,Op.G_MAJOR,Op.G_AFTER)),(self.r['z'],(Op.G_AFTER,))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
@@ -163,12 +164,15 @@ class RuleCompiler:
                             self.NOT(self.eq(hs['b'], 0)), self.lt(hs['b'], r['scan']), self.eq(hs['v'], 0))
         atom_ok = self.AND(self.eq(hs['a'], 0), self.eq(hs['b'], 0),
                            self.OR(self.NOT(self.tag(hs, Tag.CONST)), self.lt(hs['v'], r['decl_count'])))
-        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok))
+        proj=self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.lt(hs['v'],r['decl_count']))
+        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),proj)
         check = self.AND(op, more)
         self.stop(self.AND(check, self.NOT(valid)), Outcome.REJECT, Reason.SYNTAX)
         high = self.AND(self.tag(hs, Tag.SORT), self.lt(self.cfg.universe, hs['v']))
-        self.stop(self.AND(check, valid, high), Outcome.RESOURCE, Reason.UNIVERSE)
-        self.emit(self.AND(check, valid, self.NOT(high)), scan=self.add(r['scan'], 1))
+        unsupported=self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['b'],0)))
+        self.stop(self.AND(check,valid,unsupported),Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
+        self.stop(self.AND(check, valid, self.NOT(unsupported), high), Outcome.RESOURCE, Reason.UNIVERSE)
+        self.emit(self.AND(check, valid, self.NOT(high),self.NOT(unsupported)), scan=self.add(r['scan'], 1))
         # Environment and root-check orchestration.
         op = self.mode(Op.ENV)
         done = self.eq(r['decl'], r['decl_count'])
@@ -290,11 +294,22 @@ class RuleCompiler:
         self.allocate(self.AND(sort, level_ok), Tag.SORT, v=self.add(hx['v'], 1))
         self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.INFER, hx['a'], continuation=(Op.I_APP, hx['b']))
+        self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.P_TYPE,x))
         const = self.AND(op, self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl']))
         self.ret(const, self.read['constant']['type'])
-        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP),
+        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ),
                         self.AND(self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl'])))
         self.stop(self.AND(op, self.NOT(legal)), Outcome.REJECT, Reason.SYNTAX)
+        self.call(self.mode(Op.P_TYPE),Op.WHNF,result,continuation=(Op.P_FAMILY,x))
+        phase=self.mode(Op.P_FAMILY);row=self.read['constant']
+        shape=self.AND(self.tag(hr,Tag.CONST),self.eq(hr['v'],hx['v']))
+        good=self.AND(self.lt(hx['v'],r['decl']),self.eq(row['kind'],3),self.eq(row['info'],1))
+        self.stop(self.AND(phase,self.NOT(shape)),Outcome.REJECT,Reason.CONVERSION)
+        self.stop(self.AND(phase,shape,self.NOT(good)),Outcome.REJECT,Reason.DECLARATION)
+        self.tail(self.AND(phase,shape,good),Op.P_DOMAIN,nxt['type'])
+        phase=self.mode(Op.P_DOMAIN);good=self.tag(hx,Tag.PI)
+        self.stop(self.AND(phase,self.NOT(good)),Outcome.REJECT,Reason.DECLARATION)
+        self.ret(self.AND(phase,good),hx['a'])
         self.call(self.mode(Op.I_DOM), Op.WHNF, result, continuation=(Op.I_BIND, x))
         op, is_sort = self.mode(Op.I_BIND), self.tag(hr, Tag.SORT)
         self.stop(self.AND(op, self.NOT(is_sort)), Outcome.REJECT, Reason.EXPECT_SORT)
@@ -323,6 +338,10 @@ class RuleCompiler:
         # WHNF, delta unfolding and beta substitution.
         op = self.mode(Op.WHNF)
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.WHNF, hx['a'], continuation=(Op.W_APP, x, hx['b']))
+        proj=self.AND(op,self.tag(hx,Tag.PROJ));row=self.read['constant']
+        good=self.AND(self.lt(hx['v'],r['decl']),self.eq(row['kind'],3),self.eq(row['info'],1))
+        self.stop(self.AND(proj,self.NOT(good)),Outcome.REJECT,Reason.DECLARATION)
+        self.call(self.AND(proj,good),Op.WHNF,hx['a'],continuation=(Op.P_VALUE,x))
         const = self.AND(op, self.tag(hx, Tag.CONST))
         available = self.lt(hx['v'], r['decl'])
         self.stop(self.AND(const, self.NOT(available)), Outcome.REJECT, Reason.SYNTAX)
@@ -330,7 +349,7 @@ class RuleCompiler:
         self.tail(self.AND(const, available, definition), Op.WHNF, self.read['constant']['value'])
         self.ret(self.AND(const,available,self.NOT(definition)),x,head=self.mux(self.eq(self.read['constant']['kind'],5),self.add(self.read['constant']['owner'],1),0))
         self.ret(self.AND(op, self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM)), x)
-        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST))), Outcome.REJECT, Reason.SYNTAX)
+        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
         op,lam=self.mode(Op.W_APP),self.tag(hr,Tag.LAM)
         self.call(self.AND(op,lam),Op.SUBST,hr['b'],y,continuation=(Op.W_BETA,))
         head=r['head'];has=self.NOT(self.eq(head,0));count=self.read['headrow']['info']
@@ -364,6 +383,25 @@ class RuleCompiler:
         self.tail(self.AND(phase,found),Op.WHNF,result)
         self.ret(self.AND(phase,self.NOT(found),same),x)
         self.allocate(self.AND(phase,self.NOT(found),self.NOT(same)),Tag.APP,y,z)
+        phase=self.mode(Op.P_VALUE);app=self.tag(hr,Tag.APP);same=self.eq(hx['a'],result)
+        self.call(self.AND(phase,app),Op.P_HEAD,hr['a'],hr['b'],hx['v'],continuation=(Op.P_DONE,x,result))
+        self.ret(self.AND(phase,self.NOT(app),same),x)
+        self.allocate(self.AND(phase,self.NOT(app),self.NOT(same)),Tag.PROJ,result,v=hx['v'])
+        phase=self.mode(Op.P_HEAD);row=self.read['constant']
+        good=self.AND(self.tag(hx,Tag.CONST),self.lt(hx['v'],r['decl']),self.eq(row['kind'],4),self.eq(row['owner'],z),self.eq(row['info'],0))
+        self.tail(self.AND(phase,good),Op.P_CHECK,row['type'],y)
+        self.ret(self.AND(phase,self.NOT(good)),0)
+        self.ret(self.mode(Op.P_CHECK),self.mux(self.tag(hx,Tag.PI),y,0))
+        phase=self.mode(Op.P_DONE);found=self.NOT(self.eq(result,0));same=self.eq(hx['a'],y)
+        self.tail(self.AND(phase,found),Op.WHNF,result)
+        self.ret(self.AND(phase,self.NOT(found),same),x)
+        self.allocate(self.AND(phase,self.NOT(found),self.NOT(same)),Tag.PROJ,y,v=hx['v'])
+        phase=self.mode(Op.P_REBUILD);same=self.eq(hx['a'],result)
+        self.ret(self.AND(phase,same),x)
+        self.allocate(self.AND(phase,self.NOT(same)),Tag.PROJ,result,v=hx['v'])
+        phase=self.mode(Op.P_CONV_DONE);good=self.NOT(self.eq(result,0))
+        self.ret(self.AND(phase,good),1)
+        self.tail(self.AND(phase,self.NOT(good)),Op.FALLBACK,x,y)
         self.tail(self.mode(Op.W_BETA), Op.WHNF, result)
         # Capture-avoiding structural shift/substitution with explicit frames.
         for operation in (Op.SHIFT, Op.SUBST):
@@ -384,10 +422,11 @@ class RuleCompiler:
                 self.ret(self.AND(var, below), x)
                 self.tail(self.AND(var, equal), Op.SHIFT, y, 0, z)
                 self.allocate(self.AND(var, self.NOT(below), self.NOT(equal)), Tag.VAR, v=self.sub(hx['v'], 1))
+            self.call(self.AND(work,self.tag(hx,Tag.PROJ)),operation,hx['a'],y,z,continuation=(Op.P_REBUILD,x))
             tree = self.tag(hx, Tag.PI, Tag.LAM, Tag.APP)
             self.call(self.AND(work, tree), operation, hx['a'], y, z,
                       continuation=(Op.TREE_LEFT, x, y, z, operation))
-            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP))), Outcome.REJECT, Reason.SYNTAX)
+            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
         op = self.mode(Op.TREE_LEFT)
         binder = self.tag(hx, Tag.PI, Tag.LAM)
         shift, subst = self.eq(w, Op.SHIFT), self.eq(w, Op.SUBST)
@@ -415,9 +454,12 @@ class RuleCompiler:
         equal_value = self.eq(hx['v'], hr['v'])
         self.ret(self.AND(atomic, equal_value), 1)
         self.tail(self.AND(atomic, self.NOT(equal_value)), Op.FALLBACK, x, result)
+        proj=self.AND(work,matching,self.tag(hx,Tag.PROJ))
+        self.call(self.AND(proj,equal_value),Op.CONV,hx['a'],hr['a'],continuation=(Op.P_CONV_DONE,x,result))
+        self.tail(self.AND(proj,self.NOT(equal_value)),Op.FALLBACK,x,result)
         self.call(self.AND(work, matching, self.tag(hx, Tag.PI, Tag.LAM, Tag.APP)), Op.CONV,
                   hx['a'], hr['a'], continuation=(Op.C_CHILD, x, result, hx['b'], hr['b']))
-        self.stop(self.AND(work, matching, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.CONST, Tag.PI, Tag.LAM, Tag.APP))), Outcome.REJECT, Reason.SYNTAX)
+        self.stop(self.AND(work, matching, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.CONST, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
         op, good = self.mode(Op.C_CHILD), self.NOT(self.eq(result, 0))
         self.tail(self.AND(op, self.NOT(good)), Op.FALLBACK, x, y)
         binder = self.tag(hx, Tag.PI, Tag.LAM)
@@ -596,7 +638,7 @@ def compile_machine(config=MachineConfig(),optimized=True,memory_update='attenti
 # Backend program interface: bounds are compilation inputs; declarations are data.
 from .generic_spec import prepare
 from .generic_syntax import parse_document,assumptions,Unsupported,Exhausted
-program_name='generic.nonrecursive-and-nullary-prop.v1'
+program_name='generic.onefield-projections.v1'
 constant_fields=5
 second_banks=SECOND_BANKS
 primitive_basis=()

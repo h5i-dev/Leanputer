@@ -59,7 +59,8 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
     return jsonArray [text "const", text (← ensureDeclaration env name values)]
   | .mdata _ inner => encodeExpr env inner
   | .letE .. => throw "unsupported generic let expression"
-  | .proj .. => throw "unsupported generic projection"
+  | .proj family index inner =>
+    return jsonArray [text "proj", text (← ensureDeclaration env family []), toJson index, ← encodeExpr env inner]
   | .lit .. => throw "unsupported generic literal"
   | .fvar .. => throw "unsupported free variable"
   | .mvar .. => throw "unsupported metavariable"

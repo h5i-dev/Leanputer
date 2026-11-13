@@ -1,0 +1,7 @@
+test_actual_lean_projection_replay (test_generic_projections.GenericProjectionSmoke) ... ok
+test_focused_weighted_binding_and_projection_guards (test_generic_projections.GenericProjectionSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 28.518s
+
+OK
