@@ -113,6 +113,13 @@ def check_batch(model, documents, execution='eager'):
             state = prepare(model.config, term, claim, declarations)
             encoded.append(model.layout.encode(state)); positions.append(index)
             record['input_heap_nodes'] = state['regs']['free']-1
+            record['environment_declarations'] = len(declarations)
+            syntax = [term, claim]+[d.type for d in declarations]+[d.value for d in declarations if d.value is not None]
+            tree_nodes = 0
+            while syntax:
+                expression = syntax.pop(); tree_nodes += 1
+                if len(expression) == 3: syntax.extend(expression[1:])
+            record['syntax_tree_nodes'] = tree_nodes
             record['assumptions'] = [d.name for d in declarations if d.value is None]
         except Unsupported as error:
             record.update(status='UNSUPPORTED', reason=str(error))

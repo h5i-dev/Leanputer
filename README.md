@@ -111,7 +111,9 @@ Architecture, trust and evidence
 [Architecture documentation](docs/shared-engine.md) describes state layout,
 addressed memory, semantic phases, recurrence and numerical assumptions.
 [Input and trust documentation](docs/input-and-trust.md) defines the format and
-correspondence to exported Lean expressions. [The evaluation guide](docs/evaluation.md) documents generation, replay,
+correspondence to exported Lean expressions. [The 834-judgment corpus result](docs/corpus-results.md) records 136 accept,
+694 reject, three resource and one unsupported outcome, with zero differential
+mismatches. [The evaluation guide](docs/evaluation.md) documents generation, replay,
 minimization and timing. [The research plan](docs/research-plan.md)
 tracks acceptance criteria and remaining work. The original 126-layer STLC
 unrolling remains available for comparison through `python -m leanputer` and is

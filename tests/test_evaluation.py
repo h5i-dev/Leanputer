@@ -14,6 +14,16 @@ from leanputer.validation import minimize, reference_result, trace_discrepancy
 
 
 class EvaluationHarnessTests(unittest.TestCase):
+    def test_reports_preserve_malformed_rows_and_opaque_metadata(self):
+        doc = generate(synthetic=2, mutations=0, fuzz=0)[1]
+        doc['provenance'] = dict(family=[], source_constant=[])
+        config = MachineConfig(heap=32, stack=8, context=4, constants=2, fuel=128)
+        with tempfile.TemporaryDirectory() as directory:
+            result = evaluate([None, doc], config, 'cpu', directory, repeats=0)
+        self.assertEqual(result['counts'], {'MALFORMED': 1, 'ACCEPT': 1})
+        self.assertEqual(result['mismatches'], [])
+        self.assertEqual(result['real_source_constants'], 0)
+
     def test_seeded_generation_and_positive_recipes(self):
         first = generate(seed=81, synthetic=36, mutations=5, fuzz=5)
         self.assertEqual(first, generate(seed=81, synthetic=36, mutations=5, fuzz=5))

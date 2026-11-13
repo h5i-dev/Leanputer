@@ -145,3 +145,16 @@ additional graph capture was required. Complete raw compact records are in
 `benchmarks/mathlib-v4.31.0/cuda-pipeline.json` and
 `cuda-repeated-evaluation.json`; all selected outcomes remain in
 `population-outcomes.jsonl`. No other GPU workload ran concurrently.
+
+A minimal cache-provisioning command (run in the pinned checkout) is:
+
+```bash
+MATHLIB_CACHE_DIR=/mnt/scratch/leanputer-mathlib-cache lake exe cache get \
+  Mathlib/Logic/Basic.lean Mathlib/Logic/Function/Basic.lean \
+  Mathlib/Algebra/Group/Defs.lean Mathlib/Data/Nat/Basic.lean
+```
+
+The recorded setup fetched 128 reachable module artifacts. The benchmark does
+not require downloading the complete mathlib cache or any language-model
+weights. Pin the checkout before provisioning, and retain the generated
+`lake-manifest.json` hash in the selection manifest.

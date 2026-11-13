@@ -30,8 +30,15 @@ def provenance():
             return completed.stdout.strip() if completed.returncode == 0 else None
         except OSError:
             return None
-    return dict(python=platform.python_version(), torch=torch.__version__,
+    cpu = platform.processor()
+    cpuinfo = Path('/proc/cpuinfo')
+    if cpuinfo.exists():
+        cpu = next((line.partition(':')[2].strip() for line in cpuinfo.read_text().splitlines()
+                    if line.startswith('model name')), cpu)
+    return dict(python=platform.python_version(), torch=torch.__version__, cpu=cpu,
+                torch_cpu_threads=torch.get_num_threads(),
                 cuda_runtime=torch.version.cuda, gpu=torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+                cuda_driver=output(['nvidia-smi', '--query-gpu=driver_version', '--format=csv,noheader']),
                 float32_matmul_precision=torch.get_float32_matmul_precision(),
                 cuda_matmul_tf32=torch.backends.cuda.matmul.allow_tf32,
                 lean_version=output(['lean', '--version']),
@@ -106,6 +113,7 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
         metadata = document.get('provenance', {}) if isinstance(document, dict) else {}
         if not isinstance(metadata, dict): metadata = {}
         family = metadata.get('family', 'elaborated_lean' if metadata.get('source_constant') else 'other')
+        if not isinstance(family, str): family = 'other'
         families.setdefault(family, Counter())[actual['status']] += 1
     op_counts = Counter()
     for reference in references: op_counts.update(reference.get('op_counts', {}))
@@ -121,15 +129,19 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
                 if 'final_state' in mismatch:
                     return ('operational_state_sha256' in checked_candidate
                             and checked_candidate['operational_state_sha256'] != reference.get('operational_state_sha256'))
-                if actual not in ('ACCEPT', 'REJECT') or reference['status'] not in ('ACCEPT', 'REJECT'):
-                    return False
                 if 'trace' in mismatch:
                     return trace_discrepancy(model, candidate, execution) is not None
-                if actual != reference['status'] or actual != reference.get('recursive'):
+                if actual != reference['status']:
+                    return True
+                if actual not in ('ACCEPT', 'REJECT'):
+                    return False
+                if actual != reference.get('recursive'):
                     return True
                 if 'lean' in mismatch:
                     replay, _ = lean_replay([candidate], directory/'minimization-replay')
                     return replay[0]['status'] != actual
+                if 'nanoda' in mismatch:
+                    return nanoda_replay(candidate, directory/'minimization-nanoda', nanoda)['status'] != actual
                 return False
             except (ValueError, TypeError, RecursionError):
                 return False
@@ -138,7 +150,8 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
         (directory/f'counterexample-{index:05d}.json').write_text(json.dumps(smaller, indent=2)+'\n')
     unique = {json.dumps({key:d.get(key) for key in ('term','claim','environment','status')} if isinstance(d, dict) else d, sort_keys=True) for d in documents}
     source_constants = {d.get('provenance', {}).get('source_constant') for d in documents
-                        if isinstance(d, dict) and isinstance(d.get('provenance', {}), dict)}
+                        if isinstance(d, dict) and isinstance(d.get('provenance', {}), dict)
+                        and isinstance(d.get('provenance', {}).get('source_constant'), str)}
     source_constants.discard(None)
     corpus_digest = hashlib.sha256(json.dumps(documents, sort_keys=True).encode()).hexdigest()
     encoded = sum('input_heap_nodes' in row for row in weighted)
@@ -148,6 +161,7 @@ def evaluate(documents, config, device, directory, batch_size=16, optimized=True
                   execution=execution,
                   documents=len(documents), unique_syntax_judgments=len(unique), real_source_constants=len(source_constants),
                   corpus_sha256=corpus_digest, batch_size=batch_size, counts=counts,
+                  resource_reasons=dict(Counter(row['reason'] for row in weighted if row['status'] == 'RESOURCE')),
                   cold_compile_and_check_seconds=cold_check_seconds, steady=steady,
                   steady_forward_median_seconds=statistics.median(s['forward_seconds'] for s in steady) if steady else None,
                   steady_forward_p95_seconds=sorted(s['forward_seconds'] for s in steady)[math.ceil(.95*len(steady))-1] if steady else None,

@@ -99,6 +99,12 @@ def nanoda_replay(document, directory, binary):
     start = time.perf_counter()
     completed = subprocess.run([str(binary), str(config)], capture_output=True, text=True, timeout=120)
     (directory/'nanoda.log').write_text(completed.stdout+completed.stderr)
-    return dict(status='ACCEPT' if completed.returncode == 0 else 'REJECT',
+    # A signal is a tool failure, never evidence of logical rejection. Nanoda
+    # uses Rust assertion panics (101) for invalid judgments; retain that detail
+    # rather than presenting every failed process as an unqualified verdict.
+    status = 'ACCEPT' if completed.returncode == 0 else 'ERROR' if completed.returncode < 0 else 'REJECT'
+    return dict(status=status,
+                failure_mode=None if completed.returncode == 0 else
+                'signal' if completed.returncode < 0 else 'rust_panic' if completed.returncode == 101 else 'nonzero_exit',
                 seconds=time.perf_counter()-start, exit_code=completed.returncode,
                 stdout=completed.stdout, stderr=completed.stderr)

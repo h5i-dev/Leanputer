@@ -115,3 +115,30 @@ Choose 200 by lowest SHA256("814732/module/name"), before inspecting/filtering
 expressions, with one all-ones universe specialization per source theorem.
 Publish population/selection manifests and all 200 outcomes. These figures
 concern this four-module population/sample only, not all of mathlib.
+
+## Current user priority: feature expansion and architecture assessment
+
+Broad corpus repetition/profiling is deferred after the 834-case foundation.
+The unsupported full population's first blockers include Eq130, Decidable109,
+Iff41 (+Iff.intro22), Exists35, False15 and And14. These are first failures, not
+complete closure requirements. Current implementation work order:
+
+1. Empty proposition False and dependent empty eliminator: fixed primitive
+   typing rules, no invented axiom assumptions, syntax-only export and actual
+   kernel replay. Target `Function.mt` from the measured unsupported population.
+2. Nonrecursive singleton Prop structures Iff/And, constructors, native
+   projections and appropriate eliminator typing/reduction.
+3. Equality with refl and dependent elimination, then other measured blockers.
+
+Each slice needs targeted positive/negative/full-state tests and a small real
+mathlib smoke, then commit/push; full expensive campaigns wait for substantial
+checkpoints. The semantic machine/IR must survive backend replacement.
+
+The current sparse circuit plus custom attention/RAM updates is **not a standard
+Transformer architecture**. A matched dense ReLU lowering prototype and concrete
+standard recurrent-block assessment are required, without asserting unchanged
+compatibility with normalization, SwiGLU or optimized attention. Custom delta
+memory is nonstandard. Existing fixed schedule wasted95.54%of corpus item-steps
+on absorption; mathlib large budget wasted69.66%. GPU placement or100%device
+utilization does not establish efficiency. Architecture assessment accompanies
+feature work; it does not replace expanding supported judgments.
