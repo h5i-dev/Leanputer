@@ -6,6 +6,7 @@ occurrence walk, restore the caller's universe/window state on return. Fresh
 Local allocation may later overwrite the dead scratch cells. No source loader
 can enter this internal ABI with supplied checked headers.
 """
+from .native_cells import VectorKind
 from .traversal_machine import Mode,Task,Outcome,Reason,CALL_FAMILY_OCCURRENCE
 
 PRIVATE_PHASES=(CALL_FAMILY_OCCURRENCE,)
@@ -14,13 +15,24 @@ PRIVATE_PHASES=(CALL_FAMILY_OCCURRENCE,)
 def resume(machine,frame,stop,ret,alloc):
     r=machine.state['regs']
     _,original,ctx,task,count,base=frame
-    r.update(sp=r['sp']-1,ctx=ctx,count=count,arg_base=base,task=Task.HAS_FAMILIES,mode=Mode.RETURN)
+    r.update(sp=r['sp']-1,ctx=ctx,count=count,arg_base=base,task=frame[3],mode=Mode.RETURN)
 
 
 def step(machine,tag,a,b,c,stop,ret,alloc):
     s,r,cfg=machine.state,machine.state['regs'],machine.cfg
-    if r['task']!=Task.HAS_FAMILIES:return False
-    if r['mode']==Mode.WALK:
+    if r['task'] not in (Task.HAS_FAMILIES,Task.HAS_RAW_FAMILIES):return False
+    raw = r['task']==Task.HAS_RAW_FAMILIES
+    if r['mode']==Mode.WALK and raw:
+        r.update(family_occurrence_root=r['x'],mode=Mode.RAW_FAMILY_VECTOR,x=r['raw_family_vector'])
+    elif r['mode']==Mode.RAW_FAMILY_VECTOR and raw:
+        if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
+        elif not a:ret(0)
+        elif r['ctx']+a>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
+        elif r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
+        else:
+            s['stack'][r['sp']]=[CALL_FAMILY_OCCURRENCE,r['family_occurrence_root'],r['ctx'],Task.HAS_RAW_FAMILIES,r['count'],r['arg_base']]
+            r.update(sp=r['sp']+1,mode=Mode.FAMILY_SET_CELL,x=b,family_set_cursor=r['ctx'],family_set_remaining=a)
+    elif r['mode']==Mode.WALK:
         if not r['header_seen']:ret(0)
         elif r['ctx']+r['header_seen']>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
         elif r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
@@ -41,6 +53,6 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
             if more:r.update(mode=Mode.FAMILY_SET_CELL,x=r['family_set_next'])
             else:
                 frame=s['stack'][r['sp']-1]
-                r.update(mode=Mode.WALK,task=Task.HAS_CONSTANTS,x=frame[1],arg_base=frame[2],count=r['header_seen'])
+                r.update(mode=Mode.WALK,task=Task.HAS_CONSTANTS,x=frame[1],arg_base=frame[2],count=r['family_set_cursor']-frame[2])
     else:stop(Outcome.INVALID,Reason.SYNTAX)
     return True

@@ -188,3 +188,35 @@ scopes, even when the preserved parent path does. Numeric, macro-scoped and
 anonymous parent-data checks, indexed construction and the independent existing
 normal-rec-name relation PASS1test24.264s in exact-state IR. No source block or
 theorem is admitted by this syntax operation.
+
+`OPEN_RAW_PREFIX` now implements the source's exact counted Pi/Lam prefix
+opening with shared fresh-variable/capture-avoiding instantiation services.
+It preserves binder info/dependencies and never WHNFs or infers a type. These
+Locals are provisional syntax variables for rewriting, not approved context
+assumptions; the staging scope must be discharged before expanded CORE checking.
+No raw domain is inserted into Γ. Exact/partial/empty/dependent Pi/Lam, metadata/
+Let no-normalization failures and context-resource checks PASS1test3.100s.
+
+The shared Expr occurrence walker now also implements `HAS_LOOSE_BVARS` with
+source binder depths, an internal delimiter and opaque Local leaves. Sort/Const
+universe fields and Local types are not Expr children. Full-tag/depth checks plus
+the existing symbol-occurrence callback PASS1test3.782s. The existing family-name
+collection loop additionally accepts raw current/all-queued family vectors
+(`HAS_RAW_FAMILIES`), copying only their symbols after the live context, then
+restoring the caller's window; no raw type is trusted. Focused syntax/liveness
+checks PASS1test4.066s.
+
+`IS_NESTED_APPLICATION` now composes the complete pinned condition: application
+spine and prior-origin lookup, enough actual parameters, current-family and loose
+BVar predicates across **every** actual parameter, and the conditional error only
+when both properties hold. A positive result is a derived186
+`(priorOrigin,applicationSpine,0)` record, never a supplied type/admission answer.
+It uses no container-name catalog or field/parameter-count-specific lowering.
+Exact-state13case checks PASS1test27.971s: current/loose occurrences in either
+parameter order, loose with no current occurrence, binder depth, missing args,
+non-application/unknown owner and empty registry. Prior metadata in this test was
+derived by the weighted CORE controller, but the origin list is explicitly a
+private ABI fixture, not a published original-source block. The full prior
+registration, specialization/copying, restoration/rechecking and original-source
+publication path remains unfinished. These IR checks do not expand the pinned
+stock report or mathlib theorem coverage.

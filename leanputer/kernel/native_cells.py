@@ -53,6 +53,7 @@ class CellTag(IntEnum):
     FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
     RECURSOR_COUNTS = 180        # Derived (numParams,numIndices,sharedCounts181).
     RECURSOR_SHARED_COUNTS = 181 # Derived (numMotives,numMinors,block182).
+    NESTED_APPLICATION = 186    # Derived (priorBlockOrigin,applicationSpine,0), not admission.
     BLOCK_ORIGIN = 185          # Private (originalRawBlock,originalUparams,familySigVector).
     REDUCER_CALL = 184          # Private (originalHead,pendingStackBase,0).
     APPLICATION_SPINE = 183     # Derived (headExpr,argumentVector,0), not a reduction answer.
