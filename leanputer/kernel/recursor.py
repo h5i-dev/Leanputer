@@ -175,7 +175,9 @@ def reduce_constructor_rule(arena, recursor, levels, arguments, whnf):
     """
     levels, arguments = tuple(levels), tuple(arguments)
     if len(levels) != len(recursor.universe_parameters):
-        raise KernelError('recursor universe arity')
+        # Pinned inductive.h returns none: this is an optional reduction, not
+        # the constant-inference operation which rejects an arity mismatch.
+        return None
     major = recursor.major_position
     if len(arguments) <= major:
         return None

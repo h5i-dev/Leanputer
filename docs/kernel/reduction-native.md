@@ -107,3 +107,30 @@ integration; full original-source nested staging/restoration and publication.
 Missing checked conversion/primitive/projection services must GAP, not supply
 admission answers. This decomposition is of the complete source algorithm,
 not a supported datatype-class ladder.
+
+The pure `APPLY_RECURSOR_RULE` segment is now implemented in reference and
+Boolean IR. It consumes a generated checked recursor signature, the recursor
+spine, and the surrounding reducer's prepared-major spine. It computes counts
+with overflow checks; searches only that recursor's derived rules; returns null
+for the source's optional-reduction failures; instantiates the selected RHS with
+the shared scheme service; and composes the three source slices. No reduction or
+type oracle is consulted. This internal segment cannot itself certify a major's
+normal form or K/eta validity and has no raw-input entry point. It does not yet
+change the existing WHNF controller's neutral recursor behavior.
+
+`VECTOR_REFERENCE` additionally selects a reference from a typed vector, returning
+null for an absent index; it shares the application representation and preserves
+scope/environment. It will serve major selection and constructor/type telescope
+traversal. Runtime recursion must retain caller state in immutable heap records
+before any WHNF/inference/conversion call; these pure nonrecursive application
+segments do not call WHNF and keep dedicated scratch registers.
+
+Focused validation: exact-state IR against the transition reference plus
+independent source RHS/slice construction from genuinely generated metadata,
+including Eq, mixed zero/functional/direct fields and empty indexed mutual
+families; universe specialization, differing constructor/recursor prefix lengths,
+extra arguments, missing major, absent rule, wrong universe arity and insufficient
+fields. The pure syntax argument tests deliberately do not claim well-typed
+proofs, checked K/eta expansion or nested source admission. The independent
+`reduce_constructor_rule` reference now returns no reduction for wrong universe
+arity, matching pinned `inductive.h`; constant inference still rejects it.

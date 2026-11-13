@@ -36,6 +36,12 @@ class ApplicationOpsTest(unittest.TestCase):
             tag, head, argvec, reserved = state['heap'][r['r']]
             self.assertEqual((tag, head, reserved), (CellTag.APPLICATION_SPINE, fn, 0))
             self.assertEqual(vector(SimpleNamespace(heap=state['heap']), argvec, VectorKind.REFERENCES), arguments)
+            for index in {0, max(0, count-1), count, 255}:
+                selected = deepcopy(state)
+                selected['regs'].update(status=0, reason=0, fuel=cfg.fuel, mode=int(spec.Mode.WALK),
+                    task=int(spec.Task.VECTOR_REFERENCE), x=argvec, vector_index=index)
+                selected = run(selected)
+                self.assertEqual(selected['regs']['r'], arguments[index] if index < count else 0)
             slices = {(0, 0), (0, count), (count, 0), (count+1, 0), (0, count+1), (255, 2)}
             if count: slices |= {(count-1, 1), (1, count-1)}
             for start, take in sorted(slices):

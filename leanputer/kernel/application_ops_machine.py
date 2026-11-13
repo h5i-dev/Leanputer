@@ -33,6 +33,17 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             r['free'] = ref+1; ret(ref)
         else: stop(Outcome.INVALID, Reason.SYNTAX)
         return True
+    if r['task'] == Task.VECTOR_REFERENCE:
+        if mode == Mode.WALK:
+            if c != VectorKind.REFERENCES or bool(a) != bool(b): stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['vector_index'] >= a: ret(0)
+            else: r.update(reference_remaining=a, mode=Mode.SLICE_CELL, x=b)
+        elif mode == Mode.SLICE_CELL:
+            if not r['reference_remaining'] or bool(b) != (r['reference_remaining'] > 1): stop(Outcome.INVALID, Reason.SYNTAX)
+            elif not r['vector_index']: ret(a)
+            else: r.update(vector_index=r['vector_index']-1, reference_remaining=r['reference_remaining']-1, x=b)
+        else: stop(Outcome.INVALID, Reason.SYNTAX)
+        return True
     if r['task'] != Task.APPLY_VECTOR_SLICE: return False
     if mode == Mode.WALK:
         if c != VectorKind.REFERENCES or bool(a) != bool(b): stop(Outcome.INVALID, Reason.SYNTAX)

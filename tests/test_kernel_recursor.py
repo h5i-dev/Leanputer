@@ -58,6 +58,7 @@ class RecursorAlgorithmTest(unittest.TestCase):
         p, mf, mg, base, step, join = args
         x, child, extra = a.const(439), a.const(443), a.const(449)
         major = a.app(a.const(113), (p, x, child))
+        self.assertIsNone(reduce_constructor_rule(a, recs[0], (), args+(x, major, extra), whnf))
         reduced = reduce_constructor_rule(a, recs[0], (a.zero,), args+(x, major, extra), whnf)
         head, actual_args = spine(a, whnf(reduced))
         self.assertEqual(head, step)
