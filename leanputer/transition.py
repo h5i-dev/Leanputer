@@ -96,9 +96,11 @@ class RuleCompiler:
                       self.lt(self.r['decl_count'], self.r['decl']), self.lt(self.cfg.constants, self.r['decl_count']))
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                    Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
-                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT)
+                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
+                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ)
+                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
+                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
@@ -188,7 +190,8 @@ class RuleCompiler:
         builtin_ok=self.AND(self.tag(hs,Tag.BUILTIN),self.OR(*(self.eq(hs['v'],code)for code in PRIMITIVE_SCHEMAS)),
                             self.OR(has_first,self.eq(hs['a'],0)),self.OR(has_second,self.eq(hs['b'],0)))
         projection_ok = self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.eq(hs['b'],0),self.lt(hs['v'],4))
-        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok,projection_ok)
+        let_ok=self.AND(self.tag(hs,Tag.LET),*(self.AND(self.NOT(self.eq(hs[field],0)),self.lt(hs[field],r['scan']))for field in ('a','b','v')))
+        valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok,projection_ok,let_ok)
         check = self.AND(op, more)
         self.stop(self.AND(check, self.NOT(valid)), Outcome.REJECT, Reason.SYNTAX)
         high=self.OR(self.AND(self.tag(hs,Tag.SORT),self.lt(self.cfg.universe,hs['v'])),
@@ -269,11 +272,11 @@ class RuleCompiler:
         packed=self.g.fit(hx['a'][:self.cfg.universe_bits]+hx['b'][:self.cfg.universe_bits],self.width)
         self.tail(self.AND(primitive,self.NOT(empty)),Op.BUILTIN_TYPE,hx['v'],0,r['free'],packed)
         self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.I_PROJ,x))
-        self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
+        self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI, Tag.LET)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.INFER, hx['a'], continuation=(Op.I_APP, hx['b']))
         const = self.AND(op, self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl']))
         self.ret(const, self.read['constant']['type'])
-        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN,Tag.PROJ),
+        legal = self.OR(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP,Tag.BUILTIN,Tag.PROJ,Tag.LET),
                         self.AND(self.tag(hx, Tag.CONST), self.lt(hx['v'], r['decl'])))
         self.stop(self.AND(op, self.NOT(legal)), Outcome.REJECT, Reason.SYNTAX)
         self.call(self.mode(Op.I_PROJ),Op.WHNF,result,continuation=(Op.I_PROJ_TYPE,x))
@@ -294,13 +297,20 @@ class RuleCompiler:
         self.call(self.mode(Op.I_DOM), Op.WHNF, result, continuation=(Op.I_BIND, x))
         op, is_sort = self.mode(Op.I_BIND), self.tag(hr, Tag.SORT)
         self.stop(self.AND(op, self.NOT(is_sort)), Outcome.REJECT, Reason.EXPECT_SORT)
+        let=self.tag(hx,Tag.LET)
+        self.call(self.AND(op,is_sort,let),Op.INFER,hx['b'],continuation=(Op.LET_VALUE,x))
         room = self.lt(r['ctx'], self.cfg.context)
-        self.stop(self.AND(op, is_sort, self.NOT(room)), Outcome.RESOURCE, Reason.CONTEXT)
-        cond = self.AND(op, is_sort, room)
+        self.stop(self.AND(op, is_sort, self.NOT(let), self.NOT(room)), Outcome.RESOURCE, Reason.CONTEXT)
+        cond = self.AND(op, is_sort, self.NOT(let), room)
         self.writes['context'].append((cond, r['ctx'], [hx['a']]))
         lam = self.tag(hx, Tag.LAM)
         self.call(self.AND(cond, lam), Op.INFER, hx['b'], continuation=(Op.I_LAM, hx['a']), context=self.add(r['ctx'], 1))
         self.call(self.AND(cond, self.NOT(lam)), Op.INFER, hx['b'], continuation=(Op.I_PI, hr['v']), context=self.add(r['ctx'], 1))
+        self.call(self.mode(Op.LET_VALUE),Op.CONV,hx['a'],result,continuation=(Op.LET_CHECK,x))
+        op=self.mode(Op.LET_CHECK);good=self.NOT(self.eq(result,0))
+        self.stop(self.AND(op,self.NOT(good)),Outcome.REJECT,Reason.CONVERSION)
+        self.call(self.AND(op,good),Op.SUBST,hx['v'],hx['b'],continuation=(Op.LET_INFER,))
+        self.tail(self.mode(Op.LET_INFER),Op.INFER,result)
         self.allocate(self.mode(Op.I_LAM), Tag.PI, x, result)
         self.call(self.mode(Op.I_PI), Op.WHNF, result, continuation=(Op.I_SORT, x))
         op, is_sort = self.mode(Op.I_SORT), self.tag(hr, Tag.SORT)
@@ -320,6 +330,7 @@ class RuleCompiler:
         op = self.mode(Op.WHNF)
         self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.WHNF,hx['a'],continuation=(Op.W_PROJ,x))
         self.call(self.AND(op, self.tag(hx, Tag.APP)), Op.WHNF, hx['a'], continuation=(Op.W_APP, x, hx['b']))
+        self.call(self.AND(op,self.tag(hx,Tag.LET)),Op.SUBST,hx['v'],hx['b'],continuation=(Op.W_BETA,))
         const = self.AND(op, self.tag(hx, Tag.CONST))
         available = self.lt(hx['v'], r['decl'])
         self.stop(self.AND(const, self.NOT(available)), Outcome.REJECT, Reason.SYNTAX)
@@ -328,7 +339,7 @@ class RuleCompiler:
         self.ret(self.AND(const, available, self.NOT(definition)), x)
         eq_head=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],8))
         self.ret(self.AND(op,self.tag(hx,Tag.VAR,Tag.SORT,Tag.PI,Tag.LAM,Tag.BUILTIN)),x,head=self.mux(eq_head,8,0))
-        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.BUILTIN,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
+        self.stop(self.AND(op, self.NOT(self.tag(hx, Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.APP, Tag.CONST,Tag.BUILTIN,Tag.PROJ,Tag.LET))), Outcome.REJECT, Reason.SYNTAX)
         op=self.mode(Op.W_PROJ);app=self.tag(hr,Tag.APP)
         self.tail(self.AND(op,app),Op.PROJ_FIELDS,hr['a'],x,result,hr['b'])
         self.neutral_projection(self.AND(op,self.NOT(app)),x,hx,result)
@@ -391,10 +402,12 @@ class RuleCompiler:
                 self.tail(self.AND(var, equal), Op.SHIFT, y, 0, z)
                 self.allocate(self.AND(var, self.NOT(below), self.NOT(equal)), Tag.VAR, v=self.sub(hx['v'], 1))
             self.call(self.AND(work,self.tag(hx,Tag.PROJ)),operation,hx['a'],y,z,continuation=(Op.TREE_PROJ,x))
+            continuation=Op.SHIFT_LET_A if operation==Op.SHIFT else Op.SUBST_LET_A
+            self.call(self.AND(work,self.tag(hx,Tag.LET)),operation,hx['a'],y,z,continuation=(continuation,x,y,z))
             tree = self.tag(hx, Tag.PI, Tag.LAM, Tag.APP)
             self.call(self.AND(work, tree), operation, hx['a'], y, z,
                       continuation=(Op.TREE_LEFT, x, y, z, operation))
-            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ))), Outcome.REJECT, Reason.SYNTAX)
+            self.stop(self.AND(work, self.NOT(self.tag(hx, Tag.VAR, Tag.PI, Tag.LAM, Tag.APP,Tag.PROJ,Tag.LET))), Outcome.REJECT, Reason.SYNTAX)
         op=self.mode(Op.TREE_PROJ);same=self.eq(hx['a'],result)
         self.ret(self.AND(op,same),x)
         self.allocate(self.AND(op,self.NOT(same)),Tag.PROJ,result,v=hx['v'])
@@ -411,6 +424,17 @@ class RuleCompiler:
         same = self.AND(self.eq(hx['a'], y), self.eq(hx['b'], result))
         self.ret(self.AND(op, same), x)
         self.allocate(self.AND(op, self.NOT(same)), hx['tag'], y, result)
+        for operation,a_mode,b_mode in ((Op.SHIFT,Op.SHIFT_LET_A,Op.SHIFT_LET_B),(Op.SUBST,Op.SUBST_LET_A,Op.SUBST_LET_B)):
+            self.call(self.mode(a_mode),operation,hx['b'],y,z,continuation=(b_mode,x,result,y,z))
+            next_y=self.add(z,1) if operation==Op.SHIFT else z
+            next_z=self.add(w,1) if operation==Op.SUBST else w
+            overflow=self.OR(self.lt(next_y,z),self.lt(next_z,w))
+            op=self.mode(b_mode)
+            self.stop(self.AND(op,overflow),Outcome.RESOURCE,Reason.INDEX)
+            self.call(self.AND(op,self.NOT(overflow)),operation,hx['v'],next_y,next_z,continuation=(Op.LET_END,x,y,result))
+        op=self.mode(Op.LET_END);same=self.AND(self.eq(hx['a'],y),self.eq(hx['b'],z),self.eq(hx['v'],result))
+        self.ret(self.AND(op,same),x)
+        self.allocate(self.AND(op,self.NOT(same)),Tag.LET,y,z,result)
         # Contextual conversion with beta/delta, proof irrelevance and eta.
         op, same = self.mode(Op.CONV), self.eq(x, y)
         self.ret(self.AND(op, same), 1)

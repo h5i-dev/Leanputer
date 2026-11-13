@@ -29,9 +29,10 @@ class Tag(IntEnum):
     CONST = 6
     BUILTIN = 7
     PROJ = 8
+    LET = 9
 
 
-TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN, 'proj':Tag.PROJ}
+TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN, 'proj':Tag.PROJ, 'let':Tag.LET}
 
 
 def parse_expr(value):
@@ -57,6 +58,8 @@ def parse_expr(value):
         raise Unsupported('unsupported structure projection')
     if tag in ('pi', 'lam', 'app') and len(value) == 3:
         return (tag, parse_expr(value[1]), parse_expr(value[2]))
+    if tag == 'let' and len(value) == 4:
+        return (tag, *(parse_expr(child) for child in value[1:]))
     raise ValueError(f'malformed dependent {tag} expression')
 
 
@@ -104,6 +107,9 @@ class Oracle:
         if tag in ('sort', 'const', 'builtin'):
             return term
         if tag=='proj': return (tag,term[1],term[2],self.shift(term[3],delta,cutoff))
+        if tag=='let':
+            return (tag,self.shift(term[1],delta,cutoff),self.shift(term[2],delta,cutoff),
+                    self.shift(term[3],delta,cutoff+1))
         return (tag, self.shift(term[1], delta, cutoff),
                 self.shift(term[2], delta, cutoff + int(tag in ('pi', 'lam'))))
 
@@ -118,11 +124,16 @@ class Oracle:
         if tag in ('sort', 'const', 'builtin'):
             return term
         if tag=='proj': return (tag,term[1],term[2],self.substitute(term[3],replacement,depth))
+        if tag=='let':
+            return (tag,self.substitute(term[1],replacement,depth),self.substitute(term[2],replacement,depth),
+                    self.substitute(term[3],replacement,depth+1))
         return (tag, self.substitute(term[1], replacement, depth),
                 self.substitute(term[2], replacement, depth + int(tag in ('pi', 'lam'))))
 
     def whnf(self, term, context=()):
         self.tick()
+        if term[0]=='let':
+            return self.whnf(self.substitute(term[3],term[2]),context)
         if term[0] == 'const':
             declaration = self.environment.get(term[1])
             if declaration is None:
@@ -176,6 +187,12 @@ class Oracle:
     def infer(self, term, context=()):
         self.tick()
         tag = term[0]
+        if tag=='let':
+            if self.whnf(self.infer(term[1],context),context)[0]!='sort':
+                raise Rejected('let annotation is not a type')
+            if not self.convert(self.infer(term[2],context),term[1],context):
+                raise Rejected('let value type mismatch')
+            return self.infer(self.substitute(term[3],term[2]),context)
         if tag == 'builtin':
             from .primitives import primitive_type
             return primitive_type(term)

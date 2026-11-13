@@ -4,14 +4,18 @@ Bring-up implementation; broad differential validation is deliberately pending.
 The host supplies syntax-only boot records, then performs fixed stock forwards
 with identity hidden-state feedback and the stock cache. No host checker rules.
 """
-from dataclasses import dataclass
+import argparse
+from collections import Counter
+from dataclasses import dataclass, asdict
 import json
+from pathlib import Path
 import time
 import resource
 
 import torch
 
 from .bitvec import pack_words
+from .dependent import Exhausted, Unsupported
 from .machine_spec import MachineConfig, Outcome, Reason, prepare
 from .native import emit_stock, ScratchResetCapacity
 from .native_vendor.qwenputer.expr import Expr
@@ -236,11 +240,69 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata)
 
 
-if __name__=='__main__':
+def check_documents(machine, documents, batch_size=4):
+    """Retain incomplete/malformed rows; only syntax-capable rows enter weights."""
+    if batch_size<1: raise ValueError('positive batch size required')
+    results=[];pending=[];positions=[];batches=[]
+    for index,document in enumerate(documents):
+        name=document.get('name',str(index)) if isinstance(document,dict) else str(index)
+        result=dict(name=name)
+        results.append(result)
+        if isinstance(document,dict) and document.get('format')=='leanputer.dependent.v1' and document.get('status')=='UNSUPPORTED':
+            result.update(status='UNSUPPORTED',reason=document.get('reason','unsupported preparation input'))
+            continue
+        try:
+            # Encoding only: no type checking or semantic-step planning.
+            prepare(machine.config,*parse_document(document))
+        except Unsupported as error: result.update(status='UNSUPPORTED',reason=str(error))
+        except Exhausted as error: result.update(status='RESOURCE',reason=str(error))
+        except (ValueError,TypeError,KeyError,RecursionError) as error: result.update(status='MALFORMED',reason=str(error))
+        else: pending.append(document);positions.append(index)
+    for start in range(0,len(pending),batch_size):
+        batch=machine.check(pending[start:start+batch_size])
+        for position,result in zip(positions[start:start+batch_size],batch.pop('results')):
+            results[position].update(result)
+        # Register dumps are development diagnostics, not proof certificates.
+        batch.pop('registers');batch['input_positions']=positions[start:start+batch_size]
+        batches.append(batch)
+    return dict(format='leanputer.native-report.v1',results=results,counts=dict(Counter(r['status']for r in results)),
+                config=asdict(machine.config),batches=batches,parameters=sum(p.numel()for p in machine.model.parameters()),
+                weight_bytes=sum(p.numel()*p.element_size()for p in machine.model.parameters()),
+                primitive_basis=list(PRIMITIVE_CODES),
+                validation_scope='Experimental native backend; broad differential validation pending')
+
+
+def main(argv=None):
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input',type=Path,required=True,help='dependent JSON document, array or JSONL corpus')
+    parser.add_argument('--config',type=Path,help='fixed MachineConfig capacities and fuel')
+    parser.add_argument('--report',type=Path)
+    parser.add_argument('--device',choices=('cpu','cuda'),default='cpu')
+    parser.add_argument('--batch-size',type=int,default=4)
+    parser.add_argument('--intermediate',type=int,default=1024)
+    args=parser.parse_args(argv)
     torch.set_num_threads(1)
-    machine = compile_native_machine()
-    documents = [dict(format='leanputer.dependent.v1',term=['lam',['sort',0],['var',0]],claim=['pi',['sort',0],['sort',0]]),
-                 dict(format='leanputer.dependent.v1',term=['var',0],claim=['sort',0])]
-    print(json.dumps(dict(parameters=sum(p.numel()for p in machine.model.parameters()),hidden=machine.layout.hidden,
-                         layers=machine.model.config.num_hidden_layers,heads=machine.native_heads)),flush=True)
-    print(json.dumps(machine.check(documents)),flush=True)
+    try:
+        if args.batch_size<1 or args.intermediate<128: raise ValueError('positive batch size and intermediate>=128 required')
+        if args.device=='cuda' and not torch.cuda.is_available(): raise ValueError('CUDA unavailable')
+        config=MachineConfig(**json.loads(args.config.read_text())) if args.config else MachineConfig()
+        content=args.input.read_text()
+        try:
+            parsed=json.loads(content);documents=parsed if isinstance(parsed,list) else [parsed]
+        except json.JSONDecodeError: documents=[json.loads(line)for line in content.splitlines()if line.strip()]
+        started=time.perf_counter()
+        machine=compile_native_machine(config,intermediate=args.intermediate,device=args.device)
+        compilation=time.perf_counter()-started
+        report=check_documents(machine,documents,args.batch_size)
+        report.update(compile_seconds=compilation,device=args.device,hidden_size=machine.layout.hidden,
+                      native_layers=machine.model.config.num_hidden_layers,intermediate_size=args.intermediate)
+        output=json.dumps(report,indent=2)+'\n'
+        if args.report:
+            args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(output)
+        else: print(output,end='')
+        statuses={r['status']for r in report['results']}
+        return 1 if 'REJECT'in statuses else 2 if statuses-{'ACCEPT'} else 0
+    except (ValueError,TypeError,KeyError,OSError,RecursionError) as error: parser.error(str(error))
+
+
+if __name__=='__main__': raise SystemExit(main())

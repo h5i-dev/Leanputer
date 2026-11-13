@@ -16,6 +16,8 @@ partial def expression (json : Json) : Except String Expr := do
     let name ← fields[1]!.getStr?
     if fields.size == 2 then
       if name == "False" then return .const ``False []
+      if name == "True" then return .const ``True []
+      if name == "True.intro" then return .const ``True.intro []
       if name == "Iff" then return .const ``Iff []
       if name == "Iff.intro" then return .const ``Iff.intro []
       if name == "And" then return .const ``And []
@@ -35,6 +37,8 @@ partial def expression (json : Json) : Except String Expr := do
     if index < 2 && (family == "Iff" || family == "And") then
       return .proj family.toName index inner
     throw "unsupported replay projection"
+  if tag == "let" && fields.size == 4 then
+    return .letE `x (← expression fields[1]!) (← expression fields[2]!) (← expression fields[3]!) false
   let expected := if tag == "var" || tag == "sort" || tag == "const" then 2 else 3
   if fields.size != expected then throw "malformed replay expression arity"
   match tag with
@@ -88,7 +92,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True] do
     let some (.inductInfo info) := standard.find? name | throw (IO.userError "missing standard primitive")
     let mut ctors : List Lean.Constructor := []
     for ctor in info.ctors do

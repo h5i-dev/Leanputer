@@ -58,7 +58,7 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .app fn arg => return jsonArray [text "app", ← encodeExpr env fn, ← encodeExpr env arg]
   | .const name levels =>
     let values ← levels.mapM (fun level => (liftM (groundLevel level) : ExportM Nat))
-    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro) && values.isEmpty then
+    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro || name == ``True || name == ``True.intro) && values.isEmpty then
       return jsonArray [text "builtin",text name.toString]
     if name == ``False.rec && values.length == 1 then
       return jsonArray [text "builtin",text "False.rec",toJson values[0]!]
@@ -69,7 +69,8 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
   | .mdata _ inner => encodeExpr env inner
-  | .letE .. => throw "unsupported let expression (no external zeta reduction)"
+  | .letE _ type value body _ =>
+    return jsonArray [text "let", ← encodeExpr env type, ← encodeExpr env value, ← encodeExpr env body]
   | .proj name index inner =>
     if (name == ``Iff || name == ``And) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]

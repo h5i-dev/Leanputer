@@ -158,3 +158,39 @@ hidden12288,64native layers; compile58.088s, peak PyTorch CUDA allocation
 5,917,372,416bytes and process RSS1,777,995,776bytes. Layerwise emission bounded
 host memory while preserving stock layer shapes. This substantial dense-zero
 overhead remains architectural debt. Compact evidence: benchmarks/native/equality-smoke.json.
+
+
+## Native document CLI and current feature work
+
+`python -m leanputer.native_machine --input corpus.jsonl --config capacities.json
+--device cuda --report native-report.json` compiles the shared native machine
+and checks JSON/JSONL in batches. The config has the same six MachineConfig
+fields as the reference CLI. Input/export failures remain MALFORMED,
+UNSUPPORTED or RESOURCE rows. Only syntax-capable rows enter stock forward;
+no syntax precheck labels a row ACCEPT. Results report explicit assumptions,
+primitive basis, compilation cost and per-batch forward cost, parameter/weight
+bytes, CUDA allocation and process RSS. Broad native validation is still pending.
+
+Let support preserves annotation/value/body through export and checks/zeta
+inside weights; shift and substitution traverse all three children with the
+body binder offset. The IR has74phases. Minimal weighted and Lean cases cover
+ordinary/dependent lets, substitution/shift under a let binder, and invalid
+unused value rejection. True/True.intro add fixed positive schemas; True.rec
+remains unsupported in this slice. Two newly exported real mathlib let closures
+exhaust2048heap cells in planning; syntax support is not proof acceptance.
+
+Let/True native baseline passed: real mathlib iff_mpr_iff_true_intro@[]
+ACCEPT2,685steps, let substitution117A/shift141A, invalid unused value45R.
+Two additional unsupported rows remained explicit (Nonempty, Quot). H512,
+stack32/context16/constants8/fuel3072,3,074fixed forwards+80boot records:
+compile81.135s,forward372.825s,4,020,610,720BF16parameters/8,041,221,440bytes,
+hidden13312/intermediate1024/81native layers,one128-dimensional key/value
+head per linear layer. CUDA peak8,168,178,688bytes,host peak1,808,584,704bytes.
+These are one cold development run, not repeated throughput. Reproducible
+inputs/config/report are under benchmarks/native/let-true-*.
+
+The user has now prioritized compiler/layout downsizing before more features.
+This exact Eq+let+True feature set and capacities/documents form the matched
+baseline. Further Nonempty/Exists/Or/recursor work is preserved on scratch and
+paused. No broad validation campaign, capacity reduction, custom runtime or
+host semantic work is part of the downsizing task.

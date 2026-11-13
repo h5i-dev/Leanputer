@@ -16,6 +16,8 @@ def syntax_paths(term, prefix=()):
     if isinstance(term, (tuple, list)) and len(term) == 3 and term[0] in ('pi', 'lam', 'app'):
         yield from syntax_paths(term[1], prefix+(1,))
         yield from syntax_paths(term[2], prefix+(2,))
+    elif isinstance(term,(tuple,list)) and len(term)==4 and term[0]=='let':
+        for child in (1,2,3): yield from syntax_paths(term[child],prefix+(child,))
     elif isinstance(term,(tuple,list)) and len(term)==4 and term[0]=='proj':
         yield from syntax_paths(term[3],prefix+(3,))
 

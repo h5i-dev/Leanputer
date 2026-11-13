@@ -7,7 +7,7 @@ and general structure recursors remain unsupported.
 
 from functools import reduce
 
-PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8}
+PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.intro':5,'Eq':6,'Eq.refl':7,'Eq.rec':8,'True':9,'True.intro':10}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2}
 PROJECTION_FAMILIES = {'Iff':0,'And':2}
 
@@ -47,6 +47,8 @@ def primitive_type(expression):
                  binder('minor',minor_type,binder('end',alpha,binder('proof',eq(anchor,end),apps(motive,end,proof)))))))
         return _close_schema(tree)
     if name=='False': return sort
+    if name=='True': return sort
+    if name=='True.intro': return ('builtin','True')
     if name=='False.rec':
         false = ('builtin','False')
         return pi(pi(false,('sort',expression[2])),pi(false,app(var(1),var(0))))

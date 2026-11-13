@@ -32,7 +32,7 @@ The external exporter traverses actual Lean Expr trees and the environment's
 ConstantInfo. It retains applications and lambda terms requiring conversion;
 it does not call inferType, whnf, isDefEq, or any checker to label the result.
 Numeric level expressions are evaluated after syntactic universe parameter
-instantiation. Unresolved levels, lets, literals, metavariables and general
+instantiation. Unresolved levels, literals, metavariables and general
 inductive/constructor/recursor/quotient declarations are explicitly unsupported.
 The fixed primitive/projection exceptions are listed below. Unsupported exporter records are report entries, never
 accepted judgments. Metadata nodes are erased because they have no typing role.
@@ -147,3 +147,18 @@ conversion algorithm. No formal proof of that invariant or whole-compiler
 soundness is claimed. Internally derived head/arity registers track partial
 recursor applications; they are not input certificates or heap annotations.
 General indexed inductive definitions, HEq and quotient rules remain unsupported.
+
+
+## Let and true proposition
+
+`["let",type,value,body]` retains all three subexpressions. Only body is under
+one new binder. All three pointers must precede the parent in the syntax DAG.
+The weighted machine checks that type has a sort, infers value and compares
+its type to the annotation, then substitutes value into body and infers the
+result. An unused invalid value or annotation still rejects. Shift/substitution
+traverse annotation and value at the current cutoff/depth, incrementing it only
+for body. Weak-head normalization performs zeta by the same weighted substitution.
+No external zeta reduction or inferred body type is supplied by preparation.
+
+`["builtin","True"]` and `["builtin","True.intro"]` add the fixed positive
+rules True:Prop and True.intro:True. General True.rec is not part of this slice.

@@ -13,13 +13,15 @@ The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,
 and acyclic axiom/definition/opaque dependencies. The native/shared IR now also
 implements False/False.rec and the Iff/And proposition structures with
-constructors and field projections, plus Eq/Eq.refl/dependent Eq.rec, as fixed
+constructors and field projections, True/True.intro, plus
+Eq/Eq.refl/dependent Eq.rec, as fixed
 kernel primitives. Targeted stock
 forward smokes pass; broader validation is pending. Numeric universes use
 Lean's impredicative Prop rule. Conversion includes beta/delta, function eta, and definitional proof irrelevance.
 Opaque dependency values are checked while their opacity is preserved. Symbolic
 universe constraints, general inductive/recursor declarations, quotient rules,
-lets and arbitrary structure projections are not yet supported. The supported ground fragment is still experimental.
+and arbitrary structure projections are not yet supported. Let expressions
+retain their annotations/values and are checked and zeta-reduced in weights. The supported ground fragment is still experimental.
 The tool does not claim a complete Lean kernel, formal soundness verification,
 or conference-level results from the current test count.
 
@@ -77,7 +79,22 @@ environment mutations against the weighted engine, two Python references, the
 actual Lean kernel and sampled nanoda replay. They no longer rely only on
 manually paired Lean/Python examples.
 
-Using the shared checker
+Using the native checker
+
+With Python3.11+ and the native extra installed, check prepared JSON/JSONL:
+
+```bash
+python -m leanputer.native_machine --input corpus.jsonl --config capacities.json \
+  --device cuda --batch-size 4 --report native-report.json
+```
+
+The same capacity fields below apply. Reports retain unsupported, malformed
+and resource outcomes and separate compilation from fixed forward time. Dense
+model sizes are substantial; consult the measured native checkpoints before
+selecting capacities. This path uses stock layers and cache, with no external
+checker at inference. Broad native validation remains pending.
+
+Using the shared reference checker
 
 ```bash
 # Compile an artifact without checking a proof.

@@ -190,3 +190,25 @@ source/K/negative check is recorded in native-backend.md after completion.
 Next measured syntax blocker is let (16first failures in the old Eq130subset):
 preserve annotation/value/body and perform checking plus zeta in weights.
 No corpus-wide rerun or model compression campaign is scheduled in this phase.
+
+
+Let74-phase implementation now preserves annotation/value/body, validates the
+annotation and value even if unused, performs zeta substitution inside weights,
+and traverses its binder in shift/substitution. Targeted weighted5cases and
+actual Lean agree. Two previously let-blocked mathlib closures now export but
+exhaust2048heap in planning; no proof acceptance claim for them. True/True.intro
+also implemented, with a small real source native smoke recorded separately.
+Next expand fixed nonrecursive positive families and recursors (True, And/Iff,
+Nonempty, Exists, Or), guided by recorded unsupported closures. No arbitrary
+user inductive declaration admission or new unchecked-axiom substitution.
+
+
+Latest user override: downsize native compiler layout now, preserving Eq and
+the implemented let/True boundary. Matched baseline: benchmarks/native/let-true-
+input.jsonl and let-true-config.json,81layers/H13312/inter1024/4.021B BF16
+parameters;3A1R2U, including new source iff_mpr_iff_true_intro. First concrete
+compiler issue: full FFNs leave no handover units, so dead residual channels
+cannot be reused and global dense width grows. Reserve handover capacity,
+measure slot/layer/weight cost and run exactly the same few cases. Other
+positive recursor work is preserved but paused. Resume features after a
+material sustainable reduction; broad validation remains deferred.

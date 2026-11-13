@@ -118,7 +118,7 @@ def check_batch(model, documents, execution='eager'):
             tree_nodes = 0
             while syntax:
                 expression = syntax.pop(); tree_nodes += 1
-                if expression[0] in ('pi','lam','app'): syntax.extend(expression[1:])
+                if expression[0] in ('pi','lam','app','let'): syntax.extend(expression[1:])
                 elif expression[0]=='proj': syntax.append(expression[3])
             record['syntax_tree_nodes'] = tree_nodes
             record['assumptions'] = [d.name for d in declarations if d.value is None]

@@ -102,6 +102,14 @@ class Op(IntEnum):
     EQ_INDEX = 63
     EQ_SELECT = 64
     EQ_RESULT = 65
+    LET_VALUE = 66
+    LET_CHECK = 67
+    LET_INFER = 68
+    SHIFT_LET_A = 69
+    SUBST_LET_A = 70
+    SHIFT_LET_B = 71
+    SUBST_LET_B = 72
+    LET_END = 73
 
 
 @dataclass(frozen=True)
@@ -155,6 +163,8 @@ def prepare(config, term, claim, declarations=()):
         a = b = v = 0
         if tag in ('pi', 'lam', 'app'):
             a, b = visit(expr[1]), visit(expr[2])
+        elif tag=='let':
+            a,b,v=(visit(child)for child in expr[1:])
         elif tag == 'const':
             if expr[1] not in names:
                 raise ValueError(f'undeclared constant: {expr[1]}')
@@ -256,10 +266,11 @@ class SpecMachine:
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                   Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE,
-                  Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT):
+                  Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
+                  Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                  Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ):
+                  Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT):
             pointers.append(y)
@@ -270,11 +281,13 @@ class SpecMachine:
                 self.tail(Op.ENV)
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
-                valid = 1 <= tag <= 8
+                valid = 1 <= tag <= int(Tag.LET)
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
                 elif tag == Tag.PROJ:
                     valid &= 0<a<i and b==0 and v<4
+                elif tag == Tag.LET:
+                    valid &= all(0<child<i for child in (a,b,v))
                 elif tag == Tag.BUILTIN:
                     counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
                     count=counts.get(v,0)
@@ -357,7 +370,7 @@ class SpecMachine:
                     self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a|(b<<cfg.universe_bits))
             elif tag==Tag.PROJ:
                 self.call(Op.INFER,a,continuation=(Op.I_PROJ,x))
-            elif tag in (Tag.LAM, Tag.PI):
+            elif tag in (Tag.LAM, Tag.PI, Tag.LET):
                 self.call(Op.INFER, a, continuation=(Op.I_DOM, x))
             elif tag == Tag.APP:
                 self.call(Op.INFER, a, continuation=(Op.I_APP, b))
@@ -391,6 +404,8 @@ class SpecMachine:
         elif op == Op.I_BIND:
             if self.node(result)[0] != Tag.SORT:
                 self.stop(Outcome.REJECT, Reason.EXPECT_SORT)
+            elif self.node(x)[0]==Tag.LET:
+                self.call(Op.INFER,self.node(x)[2],continuation=(Op.LET_VALUE,x))
             elif r['ctx'] >= cfg.context:
                 self.stop(Outcome.RESOURCE, Reason.CONTEXT)
             else:
@@ -398,6 +413,13 @@ class SpecMachine:
                 s['context'][r['ctx']][0] = a
                 cont = (Op.I_LAM, a) if tag == Tag.LAM else (Op.I_PI, self.node(result)[3])
                 self.call(Op.INFER, b, continuation=cont, context=r['ctx']+1)
+        elif op==Op.LET_VALUE:
+            self.call(Op.CONV,self.node(x)[1],result,continuation=(Op.LET_CHECK,x))
+        elif op==Op.LET_CHECK:
+            if not result: self.stop(Outcome.REJECT,Reason.CONVERSION)
+            else: self.call(Op.SUBST,self.node(x)[3],self.node(x)[2],continuation=(Op.LET_INFER,))
+        elif op==Op.LET_INFER:
+            self.tail(Op.INFER,result)
         elif op == Op.I_LAM:
             self.allocate(Tag.PI, x, result)
         elif op == Op.I_PI:
@@ -429,6 +451,8 @@ class SpecMachine:
                 self.call(Op.WHNF,a,continuation=(Op.W_PROJ,x))
             elif tag == Tag.APP:
                 self.call(Op.WHNF, a, continuation=(Op.W_APP, x, b))
+            elif tag==Tag.LET:
+                self.call(Op.SUBST,v,b,continuation=(Op.W_BETA,))
             elif tag == Tag.CONST:
                 if v >= r['decl']:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
@@ -505,6 +529,8 @@ class SpecMachine:
                     self.allocate(Tag.VAR, v=v-1)
             elif tag==Tag.PROJ:
                 self.call(op,a,y,z,continuation=(Op.TREE_PROJ,x))
+            elif tag==Tag.LET:
+                self.call(op,a,y,z,continuation=(Op.SHIFT_LET_A if op==Op.SHIFT else Op.SUBST_LET_A,x,y,z))
             elif tag in (Tag.PI, Tag.LAM, Tag.APP):
                 self.call(op, a, y, z, continuation=(Op.TREE_LEFT, x, y, z, op))
             else:
@@ -527,6 +553,19 @@ class SpecMachine:
                 self.ret(x)
             else:
                 self.allocate(tag, y, result)
+        elif op in (Op.SHIFT_LET_A,Op.SUBST_LET_A):
+            operation=Op.SHIFT if op==Op.SHIFT_LET_A else Op.SUBST
+            continuation=Op.SHIFT_LET_B if op==Op.SHIFT_LET_A else Op.SUBST_LET_B
+            self.call(operation,self.node(x)[2],y,z,continuation=(continuation,x,result,y,z))
+        elif op in (Op.SHIFT_LET_B,Op.SUBST_LET_B):
+            operation=Op.SHIFT if op==Op.SHIFT_LET_B else Op.SUBST
+            next_y=z+int(operation==Op.SHIFT);next_z=w+int(operation==Op.SUBST)
+            if max(next_y,next_z)>=1<<cfg.word_bits: self.stop(Outcome.RESOURCE,Reason.INDEX)
+            else: self.call(operation,self.node(x)[3],next_y,next_z,continuation=(Op.LET_END,x,y,result))
+        elif op==Op.LET_END:
+            _,a,b,body=self.node(x)
+            if (a,b,body)==(y,z,result): self.ret(x)
+            else: self.allocate(Tag.LET,y,z,result)
         elif op == Op.CONV:
             if x == y:
                 self.ret(1)
