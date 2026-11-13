@@ -38,3 +38,5 @@ Source symbolic universe services are now available for typed inference and
 admission callers. Those callers and complete typed conversion/primitives remain
 unfinished; operation DONE is not native proof/declaration acceptance. No added
 native mathlib coverage or formal-verification claim.
+
+Evidence is pinned to `1447eae`; later shared programs add operations.

@@ -1,0 +1,1227 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 110,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 6,
+      "depth": 0,
+      "task": 28,
+      "r": 6,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 6,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 110,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 8,
+      "depth": 0,
+      "task": 28,
+      "r": 8,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 8,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 55,
+      "free": 63,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 23,
+      "depth": 0,
+      "task": 28,
+      "r": 23,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 23,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 8,
+      "expr_depth": 1,
+      "vec_length": 2,
+      "vec_left": 1,
+      "vec_build": 2,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 3,
+      "status": 2,
+      "reason": 10,
+      "fuel": 125,
+      "free": 37,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 11,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 3,
+      "status": 2,
+      "reason": 10,
+      "fuel": 118,
+      "free": 47,
+      "sp": 2,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 11,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 6,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 6,
+      "expr_depth": 0,
+      "vec_length": 2,
+      "vec_left": 1,
+      "vec_build": 2,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 127,
+      "free": 15,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 28,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 127,
+      "free": 15,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 28,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 123,
+      "free": 16,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 2,
+      "depth": 0,
+      "task": 28,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "expr-scope-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 18
+    },
+    {
+      "name": "expr-scope-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 18
+    },
+    {
+      "name": "expr-scope-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 62,
+      "allocated_heap_nodes": 62,
+      "semantic_steps": 73
+    },
+    {
+      "name": "expr-scope-3",
+      "status": "INVALID",
+      "reason": "UNIVERSE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 36,
+      "allocated_heap_nodes": 36,
+      "semantic_steps": 3
+    },
+    {
+      "name": "expr-scope-4",
+      "status": "INVALID",
+      "reason": "UNIVERSE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 46,
+      "allocated_heap_nodes": 46,
+      "semantic_steps": 10
+    },
+    {
+      "name": "expr-scope-5",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 14,
+      "allocated_heap_nodes": 14,
+      "semantic_steps": 1
+    },
+    {
+      "name": "expr-scope-6",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 14,
+      "allocated_heap_nodes": 14,
+      "semantic_steps": 1
+    },
+    {
+      "name": "expr-scope-7",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 15,
+      "allocated_heap_nodes": 15,
+      "semantic_steps": 5
+    }
+  ],
+  "forward_seconds": 10.81821618998947,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 2188,
+    "persistent_channels": 724,
+    "subtract_handovers": 5652,
+    "head_clears": 25,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 54,
+      "dims": 7866,
+      "heads": 3,
+      "ffn_units": 9875,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 35,
+  "primitive_basis": [],
+  "semantic_program": "kernel.typed-symbolic-services.v10",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 272606636,
+  "weight_bytes": 545213272,
+  "cuda_peak_allocated_bytes": 610238464,
+  "host_process_peak_rss_bytes": 1695739904,
+  "hidden_size": 2240,
+  "native_layers": 55,
+  "boot_tokens": 65,
+  "applied_steps": 130,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 128,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 6.331547908994253,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-0",
+      "source": {
+        "declarations": [],
+        "format": "leanputer.kernel-source.v1",
+        "name": "id",
+        "provenance": {
+          "lean_version": "4.31.0",
+          "preparation": "original-scheme syntax only; metadata inert; no admission answers",
+          "source_name": [
+            {
+              "str": "id"
+            }
+          ]
+        },
+        "status": "EXPORTED",
+        "target": {
+          "kind": "definition",
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "name": [
+            {
+              "str": "id"
+            }
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-1",
+      "source": {
+        "declarations": [],
+        "format": "leanputer.kernel-source.v1",
+        "name": "id",
+        "provenance": {
+          "lean_version": "4.31.0",
+          "preparation": "original-scheme syntax only; metadata inert; no admission answers",
+          "source_name": [
+            {
+              "str": "id"
+            }
+          ]
+        },
+        "status": "EXPORTED",
+        "target": {
+          "kind": "definition",
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "name": [
+            {
+              "str": "id"
+            }
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "value"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-2",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "t"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "v"
+                  }
+                ]
+              ]
+            ],
+            [
+              "let",
+              [
+                "sort",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ],
+              [
+                "app",
+                [
+                  "app",
+                  [
+                    "const",
+                    [
+                      {
+                        "str": "f"
+                      }
+                    ],
+                    [
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "u"
+                          }
+                        ]
+                      ],
+                      [
+                        "param",
+                        [
+                          {
+                            "str": "v"
+                          }
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "nat",
+                    "1"
+                  ]
+                ],
+                [
+                  "string",
+                  "ok"
+                ]
+              ],
+              [
+                "lam",
+                3,
+                [
+                  "sort",
+                  [
+                    "param",
+                    [
+                      {
+                        "str": "u"
+                      }
+                    ]
+                  ]
+                ],
+                [
+                  "proj",
+                  [
+                    {
+                      "str": "R"
+                    }
+                  ],
+                  0,
+                  [
+                    "mdata",
+                    [
+                      "app",
+                      [
+                        "var",
+                        0
+                      ],
+                      [
+                        "var",
+                        0
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-3",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "scope"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "sort",
+            [
+              "param",
+              [
+                {
+                  "str": "missing"
+                }
+              ]
+            ]
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-4",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "scope"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            [
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ],
+              [
+                "param",
+                [
+                  {
+                    "str": "missing"
+                  }
+                ]
+              ]
+            ]
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-5",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "scope"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "var",
+            0
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-6",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "scope"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "local",
+            31
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_scope",
+      "name": "expr-scope-7",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "scope"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "sort",
+            [
+              "zero"
+            ]
+          ],
+          "value": null
+        }
+      },
+      "root": "type"
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "8 typed-memory scope operation probes; not full typing, declaration admission or mathlib coverage",
+  "operation_group": "scope",
+  "full_kernel_native_support": false
+}

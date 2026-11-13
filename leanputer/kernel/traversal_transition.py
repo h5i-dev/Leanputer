@@ -66,7 +66,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.GEQ_OFFSET_BASE, self.r['mode']), self.lt(Task.LEVEL_GEQ_CORE, self.r['task']),
+            self.lt(Mode.GEQ_OFFSET_BASE, self.r['mode']), self.lt(Task.EXPR_SCOPE, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.lt(1, self.r['vec_changed']), self.lt(1, self.r['pending_compare']), self.lt(1, self.r['order_same_base']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
@@ -74,7 +74,7 @@ class RuleCompiler:
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(invalid))
         uses_arguments = self.OR(*(self.eq(self.r['task'], value) for value in
-            (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE)))
+            (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE)))
         window_end = self.g.add(self.g.fit(self.r['arg_base'], self.width+1), self.g.fit(self.r['count'], self.width+1))
         window_bad = self.AND(uses_arguments, self.g.lt(self.g.const(self.cfg.context, self.width+1), window_end))
         self.stop(self.AND(self.active, window_bad), Outcome.RESOURCE, Reason.CONTEXT)
@@ -245,7 +245,7 @@ class RuleCompiler:
         self.stop(self.AND(cell, cell_ok, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
         call_level = self.AND(cell, cell_ok, stack_room)
         self.write('stack', call_level, r['sp'], (CALL_CONST_LEVEL, x, r['expr_depth'], task, 0, 0))
-        self.emit(call_level, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=self.mux(self.task(Task.EXPR_LEVEL_INSTANTIATE), Task.LEVEL_INSTANTIATE, Task.LEVEL_SUBSTITUTE))
+        self.emit(call_level, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=self.mux(self.task(Task.EXPR_SCOPE), Task.LEVEL_SCOPE, self.mux(self.task(Task.EXPR_LEVEL_INSTANTIATE), Task.LEVEL_INSTANTIATE, Task.LEVEL_SUBSTITUTE)))
         value = self.mode(Mode.CONST_RESULT)
         value_ok = self.NOT(self.eq(r['vec_left'], 0))
         self.stop(self.AND(value, self.NOT(value_ok)), Outcome.INVALID, Reason.SYNTAX)
@@ -392,14 +392,14 @@ class RuleCompiler:
             self.AND(level_task, self.tag(CellTag.LEVEL_SUCC), self.NOT(self.task(Task.LEVEL_NORMAL_SUCC))))
         branch = self.OR(binary, let, unary)
         walking = self.mode(Mode.WALK)
-        expression_level = self.AND(walking, self.OR(self.task(Task.EXPR_LEVEL_SUBSTITUTE), self.task(Task.EXPR_LEVEL_INSTANTIATE)))
-        no_bindings = self.eq(r['count'], 0)
+        expression_level = self.AND(walking, self.OR(self.task(Task.EXPR_LEVEL_SUBSTITUTE), self.task(Task.EXPR_LEVEL_INSTANTIATE), self.task(Task.EXPR_SCOPE)))
+        no_bindings = self.AND(self.eq(r['count'], 0), self.NOT(self.task(Task.EXPR_SCOPE)))
         self.ret(self.AND(expression_level, no_bindings), x)
         sort_call = self.AND(expression_level, self.NOT(no_bindings), self.tag(Tag.SORT))
         self.stop(self.AND(sort_call, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
         sort_call = self.AND(sort_call, stack_room)
         self.write('stack', sort_call, r['sp'], (CALL_SORT_LEVEL, x, depth, task, 0, 0))
-        self.emit(sort_call, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=self.mux(self.task(Task.EXPR_LEVEL_INSTANTIATE), Task.LEVEL_INSTANTIATE, Task.LEVEL_SUBSTITUTE))
+        self.emit(sort_call, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=self.mux(self.task(Task.EXPR_SCOPE), Task.LEVEL_SCOPE, self.mux(self.task(Task.EXPR_LEVEL_INSTANTIATE), Task.LEVEL_INSTANTIATE, Task.LEVEL_SUBSTITUTE)))
         self.emit(self.AND(expression_level, self.NOT(no_bindings), self.tag(Tag.CONST)),
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
@@ -459,7 +459,7 @@ class RuleCompiler:
         leaf = self.AND(walking, self.NOT(branch))
         normal_successor = self.AND(leaf, self.task(Task.LEVEL_NORMAL_SUCC))
         self.alloc(normal_successor, (CellTag.LEVEL_SUCC, x, 0, 0))
-        scope_bad = self.AND(leaf, self.task(Task.VARIABLE_SCOPE),
+        scope_bad = self.AND(leaf, self.OR(self.task(Task.VARIABLE_SCOPE), self.task(Task.EXPR_SCOPE)),
             self.OR(self.tag(Tag.LOCAL), self.AND(self.tag(Tag.BVAR), self.NOT(self.lt(a, depth)))))
         self.stop(scope_bad, Outcome.INVALID, Reason.SCOPE)
         unbound_level = self.AND(leaf, self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_PARAM), self.eq(r['count'], 0))

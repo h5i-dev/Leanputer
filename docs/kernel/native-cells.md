@@ -66,3 +66,10 @@ include structural equality, symbolic nonzero, checked successor separation and
 complete smart Max/IMax constructors. These remain operation services; canonical
 normalization/equivalence are integrated; full inference and source admission
 are unfinished.
+
+The complete [expression scope caller](../../benchmarks/kernel-expression-scope-stock/README.md)
+now checks BVar/Local closure and Sort/Const universe membership in one shared
+traversal, including empty universe contexts. Raw declaration universe parameters
+are scope data, not admitted types. Constant/projection existence, signature
+arity and type correctness remain checked-environment/inference work. A scope
+DONE must never be reported as proof or declaration acceptance.

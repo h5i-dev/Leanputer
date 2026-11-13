@@ -13,18 +13,20 @@ from leanputer.bitvec import unpack_words
 from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from leanputer.native_machine import compile_native_machine
-from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases, expression_cases, predicate_cases, constructor_cases, source_instantiation_cases, ordering_cases, normalization_cases, geq_cases
+from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases, expression_cases, predicate_cases, constructor_cases, source_instantiation_cases, ordering_cases, normalization_cases, geq_cases, expression_scope_cases
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--device', default='cuda', choices=('cpu', 'cuda'))
-    parser.add_argument('--group', choices=('syntax', 'constructors', 'instantiation', 'normalization', 'geq'), default='syntax')
+    parser.add_argument('--group', choices=('syntax', 'constructors', 'instantiation', 'normalization', 'geq', 'scope'), default='syntax')
     args = parser.parse_args()
     torch.set_num_threads(1)
     cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=512 if args.group == 'geq' else 128, word_bits=8)
-    if args.group == 'geq':
+    if args.group == 'scope':
+        documents = expression_scope_cases()
+    elif args.group == 'geq':
         documents = geq_cases()
     elif args.group == 'normalization':
         documents = normalization_cases()

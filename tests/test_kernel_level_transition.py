@@ -199,6 +199,31 @@ def geq_cases():
         name=f'level-geq-{i}', level=left, right=right) for i, (left, right) in enumerate(probes)]
 
 
+def expression_scope_cases():
+    from copy import deepcopy
+    actual_id = json.loads((Path(__file__).parent/'fixtures/kernel-source-smoke.jsonl').read_text().splitlines()[0])
+    original = expression_cases()[0]['source']
+    valid = deepcopy(original)
+    # Remove the deliberately free Local from the all-tag substitution probe;
+    # all twelve tags remain covered by the accepted form plus the Local probe.
+    def bind_local(node):
+        if not isinstance(node, list): return node
+        if node and node[0] == 'local': return ['var', 0]
+        return [bind_local(child) for child in node]
+    valid['target']['type'] = bind_local(valid['target']['type'])
+    def source(root, parameters=()):
+        return dict(format='leanputer.kernel-source.v1', status='EXPORTED', declarations=[],
+            target=dict(kind='definition', name=name('scope'), level_params=list(parameters), type=root, value=None))
+    u, missing = ['param', name('u')], ['param', name('missing')]
+    probes = [(actual_id, 'type'), (actual_id, 'value'), (valid, 'type'),
+        (source(['sort', missing], (name('u'),)), 'type'),
+        (source(['const', name('f'), [u, missing]], (name('u'),)), 'type'),
+        (source(['var', 0]), 'type'), (source(['local', 31]), 'type'),
+        (source(['sort', ['zero']]), 'type')]
+    return [dict(format='leanputer.kernel-data-operation.v1', operation='expr_scope',
+        name=f'expr-scope-{i}', source=source, root=root) for i, (source, root) in enumerate(probes)]
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -266,6 +291,29 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_complete_expression_scope_reuses_symbolic_level_scope(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in expression_scope_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            root = source.target.type if arguments['root'] == 'type' else source.target.value
+            try:
+                check_scope(source.arena, root, universe_parameters=source.target.universe_parameters)
+            except KernelError:
+                self.assertEqual(state['regs']['status'], spec.Outcome.INVALID, doc['name'])
+                self.assertIn(state['regs']['reason'], (spec.Reason.SCOPE, spec.Reason.UNIVERSE))
+            else:
+                self.assertEqual(state['regs']['status'], spec.Outcome.DONE, (doc['name'], state['regs']))
+                self.assertEqual((state['regs']['r'], state['regs']['sp']), (state['regs']['root'], 0))
+            self.assertEqual(circuit.step(state), state)
 
     def test_complete_pinned_conservative_geq_with_max_fallback(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=1024, word_bits=8)
