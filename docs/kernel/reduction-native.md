@@ -134,3 +134,29 @@ fields. The pure syntax argument tests deliberately do not claim well-typed
 proofs, checked K/eta expansion or nested source admission. The independent
 `reduce_constructor_rule` reference now returns no reduction for wrong universe
 arity, matching pinned `inductive.h`; constant inference still rejects it.
+
+The K/structure preparation controller is now written in reference and Boolean
+IR. Focused exact-state validation passed (generated Eq K, zero/multiple dependent
+fields, Prop exclusion, recursive neutrality, scratch poisoning across recursive
+service continuations, and 8-bit continuation ownership). It consumes generated recursor metadata and a
+major expression under the caller's checked typing environment. It uses the
+source K flag and full type/owner/candidate-type conversion checks, normalizes
+the major, preserves any checked constructor application, and applies the source
+structure predicate and Prop exclusion before building all projections. It
+reuses the first generated rule's constructor/field count, which is the same
+ordered checked constructor data assembled from the source family; no trusted
+constructor shape or field count enters through syntax. Literal cases currently
+GAP at the primitive boundary rather than pretending to complete this algorithm.
+
+Its continuations are task-owned: `(PREPARE_RECURSOR_MAJOR, phase0..14)` reuses the
+low phase numbers reserved by generic expression traversal under other tasks.
+This internal controller never enters that generic traversal as its own task.
+Both dispatches distinguish the owner task before interpreting a phase; legacy
+private phases start at16. Thus finite new kernel modules can have local return
+labels without truncating global phase numbers or widening the entire data ABI.
+The live major, recursor metadata, original inferred type and candidate/type
+spine are retained in the six-word continuation itself. Any scratch register can
+be overwritten during recursive inference/WHNF/conversion. Immutable generated
+metadata is reread after those calls; pure spine/slice operations do not recurse
+into major preparation. Projection generation is a counted loop, not one branch
+per supported arity. The public parser forbids this internal service.
