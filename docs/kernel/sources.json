@@ -1,0 +1,89 @@
+{
+  "format": "leanputer.kernel-sources.v1",
+  "sources": [
+    {
+      "name": "lean",
+      "commit": "68218e876d2a38b1985b8590fff244a83c321783",
+      "repository": "https://github.com/leanprover/lean4",
+      "files": [
+        {
+          "path": "src/kernel/inductive.cpp",
+          "sha256": "483fd791504ada6cdf94e9eb63f13c62f5a3a0196367a83ce8cd896ad0408db5",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/inductive.cpp"
+        },
+        {
+          "path": "src/kernel/inductive.h",
+          "sha256": "0c800b0377e7aa74a8a53a9f98ce61ab9df02ea62f917fc8e59db07189fddc98",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/inductive.h"
+        },
+        {
+          "path": "src/kernel/type_checker.cpp",
+          "sha256": "2c5501e2f2968899c7a627c78513ab85dda7390b07197237fcce0ea5202f3a88",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/type_checker.cpp"
+        },
+        {
+          "path": "src/kernel/level.cpp",
+          "sha256": "ca17818de4a7f7c2ceaea3b4c6596fb7dfad0db6305c8100548964bc6459c7f9",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/level.cpp"
+        },
+        {
+          "path": "src/kernel/environment.cpp",
+          "sha256": "2edc5a442f4bdbc93fa4c91351677de958cd40e4b569679d76f27476e44452dd",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/environment.cpp"
+        },
+        {
+          "path": "src/kernel/instantiate.cpp",
+          "sha256": "42527c96f4053fb3cbf4c26fbd544b1c4e0399e5c41b0fd792935d1d42f8916a",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/instantiate.cpp"
+        },
+        {
+          "path": "src/kernel/abstract.cpp",
+          "sha256": "64d90a1d952b8c67fa382b820f7dc3173735c5300d80a946e1ebf4952875fcc2",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/abstract.cpp"
+        },
+        {
+          "path": "src/kernel/quot.cpp",
+          "sha256": "16916b73a6297e8f680e758684390fb2df8e7ff99253ffca8f97cb01af16925f",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/quot.cpp"
+        }
+      ]
+    },
+    {
+      "name": "nanoda",
+      "commit": "0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929",
+      "repository": "https://github.com/ammkrn/nanoda_lib",
+      "files": [
+        {
+          "path": "src/inductive.rs",
+          "sha256": "5930aadaba7c044678fe42bbda9dd754a541df74248396e12039cdb64f1ee6c6",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/inductive.rs"
+        },
+        {
+          "path": "src/tc.rs",
+          "sha256": "1c74274ec2d979796f2dfa73e93d63db54cbb4ac388d283fda28e472dcd96781",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/tc.rs"
+        },
+        {
+          "path": "src/expr.rs",
+          "sha256": "b68cd2eac1922b9928fa3e98496248ee3a8cb653a7679fb438e594d9bd933a3b",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/expr.rs"
+        },
+        {
+          "path": "src/level.rs",
+          "sha256": "a1afb0638fd9f427c6e7693ea44498b9775bd619bb6fff3bdc44dc52f1d587ad",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/level.rs"
+        },
+        {
+          "path": "src/env.rs",
+          "sha256": "52c1593f0e08c4e7b9b9f8a97e48bfdde1d449253bf0c3e4967321b46dbece01",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/env.rs"
+        },
+        {
+          "path": "src/quot.rs",
+          "sha256": "f96eed028489f09569914a39093682573fb221e48f97049d1b25eaae1de517c4",
+          "url": "https://github.com/ammkrn/nanoda_lib/blob/0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929/src/quot.rs"
+        }
+      ]
+    }
+  ]
+}

@@ -1,21 +1,20 @@
 # Research tool work plan
 
-ARCHITECTURAL CORRECTION: per-name expansion has stopped. The catalog below is
-historical evidence, not generic kernel coverage. Active work is
-[declaration-as-data checking](generic-kernel.md), beginning with validated
-ground-universe inductive families with checked uniform type parameters and
-0/1 fields perconstructor (prior carrier, parameter or
-direct strictly-positive self-reference),
-validated carrier/universe/positivity bounds and data-derived dependent recursor
-types/reductions. Nullary Prop families enforce elimination restrictions and singletonK.
-Parameterized recursors now pass the focused stock15batch10A3R1U1Resource,
-including two parameters/direct recursion/Prop parameters and scoped-free-variable
-rejection. Parameterized projections remain the next slice. Full generic indexed
-elimination and multiple/dependent stored fields remain unsupported.
-Syntax-only actual source export retains full closures. Function.mt now has a
-targeted generic native result (Γ3/noaxioms), not a population coverage estimate.
-No completion percentage is established. Existing checkpoints are preserved.
+Active direction: source-defined general kernel algorithms, not catalog or
+shape-led expansion. [The complete target contract](kernel/target.md) maps
+pinned Lean/nanoda functions to immutable Expr/Level/vector records, scoped
+locals, general telescope/positivity/recursive-descriptor operations, admission,
+nested specialization and recursor generation/reduction. Counts are data.
 
+`leanputer/kernel/` implements the general traversal and recursor-generation
+modules as executable specifications. Full checking services, admission driver,
+nested restoration and native lowering are still gaps. These specifications
+never supply trusted answers to the native loader. The earlier restricted
+[declaration-as-data checker](generic-kernel.md) and uncommitted projection
+helpers are preserved reference work, not the target's semantic restrictions.
+Minimal module smoke checks precede lowering; broad differentials are deferred.
+Function.mt has one targeted prior generic native result, not a population
+coverage estimate. No completion percentage is established.
 
 The primary runtime is a standalone, compiler-generated stock
 Qwen3_5ForCausalLM with native GatedDeltaNet cache and identity hidden feedback.

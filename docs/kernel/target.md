@@ -1,0 +1,251 @@
+# Target kernel algorithms and representation
+
+This is the implementation contract, not a claim that the target is implemented.
+The earlier per-name catalog and the newer restricted `generic_*` checker are
+preserved reference work. Neither determines this target's semantics. In
+particular, field count, parameter count, constructor count, mutual-block size
+and recursive function arity are data traversed by shared loops. They do not
+select different supported inductive classes or different compiled algorithms.
+
+## Pinned authority and target boundary
+
+The authority is Lean4.31.0 commit
+`68218e876d2a38b1985b8590fff244a83c321783`, matching the installed executable.
+The algorithmic cross-reference is nanoda_lib commit
+`0da9f98feadd3a0a2ef4b3dbcf52a298a6fef929`. File hashes and source links are in
+[sources.json](sources.json). Nanoda is a reference, not code to translate wholesale.
+Where its behavior differs, the pinned Lean kernel decides the target behavior.
+
+The target is the safe declaration/expression kernel at that pin: symbolic
+universes; dependent Pi/Lam/App/Let; definitions/theorems/opaque bodies; general
+inductive blocks including dependent fields, indices, mutual and nested
+inductives; generated recursors and projections; conversion including the
+kernel's function/structure eta, proof irrelevance and unit-like rules; and the
+kernel's literal/Quot primitives. All of these belong in the design now.
+No field-count or parameter-shape restrictions are part of the target.
+
+Unsafe/partial declarations and mutual unsafe definitions are outside this safe
+profile. The pinned kernel itself rejects safe mutual-definition declarations
+(`environment.cpp:add_mutual`); ordinary safe recursive library functions arrive
+as checked acyclic definitions using recursors/fixpoint constructions. Unresolved
+metavariables and externally supplied free locals are invalid closed declarations.
+An explicit goal context is allowed only when its declarations are themselves
+checked and reported as assumptions.
+
+`Lean.reduceBool`/`Lean.reduceNat` invoke native compiled code in the pinned
+kernel. That execution path is outside the user's authorized inference model
+and is rejected explicitly. It will not be silently treated as an axiom, run on
+the host, or implemented by a CPU emulator. Kernel Nat/String literal operations
+and Quot are genuine finite primitive interfaces; ordinary Eq, Nat inductive
+formation, structures and their eliminators are not a growing primitive catalog.
+Primitive bindings and required signatures must be checked before literal/Quot
+rules use them. Symbolic universe normalization and integer arithmetic run in
+weights; the host does not precompute their answers.
+
+## Source-to-operation map
+
+All paths below are relative to the pinned repositories. The named functions,
+not a selected theorem, specify each operation.
+
+| Kernel operation | Lean authority | nanoda cross-reference | Shared transition/data operation |
+|---|---|---|---|
+| Declaration scope, safety, values | `src/kernel/environment.cpp:check_constant_val, add_axiom, add_definition, add_theorem, add_opaque, add_mutual` | `src/tc.rs:check_declar, check_declar_info` | checked environment lookup, scoped overlay, type/value comparison, atomic publication |
+| Universe syntax/equality/order | `src/kernel/level.cpp:normalize, is_equivalent, is_geq_core, is_not_zero`; `type_checker.cpp:check_level` | `src/level.rs:simplify, leq_core, eq_antisymm` | level-DAG traversal, parameter membership, substitution, canonicalization and comparison |
+| Instantiation/abstraction | `src/kernel/instantiate.cpp`, `abstract.cpp`, `local_ctx.cpp` | `src/expr.rs:inst, abstr, abstr_telescope` | binder-depth expression walk, fresh local IDs, capture avoidance, telescope fold |
+| Expression typing | `src/kernel/type_checker.cpp:infer_type_core, infer_constant, infer_app, infer_lambda, infer_pi, infer_let, infer_proj` | `src/tc.rs:infer, infer_app, infer_lambda, infer_pi, infer_let, infer_proj` | typed recursive calls through explicit continuation/scope frames |
+| Conversion/reduction | `type_checker.cpp:whnf_core, whnf, is_def_eq_core, lazy_delta_reduction, try_eta_struct_core, is_def_eq_proof_irrel` | `src/tc.rs:whnf, def_eq, proof_irrel_eq, try_eta_struct_aux` | normalize/apply/compare service, typed eta and proof checks, environment-epoch caches |
+| Block headers and indices | `src/kernel/inductive.cpp:check_inductive_types` | `src/inductive.rs:check_inductive_specs, check_inductive_spec_0th, check_inductive_specs_mutual1` | open shared parameter telescope, compare domains, traverse each index telescope, compare result levels |
+| Occurrences/strict positivity | `inductive.cpp:has_ind_occ, is_valid_ind_app, check_positivity, is_rec_argument` | `inductive.rs:has_ind_occ, is_valid_ind_app, check_positivity1, is_rec_argument` | symbol-set DFS, application-spine view, local-parameter identity, functional recursive descriptor |
+| Constructor admission | `inductive.cpp:check_constructors, declare_constructors` | `inductive.rs:check_ctor, mk_ctors_env_ext` | generic parameter/field telescope traversal and checked universe constraints |
+| Nested elimination/restoration | `inductive.cpp:elim_nested_inductive_fn, restore_nested, environment::add_inductive` | `inductive.rs:specialize_nested_aux, replace_if_nested, restore_and_check` | work queue of auxiliary block members, substitution/rewrite map, recheck restored declarations |
+| Elimination universe/K eligibility | `inductive.cpp:elim_only_at_universe_zero, init_elim_level, init_K_target` | `inductive.rs:large_elim_test, large_elim_test_aux, init_k_target` | derive flags from checked fields/result arguments and symbolic levels, never supplied flags |
+| Motives/minors/rules | `inductive.cpp:mk_rec_infos, mk_rec_rules, declare_recursors` | `inductive.rs:mk_motives, mk_minors1group, handle_rec_args_minor, mk_rec_rule1, mk_recursor_aux` | binder/vector folds over all families, constructors, fields and recursive descriptors |
+| Runtime recursor reduction | `src/kernel/inductive.h:to_cnstr_when_K, to_cnstr_when_structure, inductive_reduce_rec` | `src/tc.rs:to_ctor_when_k, iota_try_eta_struct, reduce_rec` | derived rule lookup, universe instantiation, generic vector application, beta reduction |
+| Dependent projections | `type_checker.cpp:infer_proj, reduce_proj_core` | `src/tc.rs:infer_proj, reduce_proj_core` | instantiate parameters then all preceding dependent fields using projections; select requested field |
+| Genuine primitives | `src/kernel/quot.cpp`; `type_checker.cpp:reduce_nat, reduce_pow`; `inductive.cpp:nat_lit_to_constructor, string_lit_to_constructor` | `src/quot.rs`; `src/tc.rs:reduce_quot, try_reduce_nat` | fixed primitive registry with validated bindings and bounded limb/byte algorithms |
+
+## Shared data model
+
+The input format must preserve original declaration schemes. Ground goals may
+instantiate them, but admission must not first ground-specialize a polymorphic
+inductive: whether a symbolic result universe can be Prop changes elimination
+eligibility. The old ground-specialized interface cannot decide that property
+for the original scheme and is not the complete target representation.
+
+Use immutable, indexed DAGs and separate raw and derived environment banks:
+
+* Expression row `(tag,a,b,c)`: BVar, internal Local, Sort, Const, App, Pi, Lam,
+  Let, Proj, NatLit, StringLit, MData. Const carries symbol and universe-vector
+  references; Sort carries a level reference; Let uses three expression children;
+  Proj carries a family symbol, arbitrary field index and value. Binder metadata
+  is syntax, not an inferred type. Local expressions are internal only.
+* Level row `(tag,a,b)`: Zero, Succ, Max, IMax, Param. Declaration universe-parameter
+  vectors bind Param symbols. No input metavariables. Constant universe arguments
+  are expressions over that same DAG, not host-evaluated integers.
+* Vector headers/cells store bounded lists of references. Parameters, indices,
+  fields, motives, minors, block members, local function arguments and rule lists
+  all use this representation. Length is data. A loop ends at the vector/telescope
+  boundary, not at a compiled field-count case.
+* Local rows contain a fresh identity and declared type/optional let value.
+  Opening a binder instantiates its body with a fresh Local. Folding abstracts
+  those identities back into de Bruijn binders. Scope marks restore active locals;
+  generated closed outputs are checked for escaped locals before publication.
+* Raw declaration rows describe schemes, bodies and complete inductive blocks.
+  `numParams` is a checked declaration annotation. Index/field counts, recursive
+  flags, reflexivity, elimination permissions, K and recursor descriptors are
+  derived inside the checker. Exported values for these are claims to compare,
+  never trusted admission answers.
+* A validated block descriptor references shared parameters, per-family indices
+  and result levels, constructor telescopes, result-index templates and recursive
+  argument descriptors. A recursive descriptor names a target family and the
+  dependent function telescope before it, plus its result indices. It is not a
+  boolean `recursive` flag and is not restricted to direct self fields.
+* Generated recursor records store schemes, major position, rule vectors and
+  derived eligibility flags. Each rule contains a constructor ID, derived field
+  arity and a generated lambda RHS. Reduction applies that RHS generically rather
+  than dispatching to a hand-written rule for a field layout.
+
+Only physical arena/vector/context/stack/symbol/limb capacity and fuel are model
+configuration. Exhausting them is RESOURCE. Missing implementation of a whole
+operation is recorded separately from an invalid declaration; it must not be
+hidden as acceptance or a trusted library declaration.
+
+## Complete admission and recursor algorithm
+
+1. Validate closed raw syntax, symbols, universe parameters and prior dependency
+   visibility. Start a block transaction; nothing is published on partial success.
+2. Eliminate nested occurrences using a growing queue as in the pinned kernel.
+   For a prior inductive application whose parameter arguments contain current
+   block families, require the source's closure condition, specialize all members
+   of its prior mutual block, deduplicate specialization templates and append
+   auxiliary declarations. Rewrite constructors until the queue is exhausted.
+   Retain the auxiliary-to-original map for restoration and rechecking.
+3. Check every family type. Open the first family's declared shared parameters;
+   compare the other families' parameter domains definitionally in that shared
+   context. Traverse each remaining index telescope to a Sort, and require
+   equivalent result levels across the mutual block. Parameters can be terms and
+   domains can depend on previous binders; literal Sort domains are not required.
+4. Install a private family-header overlay. For each constructor, check its type,
+   consume the shared parameters with checked domain equality, then traverse ALL
+   remaining dependent binders. For each field infer its domain's Sort; require
+   its level below the family result unless the result is Prop. Apply the generic
+   strict-positivity algorithm below. Finally require the owning family applied
+   to unchanged shared parameters and well-typed indices, with no block-family
+   occurrence inside any index expression. Derive field arity from the telescope.
+5. Derive recursion/reflexivity and elimination metadata. A provably nonzero
+   symbolic result allows large elimination. A possibly-Prop mutual block or
+   multiple constructors restricts elimination to Prop. For a singleton, each
+   non-Prop field must occur as an actual argument in its result application;
+   empty predicates allow large elimination. These are the pinned semantic rules,
+   not arbitrary implementation dispatch on convenient constructor shapes.
+6. K eligibility is exactly the source predicate: a single inductive predicate,
+   one constructor, no fields after parameters. K execution still requires that
+   the constructor prototype's inferred type converts to the actual major type;
+   singleton status alone must not erase incompatible indices.
+7. Install the private constructor overlay. For each family build
+   `motive : Π indices, family params indices → Sort elimLevel`.
+   For every constructor open ALL fields. Let its result be `I params js` and
+   constructor value `c params fields`. Its minor result is
+   `motive_I js (c params fields)`.
+8. For each recursive field `u : Π xs, J params ks`, derive an IH
+   `Π xs, motive_J ks (u xs)`. The minor binds ALL constructor fields first,
+   then ALL IHs in recursive-field order. This ordering is in both pinned sources;
+   it is not an interleaving chosen separately for each field count.
+9. Build each recursor type as
+   `Π params, Π motives, Π allMinors, Π ownIndices, Π major, motive ownIndices major`.
+   Build each computation RHS as a lambda over parameters, motives, minors and
+   constructor fields, applying the selected minor to all fields followed by
+   `λ xs, rec_J params motives minors ks (u xs)` for each recursive field.
+   Check/compare supplied recursor schemes and RHS claims against these generated
+   records. The rule is generated data, not trusted input or compiler constants.
+10. Restore nested names/schemes/rules with the retained substitution map, recheck
+    restored declarations and their association with the original block, and
+    atomically publish the checked block. Restore every temporary local/overlay
+    scope before checking subsequent declarations or the goal.
+
+Strict positivity itself is one algorithm: WHNF the field type; return if no
+current-block constant occurs; for Pi require no block occurrence in the domain,
+open the binder and continue in its body; otherwise require a saturated valid
+application of a family in the same block. Nested occurrences are first handled
+by step2, not accepted through an unproved positive-functor flag.
+
+## Expression operations and reduction
+
+The shared operations are spine traversal, scoped telescope open/fold, expression
+and level substitution, occurrence DFS, dependent vector application, INFER,
+WHNF, and typed conversion. Their implementations are independent of the number
+or names of datatypes using them.
+
+INFER follows the finite expression-tag rules: variables/locals through checked
+contexts; Sort via successor; Const via checked universe substitution; App by
+checking its argument against a Pi domain then instantiating; Lam/Pi by opening
+binders, checking domains/codomains and applying imax; Let by checking the value
+and instantiating; Proj by the generic constructor-telescope procedure. Metadata
+is inert. Literals use validated kernel primitive bindings.
+
+WHNF implements beta/zeta, transparent delta, derived recursor RHS application,
+projections and justified literal/Quot reductions. Recursor reduction computes
+its major position from descriptor lengths, performs valid K/structure expansion,
+normalizes the major, looks up its constructor rule, specializes rule universes,
+applies parameters/motives/minors and actual constructor fields, then surplus
+arguments. It never assumes a recursive subvalue has the parent's indices.
+
+Projection inference instantiates the constructor's parameter binders, then
+walks all fields preceding the requested index, substituting earlier projections
+when the remaining telescope depends on them. It enforces the pinned Prop/data
+restriction. Projection reduction selects constructor argument `numParams+idx`.
+The existing zero/one-field implementation is reusable traversal code, not the
+specification of this operation.
+
+Conversion follows the pinned typed algorithm: universe equality, beta/delta/
+zeta/iota, binder congruence, application/projection comparison, function eta,
+nonrecursive structure eta, unit-like comparison, and proof irrelevance only
+after checking proposition/type compatibility. Cache keys include environment
+and local/universe context epochs. A resource failure is not inequality; a false
+result from an incomplete module is not a certificate that Lean rejects a term.
+
+## Execution and lowering contract
+
+Each general operation uses explicit work stacks, vector cursors and scope
+frames. Calls to WHNF/INFER/CONV are internal kernel service calls in that same
+machine, never callbacks to an external checker at inference. A reference
+executable spec may implement these services in Python for development; it is
+not an inference path until the corresponding operations are lowered.
+
+The finite controller program and its typed semantic operations are compiled
+into stock Qwen3.5 Transformer blocks and cache. There is no user-supplied CPU
+instruction stream, RISC-V emulator or native code execution. Proof data cannot
+write control frames. Input/derived banks are distinct; word overflow, vector
+bounds, stale scopes and escaped locals are checked explicitly. Physical row
+payloads can reference auxiliary records instead of growing a stock value head
+past its width. No custom forward or custom attention is substituted.
+
+## Current implementation and module order
+
+The target above is complete; this table states implementation gaps, not future
+semantics to invent from examples.
+
+| Module | Current reusable implementation | General work required |
+|---|---|---|
+| Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities (spec) | raw/derived declaration transactions; native ABI/lowering |
+| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec) | lower shared work-stack operations to stock layers |
+| Expression/universe checking | ground Pi/Lam/App and partial conversion | symbolic levels, Let/literals, complete pinned conversion and primitive checks |
+| Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors (spec) | integrate complete admission, nested queue, universe/elimination derivation and publication |
+| Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
+| Stock lowering | stock forward/cache emitter and memory ABI | lower the shared general operations; remove count-specific semantic paths |
+| Evidence | targeted restricted traces/native/source replays | targeted module contracts first; broad differentials remain deferred |
+
+Implementation proceeds by these general operations, not by another selected
+record or another field count. Tests vary dependent telescope lengths, nesting,
+indices and names against the pre-existing algorithm. Documentation and reports
+must keep design, executable-spec coverage, native coverage and trust assumptions
+separate. No completion percentage or generic mathlib fraction is established.
+
+The executable modules under `leanputer/kernel/` are **not an inference path**
+yet. They are not imported by the native syntax loader. `BetaZeta` implements
+only its named WHNF subservice. Positivity and generation call internal services
+whose complete checking implementations are still missing; their focused unit
+tests supply structural equality or the beta/zeta subservice to test these
+modules' contracts, not to certify complete declaration admission. Test-generated
+recursor types/rules are scoped and exercised for mutual indexed functional
+recursion, including fields-before-IHs and nested-restoration parameter arity.
