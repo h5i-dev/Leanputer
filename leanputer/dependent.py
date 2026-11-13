@@ -161,6 +161,10 @@ class Oracle:
                 if name=='HEq.rec' and len(arguments)==7 and self.convert(arguments[0],arguments[4],context) and self.convert(arguments[1],arguments[5],context):
                     return self.whnf(arguments[3],context)
                 if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
+                if name=='Bool.rec' and len(arguments)==4:
+                    major=self.whnf(arguments[3],context)
+                    if major in (('builtin','Bool.false'),('builtin','Bool.true')):
+                        return self.whnf(arguments[1 if major[1]=='Bool.false' else 2],context)
                 if name=='Subtype.rec' and len(arguments)==5:
                     return self.whnf(apps(arguments[3],('proj','Subtype',0,arguments[4]),('proj','Subtype',1,arguments[4])),context)
                 count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6,'Decidable.rec':5}.get(name)

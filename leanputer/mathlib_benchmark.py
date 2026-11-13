@@ -71,14 +71,75 @@ def prepare_mathlib(checkout, directory, count=200, seed=814732, modules=DEFAULT
     return summary
 
 
+def write_syntax_report(preparation, directory, feature_boundary):
+    """Retain every selected row, without assigning proof-checking verdicts."""
+    from .dependent import parse_expr
+    directory = Path(directory)
+    selection = preparation['selection']
+    corpus = directory/'corpus.jsonl'
+    documents = [json.loads(line) for line in corpus.read_text().splitlines() if line.strip()]
+    if len(documents) != selection['selected']:
+        raise ValueError('syntax report denominator changed')
+    outcomes = []
+    for declaration, document in zip(selection['declarations'], documents):
+        provenance = document['provenance']
+        if declaration['name'] != provenance['source_constant']:
+            raise ValueError('syntax report declaration order changed')
+        exported = 'term' in document
+        nodes = set()
+        environment = document.get('environment', [])
+        if exported:
+            pending = [parse_expr(document['term']), parse_expr(document['claim'])]
+            for entry in environment:
+                pending.append(parse_expr(entry['type']))
+                if entry.get('value') is not None:
+                    pending.append(parse_expr(entry['value']))
+            while pending:
+                expression = pending.pop()
+                if expression in nodes:
+                    continue
+                nodes.add(expression)
+                if expression[0] in ('pi', 'lam', 'app', 'let'):
+                    pending.extend(expression[1:])
+                elif expression[0] == 'proj':
+                    pending.append(expression[3])
+        outcomes.append(dict(module=declaration['module'], source=declaration['name'],
+            source_name_parts=provenance.get('source_name_parts'), ground_levels=provenance['ground_levels'],
+            status='EXPORTED' if exported else document.get('status', 'EXPORT_FAILURE'),
+            reason=None if exported else document.get('reason'), checking_status='NOT_RUN_IN_THIS_REFRESH',
+            environment_declarations=len(environment) if exported else None,
+            assumptions=[e['name'] for e in environment if e.get('value') is None] if exported else None,
+            input_dag_nodes=len(nodes) if exported else None,
+            dependency_closure='complete_syntax_export' if exported else 'not_exported'))
+    outcome_file = directory/'syntax-outcomes.jsonl'
+    outcome_file.write_text(''.join(json.dumps(row)+'\n' for row in outcomes))
+    summary = {key: selection[key] for key in ('mathlib_commit', 'lean_toolchain', 'modules',
+        'original_theorem_declarations', 'selected', 'protocol')}
+    summary.update(format='leanputer.mathlib-syntax-refresh.v1',
+        public_population=selection['public_theorem_population'], ground_instances_per_source=1,
+        counts=dict(Counter(row['status'] for row in outcomes)), export_seconds=preparation['export_seconds'],
+        enumeration_seconds=selection['enumeration_seconds'], unsupported_reasons=preparation['unsupported_reasons'],
+        exporter_sha256=hashlib.sha256(lean_tool('Export.lean').read_bytes()).hexdigest(),
+        corpus_sha256=hashlib.sha256(corpus.read_bytes()).hexdigest(),
+        all_outcomes_sha256=hashlib.sha256(outcome_file.read_bytes()).hexdigest(),
+        leanputer_feature_boundary=feature_boundary,
+        scope='Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh.')
+    (directory/'syntax-summary.json').write_text(json.dumps(summary, indent=2)+'\n')
+    return summary
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--mathlib', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--count', type=int, default=200)
     parser.add_argument('--seed', type=int, default=814732)
+    parser.add_argument('--syntax-report', metavar='FEATURE_BOUNDARY',
+                        help='also write complete syntax-only outcomes labeled with this feature boundary')
     args = parser.parse_args(argv)
     summary = prepare_mathlib(args.mathlib, args.output, args.count, args.seed)
+    if args.syntax_report:
+        write_syntax_report(summary, args.output, args.syntax_report)
     print(json.dumps(dict(selected=summary['selection']['selected'], public_population=summary['selection']['public_theorem_population'],
                          counts=summary['export_counts'], export_seconds=summary['export_seconds'])))
     return 0

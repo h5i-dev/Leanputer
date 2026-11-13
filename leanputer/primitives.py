@@ -12,13 +12,14 @@ PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.in
                    'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23,
                    'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27,
                    'Decidable':28,'Decidable.isFalse':29,'Decidable.isTrue':30,'Decidable.rec':31,
-                   'Subtype':32,'Subtype.mk':33,'Subtype.rec':34,'HEq':35,'HEq.refl':36,'HEq.rec':37}
+                   'Subtype':32,'Subtype.mk':33,'Subtype.rec':34,'HEq':35,'HEq.refl':36,'HEq.rec':37,
+                   'Bool':38,'Bool.false':39,'Bool.true':40,'Bool.rec':41}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
                        'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1,
                        'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2,'Decidable.rec':1,
-                       'Subtype':1,'Subtype.mk':1,'Subtype.rec':2,'HEq':1,'HEq.refl':1,'HEq.rec':2}
+                       'Subtype':1,'Subtype.mk':1,'Subtype.rec':2,'HEq':1,'HEq.refl':1,'HEq.rec':2,'Bool.rec':1}
 PROJECTION_FAMILIES = {'Iff':0,'And':2,'Subtype':4}
-REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5,37:7}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5,37:7,41:4}
 REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,),31:(29,30)}
 REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3,31:2}
 
@@ -40,6 +41,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.startswith('Bool'):return _bool_type(expression)
     if name.startswith('HEq'):return _heq_type(expression)
     if name.startswith('Subtype'):return _subtype_type(expression)
     if name.startswith('Decidable'):return _decidable_type(expression)
@@ -198,6 +200,19 @@ def _heq_type(expression):
         tail=bind('motive',motive_type,bind('minor',apps(motive,alpha,anchor,refl),
              bind('beta',('sort',carrier),bind('end',beta,bind('proof',heq(beta,end),apps(motive,beta,end,proof))))))
     return _close_schema(bind('alpha',('sort',carrier),bind('anchor',alpha,tail)))
+
+
+def _bool_type(expression):
+    name=expression[1]
+    if name=='Bool':return ('sort',1)
+    if name in ('Bool.false','Bool.true'):return ('builtin','Bool')
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    app=lambda f,a:('app',f,a)
+    boolean=('builtin','Bool');motive=v('motive')
+    return _close_schema(bind('motive',bind('motive_arg',boolean,('sort',expression[2])),
+        bind('minor_false',app(motive,('builtin','Bool.false')),bind('minor_true',app(motive,('builtin','Bool.true')),
+        bind('major',boolean,app(motive,v('major')))))))
 
 
 def type_schema(expression):

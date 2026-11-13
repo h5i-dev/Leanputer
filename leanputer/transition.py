@@ -101,7 +101,7 @@ class RuleCompiler:
                    Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                    Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE)
+                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
                    Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE)
@@ -418,8 +418,14 @@ class RuleCompiler:
         self.ret(self.AND(phase,self.NOT(good)),0)
         self.tail(self.AND(phase,good),Op.CONV,x,y)
         self.call(self.mode(Op.REC_MAJOR),Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
-        phase=self.mode(Op.REC_SPINE);app=self.tag(hr,Tag.APP)
-        self.ret(self.AND(phase,self.NOT(app)),0)
+        phase=self.mode(Op.REC_SPINE);app=self.tag(hr,Tag.APP);boolean=self.eq(y,41)
+        false_ctor=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],39))
+        true_ctor=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],40))
+        self.ret(self.AND(phase,boolean,true_ctor),hx['b'])
+        self.tail(self.AND(phase,boolean,false_ctor),Op.B_PICK,hx['a'])
+        self.ret(self.AND(phase,boolean,self.NOT(self.OR(false_ctor,true_ctor))),0)
+        self.ret(self.AND(phase,self.NOT(boolean),self.NOT(app)),0)
+        self.ret(self.mode(Op.B_PICK),hx['b'])
         for head,count in REC_MAJOR_ARITIES.items():
             self.call(self.AND(phase,app,self.eq(y,head)),Op.REC_SCAN,hr['a'],count-1,
                       continuation=(Op.REC_SELECT,x,y,hr['b'],hr['a']))

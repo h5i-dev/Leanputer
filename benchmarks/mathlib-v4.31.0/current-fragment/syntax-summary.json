@@ -1,5 +1,4 @@
 {
-  "format": "leanputer.mathlib-syntax-refresh.v1",
   "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
   "lean_toolchain": "leanprover/lean4:v4.31.0",
   "modules": [
@@ -9,21 +8,21 @@
     "Mathlib.Data.Nat.Basic"
   ],
   "original_theorem_declarations": 1033,
-  "public_population": 857,
   "selected": 857,
-  "ground_instances_per_source": 1,
   "protocol": "Public original-theorem declarations in four fixed owner modules; lowest SHA256(seed/module/name), before any body/feature filtering; one all-ones ground universe instantiation per theorem.",
+  "format": "leanputer.mathlib-syntax-refresh.v1",
+  "public_population": 857,
+  "ground_instances_per_source": 1,
   "counts": {
-    "UNSUPPORTED": 621,
-    "EXPORTED": 236
+    "UNSUPPORTED": 495,
+    "EXPORTED": 362
   },
-  "export_seconds": 5.647094835003372,
-  "enumeration_seconds": 4.435761688000639,
+  "export_seconds": 8.877813733000949,
+  "enumeration_seconds": 6.080519139999524,
   "unsupported_reasons": {
     "unsupported inductive/constructor/recursor/quotient dependency Mul": 29,
-    "unsupported inductive/constructor/recursor/quotient dependency Bool": 142,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommMagma": 11,
-    "unsupported inductive/constructor/recursor/quotient dependency Inhabited": 15,
+    "unsupported inductive/constructor/recursor/quotient dependency Inhabited": 18,
     "unsupported inductive/constructor/recursor/quotient dependency SubtractionMonoid": 8,
     "unsupported inductive/constructor/recursor/quotient dependency Add": 29,
     "unsupported inductive/constructor/recursor/quotient dependency RightCancelMonoid": 1,
@@ -32,6 +31,7 @@
     "unsupported inductive/constructor/recursor/quotient dependency AddCommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency SubNegMonoid": 17,
     "unsupported inductive/constructor/recursor/quotient dependency AddMonoid": 31,
+    "unsupported inductive/constructor/recursor/quotient dependency Subsingleton": 20,
     "unsupported inductive/constructor/recursor/quotient dependency Zero": 10,
     "unsupported inductive/constructor/recursor/quotient dependency DivInvMonoid": 18,
     "unsupported inductive/constructor/recursor/quotient dependency Option": 12,
@@ -80,12 +80,12 @@
     "unsupported inductive/constructor/recursor/quotient dependency Std.Antisymm": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CancelMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency DivisionMonoid": 8,
-    "unsupported inductive/constructor/recursor/quotient dependency Subsingleton": 8,
     "unsupported inductive/constructor/recursor/quotient dependency LE": 2,
     "unsupported inductive/constructor/recursor/quotient dependency IsPreorder": 2,
     "unsupported inductive/constructor/recursor/quotient dependency IsStrictOrder": 2,
     "unsupported inductive/constructor/recursor/quotient dependency MulOneClass": 6,
     "unsupported inductive/constructor/recursor/quotient dependency IsEquiv": 2,
+    "unsupported inductive/constructor/recursor/quotient dependency PUnit": 1,
     "unsupported inductive/constructor/recursor/quotient dependency CancelCommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Pow": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CommMonoid": 2,
@@ -102,11 +102,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency Equivalence.mk": 1,
     "unsupported inductive/constructor/recursor/quotient dependency DivisionCommMonoid": 1
   },
-  "exporter_sha256": "050d94e724cc9dd3f8564eb3201c82b6887c8673ac5f374190fe49ee23180ec8",
-  "corpus_sha256": "79e171f5acfd169742e6430a379aa1fdb36c24cf520cbd8974f265b0d9defd34",
-  "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh.",
-  "all_outcomes_sha256": "e237ed560199395d1c924091f515432bba642e8d3a456ab40bf0c0cc0126c7a5",
-  "input_fits_1024_heap_8_constants": 122,
-  "leanputer_feature_boundary": "HEq98phasefixedfragment; native full-population checking NOT_RUN",
-  "leanputer_base_commit": "5ba9f01"
+  "exporter_sha256": "fd781b06a80a7607ac45d20d834f678420d642c7e96e5b51f526fda43a021fd1",
+  "corpus_sha256": "468e9590ca2078e8c278fc9603d3df9ca8bfc2f97548f58a036b29237b60f1b6",
+  "all_outcomes_sha256": "980002c007cdaac32ad492c0b42ae45adf48a19bca7a5c324800e163563cfbb1",
+  "leanputer_feature_boundary": "Bool99phasefixedfragment; native full-population checking NOT_RUN",
+  "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh."
 }

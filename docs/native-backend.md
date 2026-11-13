@@ -321,3 +321,21 @@ H3584/54layers,CUDApeak1,532,254,208bytes/host1,689,567,232bytes. Weighted
 unit50.865s and actualLean four relative cases2.096sagree. Actual mathlib cast
 closures plan at~8.5ksteps/~1.2knodes, outside this small native smoke; no new
 native mathlib acceptance for this slice. Evidence under benchmarks/native/heq-*.
+
+## Bool checkpoint
+
+Bool/false/true/rec adds nullary data-constructor selection in99semantic phases.
+Both branches are exercised with distinct data and dependent claims; a neutral
+major stays neutral even when both minors are identical. Eight native cases
+pass6A2R, agreeing with weighted CPU checking(20.254s) and actual Lean(2.153s).
+At heap128/stack32/context16/constants8/fuel768:34boot+770stock forwards49.043s,
+compile10.521s,482,431,186BF16parameters/964,862,372weightbytes/H3072/42layers,
+CUDApeak1,012,212,224bytes/host1,691,262,976bytes. CPU validation overlapped
+initial GPU development bringup; these are development observations, not a
+controlled performance comparison. Evidence under benchmarks/native/boolean-*.
+
+The full pinned syntax refresh now exports362of857 and retains495unsupported
+rows, export8.878s. Removing Bool unlocks126of142previous first blockers, but
+these are not native proof acceptances. The smallest newly exported inspected
+classical closure has72dependencies, exceeding the small eight-constant smoke
+budget. No new real-mathlib native acceptance is claimed for this slice.

@@ -25,6 +25,9 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Decidable" then return .const ``Decidable []
       if name == "Decidable.isFalse" then return .const ``Decidable.isFalse []
       if name == "Decidable.isTrue" then return .const ``Decidable.isTrue []
+      if name == "Bool" then return .const ``Bool []
+      if name == "Bool.false" then return .const ``Bool.false []
+      if name == "Bool.true" then return .const ``Bool.true []
       if name == "Iff" then return .const ``Iff []
       if name == "Iff.intro" then return .const ``Iff.intro []
       if name == "And" then return .const ``And []
@@ -47,6 +50,7 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Decidable.rec" then return .const ``Decidable.rec [level]
       if name == "Subtype" then return .const ``Subtype [level]
       if name == "Subtype.mk" then return .const ``Subtype.mk [level]
+      if name == "Bool.rec" then return .const ``Bool.rec [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -123,7 +127,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))

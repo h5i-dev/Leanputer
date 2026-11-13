@@ -158,3 +158,24 @@ The recorded setup fetched 128 reachable module artifacts. The benchmark does
 not require downloading the complete mathlib cache or any language-model
 weights. Pin the checkout before provisioning, and retain the generated
 `lake-manifest.json` hash in the selection manifest.
+
+## Current syntax boundary
+
+The Bool99-phase exporter refresh produces362EXPORTED/495UNSUPPORTED, retaining
+all857selected ground instances and their names. Export took8.877814s on the
+provisioned cache. This is syntax coverage, not native proof acceptance; native
+checking_status is NOT_RUN_IN_THIS_REFRESH for every row. Unknown unsupported
+dependency closures have null assumption and size metadata. Complete compact
+records are in benchmarks/mathlib-v4.31.0/current-fragment. Reproduce this
+syntax-only report with:
+
+```bash
+python -m leanputer.mathlib_benchmark --mathlib /mnt/scratch/leanputer-mathlib \
+  --count 857 --output /mnt/scratch/leanputer-runs/mathlib-bool-fragment \
+  --syntax-report Bool99phasefixedfragment
+```
+
+The earlier whole-population4/857 proof result above belongs to the old custom
+reference backend. Current native feature checkpoints validate selected sources
+and small relative fixtures with different budgets; they do not constitute a
+new matched full-population result. Broad native replay remains deferred.

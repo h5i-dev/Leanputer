@@ -282,3 +282,13 @@ check active. Complete syntax refresh retains all857names:236EXPORTED,
 supersedes generic-record work as the next coherent feature slice. Preserve
 exact source/trust/resource boundaries. No broad expensive differential run
 has occurred in this syntax refresh.
+
+Bool checkpoint:42fixed primitives/99phases, both nullary branches and neutral
+major boundary pass native8case6A2R. Same full857syntax denominator now362
+EXPORTED/495UNSUPPORTED; no full-population native proof result. Complete
+assumption/dependency/node metadata and unknown unsupported closures retained.
+The largest remaining first blockers are Monoid32/AddMonoid31/Mul29/Add29;
+Inhabited18 and Option/Prod are smaller coherent next data slices. New Bool
+classical closures have at least72dependencies, so native resource costs are
+material. Keep broad differential/profiling deferred; choose the next slice
+from actual closure structure rather than counting syntax export as proof.

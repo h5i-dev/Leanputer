@@ -134,6 +134,7 @@ class Op(IntEnum):
     H_ANCHOR = 95
     H_ALPHA = 96
     H_VALUE = 97
+    B_PICK = 98
 
 
 @dataclass(frozen=True)
@@ -294,7 +295,7 @@ class SpecMachine:
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE):
+                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
@@ -568,8 +569,15 @@ class SpecMachine:
         elif op==Op.REC_SPINE:
             # Entered with normalized major in r, saved partial fn/head in x/y.
             tag,a,b,_=self.node(result)
-            if tag!=Tag.APP:self.ret(0)
+            if y==41:
+                ctor=self.node(result)[3] if tag==Tag.BUILTIN else -1
+                if ctor==40:self.ret(self.node(x)[2])
+                elif ctor==39:self.tail(Op.B_PICK,self.node(x)[1])
+                else:self.ret(0)
+            elif tag!=Tag.APP:self.ret(0)
             else:self.call(Op.REC_SCAN,a,REC_MAJOR_ARITIES[y]-1,continuation=(Op.REC_SELECT,x,y,b,a))
+        elif op==Op.B_PICK:
+            self.ret(self.node(x)[2])
         elif op==Op.REC_SCAN:
             if y==0:self.ret(x)
             elif self.node(x)[0]!=Tag.APP:self.ret(0)
