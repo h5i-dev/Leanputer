@@ -43,7 +43,8 @@ input declaration admission. Symbolic universes remain unsupported.
 
 LT/LE now pass the focused native20case batch12A4R4RESOURCE, including negative
 relation/family checks and retained Eq/PUnit behavior. The four new swap source
-closures pass Spec/Lean; source-only native checking at1024heap/f4480 is pending.
+closures also accept natively at1024heap/f4480, matching4443/4449planned steps,
+four checked dependencies and noaxioms each. Fixed GPU execution698.739s remains slow.
 Report resource outcomes separately from acceptances. Next structural blockers
 include PProd/Prod and heterogeneous records; supporting their recursors needs
 an explicit ground-universe tuple ABI beyond the current two-universe limit.

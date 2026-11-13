@@ -522,3 +522,14 @@ The complete syntax-only857-source refresh is412EXPORTED445UNSUPPORTED in
 four dependencies and no axioms. They pass the independent spec and actual
 Lean replay; larger-budget native checking remains pending at this checkpoint.
 This is not412verified proofs or an updated native population fraction.
+
+The larger source-only run now accepts all four real judgments natively, matching
+Spec/Lean: swap_gt4443, swap_le4449, swap_ge4443, swap_lt4449 semantic steps.
+Each checks its four exported definitions, has87input nodes/602allocated nodes,
+and uses no axioms. Heap1024/stack32/context16/constants8/fuel4480,
+92boot+4482stockforwards:698.739s,compile37.393s;1,965,272,524BF16parameters/
+3,930,545,048bytes, hidden5120/103layers/FFN1024, peakCUDA4,004,434,432bytes,
+hostRSS1,782,493,184bytes. CPU development checks overlapped; this is a selected
+feature batch, not a controlled throughput comparison or full-population run.
+Exact evidence: relations-real*. This supersedes the pending native status
+above; the small-budget resource results remain valid and retained.
