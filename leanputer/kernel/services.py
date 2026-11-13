@@ -7,7 +7,7 @@ admitting supplied answers. The complete service contract is target.md.
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Optional
-from .arena import KernelError, Tag
+from .arena import KernelError, ResourceError, Tag
 from .levels import LevelOps
 from .operations import abstract, instantiate, spine, substitute_levels
 from .reduction import BetaZeta
@@ -34,17 +34,25 @@ class KernelServices:
         self.beta_zeta = BetaZeta(arena, context)
 
     @contextmanager
-    def overlay(self, entries):
+    def overlay(self, entries, recursors=()):
         """Private, exception-safe declarations. This never publishes a block."""
         original = self.constants.copy()
+        original_recursors = self.recursors.copy()
         try:
             for symbol, signature in entries:
                 if symbol in self.constants:
                     raise KernelError('duplicate declaration name')
+                if len(self.constants) >= self.a.limits.declarations:
+                    raise ResourceError('private declaration environment')
                 self.constants[symbol] = signature
+            for record in recursors:
+                if record.symbol in self.recursors or record.symbol not in self.constants:
+                    raise KernelError('invalid staged recursor registration')
+                self.recursors[record.symbol] = record
             yield
         finally:
             self.constants = original
+            self.recursors = original_recursors
 
     def _signature_type(self, row):
         if row.a not in self.constants:

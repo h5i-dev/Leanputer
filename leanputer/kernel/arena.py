@@ -61,6 +61,8 @@ class Limits:
     expressions: int = 65536
     levels: int = 4096
     vector_cells: int = 65536
+    declarations: int = 4096
+    symbols: int = 16384
     locals: int = 4096
     stack: int = 8192
     fuel: int = 1000000

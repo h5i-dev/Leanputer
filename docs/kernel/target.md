@@ -227,11 +227,11 @@ semantics to invent from examples.
 
 | Module | Current reusable implementation | General work required |
 |---|---|---|
-| Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities (spec) | raw/derived declaration transactions; native ABI/lowering |
+| Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities; `environment.py`: private overlay/rechecking and atomic publication (spec) | integrated native ABI/lowering |
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
 | Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversal controller plus beta/zeta-to-substitution internal calls | lower symbolic levels, scopes and dependent telescope services; connect full kernel callers |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
-| Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors; `admission.py`: general core-phase header/index/constructor/universe/positivity checks, elimination/K metadata and generation (spec) | nested queue/restoration, prior declarations/transactions, complete internal services and stock integration |
+| Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
 | Stock lowering | stock forward/cache emitter and memory ABI | lower the shared general operations; remove count-specific semantic paths |
 | Evidence | targeted restricted traces/native/source replays | targeted module contracts first; broad differentials remain deferred |
@@ -277,3 +277,13 @@ elaborator rejects possibly-Prop result universes, but its raw kernel admits
 them with the derived elimination restriction. The complete target follows the
 kernel; its schemes cannot be ground-specialized before admission. This replay
 is development evidence and is never part of inference.
+
+`environment.py` now connects ordinary declaration checking, the nested queue,
+core checks, generated recursors, restoration/rechecking and atomic publication
+as a development specification. Missing conversion/primitive services produce
+GAP, never false rejection or a trusted input answer. Actual `id` and `Eq.symm`
+source bodies/closures pass this spec; `Prod.fst` explicitly reports the missing
+projection service. A source nested/mutual/term-parameter
+[transaction smoke](../../benchmarks/kernel-nested-spec/README.md) admits12derived
+declarations/noaxioms and checks its complete source body. These are not native
+proofs or generic mathlib coverage. The weighted driver is still unfinished.

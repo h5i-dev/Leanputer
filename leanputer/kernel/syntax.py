@@ -37,6 +37,9 @@ class SymbolTable:
                 raise KernelError('invalid name component value')
         key = tuple(key)
         if key not in self.index:
+            if len(self.names)-1 >= self.arena.limits.symbols:
+                from .arena import ResourceError
+                raise ResourceError('symbol table')
             ref = self.arena.word(len(self.names))
             components = []
             for tag, value in key:
@@ -54,6 +57,23 @@ class SymbolTable:
             self.names.append(key)
             self.encoded_names.append(encoded)
         return self.index[key]
+
+    def intern_key(self, key):
+        return self.intern([{tag: value} for tag, value in key])
+
+    def recursor_name(self, symbol):
+        return self.intern_key(self.names[symbol]+(('str', 'rec'),))
+
+    def replace_prefix(self, symbol, old, new):
+        key, prefix = self.names[symbol], self.names[old]
+        if key[:len(prefix)] != prefix:
+            return symbol
+        return self.intern_key(self.names[new]+key[len(prefix):])
+
+    def indexed_recursor_name(self, family, index):
+        # Pinned restoration uses <main family>.rec_<index>. Names are data;
+        # this operation is not called by syntax parsing or native loading.
+        return self.intern_key(self.names[family]+(('str', 'rec_'+str(index)),))
 
 
 @dataclass(frozen=True)

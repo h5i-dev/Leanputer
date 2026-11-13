@@ -13,6 +13,21 @@ inductive DependentFields (A : Type) (B : A → Type) : Type where
   | mk (x : A) (v : B x) (y : A) (w : B y) : DependentFields A B
 
 mutual
+  inductive ContainerF (A : Type u) : Type u where
+    | nil : ContainerF A
+    | cons (head : A) (tail : ContainerG A) : ContainerF A
+  inductive ContainerG (A : Type u) : Type u where
+    | pack (next : ContainerF A) : ContainerG A
+end
+
+-- Nested specialization must copy the ENTIRE prior mutual block and keep the
+-- current block's two parameters distinct from the container's one parameter.
+inductive Nested (A : Type) (a : A) : Type where
+  | mk (children : ContainerF (Nested A a)) : Nested A a
+
+def nestedIdentity {A : Type} {a : A} (value : Nested A a) : Nested A a := value
+
+mutual
   inductive Left (A : Type) : A → Type where
     | seed (x : A) : Left A x
     | step (x : A) (next : (y : A) → Right A y) : Left A x

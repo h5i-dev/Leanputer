@@ -7,10 +7,10 @@ locals, general telescope/positivity/recursive-descriptor operations, admission,
 nested specialization and recursor generation/reduction. Counts are data.
 
 `leanputer/kernel/` implements symbolic universes, dependent inference, general
-admission-core/positivity and recursor-generation modules as executable specs.
+admission/positivity, nested queue/restoration/transactions and recursor-generation modules as executable specs.
 The shared all-tag traversal controller passes an exact stock forward/cache
-smoke. Full conversion/checking services, admission driver, nested restoration
-and integrated native lowering are still gaps. These Python specifications
+smoke, including internal beta/zeta-to-substitution calls. Full conversion,
+projection/K/primitive services and integrated native lowering are still gaps. These Python specifications
 never supply trusted answers to the native loader. The earlier restricted
 [declaration-as-data checker](generic-kernel.md) and uncommitted projection
 helpers are preserved reference work, not the target's semantic restrictions.

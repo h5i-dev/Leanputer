@@ -51,5 +51,7 @@ exports (`id`, `Prod.fst`, `Eq.symm`) and one deliberately unavailable target.
 The core-phase test independently infers/checks the Prod and Eq block data,
 derives their recursors and compares the supplied symbolic schemes. It does not
 check the full target bodies or earlier ordinary declarations. This is neither
-native proof coverage nor a new mathlib denominator. The complete transaction,
-nested processing, conversion and weighted driver remain unfinished.
+native proof coverage nor a new mathlib denominator. The executable spec now
+connects nested processing and atomic transactions, with explicit GAP for
+incomplete conversion/projection/primitive services. The weighted full-source
+driver remains unfinished; see [the nested spec evidence](../../benchmarks/kernel-nested-spec/README.md).

@@ -14,8 +14,8 @@ The [shared traversal stock smoke](benchmarks/kernel-traversal-stock/README.md)
 verifies lift/instantiation/abstraction/occurrence operations with one stock
 model and exact output-cache comparison. It does **not** establish full
 declaration admission or mathlib coverage. General symbolic-universe, inference,
-positivity/admission-core and recursor-generation modules are executable specs;
-complete conversion, nested processing/transactions and weighted integration
+nested processing/transactions, positivity/admission and recursor-generation
+modules are executable specs; complete conversion/primitives and integrated weighted checking
 remain unfinished. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax

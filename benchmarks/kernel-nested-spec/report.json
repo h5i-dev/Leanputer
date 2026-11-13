@@ -1,0 +1,17 @@
+{
+  "format": "leanputer.kernel-nested-spec-smoke.v1",
+  "source": "KernelAlgorithms.nestedIdentity",
+  "result": {
+    "status": "ACCEPT",
+    "reason": "",
+    "input_items": 2,
+    "checked_input_items": 2,
+    "admitted_declarations": 12,
+    "assumptions": [],
+    "syntax_steps": 583,
+    "kernel_steps": 93618
+  },
+  "scope_depth": 0,
+  "validation_scope": "offline executable-spec source closure, not native coverage",
+  "native_run": false
+}

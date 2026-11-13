@@ -1,5 +1,7 @@
 # Shared expression services and internal calls
 
+The recorded controller/evidence is pinned at commit `fe97d14`.
+
 This extends the general traversal controller with the source's syntactic
 beta/zeta/metadata weak-head subservice. Beta and literal Let reduction call
 the SAME capture-avoiding substitution walk through private continuations.

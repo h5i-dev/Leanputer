@@ -115,6 +115,21 @@ def has_constant(arena, root, symbols):
     return any(row.tag == Tag.CONST and row.a in symbols for _, row in walk(arena, root))
 
 
+def has_loose_bvars(arena, root):
+    pending, seen = [(root, 0)], set()
+    while pending:
+        arena.check_stack(pending); arena.tick()
+        ref, depth = pending.pop()
+        if (ref, depth) in seen:
+            continue
+        seen.add((ref, depth))
+        row = arena.expr(ref)
+        if row.tag == Tag.BVAR and row.a >= depth:
+            return True
+        pending.extend((child, arena.word(depth+increment)) for child, increment in children(row))
+    return False
+
+
 def check_scope(arena, root, locals_=None, universe_parameters=None):
     """Check all loose variables/local identities and bound universe symbols.
 
