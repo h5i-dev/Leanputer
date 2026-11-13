@@ -32,8 +32,8 @@ dependency environment, not published as an assumption. Missing callbacks GAP.
 
 Constant lookup traverses only PRIVATE checked signatures, verifies universe
 arity/scope and builds simultaneous binding records to call the SAME source
-scheme-instantiation service. Delta reduction must use only a checked definition's
-allowed payload; its general integration remains the next implementation. No raw type is accepted as an inferred result. Signature-name
+scheme-instantiation service. Delta reduction now uses the SAME lookup/zip/instantiation to access only a
+checked definition/theorem's allowed payload; opaque/axiom heads remain neutral. No raw type is accepted as an inferred result. Signature-name
 and parameter vectors are data; no selected-library-name/field-count paths.
 
 Inductive input goes through the complete header/telescope/positivity/nested/

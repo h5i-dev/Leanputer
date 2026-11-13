@@ -60,6 +60,11 @@
           "path": "src/kernel/expr.cpp",
           "sha256": "cb02c18964aca67289b8c1d64864355bb5c10fc93d55bd3c3c9646776af9c592",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/expr.cpp"
+        },
+        {
+          "path": "src/kernel/declaration.h",
+          "sha256": "eb9c497bb19dab26550cbb5196a13e0a925896c6d357a8faa2f3794c1e798a51",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/declaration.h"
         }
       ]
     },

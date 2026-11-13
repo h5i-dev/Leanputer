@@ -4,7 +4,7 @@ No raw signature supplies a type. The source driver must establish env_ready
 and publish checked entries first; public inference keeps GAP_ENVIRONMENT.
 """
 from .arena import Tag
-from .native_cells import CellTag, VectorKind
+from .native_cells import CellTag, VectorKind, DeclarationKind
 from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_INFER_CONSTANT_LOOKUP, CALL_INFER_CONSTANT_SUBSTITUTE)
 
@@ -19,13 +19,16 @@ def emit_rules(c):
     returning = c.AND(c.mode(Mode.RETURN), nonempty)
     found = c.AND(returning, c.eq(f['phase'], CALL_INFER_CONSTANT_LOOKUP))
     c.stop(c.AND(found, c.eq(result, 0)), Outcome.INVALID, Reason.UNKNOWN_CONSTANT)
-    c.emit(c.AND(found, c.NOT(c.eq(result, 0))), mode=Mode.CONST_SIGNATURE, task=Task.INFER, x=result)
+    c.emit(c.AND(found, c.NOT(c.eq(result, 0))), mode=Mode.CONST_SIGNATURE, task=f['task'], x=result)
     restored = c.AND(returning, c.eq(f['phase'], CALL_INFER_CONSTANT_SUBSTITUTE))
-    c.emit(restored, sp=top, mode=Mode.RETURN, task=Task.INFER, ctx=f['depth'], arg_base=f['first'], count=f['second'])
-    entering = c.AND(c.mode(Mode.WALK), c.task(Task.INFER), c.tag(Tag.CONST), c.NOT(c.eq(r['env_ready'], 0)))
+    is_delta = c.eq(f['task'], Task.BETA_ZETA)
+    c.emit(restored, sp=top, mode=c.mux(is_delta, Mode.BETA_ZETA, Mode.RETURN), task=f['task'], ctx=f['depth'], arg_base=f['first'], count=f['second'])
+    c.emit(c.AND(restored, is_delta), x=result, depth=0)
+    entering = c.AND(c.OR(c.AND(c.mode(Mode.WALK), c.task(Task.INFER)),
+        c.AND(c.mode(Mode.BETA_ZETA), c.task(Task.BETA_ZETA))), c.tag(Tag.CONST), c.NOT(c.eq(r['env_ready'], 0)))
     c.stop(c.AND(entering, c.NOT(room)), Outcome.RESOURCE, Reason.STACK)
     entering = c.AND(entering, room)
-    c.write('stack', entering, r['sp'], (CALL_INFER_CONSTANT_LOOKUP, x, r['ctx'], Task.INFER, r['arg_base'], r['count']))
+    c.write('stack', entering, r['sp'], (CALL_INFER_CONSTANT_LOOKUP, x, r['ctx'], r['task'], r['arg_base'], r['count']))
     c.emit(entering, sp=c.add(r['sp'], 1), mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a)
     modes = (Mode.CONST_SIGNATURE, Mode.CONST_SCHEME, Mode.CONST_EXPRESSION, Mode.CONST_PARAMETER_HEADER,
              Mode.CONST_LEVEL_HEADER, Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL)
@@ -34,9 +37,18 @@ def emit_rules(c):
     at = lambda mode: c.AND(c.mode(mode), nonempty)
     c.emit(at(Mode.CONST_SIGNATURE), signature_type=b, mode=Mode.CONST_SCHEME, x=n['c'])
     scheme = at(Mode.CONST_SCHEME)
+    delta = c.task(Task.BETA_ZETA)
+    reducible = c.OR(c.eq(b, DeclarationKind.DEFINITION), c.eq(b, DeclarationKind.THEOREM))
+    neutral = c.AND(scheme, delta, c.NOT(reducible))
+    c.emit(neutral, sp=top)
+    c.ret(neutral, f['original'])
+    scheme = c.AND(scheme, c.OR(c.NOT(delta), reducible))
+    body_ok = c.AND(c.NOT(c.eq(n['c'], 0)), c.lt(n['c'], r['free']))
     valid_pointer = c.AND(c.NOT(c.eq(a, 0)), c.lt(a, r['free']))
-    c.stop(c.AND(scheme, c.NOT(valid_pointer)), Outcome.INVALID, Reason.SYNTAX)
-    c.emit(c.AND(scheme, valid_pointer), parameter_vector=a, mode=Mode.CONST_EXPRESSION, x=f['original'])
+    scheme_ok = c.AND(valid_pointer, c.OR(c.NOT(delta), body_ok))
+    c.stop(c.AND(scheme, c.NOT(scheme_ok)), Outcome.INVALID, Reason.SYNTAX)
+    c.emit(c.AND(scheme, scheme_ok, delta), signature_type=n['c'])
+    c.emit(c.AND(scheme, scheme_ok), parameter_vector=a, mode=Mode.CONST_EXPRESSION, x=f['original'])
     expression = at(Mode.CONST_EXPRESSION)
     c.stop(c.AND(expression, c.NOT(c.tag(Tag.CONST))), Outcome.INVALID, Reason.SYNTAX)
     c.emit(c.AND(expression, c.tag(Tag.CONST)), level_vector=b, mode=Mode.CONST_PARAMETER_HEADER, x=r['parameter_vector'])
@@ -55,7 +67,8 @@ def emit_rules(c):
     levels = c.AND(levels, arity_ok)
     empty = c.eq(a, 0)
     c.emit(c.AND(levels, empty), sp=top)
-    c.ret(c.AND(levels, empty), r['signature_type'])
+    c.ret(c.AND(levels, empty, c.NOT(delta)), r['signature_type'])
+    c.emit(c.AND(levels, empty, delta), mode=Mode.BETA_ZETA, x=r['signature_type'], depth=0)
     wide = c.g.add(c.g.fit(r['ctx'], c.width+1), c.g.fit(a, c.width+1))
     enough = c.NOT(c.g.lt(c.g.const(c.cfg.context, c.width+1), wide))
     c.stop(c.AND(levels, c.NOT(empty), c.NOT(enough)), Outcome.RESOURCE, Reason.CONTEXT)

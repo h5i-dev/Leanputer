@@ -1,0 +1,1115 @@
+{
+  "registers": [
+    {
+      "mode": 83,
+      "status": 1,
+      "reason": 0,
+      "fuel": 298,
+      "free": 57,
+      "sp": 0,
+      "decl": 3,
+      "decl_count": 4,
+      "ctx": 0,
+      "x": 7,
+      "depth": 0,
+      "task": 36,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 0,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 8,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 7,
+      "left_tag": 64,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 0,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 3,
+      "env_head": 56,
+      "env_next": 53,
+      "query_symbol": 3,
+      "env_ready": 1,
+      "signature_type": 7,
+      "parameter_vector": 9,
+      "level_vector": 5,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 0,
+      "zip_remaining": 0,
+      "zip_symbol": 0,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 42,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 3,
+      "kernel_zero": 43,
+      "active_kind": 3,
+      "active_symbol": 4,
+      "active_parameters": 9,
+      "active_type": 7,
+      "active_value": 8,
+      "active_extra": 0,
+      "commit_scheme": 54,
+      "commit_signature": 55
+    },
+    {
+      "mode": 81,
+      "status": 4,
+      "reason": 11,
+      "fuel": 389,
+      "free": 54,
+      "sp": 1,
+      "decl": 2,
+      "decl_count": 4,
+      "ctx": 0,
+      "x": 6,
+      "depth": 0,
+      "task": 36,
+      "r": 6,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 0,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 7,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 0,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 2,
+      "env_head": 53,
+      "env_next": 0,
+      "query_symbol": 1,
+      "env_ready": 1,
+      "signature_type": 3,
+      "parameter_vector": 9,
+      "level_vector": 5,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 0,
+      "zip_remaining": 0,
+      "zip_symbol": 0,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 42,
+      "name_table_left": 1,
+      "name_table_next": 38,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 3,
+      "kernel_zero": 43,
+      "active_kind": 1,
+      "active_symbol": 3,
+      "active_parameters": 9,
+      "active_type": 7,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 51,
+      "commit_signature": 52
+    },
+    {
+      "mode": 83,
+      "status": 1,
+      "reason": 0,
+      "fuel": 50,
+      "free": 86,
+      "sp": 0,
+      "decl": 3,
+      "decl_count": 4,
+      "ctx": 0,
+      "x": 13,
+      "depth": 0,
+      "task": 36,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 0,
+      "substitution": 83,
+      "limit": 1,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 83,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 12,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 12,
+      "left_tag": 6,
+      "left_a": 12,
+      "left_b": 12,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 1,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 0,
+      "lookup_uid": 83,
+      "lookup_index": 0,
+      "lookup_type": 12,
+      "convert_left_level": 0,
+      "raw_index": 3,
+      "env_head": 79,
+      "env_next": 76,
+      "query_symbol": 3,
+      "env_ready": 1,
+      "signature_type": 11,
+      "parameter_vector": 15,
+      "level_vector": 7,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 0,
+      "zip_remaining": 0,
+      "zip_symbol": 0,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 53,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 3,
+      "kernel_zero": 54,
+      "active_kind": 2,
+      "active_symbol": 4,
+      "active_parameters": 15,
+      "active_type": 13,
+      "active_value": 14,
+      "active_extra": 0,
+      "commit_scheme": 77,
+      "commit_signature": 78
+    },
+    {
+      "mode": 83,
+      "status": 1,
+      "reason": 0,
+      "fuel": 122,
+      "free": 92,
+      "sp": 0,
+      "decl": 2,
+      "decl_count": 3,
+      "ctx": 0,
+      "x": 15,
+      "depth": 0,
+      "task": 36,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 1,
+      "found": 0,
+      "root": 0,
+      "substitution": 89,
+      "limit": 1,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 89,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 3,
+      "lookup_level": 3,
+      "const_original": 14,
+      "expr_depth": 0,
+      "vec_length": 2,
+      "vec_left": 1,
+      "vec_build": 2,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 14,
+      "left_tag": 6,
+      "left_a": 14,
+      "left_b": 14,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 6,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 0,
+      "lookup_uid": 89,
+      "lookup_index": 0,
+      "lookup_type": 14,
+      "convert_left_level": 0,
+      "raw_index": 2,
+      "env_head": 76,
+      "env_next": 69,
+      "query_symbol": 4,
+      "env_ready": 1,
+      "signature_type": 12,
+      "parameter_vector": 20,
+      "level_vector": 11,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 2,
+      "zip_remaining": 0,
+      "zip_symbol": 3,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 61,
+      "name_table_left": 0,
+      "name_table_next": 0,
+      "name_second": 0,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 2,
+      "kernel_zero": 62,
+      "active_kind": 2,
+      "active_symbol": 5,
+      "active_parameters": 21,
+      "active_type": 15,
+      "active_value": 17,
+      "active_extra": 0,
+      "commit_scheme": 74,
+      "commit_signature": 75
+    }
+  ],
+  "results": [
+    {
+      "name": "delta-alias-type-sort",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [
+        2,
+        3
+      ],
+      "input_axiom_candidates": [
+        2,
+        3
+      ],
+      "environment_declarations": 3,
+      "admitted_declarations": 3,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 56,
+      "semantic_steps": 214
+    },
+    {
+      "name": "opaque-body-not-unfolded",
+      "status": "GAP",
+      "reason": "GAP_CONVERSION",
+      "assumptions": [
+        2
+      ],
+      "input_axiom_candidates": [
+        2,
+        3
+      ],
+      "environment_declarations": 3,
+      "admitted_declarations": 2,
+      "input_heap_nodes": 42,
+      "allocated_heap_nodes": 53,
+      "semantic_steps": 123
+    },
+    {
+      "name": "delta-application-spine",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [
+        3
+      ],
+      "input_axiom_candidates": [
+        3
+      ],
+      "environment_declarations": 3,
+      "admitted_declarations": 3,
+      "input_heap_nodes": 53,
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 462
+    },
+    {
+      "name": "delta-two-universe-parameters",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [
+        4
+      ],
+      "input_axiom_candidates": [
+        4
+      ],
+      "environment_declarations": 2,
+      "admitted_declarations": 2,
+      "input_heap_nodes": 61,
+      "allocated_heap_nodes": 91,
+      "semantic_steps": 390
+    }
+  ],
+  "forward_seconds": 52.90988940700481,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 3529,
+    "persistent_channels": 1192,
+    "subtract_handovers": 9867,
+    "head_clears": 54,
+    "logic_units_per_layer": 256,
+    "reset_layers": 5,
+    "graph": {
+      "layers": 75,
+      "dims": 13451,
+      "heads": 5,
+      "ffn_units": 16850,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 14,
+  "primitive_basis": [],
+  "semantic_program": "kernel.source-transactions.v1",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 603445270,
+  "weight_bytes": 1206890540,
+  "cuda_peak_allocated_bytes": 1283511808,
+  "host_process_peak_rss_bytes": 1761357824,
+  "hidden_size": 3584,
+  "native_layers": 76,
+  "boot_tokens": 66,
+  "applied_steps": 465,
+  "early_stop": true,
+  "halt_interval": 8,
+  "completion_flush_forwards": 1,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 256,
+    "stack": 16,
+    "context": 8,
+    "constants": 4,
+    "fuel": 512,
+    "word_bits": 9
+  },
+  "device": "cuda",
+  "compile_seconds": 14.695092280002427,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-source.v1",
+      "status": "EXPORTED",
+      "name": "delta-alias-type-sort",
+      "declarations": [
+        {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "U"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "sort",
+            [
+              "succ",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": [
+            "sort",
+            [
+              "zero"
+            ]
+          ]
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "p"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "U"
+              }
+            ],
+            []
+          ],
+          "value": null
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "hp"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "p"
+              }
+            ],
+            []
+          ],
+          "value": null
+        }
+      ],
+      "target": {
+        "kind": "theorem",
+        "name": [
+          {
+            "str": "proof"
+          }
+        ],
+        "level_params": [],
+        "type": [
+          "const",
+          [
+            {
+              "str": "p"
+            }
+          ],
+          []
+        ],
+        "value": [
+          "const",
+          [
+            {
+              "str": "hp"
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "format": "leanputer.kernel-source.v1",
+      "status": "EXPORTED",
+      "name": "opaque-body-not-unfolded",
+      "declarations": [
+        {
+          "kind": "opaque",
+          "name": [
+            {
+              "str": "U"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "sort",
+            [
+              "succ",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": [
+            "sort",
+            [
+              "zero"
+            ]
+          ]
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "p"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "U"
+              }
+            ],
+            []
+          ],
+          "value": null
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "hp"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "p"
+              }
+            ],
+            []
+          ],
+          "value": null
+        }
+      ],
+      "target": {
+        "kind": "theorem",
+        "name": [
+          {
+            "str": "proof"
+          }
+        ],
+        "level_params": [],
+        "type": [
+          "const",
+          [
+            {
+              "str": "p"
+            }
+          ],
+          []
+        ],
+        "value": [
+          "const",
+          [
+            {
+              "str": "hp"
+            }
+          ],
+          []
+        ]
+      }
+    },
+    {
+      "format": "leanputer.kernel-source.v1",
+      "status": "EXPORTED",
+      "name": "delta-application-spine",
+      "declarations": [
+        {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "typeId"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "zero"
+                ]
+              ]
+            ],
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "zero"
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            0,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "zero"
+                ]
+              ]
+            ],
+            [
+              "var",
+              0
+            ]
+          ]
+        },
+        {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "U"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "sort",
+            [
+              "succ",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": [
+            "app",
+            [
+              "const",
+              [
+                {
+                  "str": "typeId"
+                }
+              ],
+              []
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ]
+          ]
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "p"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "U"
+              }
+            ],
+            []
+          ],
+          "value": null
+        }
+      ],
+      "target": {
+        "kind": "definition",
+        "name": [
+          {
+            "str": "proof"
+          }
+        ],
+        "level_params": [],
+        "type": [
+          "pi",
+          0,
+          [
+            "const",
+            [
+              {
+                "str": "p"
+              }
+            ],
+            []
+          ],
+          [
+            "const",
+            [
+              {
+                "str": "p"
+              }
+            ],
+            []
+          ]
+        ],
+        "value": [
+          "lam",
+          0,
+          [
+            "const",
+            [
+              {
+                "str": "p"
+              }
+            ],
+            []
+          ],
+          [
+            "var",
+            0
+          ]
+        ]
+      }
+    },
+    {
+      "format": "leanputer.kernel-source.v1",
+      "status": "EXPORTED",
+      "name": "delta-two-universe-parameters",
+      "declarations": [
+        {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "U"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ],
+          "type": [
+            "sort",
+            [
+              "succ",
+              [
+                "max",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "v"
+                    }
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "value": [
+            "sort",
+            [
+              "max",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ],
+              [
+                "param",
+                [
+                  {
+                    "str": "v"
+                  }
+                ]
+              ]
+            ]
+          ]
+        },
+        {
+          "kind": "axiom",
+          "name": [
+            {
+              "str": "A"
+            }
+          ],
+          "level_params": [],
+          "type": [
+            "const",
+            [
+              {
+                "str": "U"
+              }
+            ],
+            [
+              [
+                "zero"
+              ],
+              [
+                "succ",
+                [
+                  "zero"
+                ]
+              ]
+            ]
+          ],
+          "value": null
+        }
+      ],
+      "target": {
+        "kind": "definition",
+        "name": [
+          {
+            "str": "proof"
+          }
+        ],
+        "level_params": [],
+        "type": [
+          "pi",
+          0,
+          [
+            "const",
+            [
+              {
+                "str": "A"
+              }
+            ],
+            []
+          ],
+          [
+            "const",
+            [
+              {
+                "str": "A"
+              }
+            ],
+            []
+          ]
+        ],
+        "value": [
+          "lam",
+          0,
+          [
+            "const",
+            [
+              {
+                "str": "A"
+              }
+            ],
+            []
+          ],
+          [
+            "var",
+            0
+          ]
+        ]
+      }
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "heap",
+      "row_bank": 1,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "constants",
+      "row_bank": 0,
+      "rows": 4,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "4 focused generic checked-definition reduction probes; every private signature generated by weighted source checks; delta/beta application spine and original universe schemes; complete inductive/recursor/primitives/conversion unfinished",
+  "operation_group": "checked-delta",
+  "full_kernel_native_support": false
+}

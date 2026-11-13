@@ -1,5 +1,7 @@
 # Ordinary source transactions in stock Qwen3.5 weights
 
+Historical checkpoint e0db573; subsequent reduction changes have separate evidence.
+
 The source loader packs ORIGINAL raw schemes/dependencies/body syntax only.
 The weighted controller starts with an empty checked environment. It checks
 names/unique universe parameters/scopes, infers type Sort and body type, checks

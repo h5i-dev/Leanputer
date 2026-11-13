@@ -401,7 +401,7 @@ class RuleCompiler:
         self.emit(self.AND(let_call, room), sp=self.add(r['sp'], 1), mode=Mode.WALK,
             x=c, substitution=b, depth=0, task=Task.INSTANTIATE_ONE)
         stuck = self.AND(reducing, self.NOT(self.OR(self.tag(Tag.MDATA, Tag.APP, Tag.LET), self.AND(self.tag(Tag.LAM), argument))))
-        self.ret(stuck, x)
+        self.ret(self.AND(stuck, self.NOT(self.AND(self.tag(Tag.CONST), self.NOT(self.eq(r['env_ready'], 0))))), x)
 
         # Reverse list search implements Local abstraction and symbol-set DFS.
         finding = self.mode(Mode.FIND)

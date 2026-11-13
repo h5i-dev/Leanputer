@@ -92,7 +92,7 @@ class EnvironmentDriver:
                 raise KernelError('declaration value type mismatch')
         if publish:
             s.constants[declaration.symbol] = Signature(declaration.universe_parameters,
-                declaration.type, declaration.value, declaration.kind in ('theorem', 'opaque'))
+                declaration.type, declaration.value, declaration.kind == 'opaque')
             if declaration.kind == 'axiom':
                 self.axioms.append(declaration.symbol)
 
