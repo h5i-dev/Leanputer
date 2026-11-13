@@ -1,5 +1,7 @@
 # Composed typed inductive CORE in stock Qwen3.5 weights
 
+Historical checkpoint8161018; later name/generation stages have separate evidence.
+
 This is a kernel CORE-operation API, not original-source declaration/proof
 admission. [Complete phase/data contract](../../docs/kernel/inductive-native.md).
 The native loader transports raw declarations only. Weights check headers in the

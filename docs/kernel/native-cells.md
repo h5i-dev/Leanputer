@@ -20,7 +20,7 @@ until weighted checking and atomic publication derive checked records.
 | 80..82 | String/numeral name segments and `(symbolID,nameVector,0)` entries |
 | 88 | Raw symbolic-substitution argument `(parameterSymbol,levelPointer,0)` |
 | 96..100 | Raw family/constructor/recursor-claim/block records |
-| 160..170 | Output-only signature/family/constructor/recursor/rule/scheme/recursive-template records; never input answers |
+| 160..171 | Output-only signature/family/constructor/recursor/rule/scheme/recursive-template records; never input answers |
 
 Vector roles distinguish object references, level references, 16-bit natural
 limbs, UTF-8 bytes and symbol IDs. This distinction is necessary: the syntax
@@ -97,4 +97,10 @@ Private typed-core metadata168/169/170 retain pending constructor names/types,
 derived field Local snapshots/recursive descriptors/ordinals and family/field
 vectors/result arguments. Pending names support duplicate checks only; the
 typing overlay still excludes their types until every constructor passes.
-The input packer has no branch emitting any output-only160..170record.
+The input packer has no branch emitting any output-only160..171record.
+
+Name-only operations can transport additional raw symbol_roots without any
+checked entries. Symbol/path lookup and source recursor-name relation run in
+weights. Record171 `(familySignature,verifiedRecursorSymbol,next)` is generated
+only after that relation and namespace checks. Raw recursor types remain claims.
+This latest name stage has IR evidence; stock typed-core evidence is8161018.

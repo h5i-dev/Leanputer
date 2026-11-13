@@ -10,7 +10,7 @@ from .traversal_machine import Mode, Task, Outcome, Reason
 def emit_rules(c):
     r, n = c.r, c.read['node']
     a, b = n['a'], n['b']
-    entering = c.AND(c.mode(Mode.WALK), c.task(Task.CHECK_NAME))
+    entering = c.AND(c.mode(Mode.WALK), c.OR(c.task(Task.CHECK_NAME),c.task(Task.GET_NAME_PATH)))
     wb = lambda word: c.mux(c.eq(word, 0), 0, 1)
     shape = c.eq(wb(a), wb(b))
     valid_header = c.AND(c.eq(n['c'], VectorKind.REFERENCES), shape)
@@ -24,7 +24,8 @@ def emit_rules(c):
     c.emit(c.AND(cell, valid_cell), mode=Mode.NAME_ENTRY, x=a, name_table_next=b, name_table_left=c.sub(r['name_table_left'], 1))
     entry = c.mode(Mode.NAME_ENTRY)
     matches = c.eq(a, r['query_symbol'])
-    c.emit(c.AND(entry, matches), mode=Mode.NAME_PATH, x=b)
+    c.emit(c.AND(entry, matches,c.task(Task.CHECK_NAME)), mode=Mode.NAME_PATH, x=b)
+    c.ret(c.AND(entry,matches,c.task(Task.GET_NAME_PATH)),b)
     c.stop(c.AND(entry, c.NOT(matches), c.eq(r['name_table_left'], 0)), Outcome.INVALID, Reason.INVALID_DECLARATION)
     c.emit(c.AND(entry, c.NOT(matches), c.NOT(c.eq(r['name_table_left'], 0))), mode=Mode.NAME_TABLE_CELL, x=r['name_table_next'])
     path = c.mode(Mode.NAME_PATH)

@@ -78,3 +78,11 @@ still no new composed stock/full-source admission evidence for these modules.
 ```bash
 .venv/bin/python -m unittest tests.test_kernel_recursive_argument_transition -v
 ```
+
+Subsequent generated-name IR validates the pinned mk_rec_name relation using
+arbitrary structured-name paths and shared byte/limb vector content comparison.
+Only the source kernel suffix rec is literal. Name/profile2tests PASS7.708s;
+composed core3cases PASS21.704s (bad suffix, pending-constructor collision and
+numeric parent path). Output-only171 retains a verified family/recursor-symbol
+association. No supplied expected name/type/admission answer. This new name
+stage has no separate stock run yet; last composed stock remains8161018.

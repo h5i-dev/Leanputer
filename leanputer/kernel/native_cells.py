@@ -42,6 +42,7 @@ class CellTag(IntEnum):
     PENDING_CONSTRUCTOR = 168     # Private (symbol,rawType,typedFieldMetadata).
     CONSTRUCTOR_FIELD = 169       # Derived (LocalRecord,recursiveDescriptor,ordinal).
     CONSTRUCTOR_ANALYSIS = 170    # Private (familySig,fieldVector,resultArgs).
+    VALIDATED_RECURSOR_NAME = 171 # Output-only (familySig,recursorSymbol,next).
 
 
 class VectorKind(IntEnum):
@@ -149,7 +150,7 @@ def _roots(source):
     return expressions, symbols
 
 
-def pack_source(source, capacities=CellCapacities(), *, level_bindings=(), level_roots=()):
+def pack_source(source, capacities=CellCapacities(), *, level_bindings=(), level_roots=(), symbol_roots=()):
     """Relocate raw schemes into one typed heap plus a raw declaration bank.
 
     Vector roles are essential: the Arena can intern the SAME integer tuple as
@@ -161,6 +162,10 @@ def pack_source(source, capacities=CellCapacities(), *, level_bindings=(), level
     if len(source.declarations) > capacities.constants:
         raise ResourceError('raw declaration input bank')
     pending, symbols = _roots(source)
+    for symbol in symbol_roots:
+        a.word(symbol)
+        if symbol >= len(source.symbols.names): raise KernelError('unknown raw symbol root')
+        symbols.add(symbol)
     level_bindings = tuple(level_bindings)
     symbols.update(symbol for symbol, _ in level_bindings)
     exprs, levels = set(), set()

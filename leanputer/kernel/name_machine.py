@@ -19,7 +19,7 @@ def valid_tag(mode, tag):
 
 def step(machine, tag, a, b, c, stop, ret, alloc):
     r = machine.state['regs']
-    if r['task'] != Task.CHECK_NAME: return False
+    if r['task'] not in (Task.CHECK_NAME,Task.GET_NAME_PATH): return False
     if r['mode'] == Mode.WALK:
         if c != VectorKind.REFERENCES or bool(a) != bool(b): stop(Outcome.INVALID, Reason.SYNTAX)
         elif not a or not r['query_symbol']: stop(Outcome.INVALID, Reason.INVALID_DECLARATION)
@@ -28,7 +28,9 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         if not r['name_table_left'] or bool(b) != (r['name_table_left'] > 1): stop(Outcome.INVALID, Reason.SYNTAX)
         else: r.update(mode=Mode.NAME_ENTRY, x=a, name_table_next=b, name_table_left=r['name_table_left']-1)
     elif r['mode'] == Mode.NAME_ENTRY:
-        if a == r['query_symbol']: r.update(mode=Mode.NAME_PATH, x=b)
+        if a == r['query_symbol']:
+            if r['task']==Task.GET_NAME_PATH:ret(b)
+            else:r.update(mode=Mode.NAME_PATH, x=b)
         elif not r['name_table_left']: stop(Outcome.INVALID, Reason.INVALID_DECLARATION)
         else: r.update(mode=Mode.NAME_TABLE_CELL, x=r['name_table_next'])
     elif r['mode'] == Mode.NAME_PATH:

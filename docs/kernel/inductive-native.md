@@ -195,3 +195,14 @@ constructor declaration/elimination/K/recursor generation and claim checks.
 The [stock2 evidence](../../benchmarks/kernel-typed-core-stock/README.md) derives
 ALL private state from raw syntax in normal forward/cache; no native metadata
 seeding or external checking. Generated recursor names/claims remain untrusted.
+
+Recursor-name checking uses the pinned mk_rec_name rule `I + name("rec")`.
+Family/candidate names are raw structured-name DATA, not a lookup catalog. A
+shared name-path lookup traverses the symbol table, then a count-driven prefix
+comparison uses the SAME byte/limb vector comparator for string/numeral segments
+and checks the final string segment's bytes. A raw recursor symbol can be reused
+only AFTER that relation and declaration-name uniqueness pass. Its supplied type
+remains a claim compared against the GENERATED recursor scheme. The raw block
+format already carries the recursor-name claim; no host expected-name/type
+answer is inserted. Generic fresh-name interning for nested specialization is
+still a separate subsequent operation.
