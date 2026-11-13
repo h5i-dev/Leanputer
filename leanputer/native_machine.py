@@ -1,0 +1,221 @@
+"""Shared dependent IR lowered to stock Qwen3.5 GatedDeltaNet/SwiGLU.
+
+Bring-up implementation; broad differential validation is deliberately pending.
+The host supplies syntax-only boot records, then performs fixed stock forwards
+with identity hidden-state feedback and the stock cache. No host checker rules.
+"""
+from dataclasses import dataclass
+import json
+import time
+
+import torch
+
+from .bitvec import pack_words
+from .machine_spec import MachineConfig, prepare
+from .native import emit_stock
+from .native_vendor.qwenputer.expr import Expr
+from .native_vendor.qwenputer.ir import Graph, Target, K, A_BIT, A_REF
+from .runner import parse_document
+from .state_layout import StateLayout, RegisterLayout
+from .transition import compile_addresses, RuleCompiler
+
+
+class NativeBuilder:
+    def __init__(self, intermediate=1024, reset_layers=4):
+        self.graph = Graph(Target(key_heads=1, value_heads=1, intermediate=intermediate))
+        self.barrier = 2*reset_layers
+
+    def feature(self, name): return self.graph.token_feature(name, lambda token:0)
+
+    def gate(self, operation, values, name):
+        total = sum(values, Expr())
+        one = self.graph.one
+        if operation == 'not': terms = [(1, one, one-total)]
+        elif operation == 'and': terms = [(1, one, total+1-len(values))]
+        else: terms = [(1, one, total),(-1, one, total-1)]
+        return self.graph.ffn(terms, name=name, min_level=self.barrier)
+
+    def circuit(self, plan, inputs, name):
+        circuit, outputs = plan
+        values = dict(enumerate(inputs))
+        needed = set(outputs); live = []
+        for gate in reversed(circuit.gates):
+            if gate[0] in needed: needed.update(gate[2]); live.append(gate)
+        for wire, operation, operands in reversed(live):
+            values[wire] = self.gate(operation, [values[i] for i in operands], f'{name}/{wire}')
+        return [values[i] for i in outputs]
+
+    def onehot(self, bits, enabled, cells, name):
+        return [self.gate('and', [enabled]+[bit if row >> i & 1 else self.graph.one-bit
+                                           for i,bit in enumerate(bits)], f'{name}/{row}') for row in range(cells)]
+
+
+@dataclass
+class NativeMachine:
+    model: object
+    layout: object
+    state_layout: object
+    register_layout: object
+    feature_slots: list
+    config: MachineConfig
+    offsets: dict
+    native_heads: list
+
+    def embeddings(self, features):
+        parameter = next(self.model.parameters())
+        result = torch.zeros((*features.shape[:2],self.layout.hidden), device=parameter.device, dtype=parameter.dtype)
+        result[:,:,:self.layout.m] = self.layout.ballast
+        result[:,:,self.feature_slots] = features.to(result.device,result.dtype)
+        return result
+
+    def check(self, documents, diagnostic_steps=None):
+        states = [prepare(self.config,*parse_document(document)) for document in documents]
+        control_width = self.register_layout.width
+        # Static syntax load. Equal capacities give every item the same boot length.
+        boot = []
+        for bank in ('heap','stack','context','constants'):
+            for row in range(max(state['regs']['free'] for state in states) if bank=='heap' else max(state['regs']['decl_count'] for state in states) if bank=='constants' else 0):
+                packet = torch.zeros(len(states),len(self.feature_slots))
+                for index,state in enumerate(states):
+                    packet[index,:control_width] = self.state_layout.encode(state)[0,:control_width]
+                    packet[index,self.offsets['boot/'+bank]] = float(row < (state['regs']['free'] if bank=='heap' else state['regs']['decl_count']))
+                    for bit in range(self.offsets['address_width']):
+                        packet[index,self.offsets['boot/address']+bit] = float(bool(row & (1 << bit)))
+                    fields = state[bank][row]
+                    values = pack_words(fields,[self.config.word_bits]*len(fields))
+                    packet[index,self.offsets['boot/payload']:self.offsets['boot/payload']+len(values)] = torch.tensor(values)
+                boot.append(packet)
+        initial = torch.zeros(len(states),1,len(self.feature_slots))
+        for index,state in enumerate(states): initial[index,0,:control_width] = self.state_layout.encode(state)[0,:control_width]
+        device = next(self.model.parameters()).device
+        if device.type=='cuda': torch.cuda.synchronize()
+        started = time.perf_counter()
+        with torch.inference_mode():
+            loaded = self.model(inputs_embeds=self.embeddings(torch.stack(boot,dim=1)), use_cache=True)
+            state = self.embeddings(initial)
+            cache = loaded.past_key_values
+            for step in range(diagnostic_steps or self.config.fuel+2):
+                output = self.model(inputs_embeds=state, past_key_values=cache,
+                                    use_cache=True,output_hidden_states=True)
+                cache = output.past_key_values
+                state = output.hidden_states[-2]  # identity wire; no interpretation/update
+                if diagnostic_steps:
+                    raw = state[:,0,self.feature_slots].float().cpu()
+                    values = output.logits[:,0,:].float().cpu()[0]
+                    decoded = {name:sum(int(values[s.start+i]) << i for i in range(s.stop-s.start))
+                               for name,s in self.register_layout.slices.items()}
+                    memory = cache.layers[self.native_heads[0]['layer']].recurrent_states[0]
+                    print(json.dumps(dict(step=step+1, regs=decoded,
+                                          pending=raw[0,control_width:control_width+30].tolist(),
+                                          heap5=memory[0,0,5,2:26].float().cpu().tolist())),flush=True)
+        if device.type=='cuda': torch.cuda.synchronize()
+        bits = output.logits[:,0,:].float().cpu()
+        if not torch.all((bits==0)|(bits==1)):
+            raise ValueError('native control left Boolean domain; no rounding permitted')
+        registers = []
+        for row in bits.tolist():
+            registers.append({name:sum(int(row[s.start+i]) << i for i in range(s.stop-s.start))
+                              for name,s in self.register_layout.slices.items()})
+        return dict(registers=registers,forward_seconds=time.perf_counter()-started,
+                    stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
+                    parameters=sum(p.numel() for p in self.model.parameters()),
+                    hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
+                    boot_tokens=len(boot),applied_steps=diagnostic_steps or self.config.fuel+2)
+
+
+def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
+                           intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16):
+    state_layout = StateLayout(config); registers = RegisterLayout(state_layout)
+    builder = NativeBuilder(intermediate,reset_layers); graph = builder.graph
+    features = [builder.feature(name) for name in registers.names]
+    control = list(features)
+    pending = {}
+    for bank,fields,reg in [('heap',4,'free'),('stack',6,'sp'),('context',1,'ctx')]:
+        address_width = getattr(config,bank).bit_length()-1
+        address = [builder.feature(f'pending/{bank}/address/{i}') for i in range(address_width)]
+        enable = builder.feature(f'pending/{bank}/enable')
+        payload = [builder.feature(f'pending/{bank}/payload/{i}') for i in range(fields*config.word_bits)]
+        pending[bank] = (address,enable,payload)
+        features.extend(address+[enable]+payload)
+    offsets = {}
+    boot_banks = {}
+    for bank in ('heap','stack','context','constants'):
+        offsets['boot/'+bank] = len(features)
+        boot_banks[bank] = builder.feature('boot/'+bank); features.append(boot_banks[bank])
+    address_width = max(config.heap,config.stack,config.context,config.constants).bit_length()-1
+    offsets.update(address_width=address_width, **{'boot/address':len(features)})
+    boot_address = [builder.feature(f'boot/address/{i}') for i in range(address_width)]; features.extend(boot_address)
+    offsets['boot/payload'] = len(features)
+    boot_payload = [builder.feature(f'boot/payload/{i}') for i in range(6*config.word_bits)]; features.extend(boot_payload)
+    head_metadata = []
+
+    def read(bank,query,name):
+        cells = getattr(config,bank); width = {'heap':4,'stack':6,'context':1,'constants':3}[bank]*config.word_bits
+        boot = boot_banks[bank]
+        paddr,penable,payload = pending.get(bank,([Expr()]*address_width,Expr(),[Expr()]*width))
+        addr = [builder.gate('or',[builder.gate('and',[boot,a],name+'/ba'),
+                                  builder.gate('and',[penable,b],name+'/pa')],name+'/wa')
+                for a,b in zip(boot_address,paddr)]
+        enable = builder.gate('or',[boot,penable],name+'/write')
+        values = [builder.gate('or',[builder.gate('and',[boot,a],name+'/bv'),
+                                    builder.gate('and',[penable,b],name+'/pv')],name+'/wv')
+                  for a,b in zip(boot_payload[:width],payload)]
+        select = lambda expression: K*(2*expression-graph.one)
+        low = min(7,cells.bit_length()-1)
+        parts = []
+        for part in range(max(1,cells//128)):
+            named = f'{name}/bank{part}'
+            matches = lambda bits:[bit if part >> i & 1 else graph.one-bit for i,bit in enumerate(bits)]
+            writing = builder.gate('and',[enable]+matches(addr[low:]),named+'/write')
+            querying = builder.gate('and',matches(query[low:]),named+'/query-bank')
+            keys = builder.onehot(addr[:low],writing,min(cells,128),named+'/key')
+            queries = builder.onehot(query[:low],querying,min(cells,128),named+'/query')
+            data = {i+2:A_BIT*value for i,value in enumerate(values)}
+            data.update({0:A_REF*writing,1:A_REF*writing})
+            outputs = graph.head(named,{i:select(value) for i,value in enumerate(queries)},
+                                 {i:select(value) for i,value in enumerate(keys)},data,0,
+                                 {i+2:K*graph.one for i in range(width)},[(i+2,2.**7)for i in range(width)],
+                                 min_level=builder.barrier)
+            head_metadata.append(dict(name=named,bank=bank,row_bank=part,layer=(graph.nodes[-1].level-1)//2))
+            parts.append(outputs)
+        return [sum((part[i] for part in parts),Expr())for i in range(width)]
+
+    collect = lambda circuit,outputs:(circuit,outputs)
+    address1,address2 = compile_addresses(registers,target=collect)
+    addresses = builder.circuit(address1,control,'address1')
+    first = []; offset = 0
+    for bank,ports in [('heap',4),('stack',1),('constants',1)]:
+        bits = getattr(config,bank).bit_length()-1
+        for port in range(ports):
+            first.extend(read(bank,addresses[offset:offset+bits],f'read/{bank}/{port}')); offset += bits
+    second = builder.circuit(address2,control+first,'address2')
+    ctxbits = config.context.bit_length()-1
+    all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
+    plan = RuleCompiler(registers).finish('attention_delta',target=collect)
+    outputs = builder.circuit(plan,control+all_reads,'transition')
+    update_features = control+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
+    if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
+    # Snapshot every selected output before mutating any input register slot.
+    # In particular write addresses select OLD free/sp, while next registers
+    # increment those fields. A direct late read would observe the increment.
+    level = max(graph.level(expression) for expression in outputs)+2
+    outputs = [graph.ffn([(1,graph.one,value)],name=f'snapshot/{index}',min_level=level)
+               for index,value in enumerate(outputs)]
+    level = max(graph.level(expression) for expression in outputs)+2
+    for index,(feature,value) in enumerate(zip(update_features,outputs)):
+        graph.ffn([(1,graph.one,value),(-1,graph.one,feature)], name=f'commit/{index}',into=feature,min_level=level)
+    dimensions = [next(iter(expression.terms))for expression in control]
+    keep = {next(iter(expression.terms))for expression in features}
+    model,layout,_ = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
+    slots = [layout.dim(next(iter(expression.terms)))for expression in features]
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata)
+
+
+if __name__=='__main__':
+    torch.set_num_threads(1)
+    machine = compile_native_machine()
+    documents = [dict(format='leanputer.dependent.v1',term=['lam',['sort',0],['var',0]],claim=['pi',['sort',0],['sort',0]]),
+                 dict(format='leanputer.dependent.v1',term=['var',0],claim=['sort',0])]
+    print(json.dumps(dict(parameters=sum(p.numel()for p in machine.model.parameters()),hidden=machine.layout.hidden,
+                         layers=machine.model.config.num_hidden_layers,heads=machine.native_heads)),flush=True)
+    print(json.dumps(machine.check(documents)),flush=True)

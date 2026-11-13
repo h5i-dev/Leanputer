@@ -105,7 +105,9 @@ class Builder:
         return tuple(x if self.optimized and x == y else self.OR(self.AND(condition, x), self.AND(neg, y))
                      for x, y in zip(self.fit(yes, width), self.fit(no, width)))
 
-    def compile(self, outputs):
+    def compile(self, outputs, target=None):
+        if target is not None:
+            return target(self.c, outputs)
         return CompiledLogic(self.c, outputs, prune=self.optimized)
 
 

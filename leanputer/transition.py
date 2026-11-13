@@ -27,7 +27,7 @@ def state_words(builder, layout):
     return {name: tuple(builder.inputs[layout.slices[name]]) for name, _ in layout.fields}
 
 
-def compile_addresses(layout, optimized=True):
+def compile_addresses(layout, optimized=True, target=None):
     cfg, width = layout.config, layout.config.word_bits
     first = Builder(layout.names, optimized)
     r = state_words(first, layout)
@@ -36,7 +36,7 @@ def compile_addresses(layout, optimized=True):
         outputs.extend(r[name][:cfg.heap.bit_length()-1])
     outputs.extend(first.sub(r['sp'], first.const(1, width))[0][:cfg.stack.bit_length()-1])
     outputs.extend(r['decl'][:cfg.constants.bit_length()-1])
-    address1 = first.compile(outputs)
+    address1 = first.compile(outputs, target=target)
     names1 = port_names(width, PORTS[:6])
     second = Builder(layout.names + names1, optimized)
     r = state_words(second, layout)
@@ -49,7 +49,7 @@ def compile_addresses(layout, optimized=True):
         index = second.sub(before, index)[0]
     outputs = list(index[:cfg.context.bit_length()-1])
     outputs += list(second.inputs[v_start:v_start+cfg.constants.bit_length()-1])
-    return address1, second.compile(outputs)
+    return address1, second.compile(outputs, target=target)
 
 
 def compile_initializer(layout, optimized=True):
@@ -387,7 +387,7 @@ class RuleCompiler:
         self.emit(good, ctx=self.add(r['ctx'], 1))
         self.stop(self.AND(self.active, self.NOT(self.OR(*(self.eq(r['mode'], op) for op in Op)))), Outcome.REJECT, Reason.INTERNAL)
 
-    def finish(self, memory_update='logic'):
+    def finish(self, memory_update='logic', target=None):
         self.rules()
         if memory_update == 'attention_delta':
             outputs = self.state_outputs()
@@ -401,7 +401,7 @@ class RuleCompiler:
                 for field in range(len(fields)):
                     outputs.extend(self.OR(*(self.AND(condition, payload[field][bit]) for condition, _, payload in choices))
                                    for bit in range(self.width))
-            return self.g.compile(outputs)
+            return self.g.compile(outputs, target=target)
         # Masked memory writes are control FFNs, with one write per bank/step.
         for bank, choices in self.writes.items():
             if not choices:
@@ -421,7 +421,7 @@ class RuleCompiler:
                 for field_index, field in enumerate(fields):
                     name = f'{bank}/{row}/{field}'
                     self.choices[name].extend((condition, values[field_index]) for condition, (_, _, values) in zip(conditions, choices))
-        return self.g.compile(self.state_outputs())
+        return self.g.compile(self.state_outputs(), target=target)
 
     def state_outputs(self):
         outputs = []

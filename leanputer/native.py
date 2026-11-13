@@ -56,6 +56,52 @@ class NativeCompilation:
         return inputs
 
 
+def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
+    from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
+    results = result_dims
+    keep = set(result_dims) | set(keep_dims or ())
+    allocation = allocate(graph, None, keep, intermediate)
+    layout = pick_layout(allocation.n_slots)
+    layout.slots = allocation.slots
+    layers = graph.n_layers()
+    tc = dict(hidden_size=layout.hidden, vocab_size=len(results), intermediate_size=intermediate,
+              num_hidden_layers=layers+1, layer_types=['linear_attention']*layers+['full_attention'],
+              hidden_act='silu', linear_conv_kernel_dim=4, linear_key_head_dim=128, linear_value_head_dim=128,
+              linear_num_key_heads=graph.target.key_heads, linear_num_value_heads=graph.target.value_heads, num_attention_heads=1, num_key_value_heads=1,
+              head_dim=256, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
+              rope_parameters=dict(rope_type='default', rope_theta=10000000, partial_rotary_factor=.25,
+                                   mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
+    native_config = Qwen3_5TextConfig(**tc)
+    native_config._attn_implementation = 'eager'
+    # Stock construction also initializes nonpersistent rotary/cache buffers.
+    # Its random parameters are all overwritten below by generated tensors.
+    model = Qwen3_5ForCausalLM(native_config)
+    # Every parameter is compiler-generated, including inactive native sublayers.
+    state = {name:torch.zeros(value.shape, dtype=torch.float32) for name, value in model.state_dict().items()}
+    state.update(emit_layers(graph, layout, tc, 0, 'model.', allocation))
+    if reset_layers:
+        from .native_vendor.qwenputer.emit import row
+        persistent = {layout.dim(d) for d in keep}
+        clear = [d for d in range(layout.m, layout.hidden) if d not in persistent]
+        if len(clear) > reset_layers*intermediate:
+            raise ValueError('native scratch reset needs more reserved layers')
+        for unit, slot in enumerate(clear):
+            layer, index = divmod(unit, intermediate)
+            prefix = f'model.layers.{layer}.mlp.'
+            row(graph.one, layout, state[prefix+'gate_proj.weight'][index], 128.)
+            state[prefix+'up_proj.weight'][index, slot] = 1/(128*layout.scale)
+            state[prefix+'down_proj.weight'][slot,index] = -1.
+    state['model.norm.weight'].fill_(-1.)
+    for i, dimension in enumerate(result_dims):
+        slot = layout.dim(dimension)
+        state['model.norm.weight'][slot] = 1/layout.scale
+        state['lm_head.weight'][i, slot] = 1.
+    model.load_state_dict(state, strict=True, assign=True)
+    model.requires_grad_(False)
+    model = model.to(device=device, dtype=dtype).eval()
+    return model, layout, allocation
+
+
 def compile_stlc(config=Config(nodes=5, types=('P', ('P','P'), (('P','P'),('P','P')))),
                  intermediate=256, dtype=torch.float32, device='cpu'):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
@@ -75,33 +121,7 @@ def compile_stlc(config=Config(nodes=5, types=('P', ('P','P'), (('P','P'),('P','
         values[wire] = graph.ffn(terms, name=f'gate/{wire}/{operation}')
     results = [graph.ffn([(1, graph.one, values[wire])], name=f'result/{i}') for i, wire in enumerate(outputs)]
     result_dims = [next(iter(expression.terms)) for expression in results]
-    allocation = allocate(graph, None, set(result_dims), intermediate)
-    layout = pick_layout(allocation.n_slots)
-    layout.slots = allocation.slots
-    layers = graph.n_layers()
-    tc = dict(hidden_size=layout.hidden, vocab_size=len(results), intermediate_size=intermediate,
-              num_hidden_layers=layers+1, layer_types=['linear_attention']*layers+['full_attention'],
-              hidden_act='silu', linear_conv_kernel_dim=4, linear_key_head_dim=128, linear_value_head_dim=128,
-              linear_num_key_heads=1, linear_num_value_heads=1, num_attention_heads=1, num_key_value_heads=1,
-              head_dim=256, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
-              rope_parameters=dict(rope_type='default', rope_theta=10000000, partial_rotary_factor=.25,
-                                   mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
-    native_config = Qwen3_5TextConfig(**tc)
-    native_config._attn_implementation = 'eager'
-    # Stock construction also initializes nonpersistent rotary/cache buffers.
-    # Its random parameters are all overwritten below by generated tensors.
-    model = Qwen3_5ForCausalLM(native_config)
-    # Every parameter is compiler-generated, including inactive native sublayers.
-    state = {name:torch.zeros(value.shape, dtype=torch.float32) for name, value in model.state_dict().items()}
-    state.update(emit_layers(graph, layout, tc, 0, 'model.', allocation))
-    state['model.norm.weight'].fill_(-1.)
-    for i, dimension in enumerate(result_dims):
-        slot = layout.dim(dimension)
-        state['model.norm.weight'][slot] = 1/layout.scale
-        state['lm_head.weight'][i, slot] = 1.
-    model.load_state_dict(state, strict=True, assign=True)
-    model.requires_grad_(False)
-    model = model.to(device=device, dtype=dtype).eval()
+    model, layout, allocation = emit_stock(graph, result_dims, intermediate, dtype, device)
     slots = tuple(layout.dim(next(iter(values[i].terms))) for i in range(len(circuit.inputs)))
     return NativeCompilation(model, config, tuple(circuit.inputs), slots,
                              tuple(layout.dim(d) for d in result_dims), layout, graph)

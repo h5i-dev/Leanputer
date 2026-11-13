@@ -74,3 +74,33 @@ rules to native SwiGLU, establish stock-forward recurrence, then add False/Iff/
 And/equality support based on the measured mathlib blockers. Native memory state,
 normalization, gating, dtype and cache behavior need executable correspondence;
 the current custom rank-one RAM update is not evidence of native compatibility.
+
+## Shared dependent native execution (bring-up checkpoint)
+
+The shared dependent port now emits the existing49-phase register-control IR
+into native SwiGLU and uses **active stock GatedDeltaNet cache** for heap,
+continuations, context and constants. Each read port has a replicated native
+memory head; pending writes commit through the native delta recurrence before
+the next read. Banks larger than128 rows split across native heads/layers.
+There is no host rank-one memory update. Stock layer methods/cache behavior are
+unchanged. A two-case CPU/CUDA smoke now accepts the valid identity in52semantic
+steps and rejects an unbound variable. Broad correctness validation is pending.
+
+The host loads syntax-only boot records, then applies a fixed fuel+2 stock
+forward schedule. Raw pre-final-norm hidden state feeds back by identity through
+the public hidden-state output; stock cache carries memory. Compiled prefix
+SwiGLUs clear temporary channels, and compiled final stages snapshot outputs
+before updating register slots. That snapshot matters: write addresses must
+observe old allocation/stack pointers, not their simultaneously incremented
+values. The first bring-up failure exposed and corrected this aliasing bug.
+No host inference, substitution, conversion, operation dispatch or halting is
+performed. Final register flags are decoded after the fixed schedule.
+
+This first recurrent configuration is larger than the unrolled STLC smoke:
+roughly260Mgenerated parameters at hidden2048/intermediate1024. BF16 is used for
+native memory outputs and saturated gates; no host rounding repairs results.
+A10G fallback-kernel smoke took6.740s for two judgments/130forwards, including
+five syntax boot tokens. It is a development observation, not a speedup claim.
+The CPU test used the earlier full-capacity boot schedule and took42.144s, so
+these are not matching timing boundaries. Sparse-reference results and native
+results must remain separately labeled until the deferred validation phase.
