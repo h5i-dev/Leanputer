@@ -43,6 +43,7 @@ class CellTag(IntEnum):
     CONSTRUCTOR_FIELD = 169       # Derived (LocalRecord,recursiveDescriptor,ordinal).
     CONSTRUCTOR_ANALYSIS = 170    # Private (familySig,fieldVector,resultArgs).
     VALIDATED_RECURSOR_NAME = 171 # Output-only (familySig,recursorSymbol,next).
+    ELIMINATION_INFO = 172       # Derived (elimLevel,recursorUparams,Kflag).
 
 
 class VectorKind(IntEnum):

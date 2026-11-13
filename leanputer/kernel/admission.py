@@ -134,7 +134,7 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                             occurrence = occurrence or raw_occurrence
                             reflexive = reflexive or (a.expr(row.a).tag == Tag.PI and raw_occurrence)
                             field_level = services.ensure_type(row.a)
-                            if not (levels.is_zero(result_level) or levels.geq(result_level, field_level)):
+                            if not (a.level_row(result_level).tag == LevelTag.ZERO or levels.geq(result_level, field_level)):
                                 raise KernelError('constructor field universe too large')
                             traversal.check_positivity(row.a)
                             descriptor = traversal.recursive_argument(row.a)
@@ -163,7 +163,7 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                         while a.expr(tail).tag == Tag.PI:
                             row = a.expr(tail)
                             local = c.fresh(row.a, binder_info=row.c)
-                            if not levels.is_zero(services.ensure_type(row.a)):
+                            if a.level_row(services.ensure_type(row.a)).tag != LevelTag.ZERO:
                                 non_prop.append(local)
                             tail = instantiate(a, row.b, (local,))
                         _, args = spine(a, tail)
@@ -174,7 +174,7 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                 elimination_level = a.level(LevelTag.PARAM, fresh_elimination_symbol)
             else:
                 elimination_level = a.zero
-            k = (len(analyses) == 1 and levels.is_zero(result_level)
+            k = (len(analyses) == 1 and a.level_row(result_level).tag == LevelTag.ZERO
                  and len(analyses[0].constructors) == 1 and analyses[0].constructors[0].fields == 0)
             constructors = [(ctor.symbol, Signature(universe_parameters, ctor.type))
                 for ind in inductives for ctor in ind.constructors]

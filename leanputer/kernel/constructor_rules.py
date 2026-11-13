@@ -100,7 +100,7 @@ def emit_rules(c):
     call(c.AND(field,c.NOT(pi)),CALL_CTOR_RESULT_APPLICATION,Task.FAMILY_APPLICATION,r['x'])
     sorted_=ensure_sort(at_mode(Mode.CTOR_FIELD_SORT))
     c.emit(sorted_,ctor_field_level=a)
-    call(sorted_,CALL_CTOR_RESULT_PROP,Task.LEVEL_EQUIVALENT,r['header_result_level'],peer=r['kernel_zero'])
+    call(sorted_,CALL_CTOR_RESULT_PROP,Task.LEVEL_EQUAL,r['header_result_level'],peer=r['kernel_zero'])
     c.emit(at_mode(Mode.CTOR_FIELD_SELECT),mode=Mode.CTOR_FIELD_RECORD,x=c.read['operand']['value'])
     field_record=at_mode(Mode.CTOR_FIELD_RECORD);valid=c.AND(ptr(a),ptr(b))
     c.stop(c.AND(field_record,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)

@@ -190,8 +190,10 @@ head; committed Γ remains separate. No pending ctor can type a later ctor.
 `core_transition` selects the typed core operation with pure syntax input and an
 inert rejecting axiom sentinel, never a proof target. The original-source entry
 cannot set that entry flag from JSON; it remains GAP before missing nested
-staging. After constructor checks the core controller still GAPs before
-constructor declaration/elimination/K/recursor generation and claim checks.
+staging. After constructor checks the current core controller privately declares
+constructors and derives elimination/K metadata, then GAPs before recursor
+generation and type-claim checks. The historical stock report below predates
+the name, constructor-declaration and elimination/K stages.
 The [stock2 evidence](../../benchmarks/kernel-typed-core-stock/README.md) derives
 ALL private state from raw syntax in normal forward/cache; no native metadata
 seeding or external checking. Generated recursor names/claims remain untrusted.
@@ -216,3 +218,37 @@ now may these constructor types enter the PRIVATE typing head. Committed Γ and
 raw input cursor stay unchanged until all generation/restoration is complete.
 Result arguments/typed field snapshots remain in pending analysis for the
 recursor builder; none are input-derived checking answers.
+
+Elimination/K follows `inductive.cpp:475–570` in the pinned source. The complete
+decision first uses necessarily-nonzero on the result universe; otherwise mutual
+predicates and predicates with multiple constructors eliminate only to Prop,
+empty predicates eliminate to any universe, and a singleton constructor loops
+over **all** fields. Each field must either have a type in Prop or be directly
+one of the constructor result application's arguments. Nested occurrence inside
+an index does not satisfy direct equality. K applies exactly to a single
+predicate family with one constructor and no fields. These are source semantic
+conditions, not support limits on family/constructor/field counts. Header,
+field-universe and K `is_zero` checks use the source's **raw level tag**;
+normalization/equivalence to zero is a different kernel operation.
+
+`elimination_machine/rules` restores the internally derived field Local records
+one by one before inferring dependent field domains under the private checked
+environment. No supplied universe/Prop/K classification enters inference. A
+generic search chooses a fresh nonzero universe-symbol identity outside the
+old parameter set. This alpha-renames Lean's fresh `u`, `u1`, … binder; generated
+recursor types/claims must compare universe binders by substitution, not by the
+spelling chosen for that binder. The weighted transition shifts the live
+universe/parameter scope right once, preserving the derived Local identities,
+and prepends the fresh symbol to the recursor universe vector, as
+`get_rec_lparams` does. Immutable family/constructor schemes keep their original
+universe lists. Output172 contains `(elimLevel,recursorUniverseVector,Kflag)`.
+Heap/context/fuel exhaustion is RESOURCE, not a restricted semantic class.
+
+The following generation stages are still required: rebuild all family index
+telescopes; form each motive over its indices and major; traverse all constructor
+fields to form minors and functional induction hypotheses; collect motives and
+minors in declaration order; generate each recursor's closed type and rules with
+the shared telescope abstraction/substitution services; check raw type claims
+against generated schemes. Nested transformation/restoration must surround the
+core stages before an original declaration can be published. The standalone
+core-operation entry remains diagnostic and cannot accept a theorem.

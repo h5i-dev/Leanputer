@@ -111,7 +111,7 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
     elif mode==Mode.CTOR_FIELD_SORT:
         if ensure_sort():
             r['ctor_field_level']=a
-            call(CALL_CTOR_RESULT_PROP,Task.LEVEL_EQUIVALENT,r['header_result_level'],peer=r['kernel_zero'])
+            call(CALL_CTOR_RESULT_PROP,Task.LEVEL_EQUAL,r['header_result_level'],peer=r['kernel_zero'])
     elif mode==Mode.CTOR_FIELD_SELECT:r.update(mode=Mode.CTOR_FIELD_RECORD,x=s['context'][r['ctx']-1][0])
     elif mode==Mode.CTOR_FIELD_RECORD:
         if not 0<a<r['free'] or not 0<b<r['free']:stop(Outcome.INVALID,Reason.SYNTAX)
