@@ -151,3 +151,28 @@ reuse/new-name/table-visibility and atomic resource checks PASS2tests16.466s.
 Fresh counters, prefix reconstruction, FIFO/replacement/restoration and original
 publication remain pending; no prior block has been registered/admitted by these
 data operations. Later native evidence must be recorded separately.
+
+`VECTOR_SPLICE` now implements prefix-vector plus suffix[skip:] across the five
+container roles with shared counted reversal and immutable suffix sharing. It
+checks roles, counts/ranges and word overflow; it neither interprets element
+proof types nor authorizes any environment insertion. Focused exact-state
+empty/full/interior/out-of-range and input/scope-preservation checks PASS1test
+10.210s. `REPLACE_NAME_PREFIX` composes path lookup, generic prefix comparison,
+this splice and interning, preserving the original symbol on no match. Exact,
+strict, anonymous, string/numeral and no-match cases PASS1test21.648s. This is the
+full structural `Name.replacePrefix` operation, not a family/constructor catalog.
+
+`WORD_DECIMAL` formats an unsigned physical counter into decimal bytes using
+compiled binary long division by10 and a counted digit list. No host formatting
+runs at inference. Exact-state zero/carry/maximum/resource checks at8/10/21bits
+PASS1test7.310s. This is bounded kernel-count formatting, not arbitrary-precision
+Nat primitive support. Source hashes now include `util/name.cpp`,
+`Init/Meta/Defs.lean` (appendIndexAfter) and `Init/Prelude.lean` (macro-scope name
+operations). Arbitrary `appendIndexAfter` applies `modifyBase` and cannot silently
+ignore macro scopes. The actual public auxiliary recursor call site first forms
+`mk_rec_name(main)` with final string `rec`; its last component therefore has no
+macro scopes under `Name.hasMacroScopes`, for **every** main-name path. Building
+that call site's final `rec_<index>` component is source-equivalent without
+restricting the main name. Private auxiliary names may consistently alpha-rename
+and still require actual freshness/reserved-name checking. No full fresh-name
+or nested source publication claim is established by these data operations.

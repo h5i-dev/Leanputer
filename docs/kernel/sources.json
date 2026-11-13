@@ -65,6 +65,21 @@
           "path": "src/kernel/declaration.h",
           "sha256": "eb9c497bb19dab26550cbb5196a13e0a925896c6d357a8faa2f3794c1e798a51",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/declaration.h"
+        },
+        {
+          "path": "src/util/name.cpp",
+          "sha256": "7f51cfcf48ea19b2e21628511f45e44d8f4e4396a9039bfd75b882088c1c60ae",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/util/name.cpp"
+        },
+        {
+          "path": "src/Init/Meta/Defs.lean",
+          "sha256": "293adf32a669d46d2a7295101e4c0188d9b632229c96742d6daf489ee6dd84ff",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/Init/Meta/Defs.lean"
+        },
+        {
+          "path": "src/Init/Prelude.lean",
+          "sha256": "3865afb3157d52a910efa9e61d951aa969a40a8bab503367e5fffb5b90c59fb3",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/Init/Prelude.lean"
         }
       ]
     },
