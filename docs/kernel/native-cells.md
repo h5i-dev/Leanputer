@@ -20,7 +20,7 @@ until weighted checking and atomic publication derive checked records.
 | 80..82 | String/numeral name segments and `(symbolID,nameVector,0)` entries |
 | 88 | Raw symbolic-substitution argument `(parameterSymbol,levelPointer,0)` |
 | 96..100 | Raw family/constructor/recursor-claim/block records |
-| 160..167 | Output-only signature/family/constructor/recursor/rule/scheme/recursive-template records; never input answers |
+| 160..170 | Output-only signature/family/constructor/recursor/rule/scheme/recursive-template records; never input answers |
 
 Vector roles distinguish object references, level references, 16-bit natural
 limbs, UTF-8 bytes and symbol IDs. This distinction is necessary: the syntax
@@ -89,5 +89,12 @@ and167 `(abstractDomain,binderInfo,0)`. Prefix/index vectors and fresh-Local
 abstraction are derived by weighted operations. These records may retain
 caller constructor Locals until the later generic recursor builder abstracts
 the surrounding scope. They are private analysis outputs, not publishable raw
-input assumptions. Composed stock validation of these new services is pending;
-last header stock evidence remains pinned8758019.
+input assumptions. [Composed typed-core stock evidence](../../benchmarks/kernel-typed-core-stock/README.md)
+now derives these services from raw syntax. Full original-source admission and
+generation remain unfinished.
+
+Private typed-core metadata168/169/170 retain pending constructor names/types,
+derived field Local snapshots/recursive descriptors/ordinals and family/field
+vectors/result arguments. Pending names support duplicate checks only; the
+typing overlay still excludes their types until every constructor passes.
+The input packer has no branch emitting any output-only160..170record.

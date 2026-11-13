@@ -1,6 +1,9 @@
 # General family/strict-positivity CORE semantic IR
 
-**This checkpoint has Boolean-IR evidence only.** It adds no new stock/native
+Historical checkpoints23ecc55/a3b1008. [Subsequent composed stock evidence](../kernel-typed-core-stock/README.md)
+now exercises the shared rules through typed constructor checking.
+
+**Those checkpoints had Boolean-IR evidence only.** It adds no new stock/native
 source coverage. The last stock source/header evidence remains pinned8758019.
 No broad differential, profiling or full857source evaluation was run.
 

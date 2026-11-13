@@ -39,6 +39,9 @@ class CellTag(IntEnum):
     CHECKED_SCHEME = 165          # Output-only (uparams,kind,payload), never packed.
     RECURSIVE_ARGUMENT = 166      # Output-only (familySig,prefixVector,indexVector).
     PREFIX_BINDER = 167           # Output-only (abstractDomain,binderInfo,0).
+    PENDING_CONSTRUCTOR = 168     # Private (symbol,rawType,typedFieldMetadata).
+    CONSTRUCTOR_FIELD = 169       # Derived (LocalRecord,recursiveDescriptor,ordinal).
+    CONSTRUCTOR_ANALYSIS = 170    # Private (familySig,fieldVector,resultArgs).
 
 
 class VectorKind(IntEnum):

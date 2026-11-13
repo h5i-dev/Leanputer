@@ -30,7 +30,7 @@ def resume(machine,frame,stop,ret,alloc):
         else:r.update(task=Task.ANALYZE_HEADERS,mode=Mode.HEADER_VECTOR,x=r['header_vector'],
             header_parameter_base=r['ctx'],header_parameter_end=end,local_base=r['ctx'])
     elif phase==CALL_HEADER_NAME:
-        call(CALL_HEADER_DUPLICATE_GLOBAL,Task.ENV_LOOKUP,0,query_symbol=r['header_symbol'],lookup_head=r['env_head'])
+        call(CALL_HEADER_DUPLICATE_GLOBAL,Task.ENV_LOOKUP,0,query_symbol=r['header_symbol'],lookup_head=r['typing_head'] if r['typing_active'] else r['env_head'])
     elif phase in (CALL_HEADER_DUPLICATE_GLOBAL,CALL_HEADER_DUPLICATE_PRIVATE):
         if r['r']:stop(Outcome.INVALID,Reason.DUPLICATE_DECLARATION)
         elif phase==CALL_HEADER_DUPLICATE_GLOBAL:
@@ -64,7 +64,7 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         else:
             s['stack'][r['sp']]=[CALL_HEADER_PARAMETERS,0,0,Task.ANALYZE_HEADERS,0,0]
             r.update(sp=r['sp']+1,task=Task.LOAD_PARAMETERS,x=r['header_parameters'],
-                header_parameter_count=a,header_vector=b,header_head=0,header_seen=0)
+                header_parameter_count=a,header_vector=b,header_head=r['typing_head'] if r['typing_active'] else r['env_head'],header_seen=0)
     elif r['mode']==Mode.HEADER_VECTOR:
         if c!=VectorKind.REFERENCES or not a or not b:stop(Outcome.INVALID,Reason.INVALID_DECLARATION)
         else:r.update(mode=Mode.HEADER_CELL,x=b,header_remaining=a)

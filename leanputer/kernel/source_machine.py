@@ -11,9 +11,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_SOURCE_NAME, CALL_SOURCE_DUPLICATE, CALL_SOURCE_PARAMETERS,
     CALL_SOURCE_TYPE_SCOPE, CALL_SOURCE_TYPE_INFER, CALL_SOURCE_TYPE_WHNF,
     CALL_SOURCE_PROPOSITION, CALL_SOURCE_VALUE_SCOPE, CALL_SOURCE_VALUE_INFER,
-    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS)
+    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS, CALL_SOURCE_CORE_CONSTRUCTORS)
 
-PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,)
+PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,CALL_SOURCE_CORE_CONSTRUCTORS,)
 
 
 def resume(machine, frame, stop, ret, alloc):
@@ -23,7 +23,11 @@ def resume(machine, frame, stop, ret, alloc):
         s['stack'][r['sp']-1] = [next_phase, 0, 0, Task.CHECK_SOURCE, 0, 0]
         r.update(mode=mode, task=task, x=x, depth=0, **updates)
     if phase == CALL_SOURCE_BLOCK_HEADERS:
-        stop(Outcome.GAP, Reason.GAP_INDUCTIVE) # Constructor/positivity/generation/restoration not integrated.
+        if r['core_operation'] and r['raw_index']==r['core_index']:
+            call(CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
+        else:stop(Outcome.GAP, Reason.GAP_INDUCTIVE) # Original-source nested staging remains missing.
+    elif phase == CALL_SOURCE_CORE_CONSTRUCTORS:
+        stop(Outcome.GAP,Reason.GAP_RECURSOR_GENERATION)
     elif phase == CALL_SOURCE_NAME:
         call(CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     elif phase == CALL_SOURCE_DUPLICATE:
@@ -53,13 +57,13 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
     s, r, cfg = machine.state, machine.state['regs'], machine.cfg
     if r['task'] != Task.CHECK_SOURCE: return False
     if r['mode'] == Mode.WALK:
-        if not 0 < r['decl_count'] <= cfg.constants or r['target_index'] != r['decl_count']-1:
+        if not 0 < r['decl_count'] <= cfg.constants or r['target_index'] != r['decl_count']-1 or (r['core_operation'] and r['core_index']>=r['target_index']):
             stop(Outcome.INVALID, Reason.SYNTAX)
         elif r['free'] >= cfg.heap: stop(Outcome.RESOURCE, Reason.HEAP)
         else:
             zero = r['free']
             s['heap'][zero] = [CellTag.LEVEL_ZERO, 0, 0, 0]
-            r.update(free=zero+1, kernel_zero=zero, env_ready=1, env_head=0, decl=0, raw_index=0,
+            r.update(free=zero+1, kernel_zero=zero, env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0,
                 ctx=0, count=0, arg_base=0, local_base=0, sp=0, pending_scope=0, pending_infer=0,
                 pending_open=0, pending_fold=0, pending_compare=0, mode=Mode.SOURCE_READ, x=0)
     elif r['mode'] == Mode.SOURCE_READ:

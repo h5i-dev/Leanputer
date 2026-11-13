@@ -10,9 +10,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_SOURCE_NAME, CALL_SOURCE_DUPLICATE, CALL_SOURCE_PARAMETERS,
     CALL_SOURCE_TYPE_SCOPE, CALL_SOURCE_TYPE_INFER, CALL_SOURCE_TYPE_WHNF,
     CALL_SOURCE_PROPOSITION, CALL_SOURCE_VALUE_SCOPE, CALL_SOURCE_VALUE_INFER,
-    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS)
+    CALL_SOURCE_VALUE_CONVERT, CALL_SOURCE_BLOCK_HEADERS, CALL_SOURCE_CORE_CONSTRUCTORS)
 
-PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,)
+PRIVATE_PHASES = tuple(range(CALL_SOURCE_NAME, CALL_SOURCE_VALUE_CONVERT+1))+(CALL_SOURCE_BLOCK_HEADERS,CALL_SOURCE_CORE_CONSTRUCTORS,)
 
 
 def emit_rules(c):
@@ -23,7 +23,10 @@ def emit_rules(c):
     def call(guard, phase, task, x, mode=Mode.WALK, **updates):
         c.write('stack', guard, top, (phase, 0, 0, Task.CHECK_SOURCE, 0, 0))
         c.emit(guard, mode=mode, task=task, x=x, depth=0, **updates)
-    c.stop(at_return(CALL_SOURCE_BLOCK_HEADERS), Outcome.GAP, Reason.GAP_INDUCTIVE)
+    core = c.AND(c.NOT(c.eq(r['core_operation'],0)),c.eq(r['raw_index'],r['core_index']))
+    c.stop(c.AND(at_return(CALL_SOURCE_BLOCK_HEADERS),c.NOT(core)), Outcome.GAP, Reason.GAP_INDUCTIVE)
+    call(c.AND(at_return(CALL_SOURCE_BLOCK_HEADERS),core),CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
+    c.stop(at_return(CALL_SOURCE_CORE_CONSTRUCTORS),Outcome.GAP,Reason.GAP_RECURSOR_GENERATION)
     call(at_return(CALL_SOURCE_NAME), CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     duplicate = at_return(CALL_SOURCE_DUPLICATE)
     c.stop(c.AND(duplicate, c.NOT(c.eq(result, 0))), Outcome.INVALID, Reason.DUPLICATE_DECLARATION)
@@ -43,13 +46,14 @@ def emit_rules(c):
 
     init = c.AND(c.mode(Mode.WALK), c.task(Task.CHECK_SOURCE))
     counts_ok = c.AND(c.NOT(c.eq(r['decl_count'], 0)), c.NOT(c.lt(c.cfg.constants, r['decl_count'])),
-        c.eq(r['target_index'], c.sub(r['decl_count'], 1)))
+        c.eq(r['target_index'], c.sub(r['decl_count'], 1)),
+        c.OR(c.eq(r['core_operation'],0),c.lt(r['core_index'],r['target_index'])))
     c.stop(c.AND(init, c.NOT(counts_ok)), Outcome.INVALID, Reason.SYNTAX)
     heap_room = c.lt(r['free'], c.cfg.heap)
     c.stop(c.AND(init, counts_ok, c.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
     init = c.AND(init, counts_ok, heap_room)
     c.write('heap', init, r['free'], (CellTag.LEVEL_ZERO, 0, 0, 0))
-    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, decl=0, raw_index=0,
+    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0,
         ctx=0, count=0, arg_base=0, local_base=0, sp=0, pending_scope=0, pending_infer=0,
         pending_open=0, pending_fold=0, pending_compare=0, mode=Mode.SOURCE_READ, x=0)
     read = c.mode(Mode.SOURCE_READ)

@@ -22,8 +22,10 @@ those same weighted services. [Ordinary source transactions](benchmarks/kernel-s
 now check raw dependency types/bodies before generating a private environment,
 and constant inference instantiates only checked schemes. [Private general inductive-header analysis](benchmarks/kernel-inductive-headers-stock/README.md)
 is now weighted; full inductive/nested admission and recursor generation remain
-development specs; complete
-conversion/reduction and primitive/projection/literal services still return GAP. The earlier uncommitted projection work is preserved.
+development specs. A [typed CORE operation](benchmarks/kernel-typed-core-stock/README.md)
+now checks constructor types/universes/positivity/functional recursive templates
+in stock weights, ending GAP before generation. Original-source nested staging
+and complete conversion/reduction/primitive/projection/literal services remain gaps. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax
 export is separate from checking or native proof acceptance.
@@ -44,8 +46,9 @@ resource exhaustion. Default capacities are heap256/stack16/context8/rawbank4,
 physical limits, not full-kernel support. At checkpoint e0db573, the source model used603.4M BF16
 parameters/1.207GB weights. Matched15-case source checks took58.18s fixed GPU
 forward or41.86s with native completion stopping; cold compile14.27s is separate.
-The later8758019header-phase model used795.3M parameters/1.591GB weights
-at its stated different configuration. Current size changes with services and
+The later composed typed-core model uses1.350B parameters/2.701GB weights;
+its two core operations take118.84s GPU forward plus28.77s cold construction
+at the stated configuration. Both end GAP before generation. Current size changes with services and
 capacities; these are historical measurements. No full-population native mathlib
 evaluation or formal compiler verification is claimed. [Trust/algorithm contract](docs/kernel/target.md) states the target;
 [typed input ABI](docs/kernel/native-cells.md) states the syntax boundary.

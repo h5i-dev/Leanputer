@@ -95,7 +95,7 @@ are not yet treated as checked results. The header output retains raw-family
 references for those later checks. Neither a private header signature nor
 header-phase completion is full inductive admission.
 
-## New semantic-IR core modules (stock validation pending)
+## Shared semantic-IR core modules and composed stock evidence
 
 `family_occurrence_machine/rules` copies only current checked-header symbols
 into a temporary window after live Locals, calls the existing composable
@@ -126,8 +126,9 @@ constant inference still rejects unknown/wrong-arity constants.
 
 These are general finite kernel operations. Unit contracts seed internal calls
 AFTER real weighted header/Local derivation and compare every Boolean-IR state
-with the development reference, plus independent source operations. They are
-IR evidence ONLY until composed stock validation. Unit control-state setup is
+with the development reference, plus independent source operations. They were
+IR-only unit evidence at23ecc55/a3b1008. The [composed stock controller](../../benchmarks/kernel-typed-core-stock/README.md)
+now runs the operations from raw syntax through typed constructor checking. Unit control-state setup is
 not a production inference path. No supplied typing/admission/positivity answers
 are packed or used by the production source loader.
 
@@ -153,3 +154,44 @@ argument returns0. Caller constructor Locals remain in scope; the later generic
 recursor builder must abstract them before any declaration publication. This
 operation alone is neither positivity nor admission and does not bypass nested
 specialization/type checking.
+
+The next typed CORE controller follows check_constructors/declare_constructors
+as separate phases. Constructor type inference sees a provisional header overlay
+ONLY after all headers have checked in the previous environment. Earlier
+constructors must NOT become assumed types while checking later constructor
+schemes. A separate private pending-name/metadata list detects duplicates and
+retains each checked constructor's derived field-Local snapshots/recursive
+descriptors; the typing overlay still contains only headers and the prior Γ.
+Every field checks its inferred Sort universe, source result-level bound,
+positivity and recursive descriptor before opening the next binder. The final
+application must return the owning family with uniform parameters and valid
+indices. Counts drive all loops. All constructors must pass before later
+constructor declaration/recursor generation. Private field snapshots are kernel
+derivations, never raw assumptions; the final recursor type/rule generator must
+abstract all their Locals before publication.
+
+A CORE-operation entry will invoke this pipeline on raw core declarations and
+report missing recursor generation as GAP. It is a kernel-function API, not a
+claim that original nested declarations have been transformed or checked. The
+production original-source entry remains GAP before missing nested staging.
+No supplied "nested checked"/typing/admission flag is accepted from raw syntax;
+operation selection is a fixed loader/controller entry, as with other kernel
+operation APIs. No proof target may be accepted by this diagnostic core entry.
+
+Current typed core controller: `constructor_machine/rules` follows all families/
+constructors/fields with count-driven traversal, provisional HEADER-only typing
+and a separate pending-name registry. Record168 holds pending ctor symbol/type/
+analysis;169 holds a derived Local record/recursive descriptor/field ordinal;
+170 retains family/field-vector/result arguments. All are output-only private
+metadata. Header list prefixes share the prior Γ tail; `header_seen` delimits
+current families for occurrence. Constant inference selects the scoped typing
+head; committed Γ remains separate. No pending ctor can type a later ctor.
+
+`core_transition` selects the typed core operation with pure syntax input and an
+inert rejecting axiom sentinel, never a proof target. The original-source entry
+cannot set that entry flag from JSON; it remains GAP before missing nested
+staging. After constructor checks the core controller still GAPs before
+constructor declaration/elimination/K/recursor generation and claim checks.
+The [stock2 evidence](../../benchmarks/kernel-typed-core-stock/README.md) derives
+ALL private state from raw syntax in normal forward/cache; no native metadata
+seeding or external checking. Generated recursor names/claims remain untrusted.

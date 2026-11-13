@@ -29,7 +29,7 @@ def emit_rules(c):
     c.stop(c.AND(params,c.NOT(enough)),Outcome.RESOURCE,Reason.CONTEXT)
     c.emit(c.AND(params,enough),task=Task.ANALYZE_HEADERS,mode=Mode.HEADER_VECTOR,x=r['header_vector'],
         header_parameter_base=r['ctx'],header_parameter_end=end[:c.width],local_base=r['ctx'])
-    call(at(CALL_HEADER_NAME),CALL_HEADER_DUPLICATE_GLOBAL,Task.ENV_LOOKUP,0,query_symbol=r['header_symbol'],lookup_head=r['env_head'])
+    call(at(CALL_HEADER_NAME),CALL_HEADER_DUPLICATE_GLOBAL,Task.ENV_LOOKUP,0,query_symbol=r['header_symbol'],lookup_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']))
     for phase in (CALL_HEADER_DUPLICATE_GLOBAL,CALL_HEADER_DUPLICATE_PRIVATE):
         c.stop(c.AND(at(phase),c.NOT(c.eq(result,0))),Outcome.INVALID,Reason.DUPLICATE_DECLARATION)
     call(c.AND(at(CALL_HEADER_DUPLICATE_GLOBAL),c.eq(result,0)),CALL_HEADER_DUPLICATE_PRIVATE,Task.ENV_LOOKUP,0,
@@ -50,7 +50,7 @@ def emit_rules(c):
     init=c.AND(init,room)
     c.write('stack',init,r['sp'],(CALL_HEADER_PARAMETERS,0,0,Task.ANALYZE_HEADERS,0,0))
     c.emit(init,sp=c.add(r['sp'],1),task=Task.LOAD_PARAMETERS,x=r['header_parameters'],
-        header_parameter_count=a,header_vector=b,header_head=0,header_seen=0)
+        header_parameter_count=a,header_vector=b,header_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']),header_seen=0)
     header=at_mode(Mode.HEADER_VECTOR)
     valid=c.AND(c.eq(n['c'],VectorKind.REFERENCES),c.NOT(c.eq(a,0)),c.NOT(c.eq(b,0)))
     c.stop(c.AND(header,c.NOT(valid)),Outcome.INVALID,Reason.INVALID_DECLARATION)
