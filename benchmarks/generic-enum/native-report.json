@@ -1,0 +1,145 @@
+{
+  "results": [
+    {
+      "name": "Bool-elimination",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 804
+    },
+    {
+      "name": "Unrelated.Namespace-elimination",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 804
+    },
+    {
+      "name": "Traffic-elimination",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 5,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 80,
+      "semantic_steps": 991
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 846
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 33
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 34
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 20,
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 63
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 29,
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 34
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 29,
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 32
+    },
+    {
+      "name": "Bool-elimination",
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "assumptions": [],
+      "environment_declarations": 4,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 31
+    }
+  ],
+  "forward_seconds": 108.39415829000063,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 1383,
+    "persistent_channels": 359,
+    "subtract_handovers": 6059,
+    "head_clears": 360,
+    "logic_units_per_layer": 512,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 68,
+      "dims": 7803,
+      "heads": 12,
+      "ffn_units": 9064,
+      "max_units": 512,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 22,
+  "primitive_basis": [],
+  "semantic_program": "generic.nullary-positive-inductives.v1",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 362579464,
+  "weight_bytes": 725158928,
+  "cuda_peak_allocated_bytes": 818098176,
+  "host_process_peak_rss_bytes": 1699545088,
+  "hidden_size": 1408,
+  "native_layers": 69,
+  "boot_tokens": 39,
+  "applied_steps": 1058,
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "compile_seconds": 6.578620402011438
+}

@@ -6,6 +6,39 @@ training. The [native backend](docs/native-backend.md) runs through stock
 feedback. The compiler generates all weights for a standalone configuration.
 The custom sparse circuit/attention-RAM implementation remains a reference.
 
+The active kernel development path is [declaration-as-data](docs/generic-kernel.md).
+Its compiler takes resource bounds only. Family names, constructor blocks and
+claimed recursor signatures are input data, validated by fixed weighted rules.
+One stock model checks two- and three-constructor enums, including arbitrary
+renamings. The initial class is monomorphic, field-free, nonrecursive inductives
+in positive numeric Sorts; parameters, indices and Prop families are explicitly
+unsupported. The checker derives dependent recursor types inside weights and
+performs generic constructor iota reduction. This is experimental, with no
+whole-checker soundness proof or generic mathlib coverage claim.
+
+```bash
+.venv/bin/python -m leanputer.generic --backend circuit \
+  --input benchmarks/generic-enum/input.jsonl \
+  --config benchmarks/generic-enum/config.json --report /tmp/generic-report.json
+# Stock architecture: install .[native] in Python >=3.11, then select:
+# --backend native --device cuda
+```
+
+The focused ten-case stock run produced 3 ACCEPT, 4 REJECT and 3 UNSUPPORTED
+outcomes using 362,579,464 BF16 parameters (725,158,928 weight bytes).
+Compilation took 6.58s and fixed-fuel checking took 108.39s on the A10G.
+These are small declaration/proof fixtures, not real mathlib throughput.
+Input, configuration and measured evidence are in
+[benchmarks/generic-enum](benchmarks/generic-enum/README.md).
+A syntax-only generic Lean exporter is not yet implemented; the independent
+Lean replay constructs actual inductives and checks their generated recursors.
+It is an evaluation tool, never invoked by inference.
+
+The remainder documents the **historical per-name catalog backend**, retained
+for reproducibility. Its syntax-export counts and feature list do not describe
+the new generic backend. Expanding that catalog is no longer the implementation
+strategy.
+
 [Layout improvements](docs/native-downsizing.md) reduced an earlier matched 512-cell
 model from 4.021 billion to 668.6 million BF16 parameters, with identical
 outcomes on targeted checks. GPU forward remains slow: 372.83s → 315.20s for

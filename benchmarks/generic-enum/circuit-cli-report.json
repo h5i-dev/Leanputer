@@ -1,0 +1,145 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.nullary-positive-inductives.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "results": [
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 804,
+      "allocated_heap_nodes": 68
+    },
+    {
+      "name": "Unrelated.Namespace-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 804,
+      "allocated_heap_nodes": 68
+    },
+    {
+      "name": "Traffic-elimination",
+      "environment_declarations": 5,
+      "assumptions": [],
+      "input_heap_nodes": 33,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 991,
+      "allocated_heap_nodes": 80
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "semantic_steps": 846,
+      "allocated_heap_nodes": 68
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "semantic_steps": 33,
+      "allocated_heap_nodes": 28
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "semantic_steps": 34,
+      "allocated_heap_nodes": 28
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 20,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "semantic_steps": 63,
+      "allocated_heap_nodes": 37
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "semantic_steps": 34,
+      "allocated_heap_nodes": 29
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "semantic_steps": 32,
+      "allocated_heap_nodes": 29
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "semantic_steps": 31,
+      "allocated_heap_nodes": 28
+    }
+  ],
+  "counts": {
+    "ACCEPT": 3,
+    "REJECT": 4,
+    "UNSUPPORTED": 3
+  },
+  "syntax_seconds": 0.0021631159906974062,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "forward_seconds": 6.236434047998046,
+      "applied_steps": 1057
+    }
+  ],
+  "total_check_seconds": 6.2742655820038635,
+  "validation_scope": "Restricted finite nullary positive-Sort inductives; no full Lean/general inductive soundness claim",
+  "backend": "circuit",
+  "device": "cpu",
+  "compile_seconds": 0.18154391899588518,
+  "cold_compile_and_check_seconds": 6.455893181991996
+}

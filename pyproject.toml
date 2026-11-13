@@ -13,13 +13,14 @@ dependencies = ["torch>=2.6"]
 [project.scripts]
 leanputer = "leanputer.__main__:main"
 leanputer-research = "leanputer.research:main"
+leanputer-generic = "leanputer.generic:main"
 leanputer-export = "leanputer.preparation:main"
 
 [tool.setuptools.packages.find]
 include = ["leanputer*"]
 
 [tool.setuptools.data-files]
-"share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean", "tools/lean/Enumerate.lean"]
+"share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean", "tools/lean/Enumerate.lean", "tools/lean/ValidateGeneric.lean"]
 
 [project.optional-dependencies]
 native = ["torch>=2.8", "transformers==5.19.0; python_version >= '3.11'", "numpy>=1.26"]

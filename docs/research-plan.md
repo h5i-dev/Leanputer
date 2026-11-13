@@ -1,5 +1,12 @@
 # Research tool work plan
 
+ARCHITECTURAL CORRECTION: per-name expansion has stopped. The catalog below is
+historical evidence, not generic kernel coverage. Active work is
+[declaration-as-data checking](generic-kernel.md), beginning with validated
+finite nullary inductives and data-derived dependent recursor types/reductions.
+No completion percentage is established. Existing checkpoints are preserved.
+
+
 The primary runtime is a standalone, compiler-generated stock
 Qwen3_5ForCausalLM with native GatedDeltaNet cache and identity hidden feedback.
 No pretrained backbone, custom forward, CPU emulator or inference-time external

@@ -128,6 +128,7 @@ class NativeMachine:
     layout_statistics: object=None
     bank_layout: str='accumulate'
     max_ballast: int=64
+    program: object=None
 
     def embeddings(self, features):
         parameter = next(self.model.parameters())
@@ -137,8 +138,13 @@ class NativeMachine:
         return result
 
     def check(self, documents, diagnostic_steps=None):
-        parsed = [parse_document(document) for document in documents]
-        states = [prepare(self.config,*judgment) for judgment in parsed]
+        parser=self.program.parse_document if self.program else parse_document
+        encoder=self.program.prepare if self.program else prepare
+        get_assumptions=self.program.assumptions if self.program else lambda ds:[d.name for d in ds if d.value is None]
+        outcome_class=self.program.Outcome if self.program else Outcome
+        reason_class=self.program.Reason if self.program else Reason
+        parsed = [parser(document) for document in documents]
+        states = [encoder(self.config,*judgment) for judgment in parsed]
         control_width = self.register_layout.width
         # Static syntax load. Equal capacities give every item the same boot length.
         boot = []
@@ -187,17 +193,18 @@ class NativeMachine:
         for row in bits.tolist():
             registers.append({name:sum(int(row[s.start+i]) << i for i in range(s.stop-s.start))
                               for name,s in self.register_layout.slices.items()})
-        results = [dict(name=document.get('name',str(index)),status=Outcome(r['status']).name,
-                        reason=Reason(r['reason']).name,assumptions=[declaration.name for declaration in judgment[2] if declaration.value is None],
+        results = [dict(name=document.get('name',str(index)),status=('UNSUPPORTED'if self.program and r['reason']==self.program.Reason.UNSUPPORTED_DECLARATION else outcome_class(r['status']).name),
+                        reason=reason_class(r['reason']).name,assumptions=get_assumptions(judgment[2]),
                         environment_declarations=len(judgment[2]),input_heap_nodes=initial_state['regs']['free']-1,
                         allocated_heap_nodes=r['free']-1,
-                        semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL))
+                        semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==reason_class.FUEL))
                    for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]
         return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
                     layout_policy=self.layout_policy,layout_statistics=self.layout_statistics,
                     bank_layout=self.bank_layout,
                     max_ballast=self.max_ballast,ballast_channels=self.layout.m,
-                    primitive_basis=list(PRIMITIVE_CODES),
+                    primitive_basis=list(self.program.primitive_basis)if self.program else list(PRIMITIVE_CODES),
+                    semantic_program=self.program.program_name if self.program else 'historical.per-name-catalog',
                     stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
                     parameters=sum(p.numel() for p in self.model.parameters()),
                     weight_bytes=sum(p.numel()*p.element_size() for p in self.model.parameters()),
@@ -209,14 +216,18 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
     if type(reset_layers)is not int or reset_layers<1:raise ValueError('recurrent native execution requires scratch reset layers')
     if 6*config.word_bits+2>128:
         raise ValueError('native RAM stack payload exceeds the 128-dimensional value head (word width must be <=21)')
-    state_layout = StateLayout(config); registers = RegisterLayout(state_layout)
+    state_layout = (program.StateLayout if program else StateLayout)(config)
+    registers = (program.RegisterLayout if program else RegisterLayout)(state_layout)
+    address_compiler=program.compile_addresses if program else compile_addresses
+    rule_compiler=program.RuleCompiler if program else RuleCompiler
+    constants_width=program.constant_fields if program else 3
     builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
     features = [builder.feature(name) for name in registers.names]
     control = list(features)
@@ -245,7 +256,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         # Produce one-hot arrays shortly before their consuming native head,
         # rather than keeping every port's arrays live across all read rounds.
         builder.barrier = max(builder.barrier, max((node.level for node in graph.nodes if isinstance(node,Head)),default=0))
-        cells = getattr(config,bank); width = {'heap':4,'stack':6,'context':1,'constants':3}[bank]*config.word_bits
+        cells = getattr(config,bank); width = {'heap':4,'stack':6,'context':1,'constants':constants_width}[bank]*config.word_bits
         boot = boot_banks[bank]
         paddr,penable,payload = pending.get(bank,([Expr()]*address_width,Expr(),[Expr()]*width))
         addr = [builder.gate('or',[builder.gate('and',[boot,a],name+'/ba'),
@@ -260,7 +271,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         return outputs
 
     collect = lambda circuit,outputs:(circuit,outputs)
-    address1,address2 = compile_addresses(registers,target=collect)
+    address1,address2 = address_compiler(registers,target=collect)
     addresses = builder.circuit(address1,control,'address1')
     first = []; offset = 0
     for bank,ports in [('heap',4),('stack',1),('constants',1)]:
@@ -269,8 +280,14 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
             first.extend(read(bank,addresses[offset:offset+bits],f'read/{bank}/{port}')); offset += bits
     second = builder.circuit(address2,control+first,'address2')
     ctxbits = config.context.bit_length()-1
-    all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
-    plan = RuleCompiler(registers,factor_choices=layout_policy=='compact').finish('attention_delta',target=collect)
+    if program:
+        all_reads=list(first);offset=0
+        for index,bank in enumerate(program.second_banks):
+            bits=getattr(config,bank).bit_length()-1
+            all_reads.extend(read(bank,second[offset:offset+bits],f'read/second/{index}/{bank}'));offset+=bits
+        if offset!=len(second):raise ValueError('program read address ABI differs')
+    else:all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
+    plan = rule_compiler(registers,factor_choices=layout_policy=='compact').finish('attention_delta',target=collect)
     outputs = builder.circuit(plan,control+all_reads,'transition')
     update_features = control+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
     if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
@@ -296,12 +313,12 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
                logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats())
-    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast)
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program)
 
 
 def check_documents(machine, documents, batch_size=4):
