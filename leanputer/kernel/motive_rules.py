@@ -3,11 +3,10 @@ from .arena import Tag
 from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_MOTIVE_CONSUME,
     CALL_MOTIVE_INDICES,CALL_MOTIVE_PARAMETERS,CALL_MOTIVE_APPLY_INDICES,
-    CALL_MOTIVE_MAJOR,CALL_MOTIVE_FOLD,CALL_MOTIVE_LOCAL,CALL_MOTIVE_VECTOR)
+    CALL_MOTIVE_MAJOR,CALL_MOTIVE_FOLD,CALL_MOTIVE_LOCAL,CALL_MOTIVE_VECTOR,CALL_MOTIVE_SNAPSHOT)
 
-PRIVATE_PHASES=tuple(range(CALL_MOTIVE_CONSUME,CALL_MOTIVE_VECTOR+1))
-NO_NODE=(Mode.WALK,Mode.MOTIVE_CONSTANT,Mode.MOTIVE_SNAPSHOT_SELECT,
-    Mode.MOTIVE_SNAPSHOT_VECTOR,Mode.MOTIVE_ELIM_SORT,Mode.MOTIVE_STORE_TELESCOPE,
+PRIVATE_PHASES=tuple(range(CALL_MOTIVE_CONSUME,CALL_MOTIVE_VECTOR+1))+(CALL_MOTIVE_SNAPSHOT,)
+NO_NODE=(Mode.WALK,Mode.MOTIVE_CONSTANT,Mode.MOTIVE_ELIM_SORT,Mode.MOTIVE_STORE_TELESCOPE,
     Mode.MOTIVE_STORE_INFO,Mode.MOTIVE_LINK)
 TAGS={Mode.MOTIVE_NAME:CellTag.VALIDATED_RECURSOR_NAME,Mode.MOTIVE_SIGNATURE:CellTag.CHECKED_SIGNATURE}
 
@@ -23,10 +22,9 @@ def emit_rules(c):
     c.emit(phase(CALL_MOTIVE_INDICES),task=Task.BUILD_MOTIVES,mode=Mode.MOTIVE_SORT,x=r['r'])
     call(phase(CALL_MOTIVE_PARAMETERS),CALL_MOTIVE_APPLY_INDICES,Task.APPLY_SCOPE,r['r'],apply_base=r['motive_mark'],apply_end=r['ctx'])
     call(phase(CALL_MOTIVE_APPLY_INDICES),CALL_MOTIVE_MAJOR,Task.FRESH_LOCAL,r['r'],binder_info=0)
-    major=phase(CALL_MOTIVE_MAJOR);size=c.sub(c.sub(r['ctx'],1),r['motive_mark']);empty=c.eq(size,0)
-    c.emit(major,task=Task.BUILD_MOTIVES,motive_major=r['fresh_record'],motive_index_count=size,
-        motive_snapshot_remaining=size,motive_snapshot_head=0,motive_snapshot_cursor=c.mux(empty,0,c.sub(r['ctx'],2)),
-        mode=c.mux(empty,Mode.MOTIVE_SNAPSHOT_VECTOR,Mode.MOTIVE_SNAPSHOT_SELECT))
+    major=phase(CALL_MOTIVE_MAJOR);c.emit(major,motive_major=r['fresh_record'])
+    call(major,CALL_MOTIVE_SNAPSHOT,Task.SNAPSHOT_SCOPE,0,abstract_base=r['motive_mark'],abstract_end=c.sub(r['ctx'],1))
+    c.emit(phase(CALL_MOTIVE_SNAPSHOT),task=Task.BUILD_MOTIVES,motive_indices=r['r'],mode=Mode.MOTIVE_ELIM_SORT)
     call(phase(CALL_MOTIVE_FOLD),CALL_MOTIVE_LOCAL,Task.FRESH_LOCAL,r['r'],binder_info=0)
     c.emit(phase(CALL_MOTIVE_LOCAL),task=Task.BUILD_MOTIVES,motive_local=r['fresh_record'],mode=Mode.MOTIVE_STORE_TELESCOPE)
     vector=phase(CALL_MOTIVE_VECTOR)
@@ -58,14 +56,6 @@ def emit_rules(c):
     c.write('heap',const,r['free'],(Tag.CONST,r['motive_family_symbol'],r['header_levels'],0))
     c.emit(const,free=c.add(r['free'],1))
     call(const,CALL_MOTIVE_PARAMETERS,Task.APPLY_SCOPE,r['free'],apply_base=r['header_parameter_base'],apply_end=r['header_parameter_end'])
-    snapshot=room(at(Mode.MOTIVE_SNAPSHOT_SELECT));more=c.lt(1,r['motive_snapshot_remaining'])
-    c.write('heap',snapshot,r['free'],(CellTag.VECTOR_CELL,c.read['operand']['value'],r['motive_snapshot_head'],0))
-    c.emit(snapshot,free=c.add(r['free'],1),motive_snapshot_head=r['free'],motive_snapshot_remaining=c.sub(r['motive_snapshot_remaining'],1),
-        mode=c.mux(more,Mode.MOTIVE_SNAPSHOT_SELECT,Mode.MOTIVE_SNAPSHOT_VECTOR))
-    c.emit(c.AND(snapshot,more),motive_snapshot_cursor=c.sub(r['motive_snapshot_cursor'],1))
-    vec=room(at(Mode.MOTIVE_SNAPSHOT_VECTOR))
-    c.write('heap',vec,r['free'],(CellTag.VECTOR,r['motive_index_count'],r['motive_snapshot_head'],VectorKind.REFERENCES))
-    c.emit(vec,free=c.add(r['free'],1),motive_indices=r['free'],mode=Mode.MOTIVE_ELIM_SORT)
     sort=room(at(Mode.MOTIVE_ELIM_SORT))
     c.write('heap',sort,r['free'],(Tag.SORT,r['core_elim_level'],0,0));c.emit(sort,free=c.add(r['free'],1))
     call(sort,CALL_MOTIVE_FOLD,Task.FOLD_TELESCOPE,r['free'],Mode.FOLD_SELECT,fold_body=r['free'],fold_tag=Tag.PI,fold_base=r['motive_mark'])

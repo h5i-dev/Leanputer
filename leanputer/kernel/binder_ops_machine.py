@@ -4,12 +4,31 @@ Generated binder types come from the caller's kernel algorithm. This operation
 is not a public type/admission boundary; it cannot be entered by raw proof data.
 """
 from .arena import Tag
-from .native_cells import CellTag
+from .native_cells import CellTag,VectorKind
 from .traversal_machine import Mode, Task, Outcome, Reason
 
 
 def step(machine,tag,a,b,c,stop,ret,alloc):
     s,r,cfg=machine.state,machine.state['regs'],machine.cfg
+    if r['task']==Task.SNAPSHOT_SCOPE:
+        if r['mode']==Mode.WALK:
+            if not r['local_base']<=r['abstract_base']<=r['abstract_end']<=r['ctx']:stop(Outcome.INVALID,Reason.SYNTAX)
+            else:
+                size=r['abstract_end']-r['abstract_base']
+                r.update(snapshot_count=size,snapshot_remaining=size,snapshot_head=0,scope_cursor=r['abstract_end']-1 if size else 0,
+                    mode=Mode.SNAPSHOT_SCOPE if size else Mode.SNAPSHOT_VECTOR)
+        elif r['mode']==Mode.SNAPSHOT_SCOPE:
+            if r['free']>=cfg.heap:stop(Outcome.RESOURCE,Reason.HEAP)
+            else:
+                ref=r['free'];s['heap'][ref]=[CellTag.VECTOR_CELL,s['context'][r['scope_cursor']][0],r['snapshot_head'],0]
+                more=r['snapshot_remaining']>1
+                r.update(free=ref+1,snapshot_head=ref,snapshot_remaining=r['snapshot_remaining']-1,
+                    mode=Mode.SNAPSHOT_SCOPE if more else Mode.SNAPSHOT_VECTOR)
+                if more:r['scope_cursor']-=1
+        elif r['mode']==Mode.SNAPSHOT_VECTOR:
+            alloc((CellTag.VECTOR,r['snapshot_count'],r['snapshot_head'],VectorKind.REFERENCES))
+        else:stop(Outcome.INVALID,Reason.SYNTAX)
+        return True
     if r['task']==Task.FRESH_LOCAL:
         if r['mode']==Mode.WALK:
             if r['ctx']>=cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)

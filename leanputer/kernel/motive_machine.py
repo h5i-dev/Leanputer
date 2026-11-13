@@ -3,10 +3,10 @@ from .arena import Tag
 from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_MOTIVE_CONSUME,
     CALL_MOTIVE_INDICES,CALL_MOTIVE_PARAMETERS,CALL_MOTIVE_APPLY_INDICES,
-    CALL_MOTIVE_MAJOR,CALL_MOTIVE_FOLD,CALL_MOTIVE_LOCAL,CALL_MOTIVE_VECTOR)
+    CALL_MOTIVE_MAJOR,CALL_MOTIVE_FOLD,CALL_MOTIVE_LOCAL,CALL_MOTIVE_VECTOR,CALL_MOTIVE_SNAPSHOT)
 from .motive_rules import NO_NODE,TAGS
 
-PRIVATE_PHASES=tuple(range(CALL_MOTIVE_CONSUME,CALL_MOTIVE_VECTOR+1))
+PRIVATE_PHASES=tuple(range(CALL_MOTIVE_CONSUME,CALL_MOTIVE_VECTOR+1))+(CALL_MOTIVE_SNAPSHOT,)
 
 
 def resume(machine,frame,stop,ret,alloc):
@@ -23,10 +23,10 @@ def resume(machine,frame,stop,ret,alloc):
     elif phase==CALL_MOTIVE_APPLY_INDICES:
         call(CALL_MOTIVE_MAJOR,Task.FRESH_LOCAL,r['r'],binder_info=0)
     elif phase==CALL_MOTIVE_MAJOR:
-        size=r['ctx']-1-r['motive_mark']
-        r.update(task=Task.BUILD_MOTIVES,motive_major=r['fresh_record'],motive_index_count=size,
-            motive_snapshot_remaining=size,motive_snapshot_head=0,motive_snapshot_cursor=r['ctx']-2 if size else 0,
-            mode=Mode.MOTIVE_SNAPSHOT_SELECT if size else Mode.MOTIVE_SNAPSHOT_VECTOR)
+        r['motive_major']=r['fresh_record']
+        call(CALL_MOTIVE_SNAPSHOT,Task.SNAPSHOT_SCOPE,0,abstract_base=r['motive_mark'],abstract_end=r['ctx']-1)
+    elif phase==CALL_MOTIVE_SNAPSHOT:
+        r.update(task=Task.BUILD_MOTIVES,motive_indices=r['r'],mode=Mode.MOTIVE_ELIM_SORT)
     elif phase==CALL_MOTIVE_FOLD:call(CALL_MOTIVE_LOCAL,Task.FRESH_LOCAL,r['r'],binder_info=0)
     elif phase==CALL_MOTIVE_LOCAL:
         r.update(task=Task.BUILD_MOTIVES,motive_local=r['fresh_record'],mode=Mode.MOTIVE_STORE_TELESCOPE)
@@ -67,17 +67,6 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
             ref=r['free'];s['heap'][ref]=[Tag.CONST,r['motive_family_symbol'],r['header_levels'],0]
             r['free']=ref+1
             call(CALL_MOTIVE_PARAMETERS,Task.APPLY_SCOPE,ref,apply_base=r['header_parameter_base'],apply_end=r['header_parameter_end'])
-    elif mode==Mode.MOTIVE_SNAPSHOT_SELECT:
-        if room():
-            ref=r['free'];s['heap'][ref]=[CellTag.VECTOR_CELL,s['context'][r['motive_snapshot_cursor']][0],r['motive_snapshot_head'],0]
-            more=r['motive_snapshot_remaining']>1
-            r.update(free=ref+1,motive_snapshot_head=ref,motive_snapshot_remaining=r['motive_snapshot_remaining']-1,
-                mode=Mode.MOTIVE_SNAPSHOT_SELECT if more else Mode.MOTIVE_SNAPSHOT_VECTOR)
-            if more:r['motive_snapshot_cursor']-=1
-    elif mode==Mode.MOTIVE_SNAPSHOT_VECTOR:
-        if room():
-            ref=r['free'];s['heap'][ref]=[CellTag.VECTOR,r['motive_index_count'],r['motive_snapshot_head'],VectorKind.REFERENCES]
-            r.update(free=ref+1,motive_indices=ref,mode=Mode.MOTIVE_ELIM_SORT)
     elif mode==Mode.MOTIVE_ELIM_SORT:
         if room():
             ref=r['free'];s['heap'][ref]=[Tag.SORT,r['core_elim_level'],0,0];r['free']=ref+1

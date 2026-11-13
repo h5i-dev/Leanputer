@@ -278,3 +278,15 @@ family, so scanning the nonparameter snapshots has the same result as the
 source's full raw constructor telescope. One generic loop traverses all pending
 constructors and all fields and calls the shared all-Expr occurrence operation.
 Output175 stores `(recursive,reflexive,0)`; no input metadata supplies these bits.
+
+Functional IHs and recursive rule arguments use the complete
+`recursor.py:open_recursive_prefix` operation: take the generated166 descriptor;
+for each abstract binder domain, simultaneously instantiate its earlier prefix
+Locals in reverse BVar order, then allocate a fresh Local with the preserved
+binder information. After all binders, instantiate **every** saved index over
+that same complete prefix. Output176 is `(familySig,prefixLocalVector,indexVec)`;
+the newly opened prefix remains live for the caller's Pi/Lam fold. Both empty
+and arbitrarily bounded dependent prefixes/indices follow the same loops.
+Abstraction and reverse instantiation share the context-to-scratch traversal;
+snapshots use one reusable immutable context-window operation. No descriptor,
+opened domain or substituted index is supplied as an input checking answer.

@@ -369,3 +369,16 @@ conversion and general inductive/recursor generation/restoration, Quot/literal/
 projection/K/eta services remain unfinished explicit GAPs. Ordinary native source
 evidence is distinct from earlier operation DONEs and offline inductive specs.
 No complete857-source native rerun/mathlib fraction is claimed.
+
+The [core-through-motives stock report](../../benchmarks/kernel-motives-stock/README.md)
+at72cd7a0 now derives all private header/constructor checks, functional recursion
+descriptors, recursor-name relations, constructor signatures, elimination/K and
+all-family motive types from raw syntax, with exact register/cache agreement.
+It ends GAP before minors/recursor types/rules. The original-source controller
+still GAPs before missing nested staging; this explicit kernel-function operation
+cannot certify an original nested declaration or theorem. Subsequent IR modules
+scan raw recursion/reflexivity flags and reopen generic dependent recursive
+prefix/index templates using shared context-window substitution/snapshots.
+These later modules are not part of that pinned stock measurement. The complete
+generation/restoration/reduction algorithms above remain the implementation
+target, not a supported shape catalog.
