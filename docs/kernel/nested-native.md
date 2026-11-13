@@ -134,3 +134,20 @@ Focused exact-state lookup/empty/multi-cell/mutual-data tests passed1test6.825s.
 Those are private ABI fixtures assembled from model-generated CORE signatures,
 **not registered source admissions**. The full source producer/publication path
 is still pending; no loader can supply origin185 or enter this internal task.
+
+`COMPARE_NAME_PATH` and `INTERN_NAME_PATH` are now implemented in reference and
+Boolean IR. The comparator handles full equality or a left prefix over arbitrary
+canonical string/numeral component vectors, comparing payload content with the
+shared vector operation, not address identity. The interner validates the path
+with that operation, scans the current symbol/path table by content, returns an
+existing ID or derives the next ID from the actual maximum, and constructs an
+immutable entry/list/vector before replacing the symbol-table head. New names
+are visible to the existing GET_NAME_PATH operation; Γ/publication is untouched.
+Input/generated paths follow the canonical syntax representation (including
+minimal numeral limbs); the operation does not turn name syntax into a type or
+admission certificate. Full-table, word and heap bounds propagate RESOURCE.
+Focused exact-state equality/prefix/UTF8/string-versus-number/distinct-equal-DAG,
+reuse/new-name/table-visibility and atomic resource checks PASS2tests16.466s.
+Fresh counters, prefix reconstruction, FIFO/replacement/restoration and original
+publication remain pending; no prior block has been registered/admitted by these
+data operations. Later native evidence must be recorded separately.
