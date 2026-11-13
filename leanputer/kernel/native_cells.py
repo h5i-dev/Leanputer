@@ -24,6 +24,7 @@ class CellTag(IntEnum):
     NAME_STRING = 80
     NAME_NUMERAL = 81
     SYMBOL_ENTRY = 82
+    LEVEL_BINDING = 88
     RAW_FAMILY = 96
     RAW_FAMILY_AUX = 97
     RAW_CONSTRUCTOR = 98
@@ -80,6 +81,7 @@ class PackedInput:
     maximum_symbol: int
     expression_map: dict         # Diagnostics/relocation only, not semantic answers.
     level_map: dict
+    level_bindings: tuple = ()  # Raw (symbol,level) operation argument records.
 
     @property
     def initial_free(self):
@@ -141,7 +143,7 @@ def _roots(source):
     return expressions, symbols
 
 
-def pack_source(source, capacities=CellCapacities()):
+def pack_source(source, capacities=CellCapacities(), *, level_bindings=()):
     """Relocate raw schemes into one typed heap plus a raw declaration bank.
 
     Vector roles are essential: the Arena can intern the SAME integer tuple as
@@ -153,8 +155,10 @@ def pack_source(source, capacities=CellCapacities()):
     if len(source.declarations) > capacities.constants:
         raise ResourceError('raw declaration input bank')
     pending, symbols = _roots(source)
+    level_bindings = tuple(level_bindings)
+    symbols.update(symbol for symbol, _ in level_bindings)
     exprs, levels = set(), set()
-    level_pending = []
+    level_pending = [ref for _, ref in level_bindings]
     while pending:
         if len(pending) > capacities.heap:
             raise ResourceError('syntax transport work stack')
@@ -247,6 +251,7 @@ def pack_source(source, capacities=CellCapacities()):
 
     constants = tuple(tuple(cells.word(v) for v in declaration_row(d)) for d in source.declarations)
     target = tuple(cells.word(v) for v in declaration_row(source.target))
+    binding_records = tuple(cells.cell(CellTag.LEVEL_BINDING, symbol, level_map[ref]) for symbol, ref in level_bindings)
     symbol_records = []
     for symbol in sorted(symbols):
         if not 0 < symbol < len(source.symbols.names):
@@ -265,4 +270,5 @@ def pack_source(source, capacities=CellCapacities()):
         path = cells.vector(components, VectorKind.REFERENCES)
         symbol_records.append(cells.cell(CellTag.SYMBOL_ENTRY, symbol, path))
     symbol_vector = cells.vector(symbol_records, VectorKind.REFERENCES)
-    return PackedInput(tuple(cells.rows), constants, target, symbol_vector, max(symbols, default=0), expression_map, level_map)
+    return PackedInput(tuple(cells.rows), constants, target, symbol_vector, max(symbols, default=0),
+                       expression_map, level_map, binding_records)

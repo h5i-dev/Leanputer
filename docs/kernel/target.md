@@ -229,7 +229,7 @@ semantics to invent from examples.
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities; `environment.py`: private overlay/rechecking and atomic publication (spec) | integrated native ABI/lowering |
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
-| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: shared stock consumer for symbolic level scope and typed telescope calls | normalization/substitution, checked-environment callers and full weighted admission; see [native-cells.md](native-cells.md) |
+| Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic-level scope/raw substitution and typed telescope calls, with argument windows | normalization, expression-wide instantiation, checked-environment callers and full weighted admission; see [native-cells.md](native-cells.md) |
 | Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta, Pi/Lam telescope opening/folding through shared substitution/abstraction/private calls | lower symbolic levels/full scopes; connect checking/generation callers and full kernel |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
@@ -270,6 +270,10 @@ loads the physical name/level/vector representation and checks symbolic level
 parameter membership inside the same stock controller as Pi/Lam callers.
 It does not supply or check full source admission; standalone operation reports
 must not be counted as theorem coverage.
+The [twelve-operation substitution smoke](../../benchmarks/kernel-level-substitution-stock/README.md)
+adds simultaneous raw symbolic substitution on all level tags with typed
+bindings, missing/empty mappings and preserved caller context. Normalization
+and expression-wide scheme instantiation remain separate operations.
 `BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit

@@ -1,0 +1,1135 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 117,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 3,
+      "depth": 0,
+      "task": 11,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 100,
+      "free": 60,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 3,
+      "x": 5,
+      "depth": 0,
+      "task": 11,
+      "r": 5,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 3,
+      "i": 0,
+      "found": 0,
+      "root": 5,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 3,
+      "status": 2,
+      "reason": 10,
+      "fuel": 125,
+      "free": 56,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 1,
+      "depth": 0,
+      "task": 11,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 10,
+      "fuel": 127,
+      "free": 34,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 11,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 3,
+      "status": 2,
+      "reason": 10,
+      "fuel": 126,
+      "free": 46,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 11,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 122,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 11,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 77,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 43,
+      "depth": 0,
+      "task": 10,
+      "r": 43,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 37,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 43,
+      "domain": 3,
+      "binder_info": 1,
+      "abstract_uid": 34,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 78,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 43,
+      "depth": 0,
+      "task": 10,
+      "r": 43,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 9,
+      "substitution": 37,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 43,
+      "domain": 3,
+      "binder_info": 1,
+      "abstract_uid": 34,
+      "open_tag": 7,
+      "fold_tag": 7,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 101,
+      "free": 62,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 4,
+      "x": 8,
+      "depth": 0,
+      "task": 12,
+      "r": 61,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 1,
+      "found": 0,
+      "root": 8,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 2,
+      "parameter": 3,
+      "lookup_level": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 120,
+      "free": 36,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 3,
+      "depth": 0,
+      "task": 12,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 121,
+      "free": 45,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 12,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 2,
+      "lookup_level": 2
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 124,
+      "free": 40,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 8,
+      "depth": 0,
+      "task": 12,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 1,
+      "lookup_level": 3
+    }
+  ],
+  "results": [
+    {
+      "name": "level-scope-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 11
+    },
+    {
+      "name": "level-scope-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 59,
+      "allocated_heap_nodes": 59,
+      "semantic_steps": 28
+    },
+    {
+      "name": "level-scope-2",
+      "status": "INVALID",
+      "reason": "UNIVERSE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 55,
+      "allocated_heap_nodes": 55,
+      "semantic_steps": 3
+    },
+    {
+      "name": "level-scope-3",
+      "status": "INVALID",
+      "reason": "UNIVERSE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 33,
+      "semantic_steps": 1
+    },
+    {
+      "name": "level-scope-4",
+      "status": "INVALID",
+      "reason": "UNIVERSE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 45,
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 2
+    },
+    {
+      "name": "level-scope-5",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 43,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 6
+    },
+    {
+      "name": "typed-telescope-type",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 51
+    },
+    {
+      "name": "typed-telescope-value",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 50
+    },
+    {
+      "name": "level-substitute-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 58,
+      "allocated_heap_nodes": 61,
+      "semantic_steps": 27
+    },
+    {
+      "name": "level-substitute-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 8
+    },
+    {
+      "name": "level-substitute-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 7
+    },
+    {
+      "name": "level-substitute-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 39,
+      "allocated_heap_nodes": 39,
+      "semantic_steps": 4
+    }
+  ],
+  "forward_seconds": 9.039274495997233,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 1078,
+    "persistent_channels": 436,
+    "subtract_handovers": 3448,
+    "head_clears": 26,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 44,
+      "dims": 4553,
+      "heads": 3,
+      "ffn_units": 5651,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 18,
+  "primitive_basis": [],
+  "semantic_program": "kernel.typed-symbolic-services.v2",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 114447832,
+  "weight_bytes": 228895664,
+  "cuda_peak_allocated_bytes": 294769664,
+  "host_process_peak_rss_bytes": 1682948096,
+  "hidden_size": 1152,
+  "native_layers": 45,
+  "boot_tokens": 64,
+  "applied_steps": 130,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 128,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 3.969430363998981,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-0",
+      "parameters": [],
+      "level": [
+        "max",
+        [
+          "zero"
+        ],
+        [
+          "succ",
+          [
+            "zero"
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-1",
+      "parameters": [
+        [
+          {
+            "str": "u"
+          }
+        ],
+        [
+          {
+            "str": "v"
+          }
+        ],
+        [
+          {
+            "str": "unused"
+          }
+        ]
+      ],
+      "level": [
+        "imax",
+        [
+          "max",
+          [
+            "succ",
+            [
+              "param",
+              [
+                {
+                  "str": "u"
+                }
+              ]
+            ]
+          ],
+          [
+            "param",
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ]
+        ],
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-2",
+      "parameters": [
+        [
+          {
+            "str": "u"
+          }
+        ],
+        [
+          {
+            "str": "v"
+          }
+        ]
+      ],
+      "level": [
+        "param",
+        [
+          {
+            "str": "missing"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-3",
+      "parameters": [],
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-4",
+      "parameters": [
+        [
+          {
+            "str": "a"
+          },
+          {
+            "num": 1
+          }
+        ]
+      ],
+      "level": [
+        "param",
+        [
+          {
+            "str": "a"
+          },
+          {
+            "str": "1"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "scope",
+      "name": "level-scope-5",
+      "parameters": [
+        [
+          {
+            "str": "\u5225\u5b87\u5b99"
+          }
+        ]
+      ],
+      "level": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "\u5225\u5b87\u5b99"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "telescope_roundtrip",
+      "name": "typed-telescope-type",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "identity"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "type",
+      "open_binder": "pi"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "telescope_roundtrip",
+      "name": "typed-telescope-value",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "identity"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "value",
+      "open_binder": "lam"
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "substitute_raw",
+      "name": "level-substitute-0",
+      "level": [
+        "imax",
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ],
+        [
+          "max",
+          [
+            "param",
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ],
+          [
+            "param",
+            [
+              {
+                "str": "w"
+              }
+            ]
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "succ",
+            [
+              "param",
+              [
+                {
+                  "str": "v"
+                }
+              ]
+            ]
+          ]
+        },
+        {
+          "parameter": [
+            {
+              "str": "v"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ],
+      "argument_prefix": [
+        77,
+        79
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "substitute_raw",
+      "name": "level-substitute-1",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "zero"
+        ]
+      ],
+      "bindings": []
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "substitute_raw",
+      "name": "level-substitute-2",
+      "level": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "w"
+            }
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "substitute_raw",
+      "name": "level-substitute-3",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "succ",
+            [
+              "zero"
+            ]
+          ]
+        },
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ]
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "12 typed-memory scope/raw-substitution/telescope probes; not full typing, declaration admission or mathlib coverage",
+  "full_kernel_native_support": false
+}

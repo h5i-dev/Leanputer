@@ -17,6 +17,7 @@ until weighted checking and atomic publication derive checked records.
 | 48,49 | Vector header `(length,first,role)` and linked cell `(value,next,0)` |
 | 64..68 | Symbolic Zero/Succ/Max/IMax/Param levels; never grounded |
 | 80..82 | String/numeral name segments and `(symbolID,nameVector,0)` entries |
+| 88 | Raw symbolic-substitution argument `(parameterSymbol,levelPointer,0)` |
 | 96..100 | Raw family/constructor/recursor-claim/block records |
 | 160..164 | Reserved checked signature/family/constructor/recursor/rule records; never input answers |
 
@@ -47,8 +48,11 @@ checker configuration; native operation evidence states its actual smaller
 configuration separately.
 
 `kernel/level_transition.py` connects the typed heap to the shared stock
-controller: it traverses all five level tags and checks parameter membership in
-weights, and reuses the Pi/Lam open/fold callers on the same physical ABI.
+controller: it traverses all five level tags, checks parameter membership and
+performs simultaneous raw substitution in weights, and reuses the Pi/Lam
+open/fold callers on the same physical ABI. Argument-window offsets preserve
+earlier caller-owned context slots; those slots are opaque data, not assumptions.
 Standalone operation entry points produce DONE/INVALID, not theorem acceptance.
 They do not run full source environment admission. Symbolic normalization,
-conversion and the checked-environment callers still need integrated lowering.
+expression-wide level substitution, conversion and checked-environment callers
+still need integrated lowering.

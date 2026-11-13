@@ -5,6 +5,9 @@ from leanputer.kernel.operations import check_scope
 from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from tests.test_kernel_traversal_machine import CircuitHarness
+from tests.test_kernel_native_cells import decode_syntax
+from leanputer.kernel.operations import substitute_levels
+from types import SimpleNamespace
 
 
 def name(s):
@@ -37,6 +40,22 @@ def telescope_cases():
     return [dict(format='leanputer.kernel-data-operation.v1', operation='telescope_roundtrip',
         name='typed-telescope-'+root, source=source, root=root, open_binder=binder)
         for root, binder in (('type', 'pi'), ('value', 'lam'))]
+
+
+def substitution_cases():
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    probes = [
+        (['imax', ['succ', u], ['max', v, w]],
+            [('u', ['succ', v]), ('v', ['zero'])]),
+        (['max', u, ['zero']], []),
+        (['succ', w], [('u', ['zero'])]),
+        (u, [('u', ['succ', ['zero']]), ('u', ['zero'])])]
+    docs = [dict(format='leanputer.kernel-level-operation.v1', operation='substitute_raw',
+        name=f'level-substitute-{i}', level=level,
+        bindings=[dict(parameter=name(symbol), level=value) for symbol, value in bindings])
+        for i, (level, bindings) in enumerate(probes)]
+    docs[0]['argument_prefix'] = [77, 79]
+    return docs
 
 
 class SymbolicLevelTransitionTest(unittest.TestCase):
@@ -79,6 +98,33 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
                     break
             self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE)
             self.assertEqual((state['regs']['ctx'], state['regs']['sp']), (0, 0))
+
+    def test_simultaneous_symbolic_substitution_and_argument_window(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for i, doc in enumerate(substitution_cases()):
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            # An opaque caller-owned prefix is outside the argument window;
+            # its values are data, never admitted local-context declarations.
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']:
+                    break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE)
+            first_bindings = {}
+            for symbol, level in arguments['bindings']:
+                first_bindings.setdefault(symbol, level)
+            expected_expr = substitute_levels(source.arena, source.target.type, first_bindings)
+            expected = source.arena.expr(expected_expr).a
+            decoded, _ = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), source.arena)
+            self.assertEqual(decoded[state['regs']['r']], expected)
+            self.assertEqual(state['regs']['sp'], 0)
+            if i == 0:
+                self.assertEqual(state['context'][:2], [[77], [79]])
 
 
 if __name__ == '__main__':

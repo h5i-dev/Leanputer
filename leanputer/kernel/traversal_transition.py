@@ -36,7 +36,8 @@ def compile_addresses(layout, optimized=True, target=None):
     a = tuple(g.inputs[len(layout.names)+width:len(layout.names)+2*width])
     base = g.add(r['depth'], r['start'])
     relative = g.sub(a, base)[0]
-    index = g.mux(g.eq(r['mode'], g.const(Mode.FIND, width)), r['i'], relative)
+    selecting = g.OR(g.eq(r['mode'], g.const(Mode.FIND, width)), g.eq(r['mode'], g.const(Mode.LEVEL_SELECT, width)))
+    index = g.add(r['arg_base'], g.mux(selecting, r['i'], relative))
     index = g.mux(g.eq(r['mode'], g.const(Mode.FOLD_SELECT, width)),
         g.sub(r['ctx'], g.const(1, width))[0], index)
     second = g.compile(list(index[:cfg.context.bit_length()-1]), target)
@@ -64,19 +65,27 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.FOLD_BUILD, self.r['mode']), self.lt(Task.LEVEL_SCOPE, self.r['task']),
+            self.lt(Mode.LEVEL_BINDING, self.r['mode']), self.lt(Task.LEVEL_SUBSTITUTE, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
             self.NOT(self.OR(self.eq(self.r['fold_tag'], Tag.PI), self.eq(self.r['fold_tag'], Tag.LAM))))
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(invalid))
+        uses_arguments = self.OR(*(self.eq(self.r['task'], value) for value in
+            (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)))
+        window_end = self.g.add(self.g.fit(self.r['arg_base'], self.width+1), self.g.fit(self.r['count'], self.width+1))
+        window_bad = self.AND(uses_arguments, self.g.lt(self.g.const(self.cfg.context, self.width+1), window_end))
+        self.stop(self.AND(self.active, window_bad), Outcome.RESOURCE, Reason.CONTEXT)
+        self.active = self.AND(self.active, self.NOT(window_bad))
         needs_node = self.NOT(self.eq(self.r['mode'], Mode.RETURN))
         internal_record = self.eq(self.r['mode'], Mode.FOLD_RECORD)
-        level_scope = self.eq(self.r['task'], Task.LEVEL_SCOPE)
+        binding_record = self.eq(self.r['mode'], Mode.LEVEL_BINDING)
+        level_scope = self.OR(self.eq(self.r['task'], Task.LEVEL_SCOPE), self.eq(self.r['task'], Task.LEVEL_SUBSTITUTE))
         expression_tag_bad = self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
         level_tag_bad = self.OR(self.lt(self.read['node']['tag'], CellTag.LEVEL_ZERO), self.lt(CellTag.LEVEL_PARAM, self.read['node']['tag']))
         tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
-            self.AND(self.NOT(internal_record), self.OR(self.AND(level_scope, level_tag_bad), self.AND(self.NOT(level_scope), expression_tag_bad))))
+            self.AND(binding_record, self.NOT(self.eq(self.read['node']['tag'], CellTag.LEVEL_BINDING))),
+            self.AND(self.NOT(internal_record), self.NOT(binding_record), self.OR(self.AND(level_scope, level_tag_bad), self.AND(self.NOT(level_scope), expression_tag_bad))))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -146,6 +155,18 @@ class RuleCompiler:
         self.emit(fold_return, sp=top, mode=Mode.FOLD_BUILD, x=result, task=Task.FOLD_TELESCOPE)
         self.emit(self.AND(returning, nonempty, self.NOT(self.OR(self.eq(frame['phase'], CALL_BETA_ZETA), self.eq(frame['phase'], CALL_TELESCOPE), self.eq(frame['phase'], CALL_FOLD)))), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
+
+        self.emit(self.mode(Mode.LEVEL_SELECT), mode=Mode.LEVEL_BINDING, x=operand)
+        binding = self.mode(Mode.LEVEL_BINDING)
+        value_valid = self.AND(self.NOT(self.eq(b, 0)), self.lt(b, r['free']))
+        self.stop(self.AND(binding, self.NOT(value_valid)), Outcome.INVALID, Reason.SYNTAX)
+        binding = self.AND(binding, value_valid)
+        matches = self.eq(a, r['parameter'])
+        self.ret(self.AND(binding, matches), b)
+        another_binding = self.lt(self.add(r['i'], 1), r['count'])
+        self.emit(self.AND(binding, self.NOT(matches), another_binding),
+            mode=Mode.LEVEL_SELECT, x=r['lookup_level'], i=self.add(r['i'], 1))
+        self.ret(self.AND(binding, self.NOT(matches), self.NOT(another_binding)), r['lookup_level'])
 
         folding = self.mode(Mode.FOLD_SELECT)
         active_local = self.NOT(self.eq(r['ctx'], 0))
@@ -243,11 +264,12 @@ class RuleCompiler:
         self.ret(self.AND(last, self.NOT(self.task(Task.LEVEL_SCOPE))), x)
         self.emit(self.AND(missing, self.NOT(self.eq(r['i'], 0))), i=self.sub(r['i'], 1))
 
+        level_task = self.OR(self.task(Task.LEVEL_SCOPE), self.task(Task.LEVEL_SUBSTITUTE))
         binary = self.OR(self.tag(Tag.APP, Tag.PI, Tag.LAM),
-            self.AND(self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX)))
+            self.AND(level_task, self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX)))
         let = self.tag(Tag.LET)
         unary = self.OR(self.tag(Tag.PROJ, Tag.MDATA),
-            self.AND(self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_SUCC)))
+            self.AND(level_task, self.tag(CellTag.LEVEL_SUCC)))
         branch = self.OR(binary, let, unary)
         walking = self.mode(Mode.WALK)
         descending = self.AND(walking, branch)
@@ -290,6 +312,7 @@ class RuleCompiler:
         self.alloc(self.AND(rebuild, let), (node['tag'], first, second, result))
         self.alloc(self.AND(rebuild, self.tag(Tag.PROJ)), (node['tag'], a, b, result))
         self.alloc(self.AND(rebuild, self.tag(Tag.MDATA)), (node['tag'], result, b, 0))
+        self.alloc(self.AND(rebuild, self.tag(CellTag.LEVEL_SUCC)), (node['tag'], result, 0, 0))
 
         leaf = self.AND(walking, self.NOT(branch))
         scope_bad = self.AND(leaf, self.task(Task.VARIABLE_SCOPE),
@@ -297,6 +320,8 @@ class RuleCompiler:
         self.stop(scope_bad, Outcome.INVALID, Reason.SCOPE)
         unbound_level = self.AND(leaf, self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_PARAM), self.eq(r['count'], 0))
         self.stop(unbound_level, Outcome.INVALID, Reason.UNIVERSE)
+        substitute_level = self.AND(leaf, self.task(Task.LEVEL_SUBSTITUTE), self.tag(CellTag.LEVEL_PARAM), self.NOT(self.eq(r['count'], 0)))
+        self.emit(substitute_level, mode=Mode.LEVEL_SELECT, i=0, parameter=a, lookup_level=x)
         abstract_one = self.AND(leaf, self.task(Task.ABSTRACT_ONE), self.tag(Tag.LOCAL), self.eq(a, r['abstract_uid']))
         self.alloc(abstract_one, (Tag.BVAR, depth, 0, 0))
         inst = self.OR(self.task(Task.INSTANTIATE), self.task(Task.INSTANTIATE_ONE))
@@ -331,7 +356,7 @@ class RuleCompiler:
             self.AND(self.tag(Tag.CONST), self.task(Task.OCCURS)),
             self.AND(self.tag(CellTag.LEVEL_PARAM), self.task(Task.LEVEL_SCOPE))), self.NOT(self.eq(r['count'], 0)))
         self.emit(searching, mode=Mode.FIND, i=self.sub(r['count'], 1))
-        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one), self.NOT(unbound_level)), x)
+        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one), self.NOT(unbound_level), self.NOT(substitute_level)), x)
 
     def finish(self, memory_update='attention_delta', target=None):
         if memory_update != 'attention_delta':

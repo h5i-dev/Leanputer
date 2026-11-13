@@ -52,6 +52,7 @@ class Task(IntEnum):
     ABSTRACT_ONE = 9            # Internal semantic subroutine only.
     FOLD_TELESCOPE = 10         # Internal: consumes derived Local records.
     LEVEL_SCOPE = 11            # Internal typed-cell level walk/membership.
+    LEVEL_SUBSTITUTE = 12       # Simultaneous raw level substitution.
 
 
 class Mode(IntEnum):
@@ -66,6 +67,8 @@ class Mode(IntEnum):
     FOLD_RECORD = 8
     FOLD_LOCAL = 9
     FOLD_BUILD = 10
+    LEVEL_SELECT = 11
+    LEVEL_BINDING = 12
 
 
 CALL_BETA_ZETA = 16
@@ -78,7 +81,8 @@ LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr
 REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
     'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open',
-    'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag')
+    'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag',
+    'arg_base', 'parameter', 'lookup_level')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -177,7 +181,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -264,10 +268,14 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.FOLD_BUILD or r['task'] > Task.LEVEL_SCOPE
+                or r['mode'] > Mode.LEVEL_BINDING or r['task'] > Task.LEVEL_SUBSTITUTE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
+            return s
+        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)
+        if uses_arguments and r['arg_base']+r['count'] > cfg.context:
+            stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
@@ -296,12 +304,27 @@ class SpecMachine:
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
+        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)
         valid_tag = (tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
-            CellTag.LEVEL_ZERO <= tag <= CellTag.LEVEL_PARAM if level_scope else Tag.BVAR <= tag <= Tag.MDATA)
+            tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
+            CellTag.LEVEL_ZERO <= tag <= CellTag.LEVEL_PARAM if level_task else Tag.BVAR <= tag <= Tag.MDATA)
         if not valid_tag:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if r['mode'] == Mode.LEVEL_SELECT:
+            r.update(mode=Mode.LEVEL_BINDING, x=s['context'][r['arg_base']+r['i']][0])
+            return s
+        if r['mode'] == Mode.LEVEL_BINDING:
+            if not 0 < b < r['free']:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif a == r['parameter']:
+                ret(b)  # Simultaneous substitution: do NOT traverse replacement.
+            elif r['i']+1 < r['count']:
+                r.update(mode=Mode.LEVEL_SELECT, x=r['lookup_level'], i=r['i']+1)
+            else:
+                ret(r['lookup_level'])
+            return s
         if r['mode'] == Mode.FOLD_SELECT:
             if not r['ctx']:
                 ret(r['fold_body'])
@@ -387,7 +410,7 @@ class SpecMachine:
         if r['mode'] == Mode.FIND:
             if r['i'] >= r['count']:
                 stop(Outcome.INVALID, Reason.SYNTAX)
-            elif s['context'][r['i']][0] == a:
+            elif s['context'][r['arg_base']+r['i']][0] == a:
                 if task == Task.OCCURS:
                     r.update(found=1, sp=0, r=r['root']); stop(Outcome.DONE)
                 elif level_scope:
@@ -405,7 +428,7 @@ class SpecMachine:
         # Children have exactly the increments in arena.children, but no host
         # walk or supplied traversal schedule drives the actual transition.
         child_list = (((a, b) if tag in (CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX) else
-                       (a,) if tag == CellTag.LEVEL_SUCC else ()) if level_scope else
+                       (a,) if tag == CellTag.LEVEL_SUCC else ()) if level_task else
                       (a, b, c) if tag == Tag.LET else (a, b) if tag in (Tag.APP, Tag.PI, Tag.LAM)
                       else (c,) if tag == Tag.PROJ else (a,) if tag == Tag.MDATA else ())
         if r['mode'] == Mode.RESUME:
@@ -456,6 +479,9 @@ class SpecMachine:
         elif level_scope and tag == CellTag.LEVEL_PARAM:
             if not r['count']: stop(Outcome.INVALID, Reason.UNIVERSE)
             else: r.update(mode=Mode.FIND, i=r['count']-1)
+        elif task == Task.LEVEL_SUBSTITUTE and tag == CellTag.LEVEL_PARAM:
+            if not r['count']: ret(r['x'])
+            else: r.update(mode=Mode.LEVEL_SELECT, i=0, parameter=a, lookup_level=r['x'])
         elif task == Task.VARIABLE_SCOPE and (tag == Tag.LOCAL or tag == Tag.BVAR and a >= depth):
             stop(Outcome.INVALID, Reason.SCOPE)
         elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE, Task.INSTANTIATE_ONE):
@@ -475,7 +501,7 @@ class SpecMachine:
                 if not count: ret(r['x'])
                 else: alloc((Tag.BVAR, a-count, 0, 0))
             else:
-                value = r['substitution'] if task == Task.INSTANTIATE_ONE else s['context'][a-offset][0]
+                value = r['substitution'] if task == Task.INSTANTIATE_ONE else s['context'][r['arg_base']+a-offset][0]
                 if not 0 < value < r['free']:
                     stop(Outcome.INVALID, Reason.SYNTAX)
                 elif not depth:

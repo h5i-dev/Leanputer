@@ -1,5 +1,8 @@
 # Typed symbolic memory and shared stock services
 
+Recorded scope-only controller/evidence: commit `d055a0a`. The current source
+also substitutes raw symbolic levels; see [the extended evidence](../kernel-level-substitution-stock/README.md).
+
 One stock model now consumes the [typed raw-memory ABI](../../docs/kernel/native-cells.md)
 for both symbolic universe scope and Pi/Lam open/fold calls. The level service
 traverses Zero/Succ/Max/IMax/Param and checks parameter-vector membership in
