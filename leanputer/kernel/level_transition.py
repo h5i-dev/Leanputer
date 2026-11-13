@@ -16,13 +16,15 @@ from .traversal_transition import RuleCompiler, compile_addresses, constant_fiel
 def parse_document(document):
     if document.get('format') == 'leanputer.kernel-data-operation.v1':
         operation = document.get('operation')
-        if operation not in ('telescope_roundtrip', 'expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal'):
+        if operation not in ('telescope_roundtrip', 'expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal', 'infer'):
             raise KernelError('unknown typed-cell semantic operation')
         codec = SyntaxCodec()
         source = codec.document(document['source'])
         root = document.get('root', 'type')
         if root not in ('type', 'value') or root == 'value' and source.target.value is None:
             raise KernelError('missing syntax root for typed expression operation')
+        if operation == 'infer':
+            return source, dict(operation=operation, root=root), source.declarations
         if operation == 'expr_equal':
             peer_root = document.get('right', 'value')
             if peer_root not in ('type', 'value') or peer_root == 'value' and source.target.value is None:
@@ -73,15 +75,15 @@ def parse_document(document):
 
 def prepare(config, source, level, _declarations=()):
     operation = level.get('operation') if isinstance(level, dict) else 'scope'
-    expression = operation in ('expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal')
+    expression = operation in ('expr_substitute_raw', 'expr_instantiate', 'expr_scope', 'expr_equal', 'expr_instantiate_equal', 'infer')
     substitute = operation in ('substitute_raw', 'substitute_raw_equal', 'expr_substitute_raw', 'instantiate', 'expr_instantiate', 'expr_instantiate_equal')
-    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare', 'equivalent', 'normalize', 'geq', 'expr_equal')
+    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax', 'compare', 'equivalent', 'normalize', 'geq', 'expr_equal', 'infer')
     telescope = isinstance(level, dict) and not (substitute or service or operation == 'expr_scope')
     peer = level.get('peer') if isinstance(level, dict) else None
     bindings = level['bindings'] if substitute else ()
     packed = pack_source(source, CellCapacities(heap=config.heap, constants=config.constants, word_bits=config.word_bits),
                          level_bindings=bindings, level_roots=() if peer is None else (peer,))
-    parameters = packed.level_bindings if substitute else () if telescope or service else source.target.universe_parameters
+    parameters = source.target.universe_parameters if operation == 'infer' else packed.level_bindings if substitute else () if telescope or service else source.target.universe_parameters
     prefix = level.get('argument_prefix', ()) if substitute else ()
     if any(value >= 1 << config.word_bits for value in prefix):
         raise ResourceError('caller data word width')
@@ -98,11 +100,13 @@ def prepare(config, source, level, _declarations=()):
         root = packed.expression_map[raw_root]
     else:
         root = packed.level_map[level['root_level'] if substitute or service else level]
-    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER, 'normalize': Task.LEVEL_NORMALIZE, 'equivalent': Task.LEVEL_EQUIVALENT, 'geq': Task.LEVEL_GEQ, 'expr_equal': Task.EXPR_EQUAL}[operation] if service else
+    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX, 'compare': Task.LEVEL_ORDER, 'normalize': Task.LEVEL_NORMALIZE, 'equivalent': Task.LEVEL_EQUIVALENT, 'geq': Task.LEVEL_GEQ, 'expr_equal': Task.EXPR_EQUAL, 'infer': Task.EXPR_SCOPE}[operation] if service else
             Task.VARIABLE_SCOPE if telescope else Task.EXPR_SCOPE if operation == 'expr_scope' else Task.EXPR_LEVEL_INSTANTIATE if operation in ('expr_instantiate', 'expr_instantiate_equal') else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_INSTANTIATE if operation == 'instantiate' else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
     state['regs'].update(mode=int(Mode.WALK), task=int(task),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
         fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
+    if operation == 'infer':
+        state['regs']['pending_infer'] = 1
     if operation in ('expr_equal', 'expr_instantiate_equal'):
         other = source.target.type if level['peer_root'] == 'type' else source.target.value
         state['regs'].update(peer=packed.expression_map[other], comparison_root=packed.expression_map[other],
@@ -127,5 +131,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.typed-symbolic-services.v11'
+program_name = 'kernel.general-typed-services.v1'
 primitive_basis = ()

@@ -1,0 +1,2469 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 69,
+      "free": 37,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 6,
+      "depth": 0,
+      "task": 31,
+      "r": 36,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 6,
+      "substitution": 32,
+      "limit": 3,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 27,
+      "constructor_right": 1,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 29,
+      "lookup_index": 1,
+      "lookup_type": 2,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 83,
+      "free": 39,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 8,
+      "depth": 0,
+      "task": 31,
+      "r": 38,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 8,
+      "substitution": 32,
+      "limit": 3,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 29,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 32,
+      "lookup_index": 2,
+      "lookup_type": 29,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 151,
+      "free": 30,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 31,
+      "r": 29,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 23,
+      "free": 52,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 7,
+      "depth": 0,
+      "task": 31,
+      "r": 51,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 42,
+      "limit": 4,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 35,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 39,
+      "lookup_index": 2,
+      "lookup_type": 35,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 93,
+      "free": 40,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 5,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 6,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 35,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 35,
+      "lookup_index": 1,
+      "lookup_type": 3,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 2,
+      "reason": 14,
+      "fuel": 78,
+      "free": 39,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 5,
+      "substitution": 33,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 33,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 33,
+      "lookup_index": 1,
+      "lookup_type": 2,
+      "convert_left_level": 36
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 114,
+      "free": 38,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 4,
+      "depth": 0,
+      "task": 31,
+      "r": 37,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 6,
+      "substitution": 4,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 2,
+      "reason": 14,
+      "fuel": 102,
+      "free": 35,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 65,
+      "left_a": 1,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 32
+    },
+    {
+      "mode": 49,
+      "status": 2,
+      "reason": 13,
+      "fuel": 111,
+      "free": 36,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 35,
+      "depth": 0,
+      "task": 31,
+      "r": 35,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 5,
+      "substitution": 33,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 33,
+      "open_tag": 7,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 33,
+      "lookup_index": 1,
+      "lookup_type": 2,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 147,
+      "free": 31,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 31,
+      "r": 30,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 4,
+      "reason": 12,
+      "fuel": 156,
+      "free": 35,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 31,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 2,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 4,
+      "reason": 17,
+      "fuel": 151,
+      "free": 36,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 31,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 4,
+      "reason": 16,
+      "fuel": 157,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 31,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 4,
+      "reason": 16,
+      "fuel": 157,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 3,
+      "depth": 0,
+      "task": 31,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 159,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 28,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 1,
+      "local_base": 0,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 159,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 28,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 1,
+      "local_base": 0,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    },
+    {
+      "mode": 0,
+      "status": 4,
+      "reason": 12,
+      "fuel": 156,
+      "free": 38,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 1,
+      "ctx": 1,
+      "x": 4,
+      "depth": 0,
+      "task": 31,
+      "r": 4,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 4,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 0,
+      "vector_expected_role": 0,
+      "vector_remaining": 0,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "inference-original-id-type",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 36,
+      "semantic_steps": 91
+    },
+    {
+      "name": "inference-original-id-value",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 38,
+      "semantic_steps": 77
+    },
+    {
+      "name": "inference-sort",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 27,
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 9
+    },
+    {
+      "name": "inference-shadow",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 32,
+      "allocated_heap_nodes": 51,
+      "semantic_steps": 137
+    },
+    {
+      "name": "inference-application",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 32,
+      "allocated_heap_nodes": 39,
+      "semantic_steps": 67
+    },
+    {
+      "name": "inference-bad-argument",
+      "status": "INVALID",
+      "reason": "TYPE_MISMATCH",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 30,
+      "allocated_heap_nodes": 38,
+      "semantic_steps": 82
+    },
+    {
+      "name": "inference-let",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 31,
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 46
+    },
+    {
+      "name": "inference-bad-let",
+      "status": "INVALID",
+      "reason": "TYPE_MISMATCH",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 29,
+      "allocated_heap_nodes": 34,
+      "semantic_steps": 58
+    },
+    {
+      "name": "inference-non-type-domain",
+      "status": "INVALID",
+      "reason": "EXPECT_SORT",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 30,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 49
+    },
+    {
+      "name": "inference-metadata",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 30,
+      "semantic_steps": 13
+    },
+    {
+      "name": "inference-environment-gap",
+      "status": "GAP",
+      "reason": "GAP_ENVIRONMENT",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 34,
+      "allocated_heap_nodes": 34,
+      "semantic_steps": 4
+    },
+    {
+      "name": "inference-projection-gap",
+      "status": "GAP",
+      "reason": "GAP_PROJECTION",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 9
+    },
+    {
+      "name": "inference-natural-gap",
+      "status": "GAP",
+      "reason": "GAP_PRIMITIVE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 3
+    },
+    {
+      "name": "inference-string-gap",
+      "status": "GAP",
+      "reason": "GAP_PRIMITIVE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 28,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 3
+    },
+    {
+      "name": "inference-free-local",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 1
+    },
+    {
+      "name": "inference-free-variable",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 26,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 1
+    },
+    {
+      "name": "inference-raw-signature-not-admitted",
+      "status": "GAP",
+      "reason": "GAP_ENVIRONMENT",
+      "assumptions": [
+        1
+      ],
+      "environment_declarations": 1,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 37,
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 4
+    }
+  ],
+  "forward_seconds": 14.427618839996285,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 2572,
+    "persistent_channels": 804,
+    "subtract_handovers": 6429,
+    "head_clears": 22,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 58,
+      "dims": 9024,
+      "heads": 3,
+      "ffn_units": 11303,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 41,
+  "primitive_basis": [],
+  "semantic_program": "kernel.general-typed-services.v1",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 342631476,
+  "weight_bytes": 685262952,
+  "cuda_peak_allocated_bytes": 814410240,
+  "host_process_peak_rss_bytes": 1692897280,
+  "hidden_size": 2624,
+  "native_layers": 59,
+  "boot_tokens": 40,
+  "applied_steps": 162,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 160,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 7.383775704001891,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-original-id-type",
+      "source": {
+        "declarations": [],
+        "format": "leanputer.kernel-source.v1",
+        "name": "id",
+        "provenance": {
+          "lean_version": "4.31.0",
+          "preparation": "original-scheme syntax only; metadata inert; no admission answers",
+          "source_name": [
+            {
+              "str": "id"
+            }
+          ]
+        },
+        "status": "EXPORTED",
+        "target": {
+          "kind": "definition",
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "name": [
+            {
+              "str": "id"
+            }
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "type"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-original-id-value",
+      "source": {
+        "declarations": [],
+        "format": "leanputer.kernel-source.v1",
+        "name": "id",
+        "provenance": {
+          "lean_version": "4.31.0",
+          "preparation": "original-scheme syntax only; metadata inert; no admission answers",
+          "source_name": [
+            {
+              "str": "id"
+            }
+          ]
+        },
+        "status": "EXPORTED",
+        "target": {
+          "kind": "definition",
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "name": [
+            {
+              "str": "id"
+            }
+          ],
+          "type": [
+            "pi",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "pi",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                1
+              ]
+            ]
+          ],
+          "value": [
+            "lam",
+            1,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      "root": "value"
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-sort",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "sort",
+            [
+              "param",
+              [
+                {
+                  "str": "u"
+                }
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-shadow",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "lam",
+            0,
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ],
+            [
+              "lam",
+              0,
+              [
+                "var",
+                0
+              ],
+              [
+                "lam",
+                0,
+                [
+                  "var",
+                  1
+                ],
+                [
+                  "var",
+                  1
+                ]
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-application",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "app",
+            [
+              "lam",
+              0,
+              [
+                "sort",
+                [
+                  "succ",
+                  [
+                    "zero"
+                  ]
+                ]
+              ],
+              [
+                "var",
+                0
+              ]
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-bad-argument",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "app",
+            [
+              "lam",
+              0,
+              [
+                "sort",
+                [
+                  "zero"
+                ]
+              ],
+              [
+                "var",
+                0
+              ]
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-let",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "let",
+            [
+              "sort",
+              [
+                "succ",
+                [
+                  "zero"
+                ]
+              ]
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            [
+              "var",
+              0
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-bad-let",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "let",
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            [
+              "var",
+              0
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-non-type-domain",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "lam",
+              0,
+              [
+                "sort",
+                [
+                  "zero"
+                ]
+              ],
+              [
+                "var",
+                0
+              ]
+            ],
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-metadata",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "mdata",
+            [
+              "sort",
+              [
+                "param",
+                [
+                  {
+                    "str": "u"
+                  }
+                ]
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-environment-gap",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            []
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-projection-gap",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "proj",
+            [
+              {
+                "str": "R"
+              }
+            ],
+            0,
+            [
+              "sort",
+              [
+                "zero"
+              ]
+            ]
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-natural-gap",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "nat",
+            "1"
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-string-gap",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "string",
+            "t"
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-free-local",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "local",
+            31
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-free-variable",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "var",
+            0
+          ],
+          "value": null
+        }
+      }
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "infer",
+      "name": "inference-raw-signature-not-admitted",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [
+          {
+            "kind": "axiom",
+            "name": [
+              {
+                "str": "f"
+              }
+            ],
+            "level_params": [],
+            "type": [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            "value": null
+          }
+        ],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "inference"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ],
+          "type": [
+            "const",
+            [
+              {
+                "str": "f"
+              }
+            ],
+            []
+          ],
+          "value": null
+        }
+      }
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "17 typed-memory inference operation probes; not full typing, declaration admission or mathlib coverage",
+  "operation_group": "inference",
+  "full_kernel_native_support": false
+}

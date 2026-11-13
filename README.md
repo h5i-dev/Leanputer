@@ -16,9 +16,11 @@ model and exact output-cache comparison. It does **not** establish full
 declaration admission or mathlib coverage. The same stock controller now runs
 [typed universe normalization/equivalence](benchmarks/kernel-level-normalization-stock/README.md),
 source scheme instantiation, [conservative level comparison](benchmarks/kernel-level-geq-stock/README.md)
-and dependent telescope opening/folding. General
-inference, nested processing/transactions, positivity/admission and recursor
-generation remain development specs; complete conversion/primitives and
+and dependent telescope opening/folding. The
+[typed inference core](benchmarks/kernel-inference-core-stock/README.md) calls
+those same weighted services, with explicit GAP for unfinished environment,
+projection/literals and full conversion. General nested processing/transactions,
+positivity/admission and recursor generation remain development specs; complete conversion/primitives and
 integrated weighted checking remain unfinished. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax

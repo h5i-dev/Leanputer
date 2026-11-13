@@ -37,3 +37,5 @@ FALSE is representation mismatch, NOT a proof of definitional inequality. Future
 conversion must continue through reduction, typed proof irrelevance and eta.
 DONE is an operation outcome, not native proof/declaration acceptance or mathlib
 coverage. General typed checking and source admission remain unfinished.
+
+Evidence is pinned to `c6b8884`; later programs add typed inference.

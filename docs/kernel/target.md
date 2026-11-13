@@ -231,7 +231,7 @@ semantics to invent from examples.
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
 | Physical native input | `native_cells.py`: typed vector/name/level/raw-declaration packing, excludes offline generated artifacts; `level_transition.py`: stock symbolic scope, raw/source all-Expr instantiation, constructors, normalization/equivalence and typed telescope calls, with argument windows | checked-environment/inference callers and full weighted admission; see [native-cells.md](native-cells.md) |
 | Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta, Pi/Lam telescope opening/folding through shared substitution/abstraction/private calls | connect checking/generation callers and full kernel |
-| Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
+| Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent inference/reduction with explicit conversion gaps (spec); `inference_rules.py`: shared stock Sort/Local/Pi/Lam/App/Let core with private typed scope and explicit callback GAPs | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
 | Stock lowering | stock forward/cache emitter and memory ABI | lower the shared general operations; remove count-specific semantic paths |
@@ -345,3 +345,9 @@ connects typed vector streaming and the SAME structural level comparator. The
 and the distinction from full conversion; false is NOT definitional inequality.
 Composed source instantiation creates duplicate runtime levels/vectors before
 comparison. Full typed/environment/admission callers still remain unfinished.
+
+The [typed-core stock smoke](../../benchmarks/kernel-inference-core-stock/README.md)
+connects [inference callers](inference-native.md) to the SAME private telescope/
+substitution/abstraction/level services. Raw signatures are not checked answers;
+missing environment/projection/literal/full-conversion paths return GAP. DONE
+returns an inferred type, not source theorem/admission acceptance.
