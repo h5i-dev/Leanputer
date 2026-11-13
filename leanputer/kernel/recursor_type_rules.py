@@ -2,14 +2,13 @@
 from .arena import Tag
 from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_REC_TYPE_BODY,
-    CALL_REC_TYPE_FOLD,CALL_REC_TYPE_SCOPE,CALL_REC_TYPE_VECTOR)
+    CALL_REC_TYPE_FOLD,CALL_REC_TYPE_SCOPE,CALL_REC_TYPE_VECTOR,CALL_REC_TYPE_RESTORE)
 
-PRIVATE_PHASES=tuple(range(CALL_REC_TYPE_BODY,CALL_REC_TYPE_VECTOR+1))
+PRIVATE_PHASES=tuple(range(CALL_REC_TYPE_BODY,CALL_REC_TYPE_VECTOR+1))+(CALL_REC_TYPE_RESTORE,)
 NO_NODE=(Mode.WALK,Mode.REC_TYPE_STORE,Mode.REC_TYPE_LINK)
 TAGS={Mode.REC_TYPE_VECTOR:CellTag.VECTOR,Mode.REC_TYPE_CELL:CellTag.VECTOR_CELL,
     Mode.REC_TYPE_INFO:CellTag.MOTIVE_INFO,Mode.REC_TYPE_TELESCOPE:CellTag.MOTIVE_TELESCOPE,
-    Mode.REC_TYPE_INDICES:CellTag.VECTOR,Mode.REC_TYPE_INDEX_CELL:CellTag.VECTOR_CELL,
-    Mode.REC_TYPE_INDEX_RECORD:CellTag.LOCAL_DECL,Mode.REC_TYPE_MAJOR:CellTag.LOCAL_DECL,
+    Mode.REC_TYPE_MAJOR:CellTag.LOCAL_DECL,
     Mode.REC_TYPE_MOTIVE_RECORD:CellTag.LOCAL_DECL}
 
 
@@ -20,6 +19,7 @@ def emit_rules(c):
     def call(guard,p,task,x,mode=Mode.WALK,**updates):
         c.write('stack',guard,top,(p,0,0,Task.BUILD_RECURSOR_TYPES,0,0))
         c.emit(guard,task=task,mode=mode,x=x,depth=0,**updates)
+    c.emit(phase(CALL_REC_TYPE_RESTORE),task=Task.BUILD_RECURSOR_TYPES,mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
     call(phase(CALL_REC_TYPE_BODY),CALL_REC_TYPE_FOLD,Task.FOLD_TELESCOPE,r['r'],Mode.FOLD_SELECT,
         fold_base=r['header_parameter_base'],fold_body=r['r'],fold_tag=Tag.PI)
     folded=phase(CALL_REC_TYPE_FOLD);c.emit(folded,rec_type_closed=r['r'])
@@ -47,22 +47,11 @@ def emit_rules(c):
         return c.AND(cell,valid)
     c.emit(cell_guard(Mode.REC_TYPE_CELL,'rec_type_remaining'),rec_type_next=n['b'],mode=Mode.REC_TYPE_INFO,x=n['a'])
     c.emit(at(Mode.REC_TYPE_INFO),rec_type_family=n['a'],rec_type_motive=n['b'],mode=Mode.REC_TYPE_TELESCOPE,x=n['c'])
-    c.emit(at(Mode.REC_TYPE_TELESCOPE),rec_type_major=n['b'],rec_type_symbol=n['c'],mode=Mode.REC_TYPE_INDICES,x=n['a'])
-    indices=at(Mode.REC_TYPE_INDICES);valid=c.AND(c.eq(n['c'],VectorKind.REFERENCES),c.eq(c.mux(c.eq(n['a'],0),0,1),c.mux(c.eq(n['b'],0),0,1)))
-    wide=c.g.add(c.g.fit(r['ctx'],c.width+2),c.g.fit(n['a'],c.width+2));wide=c.g.add(wide,c.g.const(1,c.width+2))
-    room=c.NOT(c.g.lt(c.g.const(c.cfg.context,c.width+2),wide))
-    c.stop(c.AND(indices,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
-    c.stop(c.AND(indices,valid,c.NOT(room)),Outcome.RESOURCE,Reason.CONTEXT)
-    indices=c.AND(indices,valid,room);empty=c.eq(n['a'],0)
-    c.emit(c.AND(indices,empty),mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
-    c.emit(c.AND(indices,c.NOT(empty)),rec_type_index_remaining=n['a'],mode=Mode.REC_TYPE_INDEX_CELL,x=n['b'])
-    c.emit(cell_guard(Mode.REC_TYPE_INDEX_CELL,'rec_type_index_remaining'),rec_type_index_next=n['b'],mode=Mode.REC_TYPE_INDEX_RECORD,x=n['a'])
-    record=at(Mode.REC_TYPE_INDEX_RECORD);more=c.lt(1,r['rec_type_index_remaining'])
-    c.write('context',record,r['ctx'],(r['x'],));c.emit(record,ctx=c.add(r['ctx'],1),rec_type_index_remaining=c.sub(r['rec_type_index_remaining'],1))
-    c.emit(c.AND(record,more),mode=Mode.REC_TYPE_INDEX_CELL,x=r['rec_type_index_next'])
-    c.emit(c.AND(record,c.NOT(more)),mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
-    major=at(Mode.REC_TYPE_MAJOR);c.write('context',major,r['ctx'],(r['x'],))
-    c.emit(major,ctx=c.add(r['ctx'],1),mode=Mode.REC_TYPE_MOTIVE_RECORD,x=r['rec_type_motive'])
+    telescope=at(Mode.REC_TYPE_TELESCOPE);c.emit(telescope,rec_type_major=n['b'],rec_type_symbol=n['c'])
+    call(telescope,CALL_REC_TYPE_RESTORE,Task.RESTORE_SCOPE,n['a'])
+    major=at(Mode.REC_TYPE_MAJOR);room=c.lt(r['ctx'],c.cfg.context)
+    c.stop(c.AND(major,c.NOT(room)),Outcome.RESOURCE,Reason.CONTEXT);major=c.AND(major,room)
+    c.write('context',major,r['ctx'],(r['x'],));c.emit(major,ctx=c.add(r['ctx'],1),mode=Mode.REC_TYPE_MOTIVE_RECORD,x=r['rec_type_motive'])
     call(at(Mode.REC_TYPE_MOTIVE_RECORD),CALL_REC_TYPE_BODY,Task.APPLY_SCOPE,n['a'],apply_base=r['rec_type_mark'],apply_end=r['ctx'])
     store=at(Mode.REC_TYPE_STORE);wide=c.g.add(c.g.fit(r['free'],c.width+1),c.g.const(2,c.width+1))
     room=c.NOT(c.g.lt(c.g.const(c.cfg.heap,c.width+1),wide))

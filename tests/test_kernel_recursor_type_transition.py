@@ -29,9 +29,11 @@ class RecursorTypeTransitionTest(unittest.TestCase):
                     else:
                         ref=machine.step();state={'regs':{k:int(v) for k,v in ref['regs'].items()},
                             **{bank:[[int(v) for v in row] for row in ref[bank]] for bank in spec.BANK_FIELDS}}
+                    rr=state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_REC_TYPES:break
                     if state['regs']['status']:break
                 r=state['regs'];self.assertIsNotNone(prefix)
-                self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+                self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
                 self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
                 self.assertEqual((r['ctx'],r['count'],r['arg_base']),(prefix['regs']['ctx'],prefix['regs']['count'],prefix['regs']['arg_base']))
                 self.assertEqual(state['context'][:r['ctx']],prefix['context'][:r['ctx']])
@@ -47,7 +49,6 @@ class RecursorTypeTransitionTest(unittest.TestCase):
                     self.assertEqual((tag,symbol),(CellTag.RECURSOR_TYPE,recursor.symbol))
                     self.assertEqual(state['heap'][signature][1],family.symbol)
                     self.assertTrue(representation_equal(a,decoded[type_ref],recursor.type),doc['name'])
-                self.assertEqual(circuit.step(state),state)
 
     def test_generic_closed_types_preserve_persistent_scope(self):
         cfg=spec.MachineConfig(heap=512,stack=16,context=16,constants=2,fuel=4096,word_bits=10)

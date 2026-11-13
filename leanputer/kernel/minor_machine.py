@@ -4,10 +4,10 @@ from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_MINOR_OWN_MOTIVE,
     CALL_MINOR_RESULT_INDICES,CALL_MINOR_PARAMETERS,CALL_MINOR_FIELDS,CALL_MINOR_PREFIX,
     CALL_MINOR_IH_MOTIVE,CALL_MINOR_IH_INDICES,CALL_MINOR_FUNCTION,CALL_MINOR_IH_FOLD,
-    CALL_MINOR_IH_LOCAL,CALL_MINOR_FOLD,CALL_MINOR_LOCAL,CALL_MINOR_VECTOR)
+    CALL_MINOR_IH_LOCAL,CALL_MINOR_FOLD,CALL_MINOR_LOCAL,CALL_MINOR_VECTOR,CALL_MINOR_RESTORE)
 from .minor_rules import NO_NODE,TAGS
 
-PRIVATE_PHASES=tuple(range(CALL_MINOR_OWN_MOTIVE,CALL_MINOR_VECTOR+1))
+PRIVATE_PHASES=tuple(range(CALL_MINOR_OWN_MOTIVE,CALL_MINOR_VECTOR+1))+(CALL_MINOR_RESTORE,)
 
 
 def resume(machine,frame,stop,ret,alloc):
@@ -15,7 +15,10 @@ def resume(machine,frame,stop,ret,alloc):
     def call(p,task,x,mode=Mode.WALK,**updates):
         s['stack'][r['sp']-1]=[p,0,0,Task.BUILD_MINORS,0,0]
         r.update(task=task,mode=mode,x=x,depth=0,**updates)
-    if phase==CALL_MINOR_OWN_MOTIVE:
+    if phase==CALL_MINOR_RESTORE:
+        r.update(minor_field_count=r['restore_length'],minor_fields_end=r['ctx'])
+        call(CALL_MINOR_OWN_MOTIVE,Task.FIND_MOTIVE,r['core_motives'],motive_query=r['minor_family'])
+    elif phase==CALL_MINOR_OWN_MOTIVE:
         call(CALL_MINOR_RESULT_INDICES,Task.APPLY_LIST,r['r'],list_head=r['minor_result_args'],list_skip=r['header_parameter_count'])
     elif phase==CALL_MINOR_RESULT_INDICES:
         r.update(task=Task.BUILD_MINORS,minor_result_fn=r['r'],mode=Mode.MINOR_CONSTANT)
@@ -73,23 +76,9 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         if not r['minor_remaining'] or bool(b)!=(r['minor_remaining']>1):stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(minor_next=b,minor_pending=a,mode=Mode.MINOR_PENDING,x=a,minor_mark=r['ctx'])
     elif mode==Mode.MINOR_PENDING:r.update(minor_symbol=a,mode=Mode.MINOR_ANALYSIS,x=c)
-    elif mode==Mode.MINOR_ANALYSIS:r.update(minor_family=a,minor_fields=b,minor_result_args=c,mode=Mode.MINOR_FIELD_VECTOR,x=b)
-    elif mode==Mode.MINOR_FIELD_VECTOR:
-        if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
-        elif r['ctx']+a>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
-        else:
-            r.update(minor_field_count=a,minor_restore_remaining=a,minor_fields_end=r['ctx']+a)
-            if a:r.update(mode=Mode.MINOR_FIELD_CELL,x=b)
-            else:own_motive()
-    elif mode==Mode.MINOR_FIELD_CELL:
-        if not r['minor_restore_remaining'] or bool(b)!=(r['minor_restore_remaining']>1):stop(Outcome.INVALID,Reason.SYNTAX)
-        else:r.update(minor_restore_next=b,mode=Mode.MINOR_FIELD,x=a)
-    elif mode==Mode.MINOR_FIELD:r.update(mode=Mode.MINOR_RESTORE_RECORD,x=a)
-    elif mode==Mode.MINOR_RESTORE_RECORD:
-        s['context'][r['ctx']]=[r['x']];more=r['minor_restore_remaining']>1
-        r.update(ctx=r['ctx']+1,minor_restore_remaining=r['minor_restore_remaining']-1)
-        if more:r.update(mode=Mode.MINOR_FIELD_CELL,x=r['minor_restore_next'])
-        else:own_motive()
+    elif mode==Mode.MINOR_ANALYSIS:
+        r.update(minor_family=a,minor_fields=b,minor_result_args=c)
+        call(CALL_MINOR_RESTORE,Task.RESTORE_SCOPE,b)
     elif mode==Mode.MINOR_CONSTANT:
         if room():
             ref=r['free'];s['heap'][ref]=[Tag.CONST,r['minor_symbol'],r['header_levels'],0];r['free']=ref+1

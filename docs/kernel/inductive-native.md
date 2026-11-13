@@ -325,3 +325,23 @@ Builder control is a `(Task,Mode)` pair. New type-pass phases reuse existing
 Expr-walk modes or context-address selectors. Every rule/tag guard includes its
 task. This keeps finite control vocabulary within the current8-bit minimum
 without changing declaration semantics or imposing a new syntax class.
+
+`RESTORE_SCOPE` is the shared context traversal for minor fields, recursor-type
+indices and computation-rule fields. Each element is either a derived Local
+record or a checked constructor-field record wrapping one; both are output-only
+metadata variants. One counted loop validates tags and context capacity, then
+appends the immutable records in order. It preserves the caller's universe
+window and avoids separate field/index count-specific restoration paths.
+
+Computation rules follow `mk_rec_rules`: traverse the source-ordered minor
+records, restore that constructor's fields, and apply its matching minor Local
+to all fields. For every recursive field reopen the generated prefix/indices;
+look up its family-to-recursor-name association; form
+`rec_J params allMotives allMinors indices (field xs)` at the generated recursor
+universe levels; lambda-fold `xs` and append that IH to the minor application.
+Then lambda-fold shared parameters/all motives/all minors/fields, check closed
+Expr/universe scope and retain rule164 `(ctorSymbol,fieldCount,rhs)` with a
+private179 `(owningFamilySig,ruleRef,0)` association. All constructor rules stay
+in original order. Rule generation neither assumes a type claim nor publishes
+an environment entry. Grouping/claims, outer nested restoration and runtime
+constructor/K/structure/literal reduction remain subsequent required stages.

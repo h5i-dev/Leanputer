@@ -19,11 +19,11 @@ def main():
     parser.add_argument('--report',type=Path,required=True)
     args=parser.parse_args();torch.set_num_threads(1)
     cfg=MachineConfig(heap=512,stack=16,context=8,constants=2,fuel=2048,word_bits=10)
-    run_smoke(cfg,native_cases(),program,args.device,args.report,'typed-inductive-recursor-types',
+    run_smoke(cfg,native_cases(),program,args.device,args.report,'typed-inductive-recursor-rules',
         '2 raw CORE block operations: actual Eq header/constructor and functional recursive field; '
         'weighted scope/type/universe/positivity/recursive descriptor/name checks, private constructor declarations, '
         'raw recursion/reflexivity flags, source elimination/K, all-family motives and all-constructor '
-        'minor/functional IH and closed recursor-type generation then GAP_RECURSOR_GENERATION; '
+        'minor/functional IH, closed recursor-type and computation-rule generation then GAP_RECURSOR_GENERATION; '
         'original-source nested staging and generation/restoration incomplete; NO declaration/theorem acceptance',early_stop=True)
 
 

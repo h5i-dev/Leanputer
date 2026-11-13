@@ -2,10 +2,10 @@
 from .arena import Tag
 from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_REC_TYPE_BODY,
-    CALL_REC_TYPE_FOLD,CALL_REC_TYPE_SCOPE,CALL_REC_TYPE_VECTOR)
+    CALL_REC_TYPE_FOLD,CALL_REC_TYPE_SCOPE,CALL_REC_TYPE_VECTOR,CALL_REC_TYPE_RESTORE)
 from .recursor_type_rules import NO_NODE,TAGS
 
-PRIVATE_PHASES=tuple(range(CALL_REC_TYPE_BODY,CALL_REC_TYPE_VECTOR+1))
+PRIVATE_PHASES=tuple(range(CALL_REC_TYPE_BODY,CALL_REC_TYPE_VECTOR+1))+(CALL_REC_TYPE_RESTORE,)
 
 
 def resume(machine,frame,stop,ret,alloc):
@@ -13,7 +13,8 @@ def resume(machine,frame,stop,ret,alloc):
     def call(p,task,x,mode=Mode.WALK,**updates):
         s['stack'][r['sp']-1]=[p,0,0,Task.BUILD_RECURSOR_TYPES,0,0]
         r.update(task=task,mode=mode,x=x,depth=0,**updates)
-    if phase==CALL_REC_TYPE_BODY:
+    if phase==CALL_REC_TYPE_RESTORE:r.update(task=Task.BUILD_RECURSOR_TYPES,mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
+    elif phase==CALL_REC_TYPE_BODY:
         call(CALL_REC_TYPE_FOLD,Task.FOLD_TELESCOPE,r['r'],Mode.FOLD_SELECT,
             fold_base=r['header_parameter_base'],fold_body=r['r'],fold_tag=Tag.PI)
     elif phase==CALL_REC_TYPE_FOLD:
@@ -44,22 +45,13 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         if not r['rec_type_remaining'] or bool(b)!=(r['rec_type_remaining']>1):stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(rec_type_next=b,mode=Mode.REC_TYPE_INFO,x=a)
     elif mode==Mode.REC_TYPE_INFO:r.update(rec_type_family=a,rec_type_motive=b,mode=Mode.REC_TYPE_TELESCOPE,x=c)
-    elif mode==Mode.REC_TYPE_TELESCOPE:r.update(rec_type_major=b,rec_type_symbol=c,mode=Mode.REC_TYPE_INDICES,x=a)
-    elif mode==Mode.REC_TYPE_INDICES:
-        if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
-        elif r['ctx']+a+1>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
-        elif not a:r.update(mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
-        else:r.update(rec_type_index_remaining=a,mode=Mode.REC_TYPE_INDEX_CELL,x=b)
-    elif mode==Mode.REC_TYPE_INDEX_CELL:
-        if not r['rec_type_index_remaining'] or bool(b)!=(r['rec_type_index_remaining']>1):stop(Outcome.INVALID,Reason.SYNTAX)
-        else:r.update(rec_type_index_next=b,mode=Mode.REC_TYPE_INDEX_RECORD,x=a)
-    elif mode==Mode.REC_TYPE_INDEX_RECORD:
-        s['context'][r['ctx']]=[r['x']];more=r['rec_type_index_remaining']>1
-        r.update(ctx=r['ctx']+1,rec_type_index_remaining=r['rec_type_index_remaining']-1)
-        if more:r.update(mode=Mode.REC_TYPE_INDEX_CELL,x=r['rec_type_index_next'])
-        else:r.update(mode=Mode.REC_TYPE_MAJOR,x=r['rec_type_major'])
+    elif mode==Mode.REC_TYPE_TELESCOPE:
+        r.update(rec_type_major=b,rec_type_symbol=c)
+        call(CALL_REC_TYPE_RESTORE,Task.RESTORE_SCOPE,a)
     elif mode==Mode.REC_TYPE_MAJOR:
-        s['context'][r['ctx']]=[r['x']];r.update(ctx=r['ctx']+1,mode=Mode.REC_TYPE_MOTIVE_RECORD,x=r['rec_type_motive'])
+        if r['ctx']>=cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
+        else:
+            s['context'][r['ctx']]=[r['x']];r.update(ctx=r['ctx']+1,mode=Mode.REC_TYPE_MOTIVE_RECORD,x=r['rec_type_motive'])
     elif mode==Mode.REC_TYPE_MOTIVE_RECORD:
         call(CALL_REC_TYPE_BODY,Task.APPLY_SCOPE,a,apply_base=r['rec_type_mark'],apply_end=r['ctx'])
     elif mode==Mode.REC_TYPE_STORE:

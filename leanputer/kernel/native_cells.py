@@ -50,6 +50,7 @@ class CellTag(IntEnum):
     OPENED_RECURSIVE_PREFIX = 176 # Derived (familySig,prefixLocalVector,indexVec).
     MINOR_INFO = 177             # Derived (checkedCtorPending,minorLocalRecord,nfields).
     RECURSOR_TYPE = 178          # Private (familySig,closedGeneratedType,recSymbol).
+    FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
 
 
 class VectorKind(IntEnum):

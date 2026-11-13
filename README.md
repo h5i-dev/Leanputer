@@ -21,14 +21,13 @@ and [dependent telescope opening/folding/parameter reuse](benchmarks/kernel-depe
 those same weighted services. [Ordinary source transactions](benchmarks/kernel-source-transactions-stock/README.md)
 now check raw dependency types/bodies before generating a private environment,
 and constant inference instantiates only checked schemes. [Private general inductive-header analysis](benchmarks/kernel-inductive-headers-stock/README.md)
-is now weighted. The [composed CORE motive pass](benchmarks/kernel-motives-stock/README.md)
+is now weighted. The [composed CORE type pass](benchmarks/kernel-recursor-types-stock/README.md)
 checks constructor types/universes/positivity/functional recursive templates,
 validates generated recursor names, privately declares constructors, derives
-elimination/K permissions and builds all-family motives in stock weights.
-It ends GAP before minor/recursor type/rule generation. Raw-domain recursion
-flags, reusable dependent recursive-prefix reopening and complete minor/functional
-IH construction and closed recursor-type generation have subsequent IR evidence; those additions are not included
-in the pinned stock report.
+elimination/K permissions and builds all-family motives, all constructor minors/
+functional IHs and closed recursor types in stock weights. It ends GAP before
+rule assembly/claims/restoration. Generic computation-rule generation and shared
+context restoration have subsequent IR evidence, outside that pinned stock report.
 Original-source nested staging
 and complete conversion/reduction/primitive/projection/literal services remain gaps. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
@@ -51,11 +50,12 @@ resource exhaustion. Default capacities are heap256/stack16/context8/rawbank4,
 physical limits, not full-kernel support. At checkpoint e0db573, the source model used603.4M BF16
 parameters/1.207GB weights. Matched15-case source checks took58.18s fixed GPU
 forward or41.86s with native completion stopping; cold compile14.27s is separate.
-At72cd7a0, the composed core-through-motives model uses2.129B parameters/4.258GB
-weights; its two core operations take204.75s GPU forward plus44.24s cold
-construction (heap256/stack16/context8/rawbank2,9-bit words,1024fuel).
+At86659f7, the composed core-through-types model uses3.563B parameters/7.125GB
+weights; its two core operations take456.68s GPU forward plus71.30s cold
+construction (heap512/stack16/context8/rawbank2,10-bit words,2048fuel).
 Both end GAP before recursor generation, with exact all-register/all-bank
-agreement. These are operation costs, not theorem throughput. Current size changes with services and
+agreement. CPU development checks ran concurrently: these are operation smoke
+costs, not isolated or steady-state theorem throughput. Current size changes with services and
 capacities; these are historical measurements. No full-population native mathlib
 evaluation or formal compiler verification is claimed. [Trust/algorithm contract](docs/kernel/target.md) states the target;
 [typed input ABI](docs/kernel/native-cells.md) states the syntax boundary.

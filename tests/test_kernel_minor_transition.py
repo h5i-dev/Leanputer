@@ -26,9 +26,15 @@ def cases():
 
 class MinorTransitionTest(unittest.TestCase):
     def test_all_minor_types_functional_ihs_source_order_and_scope(self):
+        self.check_documents(cases())
+
+    def test_shared_field_restore_in_mixed_minor_scope(self):
+        self.check_documents([cases()[1]])
+
+    def check_documents(self,documents):
         cfg=spec.MachineConfig(heap=512,stack=16,context=16,constants=2,fuel=4096,word_bits=10)
         circuit=CircuitHarness(cfg)
-        for doc in cases():
+        for doc in documents:
             with self.subTest(label=doc['name']):
                 source,args,decls=program.parse_document(doc);state=program.prepare(cfg,source,args,decls);machine=spec.SpecMachine(cfg,state)
                 for step in range(cfg.fuel+2):

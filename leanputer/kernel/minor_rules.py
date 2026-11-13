@@ -4,14 +4,12 @@ from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_MINOR_OWN_MOTIVE,
     CALL_MINOR_RESULT_INDICES,CALL_MINOR_PARAMETERS,CALL_MINOR_FIELDS,CALL_MINOR_PREFIX,
     CALL_MINOR_IH_MOTIVE,CALL_MINOR_IH_INDICES,CALL_MINOR_FUNCTION,CALL_MINOR_IH_FOLD,
-    CALL_MINOR_IH_LOCAL,CALL_MINOR_FOLD,CALL_MINOR_LOCAL,CALL_MINOR_VECTOR)
+    CALL_MINOR_IH_LOCAL,CALL_MINOR_FOLD,CALL_MINOR_LOCAL,CALL_MINOR_VECTOR,CALL_MINOR_RESTORE)
 
-PRIVATE_PHASES=tuple(range(CALL_MINOR_OWN_MOTIVE,CALL_MINOR_VECTOR+1))
+PRIVATE_PHASES=tuple(range(CALL_MINOR_OWN_MOTIVE,CALL_MINOR_VECTOR+1))+(CALL_MINOR_RESTORE,)
 NO_NODE=(Mode.WALK,Mode.MINOR_CONSTANT,Mode.MINOR_RESULT,Mode.MINOR_IH_RESULT,Mode.MINOR_STORE,Mode.MINOR_LINK)
 TAGS={Mode.MINOR_VECTOR:CellTag.VECTOR,Mode.MINOR_CELL:CellTag.VECTOR_CELL,
     Mode.MINOR_PENDING:CellTag.PENDING_CONSTRUCTOR,Mode.MINOR_ANALYSIS:CellTag.CONSTRUCTOR_ANALYSIS,
-    Mode.MINOR_FIELD_VECTOR:CellTag.VECTOR,Mode.MINOR_FIELD_CELL:CellTag.VECTOR_CELL,
-    Mode.MINOR_FIELD:CellTag.CONSTRUCTOR_FIELD,Mode.MINOR_RESTORE_RECORD:CellTag.LOCAL_DECL,
     Mode.MINOR_IH_VECTOR:CellTag.VECTOR,Mode.MINOR_IH_CELL:CellTag.VECTOR_CELL,
     Mode.MINOR_IH_FIELD:CellTag.CONSTRUCTOR_FIELD,Mode.MINOR_IH_LOCAL:CellTag.LOCAL_DECL,
     Mode.MINOR_OPENED:CellTag.OPENED_RECURSIVE_PREFIX,Mode.MINOR_IH_INDICES:CellTag.VECTOR}
@@ -32,6 +30,8 @@ def emit_rules(c):
         c.emit(guard,minor_ih_remaining=c.sub(r['minor_ih_remaining'],1))
         c.emit(c.AND(guard,more),task=Task.BUILD_MINORS,mode=Mode.MINOR_IH_CELL,x=r['minor_ih_next'])
         fold(c.AND(guard,c.NOT(more)))
+    restored=phase(CALL_MINOR_RESTORE);c.emit(restored,minor_field_count=r['restore_length'],minor_fields_end=r['ctx'])
+    own_motive(restored)
     call(phase(CALL_MINOR_OWN_MOTIVE),CALL_MINOR_RESULT_INDICES,Task.APPLY_LIST,r['r'],list_head=r['minor_result_args'],list_skip=r['header_parameter_count'])
     c.emit(phase(CALL_MINOR_RESULT_INDICES),task=Task.BUILD_MINORS,minor_result_fn=r['r'],mode=Mode.MINOR_CONSTANT)
     call(phase(CALL_MINOR_PARAMETERS),CALL_MINOR_FIELDS,Task.APPLY_SCOPE,r['r'],apply_base=r['minor_mark'],apply_end=r['minor_fields_end'])
@@ -73,19 +73,8 @@ def emit_rules(c):
         return c.AND(cell,valid)
     c.emit(cell_guard(Mode.MINOR_CELL,'minor_remaining'),minor_next=n['b'],minor_pending=n['a'],mode=Mode.MINOR_PENDING,x=n['a'],minor_mark=r['ctx'])
     c.emit(at(Mode.MINOR_PENDING),minor_symbol=n['a'],mode=Mode.MINOR_ANALYSIS,x=n['c'])
-    c.emit(at(Mode.MINOR_ANALYSIS),minor_family=n['a'],minor_fields=n['b'],minor_result_args=n['c'],mode=Mode.MINOR_FIELD_VECTOR,x=n['b'])
-    vector=at(Mode.MINOR_FIELD_VECTOR);valid=vector_shape()
-    wide=c.g.add(c.g.fit(r['ctx'],c.width+1),c.g.fit(n['a'],c.width+1));ctxroom=c.NOT(c.g.lt(c.g.const(c.cfg.context,c.width+1),wide))
-    c.stop(c.AND(vector,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
-    c.stop(c.AND(vector,valid,c.NOT(ctxroom)),Outcome.RESOURCE,Reason.CONTEXT)
-    vector=c.AND(vector,valid,ctxroom);nonempty=c.NOT(c.eq(n['a'],0))
-    c.emit(vector,minor_field_count=n['a'],minor_restore_remaining=n['a'],minor_fields_end=c.add(r['ctx'],n['a']))
-    c.emit(c.AND(vector,nonempty),mode=Mode.MINOR_FIELD_CELL,x=n['b']);own_motive(c.AND(vector,c.NOT(nonempty)))
-    c.emit(cell_guard(Mode.MINOR_FIELD_CELL,'minor_restore_remaining'),minor_restore_next=n['b'],mode=Mode.MINOR_FIELD,x=n['a'])
-    c.emit(at(Mode.MINOR_FIELD),mode=Mode.MINOR_RESTORE_RECORD,x=n['a'])
-    restore=at(Mode.MINOR_RESTORE_RECORD);more=c.lt(1,r['minor_restore_remaining'])
-    c.write('context',restore,r['ctx'],(r['x'],));c.emit(restore,ctx=c.add(r['ctx'],1),minor_restore_remaining=c.sub(r['minor_restore_remaining'],1))
-    c.emit(c.AND(restore,more),mode=Mode.MINOR_FIELD_CELL,x=r['minor_restore_next']);own_motive(c.AND(restore,c.NOT(more)))
+    analysis=at(Mode.MINOR_ANALYSIS);c.emit(analysis,minor_family=n['a'],minor_fields=n['b'],minor_result_args=n['c'])
+    call(analysis,CALL_MINOR_RESTORE,Task.RESTORE_SCOPE,n['b'])
     const=room(at(Mode.MINOR_CONSTANT));c.write('heap',const,r['free'],(Tag.CONST,r['minor_symbol'],r['header_levels'],0));c.emit(const,free=c.add(r['free'],1))
     call(const,CALL_MINOR_PARAMETERS,Task.APPLY_SCOPE,r['free'],apply_base=r['header_parameter_base'],apply_end=r['header_parameter_end'])
     result=room(at(Mode.MINOR_RESULT));c.write('heap',result,r['free'],(Tag.APP,r['minor_result_fn'],r['r'],0))
