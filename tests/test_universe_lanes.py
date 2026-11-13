@@ -10,7 +10,8 @@ from leanputer.transition import compile_machine
 class UniverseLaneBoundary(unittest.TestCase):
     def test_fourth_lane_and_matched_word_widths(self):
         torch.set_num_threads(1)
-        self.assertEqual(MachineConfig(heap=512).word_bits,10)
+        self.assertEqual(MachineConfig(heap=512).primitive_bits,8)
+        self.assertEqual(MachineConfig(heap=512).word_bits,11)
         self.assertEqual(MachineConfig(heap=1024).word_bits,11)
         cfg=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=32)
         model=compile_machine(cfg,memory_update='attention_delta')

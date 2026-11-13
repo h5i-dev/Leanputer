@@ -1,0 +1,177 @@
+[
+  {
+    "name": "commutative-prop-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 826,
+    "allocated_heap_nodes": 118,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-type-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 826,
+    "allocated_heap_nodes": 118,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsMulCommutative-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1349,
+    "allocated_heap_nodes": 185,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsAddCommutative-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1349,
+    "allocated_heap_nodes": 185,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-wrong-uniform-instance",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1663,
+    "allocated_heap_nodes": 243,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-class-is-not-field-type",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 793,
+    "allocated_heap_nodes": 117,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-field-projection",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1189,
+    "allocated_heap_nodes": 162,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 2380,
+    "allocated_heap_nodes": 268,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "commutative-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2492,
+    "allocated_heap_nodes": 283,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsAddCommutative.is_comm@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4034,
+    "allocated_heap_nodes": 466,
+    "environment_declarations": 4,
+    "assumptions": []
+  },
+  {
+    "name": "IsMulCommutative.is_comm@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 4034,
+    "allocated_heap_nodes": 466,
+    "environment_declarations": 4,
+    "assumptions": []
+  },
+  {
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1131,
+    "allocated_heap_nodes": 119,
+    "environment_declarations": 2,
+    "assumptions": []
+  },
+  {
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1251,
+    "allocated_heap_nodes": 129,
+    "environment_declarations": 5,
+    "assumptions": [
+      "A",
+      "a",
+      "q",
+      "P",
+      "h"
+    ]
+  },
+  {
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 395,
+    "allocated_heap_nodes": 56,
+    "environment_declarations": 3,
+    "assumptions": [
+      "A",
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "LeanputerUnits.data_eta@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 295,
+    "allocated_heap_nodes": 35,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerHeterogeneous.hMulRec1201@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1445,
+    "allocated_heap_nodes": 137,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "HAdd-fourth-universe-mismatch",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 954,
+    "allocated_heap_nodes": 137,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "Nat-forced-successor-overflow",
+    "status": "RESOURCE",
+    "reason": "NATURAL",
+    "steps": 148,
+    "allocated_heap_nodes": 28,
+    "environment_declarations": 2,
+    "assumptions": [
+      "P",
+      "k"
+    ]
+  }
+]

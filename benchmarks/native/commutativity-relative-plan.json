@@ -1,0 +1,74 @@
+[
+  {
+    "name": "commutative-prop-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 826,
+    "allocated": 118,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "commutative-type-carrier",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 826,
+    "allocated": 118,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "IsMulCommutative-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1349,
+    "allocated": 185,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "IsAddCommutative-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1349,
+    "allocated": 185,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "commutative-wrong-uniform-instance",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1663,
+    "allocated": 243,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "commutative-class-is-not-field-type",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 793,
+    "allocated": 117,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "commutative-field-projection",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1189,
+    "allocated": 162,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "commutative-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 2380,
+    "allocated": 268,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "commutative-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 2492,
+    "allocated": 283,
+    "oracle": "REJECT"
+  }
+]

@@ -80,7 +80,16 @@ including both real Γ4 symmetry instances and a false-conjunction mutation.
 The pool fits these sources in1024heap with the same matched model parameter
 count; legacy resource comparison is Spec only. Continue the three commutativity
 Prop classes, preserving their class/field distinction. The131intrinsic prototype
-passes minimal weighted/Lean/fourth-lane checks; native18confirmation is next.
+passes native18cases12A5R1numeric-resource, including two actualGamma4getters.
 The larger8-bit catalog increases512heapword width10→11, while1024stays11;
 keep numeric overflow checks tied to the actual word limit. Nat.le is the next
 indexed Prop candidate after that coherent checkpoint.
+
+Nat.le is now prototyped with exact indexed constructors and Prop-only recursor
+types, plus its genuine generated below family/constructors/recursor. Existing
+typed proof irrelevance supplies proof-only iota conversions; no dedicated WHNF
+iota is claimed. An opaque-wrapper Lean lemma confirms both equations without
+axioms, without verifying the compiler. Four newly exportable original sources
+retain135–173checked dependencies, so their source acceptance remains unrun.
+Measure bounded scratch reclamation between declarations before a large native
+budget. Preserve complete closures and all source denominators.

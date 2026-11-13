@@ -13,7 +13,9 @@ class HeterogeneousSmoke(unittest.TestCase):
         torch.set_num_threads(1)
         rows=[json.loads(line)for line in
               (Path(__file__).parent/'fixtures'/'heterogeneous.jsonl').read_text().splitlines()]
-        model=compile_machine(MachineConfig(heap=512,stack=32,context=16,constants=8,fuel=3392),
+        cfg=MachineConfig(heap=512,stack=32,context=16,constants=8,fuel=3392)
+        rows[-1]['claim'][2][2][1]=(1<<cfg.word_bits)-1
+        model=compile_machine(cfg,
                               memory_update='attention_delta')
         self.assertEqual([r['status']for r in check_batch(model,rows)['results']],
                          ['ACCEPT']*3+['REJECT']*5+['ACCEPT','RESOURCE'])

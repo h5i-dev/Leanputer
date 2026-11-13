@@ -714,3 +714,20 @@ metadata plan needs4.671Bparameters/9.341GB; this unexecuted larger capacity is 
 a matched-capacity downsizing comparison. Same857-source syntax snapshot517E340U
 in11.657s remains separate from proof acceptance. Full-population native checking
 and broad differentials are deferred. See benchmarks/native/symmetry-*.
+
+Std.Commutative is a fixed Prop class over a Sort-valued carrier and operation;
+its equality-proof field is not definitionally the class itself. IsMul/IsAdd
+Commutative retain actual operation instances and store Std.Commutative witnesses.
+The131intrinsic/116phase slice passes native18cases12A5R1NATURALresource,
+matching all Spec outcomes/reasons/steps/allocatednodes. New actual is_comm
+getters each accept4034steps/466nodes/Gamma4/noaxioms. Wrong-instance/class-field/
+data-recursion-result negatives reject; Eq3/PUniteta/fourth-universe positive/
+negative paths retain outcomes. The new8-bit code width makes512word11; forced
+Nat2047successor still reportsRESOURCE(NATURAL), not wrapped acceptance.
+
+Config512heap/s32/c16/k8/u4/f4096/pooltrue gives91boot tokens+4098stockforwards.
+The model has2,490,908,210BF16parameters/4,981,816,420weightbytes/H7424/L90/FFN1024;
+compile55.494s/fixedforward538.686s, CUDAforwardpeak5,313,446,400bytes andhostpeak
+RSS1,780,031,488bytes. Single overlapping development run, not a speed comparison.
+Same857syntaxsnapshot530E327U in20.771s remains separate from accepted proofs;
+full-population native checking is NOT_RUN. Compact evidencecommutativity-*.

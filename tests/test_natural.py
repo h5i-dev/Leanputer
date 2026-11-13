@@ -13,8 +13,9 @@ class NaturalSmoke(unittest.TestCase):
         torch.set_num_threads(1)
         documents = [json.loads(line) for line in
                      (Path(__file__).parent/'fixtures'/'natural.jsonl').read_text().splitlines()]
-        model = compile_machine(MachineConfig(heap=512, stack=32, context=16,
-                                             constants=8, fuel=2688),
+        cfg = MachineConfig(heap=512, stack=32, context=16, constants=8, fuel=2688)
+        documents[-1]['claim'][2][2][1] = (1<<cfg.word_bits)-1
+        model = compile_machine(cfg,
                                 memory_update='attention_delta')
         results = check_batch(model, documents)['results']
         self.assertEqual([r['status'] for r in results],

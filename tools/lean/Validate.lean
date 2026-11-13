@@ -12,9 +12,11 @@ def lawFamilies : List Name := ["Semigroup", "AddSemigroup", "CommMagma", "AddCo
 
 def cancellationFamilies : List Name := ["IsLeftCancelMul", "IsRightCancelMul", "IsLeftCancelAdd", "IsRightCancelAdd"].map String.toName
 
-def relationFamilies : List Name := ["Std.Symm".toName]
+def relationFamilies : List Name := ["Std.Symm".toName, "Std.Commutative".toName]
 
-def fixedRecordFamilies : List Name := lawFamilies ++ cancellationFamilies ++ relationFamilies
+def commutativityFamilies : List Name := ["IsMulCommutative".toName, "IsAddCommutative".toName]
+
+def fixedRecordFamilies : List Name := lawFamilies ++ cancellationFamilies ++ relationFamilies ++ commutativityFamilies
 
 partial def expression (json : Json) : Except String Expr := do
   let fields ← json.getArr?
@@ -120,7 +122,7 @@ partial def expression (json : Json) : Except String Expr := do
     let inner ← expression fields[3]!
     if index < 2 && (family == "Iff" || family == "And" || family == "Subtype" || family == "PProd" || family == "Prod") then
       return .proj family.toName index inner
-    if (index < 2 && lawFamilies.contains family.toName) || (index == 0 && (cancellationFamilies ++ relationFamilies).contains family.toName) then
+    if (index < 2 && lawFamilies.contains family.toName) || (index == 0 && (cancellationFamilies ++ relationFamilies ++ commutativityFamilies).contains family.toName) then
       return .proj family.toName index inner
     if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton" || family == "Zero" || family == "One" || family == "OfNat" || family == "LT" || family == "LE" || family == "Membership" || family == "HAdd" || family == "HMul") then
       return .proj family.toName index inner

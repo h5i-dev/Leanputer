@@ -1,0 +1,1 @@
+{"heap": 512, "stack": 32, "context": 16, "constants": 8, "universe": 4, "fuel": 4096, "atom_pool": true}

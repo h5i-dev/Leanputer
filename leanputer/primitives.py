@@ -52,6 +52,12 @@ for _index, (_family, _parent, _side) in enumerate((
         parameters=2,parent=_parent,side=_side)
 ONE_FIELD_RECORDS['Std.Symm']=dict(code=119,projection=34,constructor='mk',
     field='symmetry',data=False,type_carrier=False,parameters=2)
+ONE_FIELD_RECORDS['Std.Commutative']=dict(code=122,projection=35,constructor='mk',
+    field='commutativity',data=False,type_carrier=False,parameters=2)
+for _family,_parent,_code,_projection in (
+        ('IsMulCommutative','Mul',125,36),('IsAddCommutative','Add',128,37)):
+    ONE_FIELD_RECORDS[_family]=dict(code=_code,projection=_projection,constructor='mk',
+        field='commutativity_witness',data=False,type_carrier=True,parameters=2,parent=_parent)
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
@@ -327,6 +333,7 @@ def _one_record_type(expression):
     if record['field']=='heterogeneous':return _heterogeneous_type(expression)
     if record['field']=='cancellation':return _cancellation_type(expression)
     if record['field']=='symmetry':return _symmetry_type(expression)
+    if record['field']in ('commutativity','commutativity_witness'):return _commutativity_type(expression)
     carrier=expression[3] if name.endswith('.rec') else expression[2]
     carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
     v=lambda n:('named',n)
@@ -399,6 +406,33 @@ def _symmetry_type(expression):
             bind('minor',bind('field',symmetry,apps(motive,ctor)),
             bind('major',proof_type,apps(motive,major))))
     return _close_schema(bind('alpha',('sort',carrier),bind('relation',relation_type,tail)))
+
+
+def _commutativity_type(expression):
+    name=expression[1];family=primitive_family(name);record=ONE_FIELD_RECORDS[family]
+    carrier=expression[3]if name.endswith('.rec')else expression[2]
+    level=(carrier+1 if carrier>=0 else ('succ',carrier))if record['type_carrier']else carrier
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,operation,field,motive,major=map(v,('alpha','operation','field','motive','major'))
+    if record['field']=='commutativity':
+        operation_type=bind('left',alpha,bind('right',alpha,alpha))
+        a,b=map(v,('left','right'))
+        property_type=bind('left',alpha,bind('right',alpha,
+            apps(('builtin','Eq',level),alpha,apps(operation,a,b),apps(operation,b,a))))
+    else:
+        operation_type=apps(('builtin',record['parent'],carrier),alpha)
+        property_type=apps(('builtin','Std.Commutative',level),alpha,('proj',record['parent'],0,operation))
+    proof_type=apps(('builtin',family,carrier),alpha,operation)
+    if name==family:tail=('sort',0)
+    elif name.endswith('.mk'):tail=bind('field',property_type,proof_type)
+    else:
+        ctor=apps(('builtin',family+'.mk',carrier),alpha,operation,field)
+        tail=bind('motive',bind('major',proof_type,('sort',expression[2])),
+            bind('minor',bind('field',property_type,apps(motive,ctor)),
+            bind('major',proof_type,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',level),bind('operation',operation_type,tail)))
 
 
 def _pair_type(expression):

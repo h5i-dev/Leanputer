@@ -80,6 +80,10 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!,toJson values[2]!]
     if (name == ``HAdd.rec || name == ``HMul.rec) && values.length == 4 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!,toJson values[2]!,toJson values[3]!]
+    if (name == "Std.Commutative".toName || name == "Std.Commutative.mk".toName || name == "IsMulCommutative".toName || name == "IsMulCommutative.mk".toName || name == "IsAddCommutative".toName || name == "IsAddCommutative.mk".toName) && values.length == 1 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!]
+    if (name == "Std.Commutative.rec".toName || name == "IsMulCommutative.rec".toName || name == "IsAddCommutative.rec".toName) && values.length == 2 then
+      return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     if (name == "Std.Symm".toName || name == "Std.Symm.mk".toName) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if name == "Std.Symm.rec".toName && values.length == 2 then
@@ -98,6 +102,8 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .letE _ type value body _ =>
     return jsonArray [text "let", ← encodeExpr env type, ← encodeExpr env value, ← encodeExpr env body]
   | .proj name index inner =>
+    if index == 0 && (name == "Std.Commutative".toName || name == "IsMulCommutative".toName || name == "IsAddCommutative".toName) then
+      return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     if name == "Std.Symm".toName && index == 0 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     if index == 0 && (name == "IsLeftCancelMul".toName || name == "IsRightCancelMul".toName || name == "IsLeftCancelAdd".toName || name == "IsRightCancelAdd".toName) then

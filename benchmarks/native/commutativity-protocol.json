@@ -1,0 +1,43 @@
+{
+  "format": "leanputer.targeted-feature-protocol.v1",
+  "feature": "Std.Commutative and IsMul/IsAddCommutative proof-class witnesses",
+  "compiled_base": "3d984bc",
+  "compiled_with_uncommitted_feature": true,
+  "source_sha256": {
+    "leanputer/primitives.py": "7862b7c69e45ea13451124ff9da39fc65f832a9216eed8cff738e969c0fdb299",
+    "leanputer/dependent.py": "e8b363a0c3894c6244e82d7b378f19619c82d66301b29e3f157e725b6dc7157a",
+    "leanputer/machine_spec.py": "f61389eb5f5b3f751d838f3de874afa4841fadfb9a97b0663078afc2ad7e41bb",
+    "leanputer/transition.py": "cc084739338b2620243b4e31541d42dd3f636b3131d07518888556043c77db54",
+    "leanputer/native_machine.py": "db48247210a7f7afe72c0be81b19861c1288663c85b2a4da16926af753a61a2d",
+    "leanputer/native.py": "a4fd6647c6f10824283ab144f21973244d8156a889191d644fccacd5f891baef",
+    "leanputer/native_vendor/qwenputer/emit.py": "fa23bef6d7b195919c3868a565f1b8571676e200e790c431e2c092122276b7b5",
+    "leanputer/native_vendor/qwenputer/ir.py": "80531615df1bd7aa2de9193b153033978150c2fbb8594a53b1af80fca38bf3ee",
+    "tools/lean/Export.lean": "b7d55580e072defb7081080195262d5b4f6c2fe79ec7022eb7690080b64422a0",
+    "tools/lean/Validate.lean": "085e129d3d8199de3295f2beca50860adfdd6865b6e069488b089780ec890aac"
+  },
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean": "4.31.0",
+  "torch": "2.8.0+cu128",
+  "transformers": "5.19.0",
+  "device": "NVIDIA A10G",
+  "dtype": "bfloat16",
+  "stock_forward_and_cache": true,
+  "custom_runtime_or_external_checker_at_inference": false,
+  "source_population": 857,
+  "syntax_exported": 530,
+  "syntax_unsupported": 327,
+  "full_population_native": "NOT_RUN",
+  "broad_differentials": "DEFERRED",
+  "targeted_native_cases": 18,
+  "new_actual_source_candidates": [
+    "IsMulCommutative.is_comm@[1]",
+    "IsAddCommutative.is_comm@[1]"
+  ],
+  "dependency_policy": "Full four-definition closures and no axioms for both new getters. Larger closures retain137/138dependencies and are not checked in this feature smoke.",
+  "known_incompleteness": "General indexed/user inductives remain unsupported; inherited distinct-neutral law-record conversion cycle remains. Broad native validation deferred.",
+  "timing_scope": "Single development run. Compile timer excludes imports; forward timer includes syntax boot forward and fixed fuel+2 stock forwards plus final decode, excludes host parsing/boot materialization. No end-to-end cold or repeated steady measurement for this feature; overlapping CPU development means no controlled performance comparison.",
+  "command": "python -m leanputer.native_machine --input benchmarks/native/commutativity-input.jsonl --config benchmarks/native/commutativity-config.json --device cuda --batch-size 18 --report /mnt/scratch/commutativity-report.json",
+  "reference_replay": "Inside pinned mathlib lake env: lean --run tools/lean/Validate.lean INPUT OUTPUT --module Mathlib.Algebra.Group.Defs",
+  "allocation_policy": "atom_pool=true reserves Var0..7 and Sort0..4; compiled validation authenticates all prefix rows, standalone leaf allocation reuses fixed pointers, primitive schema blocks remain contiguous. Default false retains legacy allocation.",
+  "comparison_scope": "No matched performance/downsize comparison. Larger131-entry catalog uses8primitivecodebits; at512heap word width grows10to11, at1024it remains11. Current numeric overflow usesNat2047+successor and must reportRESOURCE(NATURAL)."
+}

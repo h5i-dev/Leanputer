@@ -15,7 +15,7 @@ Research quality and formal soundness remain goals, not established labels.
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest122-primitive/116phase syntax refresh517EXPORTED340UNSUPPORTED; not517proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest131-primitive/116phase syntax refresh530EXPORTED327UNSUPPORTED; not530proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -396,3 +396,16 @@ The larger legacy2048metadata plan was notexecuted. Continue Std.Commutative
 and IsMul/IsAddCommutative; their isolated131intrinsic prototype passes weighted,
 Lean and fourth-lane checks, with two Γ4getters fitting512heap. Broad validation
 and full-population native checking remain deferred.
+
+Commutativity checkpoint passes native18cases12A5R1RESOURCE(NATURAL), including
+two new actual IsMul/IsAddCommutative.is_comm getters4034steps/466nodes/Gamma4/
+noaxioms each. All outcomes/reasons/steps/heapcounts match Spec. Fourth-universe
+positive/negative cases, Eq3/PUniteta and actualNat2047successoroverflow retain
+their outcomes after primitive code width7→8. At512heap/f4096/pooltrue model
+2.491Bparams/4.982GBweights/H7424/L90, compile55.494s/forward538.686s, with no
+controlled performance comparison across different capacities/features.
+Same857syntaxsnapshot530E327U is not530proofs. Next Nat.le+generatedbelow fixed
+indexed Prop prototype unlocks4syntaxclosures but they carry135–173definitions.
+Measure input/live heap and full-checking costs before any large native run;
+do not omit declarations or replace helpers with unchecked axioms. Broad native
+population/differential campaigns remain deferred.

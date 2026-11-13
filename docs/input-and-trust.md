@@ -428,3 +428,17 @@ this policy. It may save memory and change pointer-sharing/semantic step counts;
 the prefix adds some validation work to short proofs. Default false preserves
 the previous policy. This is an experimentally checked representation change,
 not a formal proof of compilation or whole-checker soundness.
+
+The commutativity catalog uses Std.Commutative as a fixed Prop class over a
+Sort-valued carrier and a binary operation. Its stored field proves commutation;
+the class itself is not definitionally equal to that Pi-shaped proof field.
+IsMulCommutative and IsAddCommutative instead take a Type-valued carrier and its
+actual Mul/Add instance as uniform parameters, storing a Std.Commutative witness
+for the projected operation. The witness's operation must match that instance.
+
+At131intrinsics the largest primitive code needs eight bits. With four universe
+lanes this makes512heap word width11, while1024heap stays11. The numeric resource
+limit follows actual word width, so2047+successor must exhaust NATURAL resources
+rather than wrap. This changes capacity, not Lean's unbounded Nat semantics.
+Historical inputs/results keep their older boundaries; current boundary tests
+construct the actual maximum and retain fourth-universe positive/negative checks.
