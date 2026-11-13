@@ -33,8 +33,10 @@ class MinorTransitionTest(unittest.TestCase):
                 source,args,decls=program.parse_document(doc);state=program.prepare(cfg,source,args,decls);machine=spec.SpecMachine(cfg,state)
                 for step in range(cfg.fuel+2):
                     actual=circuit.step(state);self.assertEqual(actual,machine.step(),(doc['name'],step));state=actual
+                    rr=state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_MINORS:break
                     if state['regs']['status']:break
-                r=state['regs'];self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+                r=state['regs'];self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
                 self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
                 block=decls[-1];ctors=tuple(ctor for family in block.families for ctor in family.constructors)
                 self.assertEqual(r['ctx'],r['header_parameter_end']+len(block.families)+len(ctors))
@@ -60,7 +62,6 @@ class MinorTransitionTest(unittest.TestCase):
                     self.assertEqual(state['heap'][record][0],CellTag.LOCAL_DECL)
                     want=c.lookup(expected[block.parameters+len(block.families)+i]).type
                     self.assertTrue(representation_equal(a,normalized(state['heap'][record][2]),want),(doc['name'],i))
-                self.assertEqual(circuit.step(state),state)
 
 
 if __name__=='__main__':unittest.main()

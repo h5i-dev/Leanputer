@@ -308,3 +308,20 @@ The shared motive lookup uses checked family identity, and shared Expr-list
 application drops the validated parameter prefix before applying return indices.
 No constructor/family name, field-count schema or supplied minor type controls
 the algorithm. Recursor types/rules still need the following passes.
+
+Closed recursor types follow `declare_recursors`: restore each saved own-index
+and major telescope after the persistent parameters/all motives/all minors;
+apply the family's motive to those indices and major; Pi-fold the entire term
+scope to obtain `Π params motives minors indices major, C indices major`.
+Check closed Expr/universe scope, then restore the persistent scope by its saved
+boundary (folding does not overwrite its immutable Local records). Output178
+`(familySig,closedType,recursorSymbol)` is private until rules, claims and outer
+nested restoration/publication complete. Binder-info cosmetics are erased by
+the supported kernel equality interface; Lean elaborator `infer_implicit`
+annotations/export import are not claimed.
+
+Builder control is a `(Task,Mode)` pair. New type-pass phases reuse existing
+**task-scoped** mode numbers; they do not alias globally handled return/fold/
+Expr-walk modes or context-address selectors. Every rule/tag guard includes its
+task. This keeps finite control vocabulary within the current8-bit minimum
+without changing declaration semantics or imposing a new syntax class.

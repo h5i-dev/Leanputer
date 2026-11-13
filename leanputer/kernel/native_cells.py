@@ -49,6 +49,7 @@ class CellTag(IntEnum):
     BLOCK_FLAGS = 175            # Derived raw-domain (recursive,reflexive,0).
     OPENED_RECURSIVE_PREFIX = 176 # Derived (familySig,prefixLocalVector,indexVec).
     MINOR_INFO = 177             # Derived (checkedCtorPending,minorLocalRecord,nfields).
+    RECURSOR_TYPE = 178          # Private (familySig,closedGeneratedType,recSymbol).
 
 
 class VectorKind(IntEnum):

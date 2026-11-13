@@ -27,7 +27,7 @@ validates generated recursor names, privately declares constructors, derives
 elimination/K permissions and builds all-family motives in stock weights.
 It ends GAP before minor/recursor type/rule generation. Raw-domain recursion
 flags, reusable dependent recursive-prefix reopening and complete minor/functional
-IH construction have subsequent IR evidence; those additions are not included
+IH construction and closed recursor-type generation have subsequent IR evidence; those additions are not included
 in the pinned stock report.
 Original-source nested staging
 and complete conversion/reduction/primitive/projection/literal services remain gaps. The earlier uncommitted projection work is preserved.
