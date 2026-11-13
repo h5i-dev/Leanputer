@@ -44,6 +44,8 @@ class CellTag(IntEnum):
     CONSTRUCTOR_ANALYSIS = 170    # Private (familySig,fieldVector,resultArgs).
     VALIDATED_RECURSOR_NAME = 171 # Output-only (familySig,recursorSymbol,next).
     ELIMINATION_INFO = 172       # Derived (elimLevel,recursorUparams,Kflag).
+    MOTIVE_INFO = 173            # Derived (familySig,motiveLocalRecord,telescope).
+    MOTIVE_TELESCOPE = 174       # Derived (indexLocalVector,majorLocalRecord,recSymbol).
 
 
 class VectorKind(IntEnum):

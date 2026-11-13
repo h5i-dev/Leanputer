@@ -61,13 +61,18 @@ class EliminationTransitionTest(unittest.TestCase):
                 state={'regs':{key:int(value) for key,value in reference['regs'].items()},
                     **{bank:[[int(value) for value in row] for row in reference[bank]]
                         for bank in spec.BANK_FIELDS}}
+            # This module's contract ends on its private return. Subsequent
+            # generic generation stages may append motives to the live scope.
+            rr=state['regs']
+            if (rr['mode']==spec.Mode.RETURN and rr['sp'] and
+                    state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_ELIMINATION):break
             if state['regs']['status']:break
         return state,prefix,decls
 
     def assert_metadata(self,state,prefix,decls,large,k):
         self.assertIsNotNone(prefix)
         r,p=state['regs'],prefix['regs'];block=decls[-1]
-        self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+        self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
         self.assertEqual(state['heap'][r['core_elim_info']],
             [CellTag.ELIMINATION_INFO,r['core_elim_level'],r['core_rec_parameters'],int(k)])
         self.assertEqual((r['env_head'],r['decl'],r['raw_index'],r['typing_head']),
@@ -84,7 +89,6 @@ class EliminationTransitionTest(unittest.TestCase):
             self.assertEqual(r['core_elim_level'],r['kernel_zero'])
             self.assertEqual(params,block.universe_parameters)
             self.assertEqual((r['ctx'],r['header_parameter_base']), (p['header_parameter_end'],p['header_parameter_base']))
-        self.assertEqual(self.circuit.step(state),state)
 
     def test_source_decisions_share_the_same_general_field_loop(self):
         for label,doc,large,k in decision_cases():

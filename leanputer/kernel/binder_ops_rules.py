@@ -1,0 +1,36 @@
+"""Shared weighted fresh Local and application over a derived context window."""
+from .arena import Tag
+from .native_cells import CellTag
+from .traversal_machine import Mode, Task, Outcome, Reason
+
+
+def emit_rules(c):
+    r,n=c.r,c.read['node'];fresh=c.task(Task.FRESH_LOCAL);apply=c.task(Task.APPLY_SCOPE)
+    init=c.AND(fresh,c.mode(Mode.WALK));ctxroom=c.lt(r['ctx'],c.cfg.context)
+    wide=c.g.add(c.g.fit(r['free'],c.width+1),c.g.const(2,c.width+1))
+    room=c.NOT(c.g.lt(c.g.const(c.cfg.heap,c.width+1),wide))
+    c.stop(c.AND(init,c.NOT(ctxroom)),Outcome.RESOURCE,Reason.CONTEXT)
+    c.stop(c.AND(init,ctxroom,c.NOT(room)),Outcome.RESOURCE,Reason.HEAP)
+    init=c.AND(init,ctxroom,room)
+    c.write('heap',init,r['free'],(Tag.LOCAL,r['free'],0,0))
+    c.emit(init,free=c.add(r['free'],1),fresh_local=r['free'],fresh_domain=r['x'],mode=Mode.FRESH_LOCAL_RECORD)
+    record=c.AND(fresh,c.mode(Mode.FRESH_LOCAL_RECORD))
+    c.write('heap',record,r['free'],(CellTag.LOCAL_DECL,r['fresh_local'],r['fresh_domain'],r['binder_info']))
+    c.write('context',record,r['ctx'],(r['free'],))
+    c.emit(record,free=c.add(r['free'],1),fresh_record=r['free'],ctx=c.add(r['ctx'],1));c.ret(record,r['fresh_local'])
+    init=c.AND(apply,c.mode(Mode.WALK));valid=c.AND(c.NOT(c.lt(r['apply_base'],r['local_base'])),
+        c.NOT(c.lt(r['apply_end'],r['apply_base'])),c.NOT(c.lt(r['ctx'],r['apply_end'])))
+    c.stop(c.AND(init,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    empty=c.eq(r['apply_base'],r['apply_end']);c.ret(c.AND(init,valid,empty),r['x'])
+    c.emit(c.AND(init,valid,c.NOT(empty)),apply_cursor=r['apply_base'],apply_body=r['x'],mode=Mode.APPLY_SCOPE_SELECT)
+    c.emit(c.AND(apply,c.mode(Mode.APPLY_SCOPE_SELECT)),mode=Mode.APPLY_SCOPE_RECORD,x=c.read['operand']['value'])
+    record=c.AND(apply,c.mode(Mode.APPLY_SCOPE_RECORD));valid=c.AND(c.NOT(c.eq(n['a'],0)),c.lt(n['a'],r['free']))
+    c.stop(c.AND(record,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(record,valid),mode=Mode.APPLY_SCOPE_LOCAL,x=n['a'])
+    local=c.AND(apply,c.mode(Mode.APPLY_SCOPE_LOCAL));valid=c.tag(Tag.LOCAL);room=c.lt(r['free'],c.cfg.heap)
+    c.stop(c.AND(local,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.stop(c.AND(local,valid,c.NOT(room)),Outcome.RESOURCE,Reason.HEAP)
+    local=c.AND(local,valid,room);more=c.lt(c.add(r['apply_cursor'],1),r['apply_end'])
+    c.write('heap',local,r['free'],(Tag.APP,r['apply_body'],r['x'],0))
+    c.emit(local,free=c.add(r['free'],1),apply_body=r['free'],apply_cursor=c.add(r['apply_cursor'],1))
+    c.emit(c.AND(local,more),mode=Mode.APPLY_SCOPE_SELECT);c.ret(c.AND(local,c.NOT(more)),r['free'])

@@ -115,6 +115,9 @@ class Task(IntEnum):
     CHECK_CORE_NAMES = 51      # Validate all derived recursor-name/namespace claims.
     DECLARE_CONSTRUCTORS = 52  # Private signatures from fully checked pending records.
     INIT_ELIMINATION = 53      # General source elimination-universe/K analysis.
+    FRESH_LOCAL = 54           # Internal generated binder, never a raw type answer.
+    APPLY_SCOPE = 55           # Apply Expr to derived Locals in a context interval.
+    BUILD_MOTIVES = 56         # Generic all-family first mk_rec_infos loop.
 
 
 
@@ -316,6 +319,20 @@ class Mode(IntEnum):
     ELIM_STORE_CELL = 194
     ELIM_STORE_VECTOR = 195
     ELIM_STORE_METADATA = 196
+    FRESH_LOCAL_RECORD = 197
+    APPLY_SCOPE_SELECT = 198
+    APPLY_SCOPE_RECORD = 199
+    APPLY_SCOPE_LOCAL = 200
+    MOTIVE_NAME = 201
+    MOTIVE_SIGNATURE = 202
+    MOTIVE_SORT = 203
+    MOTIVE_CONSTANT = 204
+    MOTIVE_SNAPSHOT_SELECT = 205
+    MOTIVE_SNAPSHOT_VECTOR = 206
+    MOTIVE_ELIM_SORT = 207
+    MOTIVE_STORE_TELESCOPE = 208
+    MOTIVE_STORE_INFO = 209
+    MOTIVE_LINK = 210
 
 
 CALL_BETA_ZETA = 16
@@ -457,6 +474,15 @@ CALL_ELIM_NONZERO = 151
 CALL_ELIM_FIELD_INFER = 152
 CALL_ELIM_FIELD_WHNF = 153
 CALL_SOURCE_ELIMINATION = 154
+CALL_MOTIVE_CONSUME = 155
+CALL_MOTIVE_INDICES = 156
+CALL_MOTIVE_PARAMETERS = 157
+CALL_MOTIVE_APPLY_INDICES = 158
+CALL_MOTIVE_MAJOR = 159
+CALL_MOTIVE_FOLD = 160
+CALL_MOTIVE_LOCAL = 161
+CALL_MOTIVE_VECTOR = 162
+CALL_SOURCE_MOTIVES = 163
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -499,7 +525,11 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_ctor_ordinal', 'decl_ctor_next', 'decl_ctor_symbol', 'decl_ctor_type', 'decl_ctor_fields',
     'decl_ctor_info', 'decl_ctor_scheme', 'decl_ctor_signature',
     'core_K', 'core_elim_level', 'core_elim_info', 'core_rec_parameters', 'elim_large', 'elim_arguments',
-    'elim_remaining', 'elim_head', 'elim_next', 'elim_record', 'elim_local', 'elim_old_head', 'elim_fresh', 'elim_cursor', 'elim_symbol_head')
+    'elim_remaining', 'elim_head', 'elim_next', 'elim_record', 'elim_local', 'elim_old_head', 'elim_fresh', 'elim_cursor', 'elim_symbol_head',
+    'fold_base', 'fresh_local', 'fresh_domain', 'fresh_record', 'apply_base', 'apply_end', 'apply_cursor', 'apply_body',
+    'core_motives', 'motive_remaining', 'motive_rev', 'motive_family', 'motive_symbol', 'motive_next', 'motive_mark',
+    'motive_family_symbol', 'motive_major', 'motive_index_count', 'motive_snapshot_remaining', 'motive_snapshot_head',
+    'motive_snapshot_cursor', 'motive_indices', 'motive_local', 'motive_telescope', 'motive_info')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -598,7 +628,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -685,7 +715,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.ELIM_STORE_METADATA or r['task'] > Task.INIT_ELIMINATION
+                or r['mode'] > Mode.MOTIVE_LINK or r['task'] > Task.BUILD_MOTIVES
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -720,6 +750,8 @@ class SpecMachine:
         from . import core_names_machine as core_names
         from . import declare_constructors_machine as declare_constructors
         from . import elimination_machine as elimination
+        from . import binder_ops_machine as binder_ops
+        from . import motive_machine as motive
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -728,7 +760,7 @@ class SpecMachine:
                     r.update(mode=Mode.TELESCOPE, x=r['root'], task=Task.OPEN_TELESCOPE, depth=0, pending_open=0)
                 elif r['pending_fold']:
                     r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
-                        task=Task.FOLD_TELESCOPE, pending_fold=0)
+                        task=Task.FOLD_TELESCOPE, pending_fold=0, fold_base=0)
                 elif r['pending_scope']:
                     r.update(mode=Mode.WALK, task=Task.EXPR_SCOPE, x=r['root'], depth=0, pending_scope=0)
                 elif r['pending_infer']:
@@ -740,7 +772,9 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in elimination.PRIVATE_PHASES:
+                if phase in motive.PRIVATE_PHASES:
+                    motive.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in elimination.PRIVATE_PHASES:
                     elimination.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in declare_constructors.PRIVATE_PHASES:
                     declare_constructors.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -852,6 +886,10 @@ class SpecMachine:
             environment.step(self, 0, 0, 0, 0, stop, ret, alloc)
             return s
         if formal_levels.step(self, 0, 0, 0, 0, stop, ret, alloc): return s
+        if (r['task']==Task.FRESH_LOCAL and r['mode']==Mode.FRESH_LOCAL_RECORD) or (r['task']==Task.APPLY_SCOPE and r['mode']==Mode.APPLY_SCOPE_SELECT):
+            binder_ops.step(self, 0, 0, 0, 0, stop, ret, alloc); return s
+        if r['task']==Task.BUILD_MOTIVES and r['mode'] in motive.NO_NODE:
+            motive.step(self, 0, 0, 0, 0, stop, ret, alloc); return s
         if r['task'] == Task.INIT_ELIMINATION and r['mode'] in elimination.NO_NODE:
             elimination.step(self, 0, 0, 0, 0, stop, ret, alloc); return s
         if r['task'] == Task.DECLARE_CONSTRUCTORS and r['mode'] in (Mode.WALK,Mode.DECL_CTOR_STORE_INFO,Mode.DECL_CTOR_STORE_SCHEME,Mode.DECL_CTOR_STORE_SIGNATURE,Mode.DECL_CTOR_LINK):
@@ -891,7 +929,8 @@ class SpecMachine:
             Mode.DECL_CTOR_CELL:CellTag.VECTOR_CELL,Mode.DECL_CTOR_RAW:CellTag.RAW_CONSTRUCTOR,Mode.DECL_CTOR_PENDING:CellTag.PENDING_CONSTRUCTOR,
             Mode.DECL_CTOR_ANALYSIS:CellTag.CONSTRUCTOR_ANALYSIS}.get(r['mode'])
         elimination_tag = (CellTag.LEVEL_ZERO <= tag <= CellTag.LEVEL_PARAM if r['mode'] in elimination.LEVEL_MODES else Tag.BVAR <= tag <= Tag.MDATA if r['mode']==Mode.ELIM_FIELD_SORT else tag == elimination.TAGS.get(r['mode']))
-        valid_tag = (elimination_tag if r['task'] == Task.INIT_ELIMINATION else tag == decl_ctor_tag if r['task'] == Task.DECLARE_CONSTRUCTORS else tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
+        motive_tag = (Tag.BVAR <= tag <= Tag.MDATA if r['mode']==Mode.MOTIVE_SORT else tag==motive.TAGS.get(r['mode']))
+        valid_tag = (motive_tag if r['task']==Task.BUILD_MOTIVES else tag == CellTag.LOCAL_DECL if r['task']==Task.APPLY_SCOPE and r['mode']==Mode.APPLY_SCOPE_RECORD else elimination_tag if r['task'] == Task.INIT_ELIMINATION else tag == decl_ctor_tag if r['task'] == Task.DECLARE_CONSTRUCTORS else tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
             tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
             tag == CellTag.CHECKED_FAMILY if r['mode'] == Mode.APP_METADATA else
             tag == CellTag.CHECKED_SCHEME if r['mode'] in (Mode.CONST_SCHEME, Mode.APP_SCHEME) else
@@ -911,6 +950,10 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if binder_ops.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if motive.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if elimination.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if declare_constructors.step(self, tag, a, b, c, stop, ret, alloc):
@@ -1159,7 +1202,9 @@ class SpecMachine:
                 ret(r['lookup_level'])
             return s
         if r['mode'] == Mode.FOLD_SELECT:
-            if not r['ctx']:
+            if r['ctx'] < r['fold_base']:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['ctx'] == r['fold_base']:
                 ret(r['fold_body'])
             else:
                 r.update(mode=Mode.FOLD_RECORD, x=s['context'][r['ctx']-1][0])
@@ -1181,7 +1226,7 @@ class SpecMachine:
                     task=Task.ABSTRACT_ONE, abstract_uid=a)
             return s
         if r['mode'] == Mode.FOLD_BUILD:
-            if not r['ctx']:
+            if r['ctx'] <= r['fold_base']:
                 stop(Outcome.INVALID, Reason.SYNTAX)
             elif r['free'] >= cfg.heap:
                 stop(Outcome.RESOURCE, Reason.HEAP)

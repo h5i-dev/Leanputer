@@ -252,3 +252,17 @@ the shared telescope abstraction/substitution services; check raw type claims
 against generated schemes. Nested transformation/restoration must surround the
 core stages before an original declaration can be published. The standalone
 core-operation entry remains diagnostic and cannot accept a theorem.
+
+Motive-generation representation follows the first loop of `mk_rec_infos`:
+traverse verified families in declaration order, reuse the shared parameters,
+open each complete WHNF index telescope, and form the major type by applying
+the family's original universe constant to parameters and those indices.
+Allocate the major Local; fold exactly the index/major suffix over
+`Sort(elimLevel)`; then allocate the motive Local in the persistent generated
+scope. Preserve snapshots173 `(familySig,motiveLocalRecord,telescopeInfo)` and
+174 `(indexLocalVector,majorLocalRecord,recursorSymbol)` for subsequent minor,
+recursor-type and rule passes. The snapshots are output only. Their Local
+identities remain stable when the transient index/major scope is folded away.
+Motives do not enter committed declaration Γ. The suffix-fold boundary is a
+context index, so prior universe symbols, shared parameters and earlier motives
+remain live; the same fold operation serves the later minor/rule passes.
