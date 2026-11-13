@@ -317,3 +317,12 @@ field-binder domain is the projection type. Conversion first checks the whole
 record type, including its label, before typed data eta. OfNat.rec carries
 result/carrier universes and may expand a neutral data record through its field.
 No arbitrary indexed inductive declaration admission is provided by this rule.
+
+## PUnit's Prop/data distinction
+
+PUnit.{u} has sort u and no data fields. Its recursor universes are result then
+carrier. At carrier0, values are proofs and convert by typed proof irrelevance,
+but a neutral major cannot reduce a data-valued recursor. Constructor iota still
+applies. At positive carrier universes, empty-record data eta permits neutral
+recursion. Typed equality first checks the exact PUnit type; different universes
+do not merge. This distinction is checked against actual Lean rfl judgments.

@@ -48,8 +48,10 @@ PROJECTION_ARITIES={family:1 if family in ONE_FIELD_RECORDS else 2 for family in
 PROJECTION_COUNT=max(PROJECTION_FAMILIES[family]+count for family,count in PROJECTION_ARITIES.items())
 PRIMITIVE_CODES.update({'Nat':64,'Nat.zero':65,'Nat.succ':66,'Nat.rec':67})
 PRIMITIVE_UNIVERSES['Nat.rec']=1
+PRIMITIVE_CODES.update({'PUnit':71,'PUnit.unit':72,'PUnit.rec':73})
+PRIMITIVE_UNIVERSES.update({'PUnit':1,'PUnit.unit':1,'PUnit.rec':2})
 # Nat.succ is also a reducible head on literal arguments.
-REC_ARITIES.update({66:1,67:4})
+REC_ARITIES.update({66:1,67:4,73:3})
 
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
@@ -69,6 +71,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.startswith('PUnit'):return _unit_type(expression)
     if name in ('Nat','Nat.zero','Nat.succ','Nat.rec'):return _natural_type(expression)
     if name.split('.')[0] in ONE_FIELD_RECORDS:return _one_record_type(expression)
     if name.startswith('Option'):return _option_type(expression)
@@ -306,6 +309,15 @@ def _natural_type(expression):
     step=bind('number',natural,bind('hypothesis',apps(motive,number),apps(motive,apps(('builtin','Nat.succ'),number))))
     return _close_schema(bind('motive',bind('motive_arg',natural,('sort',expression[2])),
         bind('zero',apps(motive,('builtin','Nat.zero')),bind('step',step,bind('major',natural,apps(motive,v('major')))))))
+
+
+def _unit_type(expression):
+    name=expression[1];carrier=expression[3]if name=='PUnit.rec'else expression[2]
+    unit=('builtin','PUnit',carrier);constructor=('builtin','PUnit.unit',carrier)
+    if name=='PUnit':return ('sort',carrier)
+    if name=='PUnit.unit':return unit
+    return ('pi',('pi',unit,('sort',expression[2])),
+            ('pi',('app',('var',0),constructor),('pi',unit,('app',('var',2),('var',0)))))
 
 
 def type_schema(expression):

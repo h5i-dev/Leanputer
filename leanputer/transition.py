@@ -102,14 +102,14 @@ class RuleCompiler:
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                    Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
                    Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC,
-                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS)
+                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
-                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE, Op.I_ONE_CTOR, Op.I_ONE_FIELD, Op.N_SUCC_VALUE)
+                   Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE, Op.I_ONE_CTOR, Op.I_ONE_FIELD, Op.N_SUCC_VALUE, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                                            Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS)),
+                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE)),
                              (self.r['z'],(Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
@@ -449,11 +449,19 @@ class RuleCompiler:
         self.ret(self.AND(phase,self.NOT(good)),0)
         self.tail(self.AND(phase,good),Op.CONV,x,y)
         self.call(self.mode(Op.N_SUCC),Op.WHNF,x,continuation=(Op.N_SUCC_VALUE,))
+        phase=self.mode(Op.P_UNIT_UNIVERSE);known=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],73));data=self.NOT(self.eq(hr['b'],0))
+        self.stop(self.AND(phase,self.NOT(known)),Outcome.REJECT,Reason.SYNTAX)
+        self.ret(self.AND(phase,known,data),hx['b'])
+        self.call(self.AND(phase,known,self.NOT(data)),Op.WHNF,y,continuation=(Op.P_UNIT_MAJOR,hx['b']))
+        phase=self.mode(Op.P_UNIT_MAJOR);constructor=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],72),self.eq(hr['a'],0))
+        self.ret(phase,self.mux(constructor,x,0))
         phase=self.mode(Op.N_SUCC_VALUE);number=self.tag(hr,Tag.NAT);overflow=self.eq(hr['v'],(1<<self.width)-1)
         self.ret(self.AND(phase,self.NOT(number)),0)
         self.stop(self.AND(phase,number,overflow),Outcome.RESOURCE,Reason.NATURAL)
         self.allocate(self.AND(phase,number,self.NOT(overflow)),Tag.NAT,v=self.add(hr['v'],1))
-        self.call(self.mode(Op.REC_MAJOR),Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
+        phase=self.mode(Op.REC_MAJOR);unit=self.eq(z,73)
+        self.call(self.AND(phase,unit),Op.REC_SCAN,x,2,continuation=(Op.P_UNIT_UNIVERSE,x,y))
+        self.call(self.AND(phase,self.NOT(unit)),Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
         phase=self.mode(Op.REC_SPINE);app=self.tag(hr,Tag.APP);boolean=self.eq(y,41)
         false_ctor=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],39))
         true_ctor=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],40))
@@ -626,7 +634,9 @@ class RuleCompiler:
         self.call(self.AND(op, left_lam, self.NOT(right_lam)), Op.INFER, y, continuation=(Op.E_TYPE, x, y))
         self.call(self.AND(op, right_lam, self.NOT(left_lam)), Op.INFER, x, continuation=(Op.E_TYPE, y, x))
         phase=self.mode(Op.S_TYPE);app=self.tag(hx,Tag.APP)
-        self.ret(self.AND(phase,self.NOT(app)),0)
+        unit=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],71),self.NOT(self.eq(hx['a'],0)))
+        self.call(self.AND(phase,unit),Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,PROJECTION_COUNT))
+        self.ret(self.AND(phase,self.NOT(unit),self.NOT(app)),0)
         self.tail(self.AND(phase,app),Op.S_FN,hx['a'],y,z,w)
         phase=self.mode(Op.S_FN)
         self.tail(self.AND(phase,app),Op.S_FN,hx['a'],y,z,w)
@@ -642,7 +652,9 @@ class RuleCompiler:
         self.call(self.mode(Op.S_RIGHT_TYPE),Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y,w))
         phase=self.mode(Op.S_SAME_TYPE);same=self.NOT(self.eq(result,0))
         self.ret(self.AND(phase,self.NOT(same)),0)
-        self.allocate(self.AND(phase,same),Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        unit=self.eq(z,PROJECTION_COUNT)
+        self.ret(self.AND(phase,same,unit),1)
+        self.allocate(self.AND(phase,same,self.NOT(unit)),Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
         self.allocate(self.mode(Op.S_RIGHT_VAL),Tag.PROJ,x,v=z,resume=(Op.CONV,y,r['free']))
         self.call(self.mode(Op.E_TYPE), Op.WHNF, result, continuation=(Op.E_TYPE_WHNF, x, y))
         op, is_pi = self.mode(Op.E_TYPE_WHNF), self.tag(hr, Tag.PI)

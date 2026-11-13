@@ -175,6 +175,9 @@ class Oracle:
                 if name=='HEq.rec' and len(arguments)==7 and self.convert(arguments[0],arguments[4],context) and self.convert(arguments[1],arguments[5],context):
                     return self.whnf(arguments[3],context)
                 if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
+                if name=='PUnit.rec' and len(arguments)==3:
+                    if head[3]>0 or self.whnf(arguments[2],context)==('builtin','PUnit.unit',0):
+                        return self.whnf(arguments[1],context)
                 if name=='Bool.rec' and len(arguments)==4:
                     major=self.whnf(arguments[3],context)
                     if major in (('builtin','Bool.false'),('builtin','Bool.true')):
@@ -244,6 +247,8 @@ class Oracle:
             if self.convert(left_type,self.infer(right,context),context):
                 return self.convert(('proj','Subtype',0,left),('proj','Subtype',0,right),context)
         from .primitives import ONE_FIELD_RECORDS
+        if left_type[0]=='builtin' and left_type[1]=='PUnit' and left_type[2]>0:
+            return self.convert(left_type,self.infer(right,context),context)
         record=ONE_FIELD_RECORDS.get(head[1]) if head[0]=='builtin' else None
         if record and record['data'] and len(arguments)==record.get('parameters',1) and self.convert(left_type,self.infer(right,context),context):
             return self.convert(('proj',head[1],0,left),('proj',head[1],0,right),context)

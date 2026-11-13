@@ -147,6 +147,8 @@ class Op(IntEnum):
     N_REC_STEP = 107
     N_CTOR = 108
     I_RECORD_PARAMS = 109
+    P_UNIT_UNIVERSE = 110
+    P_UNIT_MAJOR = 111
 
 
 @dataclass(frozen=True)
@@ -309,15 +311,15 @@ class SpecMachine:
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC,
-                  Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS):
+                  Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
-        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE,Op.I_ONE_CTOR,Op.I_ONE_FIELD,Op.N_SUCC_VALUE):pointers.append(result)
+        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE,Op.I_ONE_CTOR,Op.I_ONE_FIELD,Op.N_SUCC_VALUE,Op.P_UNIT_UNIVERSE,Op.P_UNIT_MAJOR):pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
                   Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS):
+                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE):
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
@@ -604,13 +606,22 @@ class SpecMachine:
             else:self.ret(0)
         elif op==Op.N_SUCC:
             self.call(Op.WHNF,x,continuation=(Op.N_SUCC_VALUE,))
+        elif op==Op.P_UNIT_UNIVERSE:
+            tag,_,carrier,code=self.node(result)
+            if tag!=Tag.BUILTIN or code!=73:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            elif carrier:self.ret(self.node(x)[2])
+            else:self.call(Op.WHNF,y,continuation=(Op.P_UNIT_MAJOR,self.node(x)[2]))
+        elif op==Op.P_UNIT_MAJOR:
+            tag,carrier,_,code=self.node(result)
+            self.ret(x if tag==Tag.BUILTIN and code==72 and carrier==0 else 0)
         elif op==Op.N_SUCC_VALUE:
             tag,_,_,value=self.node(result)
             if tag!=Tag.NAT:self.ret(0)
             elif value==(1<<cfg.word_bits)-1:self.stop(Outcome.RESOURCE,Reason.NATURAL)
             else:self.allocate(Tag.NAT,v=value+1)
         elif op==Op.REC_MAJOR:
-            self.call(Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
+            if z==73:self.call(Op.REC_SCAN,x,2,continuation=(Op.P_UNIT_UNIVERSE,x,y))
+            else:self.call(Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
         elif op==Op.REC_SPINE:
             # Entered with normalized major in r, saved partial fn/head in x/y.
             tag,a,b,_=self.node(result)
@@ -813,7 +824,10 @@ class SpecMachine:
             else:
                 self.call(Op.INFER, x, continuation=(Op.E_TYPE, y, x))
         elif op==Op.S_TYPE:
-            if self.node(x)[0]!=Tag.APP:self.ret(0)
+            tag,carrier,_,code=self.node(x)
+            if tag==Tag.BUILTIN and code==71 and carrier>0:
+                self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,PROJECTION_COUNT))
+            elif tag!=Tag.APP:self.ret(0)
             else:self.tail(Op.S_FN,self.node(x)[1],y,z,w)
         elif op==Op.S_FN:
             if self.node(x)[0]==Tag.APP:self.tail(Op.S_FN,self.node(x)[1],y,z,w)
@@ -826,6 +840,7 @@ class SpecMachine:
             self.call(Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y,w))
         elif op==Op.S_SAME_TYPE:
             if not result:self.ret(0)
+            elif z==PROJECTION_COUNT:self.ret(1)
             else:self.allocate(Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
         elif op==Op.S_RIGHT_VAL:
             self.allocate(Tag.PROJ,x,v=z,resume=(Op.CONV,y,r['free']))

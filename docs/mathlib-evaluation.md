@@ -211,3 +211,9 @@ native mathlib acceptance in this slice. Current-fragment outcomes retain their
 unknown unsupported closure metadata and NOT_RUN checking labels. Native CLI
 reports now also retain known dependency/assumption/input-node metadata on
 encoding-resource rows and null values where the closure is unavailable.
+
+The PUnit112-phase refresh retains408EXPORTED/449UNSUPPORTED of857names,
+export9.705005s. Threeof28priorPUnit-first rows now syntax-export, but no new
+native mathlib acceptance is claimed:the smallest inspected Bool closure still
+plans at43989transitions/3407nodes. This remains a complete syntax-only snapshot
+with NOT_RUN checking labels and explicit unknown unsupported closures.

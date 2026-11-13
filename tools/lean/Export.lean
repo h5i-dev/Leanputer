@@ -68,12 +68,13 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
         name == ``Option || name == ``Option.none || name == ``Option.some ||
         name == ``Inhabited || name == ``Inhabited.mk || name == ``Mul || name == ``Mul.mk ||
         name == ``Add || name == ``Add.mk || name == ``Subsingleton || name == ``Subsingleton.intro ||
-        name == ``Zero || name == ``Zero.mk || name == ``One || name == ``One.mk || name == ``Nat.rec || name == ``OfNat || name == ``OfNat.mk) && values.length == 1 then
+        name == ``Zero || name == ``Zero.mk || name == ``One || name == ``One.mk || name == ``Nat.rec || name == ``OfNat || name == ``OfNat.mk ||
+        name == ``PUnit || name == ``PUnit.unit) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl || name == ``HEq || name == ``HEq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec || name == ``Option.rec ||
-        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec || name == ``Zero.rec || name == ``One.rec || name == ``OfNat.rec) && values.length == 2 then
+        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec || name == ``Zero.rec || name == ``One.rec || name == ``OfNat.rec || name == ``PUnit.rec) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]

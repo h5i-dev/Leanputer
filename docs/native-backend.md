@@ -459,3 +459,27 @@ blocked by PUnit6/HAdd3/HPow2/LT1. No new mathlib acceptance or syntax-coverage
 increase is claimed. Ordinary numeral support is a prerequisite for those
 closures, not proof that they are already checked. General multi-universe and
 inductive/indexed declaration support remain separate work.
+
+## PUnit checkpoint
+
+PUnit/unit/rec extends the catalog to74intrinsics/112phases. The weighted
+recursor-root scan checks its carrier universe:Prop0 keeps constructor-only
+data iota, while positive-universe empty records permit data eta and neutral
+recursion. Typed empty-data equality first verifies the exact type. Actual
+Lean tests distinguish proof eta from data-recursion behavior at carrier0/1.
+
+Native13cases pass11A2R with matched steps, including recursor universe aliases,
+both eta paths, data recursion, constructor Prop iota, two required rejections
+and retained Subtype eta. Focused weighted unit152.988s; actualLean negatives
+2.781s agree. At heap128/stack32/context16/constants8/fuel1152:27boot+1154stock
+forwards83.816s,compile12.677s,603,029,458BF16parameters/1,206,058,916weightbytes,
+H3840/42layers/inter1024; CUDApeak1,284,547,072bytes,host1,733,197,824bytes.
+Development CPU validation overlapped; no controlled speed/size comparison with
+the larger512-cell checkpoints. Evidence under benchmarks/native/unit-*.
+
+Threeof28PUnit-first rows newly syntax-export:Bool.involutive_not(Gamma11),
+Function.IsPartialInv.surjective_getD(Gamma21),Option.rec_update(Gamma183).
+Bool.involutive_not plans at43989transitions/3407nodes in the independent spec,
+not native verification. No new native mathlib acceptance is claimed here.
+Remaining first blockers are PProd19/HAdd6. The full syntax snapshot is408of857
+exported, not408proved; large declaration closures remain a concrete limitation.

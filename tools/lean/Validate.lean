@@ -72,6 +72,8 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Nat.rec" then return .const ``Nat.rec [level]
       if name == "OfNat" then return .const ``OfNat [level]
       if name == "OfNat.mk" then return .const ``OfNat.mk [level]
+      if name == "PUnit" then return .const ``PUnit [level]
+      if name == "PUnit.unit" then return .const ``PUnit.unit [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -81,7 +83,7 @@ partial def expression (json : Json) : Except String Expr := do
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Option.rec" && fields.size == 4 then
       return .const ``Option.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
-    if fields.size == 4 && (name == "Inhabited.rec" || name == "Mul.rec" || name == "Add.rec" || name == "Subsingleton.rec" || name == "Zero.rec" || name == "One.rec" || name == "OfNat.rec") then
+    if fields.size == 4 && (name == "Inhabited.rec" || name == "Mul.rec" || name == "Add.rec" || name == "Subsingleton.rec" || name == "Zero.rec" || name == "One.rec" || name == "OfNat.rec" || name == "PUnit.rec") then
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Subtype.rec" && fields.size == 4 then
       return .const ``Subtype.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
@@ -155,7 +157,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton, ``Zero, ``One, ``Nat, ``OfNat] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton, ``Zero, ``One, ``Nat, ``OfNat, ``PUnit] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))

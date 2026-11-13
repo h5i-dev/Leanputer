@@ -14,16 +14,16 @@
   "public_population": 857,
   "ground_instances_per_source": 1,
   "counts": {
-    "UNSUPPORTED": 452,
-    "EXPORTED": 405
+    "UNSUPPORTED": 449,
+    "EXPORTED": 408
   },
-  "export_seconds": 8.858024686996941,
-  "enumeration_seconds": 4.1978748830006225,
+  "export_seconds": 9.705005278003227,
+  "enumeration_seconds": 6.217488513997523,
   "unsupported_reasons": {
     "unsupported inductive/constructor/recursor/quotient dependency IsCancelMul": 5,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommMagma": 11,
     "unsupported inductive/constructor/recursor/quotient dependency SubtractionMonoid": 8,
-    "unsupported inductive/constructor/recursor/quotient dependency PUnit": 28,
+    "unsupported inductive/constructor/recursor/quotient dependency HAdd": 9,
     "unsupported inductive/constructor/recursor/quotient dependency RightCancelMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency IsPartialOrder": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Monoid": 32,
@@ -33,6 +33,7 @@
     "unsupported inductive/constructor/recursor/quotient dependency AddMonoid": 31,
     "unsupported inductive/constructor/recursor/quotient dependency AddSemigroup": 15,
     "unsupported inductive/constructor/recursor/quotient dependency DivInvMonoid": 18,
+    "unsupported inductive/constructor/recursor/quotient dependency PProd": 19,
     "unsupported inductive/constructor/recursor/quotient dependency Group": 13,
     "unsupported inductive/constructor/recursor/quotient dependency AddLeftCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency Semigroup": 15,
@@ -51,7 +52,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsLeftCancelMul": 8,
     "unsupported inductive/constructor/recursor/quotient dependency IsRightCancelAdd": 8,
     "unsupported inductive/constructor/recursor/quotient dependency IsLeftCancelAdd": 8,
-    "unsupported inductive/constructor/recursor/quotient dependency HAdd": 3,
     "unsupported inductive/constructor/recursor/quotient dependency AddCancelMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Nontrivial": 4,
     "unsupported inductive/constructor/recursor/quotient dependency AddGroup": 13,
@@ -106,9 +106,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency DivisionCommMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency HDiv": 1
   },
-  "exporter_sha256": "d7fca3baedf70bc8da8373cda19e25614ff51d95d74f69a82a64326666041ccd",
-  "corpus_sha256": "4c41bcc9d5a3998212c797ea9865abfd3d52281115289e58528c9f23594f7166",
-  "all_outcomes_sha256": "08e44ba8ce3a3dba862cd929c57b27fb517bc61eec6951bdfba3c246b0d5a992",
-  "leanputer_feature_boundary": "OfNat110phasefixedfragment",
+  "exporter_sha256": "340af4c1ebfc8354004bf06e762f99005eb5c429b4c1cda6273b6ebfc50e9758",
+  "corpus_sha256": "de57a5442a033ebffc27b970451e6afeb9230bbd9642f82704f95a0052ee34af",
+  "all_outcomes_sha256": "0ee7ddbffb13c2f990fb9ee5bd7e25e751ccc08a972d2529555068abb606cd9d",
+  "leanputer_feature_boundary": "PUnit112phasefixedfragment",
   "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh."
 }

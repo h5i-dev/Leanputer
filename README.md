@@ -27,7 +27,8 @@ dependent field typing. Zero and One use the same fixed data-record path.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
 are also supported. OfNat retains both uniform parameters and the stored
 field, so ordinary numerals check their actual instance definitions.
-Data records support typed eta; the Prop-valued
+PUnit distinguishes Prop0 constructor-only data reduction from positive-universe
+data eta/recursion. Data records support typed eta; the Prop-valued
 Subsingleton keeps constructor-only data reduction.
 Fixed Quot/Mk/Ind/Lift rules include checked
 relation respectfulness for lifting.
@@ -189,7 +190,7 @@ traces, seeded tests and external replay provide evidence, not formal soundness.
 
 
 The current complete syntax refresh retains all 857 selected public theorems:
-405 export and 452 remain unsupported. EXPORTED is not proof acceptance; a
+408 export and 449 remain unsupported. EXPORTED is not proof acceptance; a
 new full-population native check has not been run. The [complete syntax
 outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
 assumptions, input sizes and every unsupported row. Monoid is the largest current
