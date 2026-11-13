@@ -229,8 +229,8 @@ semantics to invent from examples.
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities (spec) | raw/derived declaration transactions; native ABI/lowering |
 | Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock lift/instantiate/abstract/occurrence controller | lower symbolic levels, scopes and dependent telescope services; integrate caller continuations |
-| Expression/universe checking | ground Pi/Lam/App and partial conversion | symbolic levels, Let/literals, complete pinned conversion and primitive checks |
-| Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors (spec) | integrate complete admission, nested queue, universe/elimination derivation and publication |
+| Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
+| Declaration admission | `kernel/positivity.py`: general block application/uniformity/positivity and functional recursive descriptors; `admission.py`: general core-phase header/index/constructor/universe/positivity checks, elimination/K metadata and generation (spec) | nested queue/restoration, prior declarations/transactions, complete internal services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
 | Stock lowering | stock forward/cache emitter and memory ABI | lower the shared general operations; remove count-specific semantic paths |
 | Evidence | targeted restricted traces/native/source replays | targeted module contracts first; broad differentials remain deferred |
@@ -252,7 +252,23 @@ acceptance. These operations are not yet integrated into full admission.
 `BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit
-tests supply structural equality or the beta/zeta subservice to test these
-modules' contracts, not to certify complete declaration admission. Test-generated
+tests supply structural equality or the beta/zeta subservice to test isolated
+module contracts. `test_kernel_admission` instead runs the actual internal
+inference/level services for the general core phase; it still does not certify
+complete declaration admission. Test-generated
 recursor types/rules are scoped and exercised for mutual indexed functional
 recursion, including fields-before-IHs and nested-restoration parameter arity.
+
+Source details preserved in the core: constructor **declared** Pi telescopes
+are traversed syntactically (unlike family headers, which are WHNF-ed).
+Recursive/reflexive block flags derive from source syntactic occurrences,
+separately from normalized recursive-argument descriptors. All members share
+those global flags. Neither flag is trusted input.
+
+`examples/KernelAlgorithms.lean` independently checks dependent fields and
+the mutual indexed functional recursor type/computation law. It also directly
+invokes the raw pinned kernel on a symbolic `Sort u` inductive. Lean's command
+elaborator rejects possibly-Prop result universes, but its raw kernel admits
+them with the derived elimination restriction. The complete target follows the
+kernel; its schemes cannot be ground-specialized before admission. This replay
+is development evidence and is never part of inference.

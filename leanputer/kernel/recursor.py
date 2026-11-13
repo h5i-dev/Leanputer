@@ -77,7 +77,12 @@ class RecursorBuilder:
             self.traversal.parameters, self.traversal.whnf, self.convertible)
 
     def _fields(self, constructor):
-        return open_telescope(self.a, self.c, self._tail(constructor.type), self.traversal.whnf)
+        # The source consumes the constructor's DECLARED Pi telescope without
+        # WHNF-ing its spine. Only recursive FIELD types are WHNF-ed. Header
+        # types/motives use _tail's normalizing traversal instead.
+        tail = consume_parameters(self.a, self.c, constructor.type,
+            self.traversal.parameters, lambda ref: ref, self.convertible)
+        return open_telescope(self.a, self.c, tail, lambda ref: ref)
 
     def _recursive_fields(self, fields):
         result = []

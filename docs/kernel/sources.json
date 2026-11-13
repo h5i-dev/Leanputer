@@ -45,6 +45,11 @@
           "path": "src/kernel/quot.cpp",
           "sha256": "16916b73a6297e8f680e758684390fb2df8e7ff99253ffca8f97cb01af16925f",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/quot.cpp"
+        },
+        {
+          "path": "src/kernel/replace_fn.h",
+          "sha256": "6b3a850ce10b5646a8d40011ff228f6d3223dc9a79136417bc586588d1aa8e76",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/replace_fn.h"
         }
       ]
     },

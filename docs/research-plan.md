@@ -6,9 +6,11 @@ pinned Lean/nanoda functions to immutable Expr/Level/vector records, scoped
 locals, general telescope/positivity/recursive-descriptor operations, admission,
 nested specialization and recursor generation/reduction. Counts are data.
 
-`leanputer/kernel/` implements the general traversal and recursor-generation
-modules as executable specifications. Full checking services, admission driver,
-nested restoration and native lowering are still gaps. These specifications
+`leanputer/kernel/` implements symbolic universes, dependent inference, general
+admission-core/positivity and recursor-generation modules as executable specs.
+The shared all-tag traversal controller passes an exact stock forward/cache
+smoke. Full conversion/checking services, admission driver, nested restoration
+and integrated native lowering are still gaps. These Python specifications
 never supply trusted answers to the native loader. The earlier restricted
 [declaration-as-data checker](generic-kernel.md) and uncommitted projection
 helpers are preserved reference work, not the target's semantic restrictions.

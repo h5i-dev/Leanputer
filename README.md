@@ -6,11 +6,23 @@ training. The [native backend](docs/native-backend.md) runs through stock
 feedback. The compiler generates all weights for a standalone configuration.
 The custom sparse circuit/attention-RAM implementation remains a reference.
 
-The active kernel development path is [declaration-as-data](docs/generic-kernel.md).
+Active development follows the [pinned general kernel contract](docs/kernel/target.md):
+declarations are input data, and shared algorithms traverse arbitrary bounded
+telescopes, indices, mutual blocks and recursive arguments. Field/name catalogs
+and count-specific feature paths are no longer the development strategy.
+The [shared traversal stock smoke](benchmarks/kernel-traversal-stock/README.md)
+verifies lift/instantiation/abstraction/occurrence operations with one stock
+model and exact output-cache comparison. It does **not** establish full
+declaration admission or mathlib coverage. General symbolic-universe, inference,
+positivity/admission-core and recursor-generation modules are executable specs;
+complete conversion, nested processing/transactions and weighted integration
+remain unfinished. The earlier uncommitted projection work is preserved.
+
+The preserved restricted checker is [declaration-as-data](docs/generic-kernel.md).
 Its compiler takes resource bounds only. Family names, constructor blocks and
 claimed recursor signatures are input data, validated by fixed weighted rules.
 One stock model checks two- and three-constructor enums, including arbitrary
-renamings. The initial class is ground-universe declarations with uniform type parameters and zero or one field per
+renamings. Its current class is ground-universe declarations with uniform type parameters and zero or one field per
 constructor in positive numeric Sorts; each field is an earlier checked carrier
 a type parameter, or a direct uniform recursive occurrence. It also supports nullary Prop families with checked
 elimination restrictions. Zero-parameter single-field projections use validated constructor
