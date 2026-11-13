@@ -20,3 +20,9 @@ include = ["leanputer*"]
 
 [tool.setuptools.data-files]
 "share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean", "tools/lean/Enumerate.lean"]
+
+[project.optional-dependencies]
+native = ["torch>=2.8", "transformers==5.19.0; python_version >= '3.11'", "numpy>=1.26"]
+
+[tool.setuptools.package-data]
+"leanputer.native_vendor.qwenputer" = ["LICENSE", "PROVENANCE.md"]

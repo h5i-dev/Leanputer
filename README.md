@@ -1,12 +1,12 @@
 # Leanputer
 
-Leanputer is an experimental bounded dependent-type checker whose semantic
-transitions are compiled directly into fixed Transformer weights. There is no
-training, CPU emulator, or external checker in its runtime checking path. It
-uses actual attention to read syntax/context/continuation memory, optional
-attention-addressed rank-one memory writes, and sparse
-ReLU FFNs to perform typing, capture-avoiding substitution, beta reduction,
-conversion, and state updates. The same weights are reused at every step.
+Leanputer compiles proof-checking logic into deterministic weights without
+training. The [new native path](docs/native-backend.md) executes a complete
+bounded STLC checker using stock `Qwen3_5ForCausalLM.forward`, with a small
+compiler-generated configuration and no pretrained backbone. The shared
+dependent checker still uses a custom sparse circuit/attention-RAM reference
+backend; its migration into native Transformer blocks is in progress. That
+custom backend is not a conventional Transformer result.
 
 The research program is in progress. Current support is a ground-universe Lean
 lambda-Pi subset: Sort, de Bruijn variables, dependent Pi, annotated Lam, App,

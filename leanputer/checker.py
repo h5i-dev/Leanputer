@@ -29,7 +29,7 @@ class Config:
                 raise ValueError('types must be atoms or arrow pairs')
 
 
-def compile_checker(config=Config()):
+def build_checker_ir(config=Config()):
     """Build proof-independent fixed weights for closed, bounded STLC terms.
 
     Output columns: acceptance, conservative type-vocabulary overflow, then
@@ -89,6 +89,11 @@ def compile_checker(config=Config()):
             row.append(c.OR(c.AND(tag[i][1], var), c.AND(tag[i][2], lam), c.AND(tag[i][3], app)))
         inferred.append(row)
     accept = c.AND(*valid, c.OR(*(c.AND(claim[t], inferred[-1][t]) for t in range(k))))
-    model = c.compile([accept, c.AND(*valid, c.OR(*overflow))] + inferred[-1])
+    return c, [accept, c.AND(*valid, c.OR(*overflow))] + inferred[-1]
+
+
+def compile_checker(config=Config()):
+    circuit, outputs = build_checker_ir(config)
+    model = circuit.compile(outputs)
     model.config = config
     return model

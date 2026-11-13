@@ -142,3 +142,19 @@ memory is nonstandard. Existing fixed schedule wasted95.54%of corpus item-steps
 on absorption; mathlib large budget wasted69.66%. GPU placement or100%device
 utilization does not establish efficiency. Architecture assessment accompanies
 feature work; it does not replace expanding supported judgments.
+
+## Authoritative execution order (latest user instruction)
+
+1. Compile the actual checker into a SMALL existing Transformer and use stock
+   forward; no full pretrained backbone. Initial complete bounded STLC native
+   Qwen3.5 path is implemented and smoke-tested; dependent native DeltaNet RAM
+   migration is next. See native-backend.md for actual sizes and scope.
+2. Expand constructs on that native backend to improve pinned-mathlib coverage.
+3. Run broad differential testing/evaluation only after architecture migration
+   and intended feature expansion. During implementation use minimal smokes.
+
+This order supersedes prior feature-first/profiling campaign notes. No further
+broad corpus, profiling or plotting runs are active. The semantic specification
+is retained; the old custom sparse engine is a reference, not the final claimed
+architecture. Stock normalization/activation/cache compatibility must be tested,
+not replaced or renamed. Full Qwen natural-language integration remains optional.
