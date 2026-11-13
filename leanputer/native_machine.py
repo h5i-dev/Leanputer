@@ -214,6 +214,8 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
     if type(reset_layers)is not int or reset_layers<1:raise ValueError('recurrent native execution requires scratch reset layers')
+    if 6*config.word_bits+2>128:
+        raise ValueError('native RAM stack payload exceeds the 128-dimensional value head (word width must be <=21)')
     state_layout = StateLayout(config); registers = RegisterLayout(state_layout)
     builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
     features = [builder.feature(name) for name in registers.names]

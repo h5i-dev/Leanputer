@@ -12,7 +12,7 @@ from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, MachineConfig, Op, Outcome,
 from .memory import AddressedRead, AddressedWrite
 from .state_layout import StateLayout, RegisterLayout
 from .dependent import Tag
-from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES,REC_ARITIES,REC_CONSTRUCTORS,REC_MAJOR_ARITIES,ONE_FIELD_RECORDS,PROJECTION_COUNT
+from .primitives import PRIMITIVE_SCHEMAS,PRIMITIVE_CODES,PRIMITIVE_UNIVERSES,REC_ARITIES,REC_CONSTRUCTORS,REC_MAJOR_ARITIES,ONE_FIELD_RECORDS,TWO_FIELD_RECORDS,PROJECTION_COUNT
 
 
 PORTS = [('hx', HEAP_FIELDS), ('hy', HEAP_FIELDS), ('hr', HEAP_FIELDS), ('hs', HEAP_FIELDS),
@@ -102,14 +102,14 @@ class RuleCompiler:
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                    Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
                    Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC,
-                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR)
+                   Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
                    Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE, Op.I_ONE_CTOR, Op.I_ONE_FIELD, Op.N_SUCC_VALUE, Op.P_UNIT_UNIVERSE, Op.P_UNIT_MAJOR)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                                            Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE)),
+                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE, Op.S_PAIR_FIELD, Op.S_PAIR_NEXT)),
                              (self.r['z'],(Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
@@ -200,19 +200,20 @@ class RuleCompiler:
         atom_ok = self.AND(self.NOT(self.tag(hs,Tag.BUILTIN)),self.eq(hs['a'], 0), self.eq(hs['b'], 0),
                            self.OR(self.NOT(self.tag(hs, Tag.CONST)), self.lt(hs['v'], r['decl_count'])))
         counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
-        has_first=self.OR(*(self.eq(hs['v'],code)for code,count in counts.items() if count>=1))
-        has_second=self.OR(*(self.eq(hs['v'],code)for code,count in counts.items() if count>=2))
-        builtin_ok=self.AND(self.tag(hs,Tag.BUILTIN),self.OR(*(self.eq(hs['v'],code)for code in PRIMITIVE_SCHEMAS)),
-                            self.OR(has_first,self.eq(hs['a'],0)),self.OR(has_second,self.eq(hs['b'],0)))
+        universe_bits=self.cfg.universe_bits
+        builtin_ok=self.AND(self.tag(hs,Tag.BUILTIN),self.eq(hs['b'],0),self.OR(*(
+            self.AND(self.eq(hs['v'],code),self.NOT(self.OR(*hs['a'][counts.get(code,0)*universe_bits:])))
+            for code in PRIMITIVE_SCHEMAS)))
         projection_ok = self.AND(self.tag(hs,Tag.PROJ),self.NOT(self.eq(hs['a'],0)),self.lt(hs['a'],r['scan']),self.eq(hs['b'],0),self.lt(hs['v'],PROJECTION_COUNT))
         let_ok=self.AND(self.tag(hs,Tag.LET),*(self.AND(self.NOT(self.eq(hs[field],0)),self.lt(hs[field],r['scan']))for field in ('a','b','v')))
         valid = self.OR(self.AND(binary, children), self.AND(atomic, atom_ok),builtin_ok,projection_ok,let_ok)
         check = self.AND(op, more)
         self.stop(self.AND(check, self.NOT(valid)), Outcome.REJECT, Reason.SYNTAX)
         high=self.OR(self.AND(self.tag(hs,Tag.SORT),self.lt(self.cfg.universe,hs['v'])),
-                     self.AND(self.tag(hs,Tag.BUILTIN),self.OR(
-                         self.AND(has_first,self.NOT(self.lt(hs['a'],self.cfg.universe))),
-                         self.AND(has_second,self.NOT(self.lt(hs['b'],self.cfg.universe))))))
+                     self.AND(self.tag(hs,Tag.BUILTIN),self.OR(*(
+                         self.AND(self.eq(hs['v'],code),self.OR(*(
+                             self.NOT(self.lt(self.g.fit(hs['a'][index*universe_bits:(index+1)*universe_bits],self.width),self.cfg.universe))
+                             for index in range(count)))) for code,count in counts.items()))))
         self.stop(self.AND(check, valid, high), Outcome.RESOURCE, Reason.UNIVERSE)
         self.emit(self.AND(check, valid, self.NOT(high)), scan=self.add(r['scan'], 1))
         op = self.mode(Op.BUILTIN_TYPE)
@@ -224,13 +225,22 @@ class RuleCompiler:
         second_level=self.g.fit(w[universe_bits:2*universe_bits],self.width)
         ceiling=self.mux(self.eq(first_level,0),1,first_level)
         first_successor=self.add(first_level,1);second_successor=self.add(second_level,1)
-        resolve=lambda value:first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else first_successor if value==-4 else second_successor if value==-5 else value
+        def resolve(value):
+            if isinstance(value,tuple):
+                if value[0]=='succ':return self.add(resolve(value[1]),1)
+                if value[0]=='max':
+                    maximum=self.vec(0)
+                    for part in value[1:]:
+                        level=self.vec(resolve(part));maximum=self.mux(self.lt(maximum,level),level,maximum)
+                    return maximum
+                raise ValueError('unknown fixed universe expression')
+            return first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else first_successor if value==-4 else second_successor if value==-5 else self.g.fit(w[2*universe_bits:3*universe_bits],self.width) if value==-6 else value
         for code,schema in PRIMITIVE_SCHEMAS.items():
             for position,(tag,a,b,v) in enumerate(schema):
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,self.add(y,1),z,w) if position+1<len(schema) else None
                 self.allocate(self.AND(op,valid,self.eq(x,code),self.eq(y,position)),tag,
-                              self.add(z,a) if binary else resolve(a),self.add(z,b) if binary else resolve(b),
+                              self.g.fit([bit for level in a for bit in self.vec(resolve(level))[:universe_bits]],self.width) if tag==Tag.BUILTIN else self.add(z,a) if binary else resolve(a),self.add(z,b) if binary else resolve(b),
                               resolve(v),resume=resume)
         # Environment and root-check orchestration.
         op = self.mode(Op.ENV)
@@ -287,7 +297,7 @@ class RuleCompiler:
         primitive = self.AND(op,self.tag(hx,Tag.BUILTIN))
         empty = self.eq(hx['v'],0)
         self.allocate(self.AND(primitive,empty),Tag.SORT,v=0)
-        packed=self.g.fit(hx['a'][:self.cfg.universe_bits]+hx['b'][:self.cfg.universe_bits],self.width)
+        packed=hx['a']
         self.tail(self.AND(primitive,self.NOT(empty)),Op.BUILTIN_TYPE,hx['v'],0,r['free'],packed)
         self.call(self.AND(op,self.tag(hx,Tag.PROJ)),Op.INFER,hx['a'],continuation=(Op.I_PROJ,x))
         self.call(self.AND(op, self.tag(hx, Tag.LAM, Tag.PI, Tag.LET)), Op.INFER, hx['a'], continuation=(Op.I_DOM, x))
@@ -321,9 +331,14 @@ class RuleCompiler:
         op=self.mode(Op.I_ONE_FIELD);pi=self.tag(hr,Tag.PI)
         self.stop(self.AND(op,self.NOT(pi)),Outcome.REJECT,Reason.SYNTAX)
         self.ret(self.AND(op,pi),hr['a'])
-        op=self.mode(Op.I_PROJ_HEAD);iff=self.lt(self.hy['v'],2);index=self.hy['v'][0];subtype=self.lt(3,self.hy['v'])
+        op=self.mode(Op.I_PROJ_HEAD);iff=self.lt(self.hy['v'],2);index=self.hy['v'][0];subtype=self.OR(self.eq(self.hy['v'],4),self.eq(self.hy['v'],5))
+        pair=self.OR(*(self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))for record in TWO_FIELD_RECORDS.values()))
         expected=self.mux(subtype,32,self.mux(iff,2,4))
-        valid=self.AND(self.tag(hx,Tag.BUILTIN),self.OR(subtype,self.eq(hx['a'],0)),self.eq(hx['v'],expected))
+        for record in TWO_FIELD_RECORDS.values():
+            match=self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))
+            expected=self.mux(match,record['code'],expected)
+            index=self.OR(self.AND(match,self.eq(self.hy['v'],record['projection']+1)),self.AND(self.NOT(match),index))
+        valid=self.AND(self.tag(hx,Tag.BUILTIN),self.OR(subtype,pair,self.eq(hx['a'],0)),self.eq(hx['v'],expected))
         self.stop(self.AND(op,self.NOT(valid)),Outcome.REJECT,Reason.EXPECT_STRUCTURE)
         self.ret(self.AND(op,valid,self.NOT(iff),self.NOT(subtype)),self.mux(index,w,z))
         self.ret(self.AND(op,valid,subtype,self.NOT(index)),z)
@@ -386,6 +401,9 @@ class RuleCompiler:
         op=self.mode(Op.PROJ_FIELDS);app=self.tag(hx,Tag.APP)
         ctor=self.mux(self.lt(3,self.hy['v']),33,self.mux(self.lt(self.hy['v'],2),3,5))
         peel=self.vec(2)
+        for record in TWO_FIELD_RECORDS.values():
+            match=self.OR(self.eq(self.hy['v'],record['projection']),self.eq(self.hy['v'],record['projection']+1))
+            ctor=self.mux(match,record['code']+1,ctor)
         for record in ONE_FIELD_RECORDS.values():
             match=self.eq(self.hy['v'],record['projection'])
             ctor=self.mux(match,record['code']+1,ctor)
@@ -395,11 +413,15 @@ class RuleCompiler:
         op=self.mode(Op.PROJ_HEAD);more=self.NOT(self.eq(y,0));app=self.tag(hx,Tag.APP)
         self.tail(self.AND(op,more,app),Op.PROJ_HEAD,hx['a'],self.sub(y,1),z)
         self.ret(self.AND(op,more,self.NOT(app)),0)
-        polymorphic=self.OR(self.eq(z,33),*(self.eq(z,record['code']+1)for record in ONE_FIELD_RECORDS.values()))
+        polymorphic=self.OR(self.eq(z,33),*(self.eq(z,record['code']+1)for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())))
         matches=self.AND(self.tag(hx,Tag.BUILTIN),self.OR(self.eq(hx['a'],0),polymorphic),self.eq(hx['v'],z))
         self.ret(self.AND(op,self.NOT(more)),self.mux(matches,1,0))
         op=self.mode(Op.PROJ_SELECT);good=self.NOT(self.eq(result,0))
-        self.tail(self.AND(op,good),Op.WHNF,self.mux(self.OR(self.lt(5,hx['v']),hx['v'][0]),w,z))
+        second=self.OR(self.lt(5,hx['v']),hx['v'][0])
+        for record in TWO_FIELD_RECORDS.values():
+            match=self.OR(self.eq(hx['v'],record['projection']),self.eq(hx['v'],record['projection']+1))
+            second=self.OR(self.AND(match,self.eq(hx['v'],record['projection']+1)),self.AND(self.NOT(match),second))
+        self.tail(self.AND(op,good),Op.WHNF,self.mux(second,w,z))
         self.neutral_projection(self.AND(op,self.NOT(good)),x,hx,y)
         op, lam = self.mode(Op.W_APP), self.tag(hr, Tag.LAM)
         self.call(self.AND(op, lam), Op.SUBST, hr['b'], y, continuation=(Op.W_BETA,))
@@ -412,6 +434,9 @@ class RuleCompiler:
             if head==8:self.call(complete,Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             elif head==11:self.tail(complete,Op.WHNF,hr['b'])
             elif head==34:self.tail(complete,Op.S_REC_LEFT,hr['b'],y)
+            elif head in {record['code']+2 for record in TWO_FIELD_RECORDS.values()}:
+                projection=next(record['projection']for record in TWO_FIELD_RECORDS.values()if record['code']+2==head)
+                self.tail(complete,Op.S_REC_LEFT,hr['b'],y,projection)
             elif head==37:self.call(complete,Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             elif head==66:self.call(complete,Op.N_SUCC,y,continuation=(Op.EQ_RESULT,x,result,y))
             elif head in data_recs:self.tail(complete,Op.ONE_REC,hr['b'],y,data_recs[head])
@@ -449,7 +474,7 @@ class RuleCompiler:
         self.ret(self.AND(phase,self.NOT(good)),0)
         self.tail(self.AND(phase,good),Op.CONV,x,y)
         self.call(self.mode(Op.N_SUCC),Op.WHNF,x,continuation=(Op.N_SUCC_VALUE,))
-        phase=self.mode(Op.P_UNIT_UNIVERSE);known=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],73));data=self.NOT(self.eq(hr['b'],0))
+        phase=self.mode(Op.P_UNIT_UNIVERSE);known=self.AND(self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],73));data=self.NOT(self.eq(self.g.fit(hr['a'][self.cfg.universe_bits:],self.width),0))
         self.stop(self.AND(phase,self.NOT(known)),Outcome.REJECT,Reason.SYNTAX)
         self.ret(self.AND(phase,known,data),hx['b'])
         self.call(self.AND(phase,known,self.NOT(data)),Op.WHNF,y,continuation=(Op.P_UNIT_MAJOR,hx['b']))
@@ -514,9 +539,9 @@ class RuleCompiler:
         self.allocate(self.mode(Op.REC_FIELDS),Tag.APP,y,hx['b'],resume=(Op.REC_APPLY,r['free'],z))
         self.tail(self.mode(Op.REC_PICK),Op.REC_APPLY,hx['b'],y)
         self.allocate(self.mode(Op.REC_APPLY),Tag.APP,x,y,resume=(Op.W_BETA,))
-        self.allocate(self.mode(Op.S_REC_LEFT),Tag.PROJ,y,v=4,resume=(Op.S_REC_RIGHT,x,y,r['free']))
+        self.allocate(self.mode(Op.S_REC_LEFT),Tag.PROJ,y,v=self.mux(self.eq(z,0),4,z),resume=(Op.S_REC_RIGHT,x,y,r['free'],self.mux(self.eq(z,0),5,self.add(z,1))))
         self.allocate(self.mode(Op.ONE_REC),Tag.PROJ,y,v=z,resume=(Op.REC_APPLY,x,r['free']))
-        self.allocate(self.mode(Op.S_REC_RIGHT),Tag.PROJ,y,v=5,resume=(Op.S_REC_APPLY,x,z,r['free']))
+        self.allocate(self.mode(Op.S_REC_RIGHT),Tag.PROJ,y,v=w,resume=(Op.S_REC_APPLY,x,z,r['free']))
         self.allocate(self.mode(Op.S_REC_APPLY),Tag.APP,x,y,resume=(Op.REC_APPLY,r['free'],z))
         self.tail(self.mode(Op.W_BETA), Op.WHNF, result)
         # Capture-avoiding structural shift/substitution with explicit frames.
@@ -643,8 +668,8 @@ class RuleCompiler:
         self.tail(self.AND(phase,self.NOT(app)),Op.S_HEAD,x,y,z,w)
         phase=self.mode(Op.S_HEAD);subtype=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],32))
         two=[subtype]
-        for record in ONE_FIELD_RECORDS.values():
-            if not record['data']:continue
+        for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values()):
+            if not record.get('data',True):continue
             match=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],record['code']));two.append(match)
             self.call(self.AND(phase,match),Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,record['projection']))
         self.ret(self.AND(phase,self.NOT(self.OR(*two))),0)
@@ -654,7 +679,13 @@ class RuleCompiler:
         self.ret(self.AND(phase,self.NOT(same)),0)
         unit=self.eq(z,PROJECTION_COUNT)
         self.ret(self.AND(phase,same,unit),1)
-        self.allocate(self.AND(phase,same,self.NOT(unit)),Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        pair=self.OR(*(self.eq(z,record['projection'])for record in TWO_FIELD_RECORDS.values()))
+        self.call(self.AND(phase,same,pair),Op.S_PAIR_FIELD,x,y,z,continuation=(Op.S_PAIR_NEXT,x,y,self.add(z,1)))
+        self.allocate(self.AND(phase,same,self.NOT(unit),self.NOT(pair)),Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        self.allocate(self.mode(Op.S_PAIR_FIELD),Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        phase=self.mode(Op.S_PAIR_NEXT);good=self.NOT(self.eq(result,0))
+        self.ret(self.AND(phase,self.NOT(good)),0)
+        self.tail(self.AND(phase,good),Op.S_PAIR_FIELD,x,y,z)
         self.allocate(self.mode(Op.S_RIGHT_VAL),Tag.PROJ,x,v=z,resume=(Op.CONV,y,r['free']))
         self.call(self.mode(Op.E_TYPE), Op.WHNF, result, continuation=(Op.E_TYPE_WHNF, x, y))
         op, is_pi = self.mode(Op.E_TYPE_WHNF), self.tag(hr, Tag.PI)

@@ -7,6 +7,15 @@ import unittest
 @unittest.skipUnless(sys.version_info >= (3,11) and importlib.util.find_spec('transformers'),
                      'native RAM requires Python3.11+ and transformers extra')
 class NativeBankSmoke(unittest.TestCase):
+    def test_payload_limit_precedes_state_allocation(self):
+        from unittest.mock import patch
+        from leanputer.machine_spec import MachineConfig
+        from leanputer.native_machine import compile_native_machine
+        config=MachineConfig(heap=1<<21,stack=8,context=4,constants=2,fuel=1)
+        with patch('leanputer.native_machine.StateLayout',side_effect=AssertionError('allocated state')):
+            with self.assertRaisesRegex(ValueError,'payload'):
+                compile_native_machine(config,plan_only=True)
+
     def test_residual_accumulation_matches_separate_bank_outputs(self):
         import torch
         from leanputer.native import emit_stock

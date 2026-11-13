@@ -533,3 +533,28 @@ hostRSS1,782,493,184bytes. CPU development checks overlapped; this is a selected
 feature batch, not a controlled throughput comparison or full-population run.
 Exact evidence: relations-real*. This supersedes the pending native status
 above; the small-budget resource results remain valid and retained.
+
+## Two-field pairs and three ground universes
+
+PProd/Prod add fixed constructors, dependent recursors, projections and typed
+eta over both fields (86primitives/114phases). PProd always has a data sort,
+even with Prop-valued components. The internal packed-universe ABI retains
+three recursor levels, validates every lane/padding inside weights, and keeps
+public syntax unchanged. [Ground-universe details](ground-universes.md) explain
+the encoding, bounds, artifact compatibility and reference checks.
+
+Native19cases pass14A5R with every expected reason/step/heap count matching,
+including real Function.uncurry_def@[1,1,1]4295steps/fourcheckeddefinitions/noaxioms.
+The batch retains previous Eq3/PUniteta2/Subtype neutral recursion. Heap1024/
+stack32/context16/constants8/fuel4352:85boot+4354stockforwards657.889s,
+compile39.508s,2,063,527,628BF16parameters/4,127,055,256bytes,H5376/103layers/
+FFN1024; peak forwardCUDA4,524,193,280bytes/hostRSS1,786,871,808bytes. CPU checks
+and syntax export overlapped: no controlled speed comparison. Source/negative
+fixtures agree with actual Lean; weighted9case5A4R193.218s and lane boundary
+regression3.586s pass. Evidence: pairs-*. No additional full native campaign.
+
+Same857-source syntax refresh425EXPORTED432UNSUPPORTED10.113s;13newexports,
+not13newnativeacceptances. The independent targeted native source count is not
+a matched425/857coverage result. SourceΓcosts, unsupported and resource rows
+remain explicit. The native128-dimensional value head reserves two references;
+six-word stack payloads require word width<=21, checked before allocation.

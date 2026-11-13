@@ -29,6 +29,8 @@ with successor universes for its Type-valued carrier.
 Fixed one-field records cover Inhabited, Mul, Add and Subsingleton, including
 dependent field typing. Zero and One use the same fixed data-record path.
 LT and LE add relation-valued fields, preserving typed data eta and family checks.
+PProd and Prod add two-field records with typed eta and dependent recursors;
+[ground-universe tuples](docs/ground-universes.md) retain all three recursor levels.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
 are also supported. OfNat retains both uniform parameters and the stored
 field, so ordinary numerals check their actual instance definitions.
@@ -106,6 +108,7 @@ Using the native checker
 With Python3.11+ and the native extra installed, check prepared JSON/JSONL:
 
 ```bash
+python -m pip install -e '.[native]'
 python -m leanputer.native_machine --input corpus.jsonl --config capacities.json \
   --device cuda --batch-size 4 --report native-report.json
 ```

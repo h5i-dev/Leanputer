@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from .dependent import Declaration, Exhausted, TAGS, Tag, parse_expr
-from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES, ONE_FIELD_RECORDS, PROJECTION_COUNT
+from .primitives import PRIMITIVE_SCHEMAS, PRIMITIVE_UNIVERSES, PRIMITIVE_CODES, PROJECTION_FAMILIES, primitive_code, REC_ARITIES, REC_CONSTRUCTORS, REC_MAJOR_ARITIES, ONE_FIELD_RECORDS, TWO_FIELD_RECORDS, PROJECTION_COUNT
 
 
 class Outcome(IntEnum):
@@ -149,6 +149,8 @@ class Op(IntEnum):
     I_RECORD_PARAMS = 109
     P_UNIT_UNIVERSE = 110
     P_UNIT_MAJOR = 111
+    S_PAIR_FIELD = 112
+    S_PAIR_NEXT = 113
 
 
 @dataclass(frozen=True)
@@ -172,12 +174,13 @@ class MachineConfig:
 
     @property
     def universe_bits(self):
-        return max(1,(self.universe-1).bit_length())
+        return max(1,self.universe.bit_length())
 
     @property
     def word_bits(self):
         return max(7,int(max(Op)).bit_length(),max(PRIMITIVE_CODES.values()).bit_length(),
-                   2*self.universe_bits,max(self.heap,self.stack,self.context,self.constants).bit_length())
+                   max(PRIMITIVE_UNIVERSES.values(),default=0)*self.universe_bits,
+                   max(self.heap,self.stack,self.context,self.constants).bit_length())
 
 
 REGISTERS = ('mode', 'x', 'y', 'z', 'w', 'r', 'ctx', 'sp', 'free', 'scan',
@@ -213,8 +216,9 @@ def prepare(config, term, claim, declarations=()):
             a=visit(expr[3]);v=PROJECTION_FAMILIES[expr[1]]+expr[2]
         elif tag == 'builtin':
             v = primitive_code(expr)
-            a=expr[2] if len(expr)>2 else 0
-            b=expr[3] if len(expr)>3 else 0
+            if any(level >= 1<<config.universe_bits for level in expr[2:]):
+                raise Exhausted('universe lane encoding capacity')
+            a=sum(level<<(index*config.universe_bits)for index,level in enumerate(expr[2:]))
         else:
             v = expr[1]
         if max(a,b,v) >= 1 << config.word_bits:
@@ -322,6 +326,7 @@ class SpecMachine:
                   Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR, Op.I_RECORD_PARAMS, Op.P_UNIT_UNIVERSE):
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR) or (op==Op.ETA and z):pointers.append(z)
+        if op in (Op.S_PAIR_FIELD,Op.S_PAIR_NEXT):pointers.extend((x,y))
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -339,14 +344,14 @@ class SpecMachine:
                 elif tag == Tag.BUILTIN:
                     counts={PRIMITIVE_CODES[name]:count for name,count in PRIMITIVE_UNIVERSES.items()}
                     count=counts.get(v,0)
-                    valid &= v in PRIMITIVE_SCHEMAS and (count>0 or a==0) and (count>1 or b==0)
+                    valid &= v in PRIMITIVE_SCHEMAS and b==0 and a < 1<<(count*cfg.universe_bits)
                 else:
                     valid &= a == b == 0
                 if tag == Tag.CONST:
                     valid &= v < r['decl_count']
                 if not valid:
                     self.stop(Outcome.REJECT, Reason.SYNTAX)
-                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and ((count>0 and a>=cfg.universe)or(count>1 and b>=cfg.universe))):
+                elif (tag==Tag.SORT and v>cfg.universe) or (tag==Tag.BUILTIN and any(((a>>(index*cfg.universe_bits))&((1<<cfg.universe_bits)-1))>=cfg.universe for index in range(count))):
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
                 else:
                     r['scan'] += 1
@@ -358,9 +363,15 @@ class SpecMachine:
                 tag,a,b,v=schema[y]
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(schema) else None
-                u=w&((1<<cfg.universe_bits)-1); second=w>>cfg.universe_bits
-                resolve=lambda value:u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else value
-                self.allocate(tag,z+a if binary else resolve(a),z+b if binary else resolve(b),resolve(v),resume)
+                u=w&((1<<cfg.universe_bits)-1); second=(w>>cfg.universe_bits)&((1<<cfg.universe_bits)-1)
+                def resolve(value):
+                    if isinstance(value,tuple):
+                        if value[0]=='succ':return resolve(value[1])+1
+                        if value[0]=='max':return max(resolve(part)for part in value[1:])
+                        raise ValueError('unknown fixed universe expression')
+                    return u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else (w>>(2*cfg.universe_bits))&((1<<cfg.universe_bits)-1) if value==-6 else value
+                encoded_a=sum(resolve(level)<<(index*cfg.universe_bits)for index,level in enumerate(a)) if tag==Tag.BUILTIN else z+a if binary else resolve(a)
+                self.allocate(tag,encoded_a,z+b if binary else resolve(b),resolve(v),resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
                 self.call(Op.INFER, r['claim'], continuation=(Op.ROOT_TYPE,))
@@ -416,7 +427,7 @@ class SpecMachine:
                 if v==0:
                     self.allocate(Tag.SORT,v=0)
                 else:
-                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a|(b<<cfg.universe_bits))
+                    self.tail(Op.BUILTIN_TYPE,v,0,r['free'],a)
             elif tag==Tag.PROJ:
                 self.call(Op.INFER,a,continuation=(Op.I_PROJ,x))
             elif tag in (Tag.LAM, Tag.PI, Tag.LET):
@@ -456,9 +467,11 @@ class SpecMachine:
             else:self.ret(self.node(result)[1])
         elif op==Op.I_PROJ_HEAD:
             tag,a,_,v=self.node(x); projection=self.node(y)[3]
-            expected=2 if projection<2 else 4 if projection<4 else 32
-            if tag!=Tag.BUILTIN or (expected!=32 and a) or v!=expected:
+            pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+            expected=pair['code']if pair else 2 if projection<2 else 4 if projection<4 else 32
+            if tag!=Tag.BUILTIN or (not pair and expected!=32 and a) or v!=expected:
                 self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            elif pair:self.ret(w if projection==pair['projection']+1 else z)
             elif projection==4:self.ret(z)
             elif projection==5:self.allocate(Tag.PROJ,self.node(y)[1],v=4,resume=(Op.I_SUBTYPE_PROPERTY,w))
             elif projection>=2: self.ret(w if projection%2 else z)
@@ -544,7 +557,8 @@ class SpecMachine:
             if tag==Tag.APP:
                 projection=self.node(y)[3]
                 record=next((record for record in ONE_FIELD_RECORDS.values() if record['projection']==projection),None)
-                ctor=record['code']+1 if record else 3 if projection<2 else 5 if projection<4 else 33
+                pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+                ctor=record['code']+1 if record else pair['code']+1 if pair else 3 if projection<2 else 5 if projection<4 else 33
                 self.call(Op.PROJ_HEAD,a,record.get('parameters',1)-1 if record else 2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
             else: self.neutral_projection(y,z)
         elif op==Op.PROJ_HEAD:
@@ -552,9 +566,13 @@ class SpecMachine:
             if y:
                 if tag==Tag.APP: self.tail(Op.PROJ_HEAD,a,y-1,z)
                 else: self.ret(0)
-            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33 or z in {record['code']+1 for record in ONE_FIELD_RECORDS.values()}) and v==z))
+            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33 or z in {record['code']+1 for record in list(ONE_FIELD_RECORDS.values())+list(TWO_FIELD_RECORDS.values())}) and v==z))
         elif op==Op.PROJ_SELECT:
-            if result: self.tail(Op.WHNF,w if self.node(x)[3]>=6 or self.node(x)[3]%2 else z)
+            if result:
+                projection=self.node(x)[3]
+                pair=next((record for record in TWO_FIELD_RECORDS.values()if record['projection']<=projection<record['projection']+2),None)
+                second=projection==pair['projection']+1 if pair else projection>=6 or projection%2
+                self.tail(Op.WHNF,w if second else z)
             else: self.neutral_projection(x,y)
         elif op == Op.W_APP:
             tag, _, body, _ = self.node(result)
@@ -568,6 +586,9 @@ class SpecMachine:
                 elif head==8:self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
                 elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
+                elif head in {record['code']+2 for record in TWO_FIELD_RECORDS.values()}:
+                    projection=next(record['projection']for record in TWO_FIELD_RECORDS.values()if record['code']+2==head)
+                    self.tail(Op.S_REC_LEFT,self.node(result)[2],y,projection)
                 elif head==37:self.call(Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==66:self.call(Op.N_SUCC,y,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head in {record['code']+2 for record in ONE_FIELD_RECORDS.values() if record['data']}:
@@ -607,7 +628,8 @@ class SpecMachine:
         elif op==Op.N_SUCC:
             self.call(Op.WHNF,x,continuation=(Op.N_SUCC_VALUE,))
         elif op==Op.P_UNIT_UNIVERSE:
-            tag,_,carrier,code=self.node(result)
+            tag,levels,_,code=self.node(result)
+            carrier=levels>>cfg.universe_bits
             if tag!=Tag.BUILTIN or code!=73:self.stop(Outcome.REJECT,Reason.SYNTAX)
             elif carrier:self.ret(self.node(x)[2])
             else:self.call(Op.WHNF,y,continuation=(Op.P_UNIT_MAJOR,self.node(x)[2]))
@@ -677,11 +699,11 @@ class SpecMachine:
         elif op==Op.REC_APPLY:
             self.allocate(Tag.APP,x,y,resume=(Op.W_BETA,))
         elif op==Op.S_REC_LEFT:
-            self.allocate(Tag.PROJ,y,v=4,resume=(Op.S_REC_RIGHT,x,y,r['free']))
+            self.allocate(Tag.PROJ,y,v=z or 4,resume=(Op.S_REC_RIGHT,x,y,r['free'],(z or 4)+1))
         elif op==Op.ONE_REC:
             self.allocate(Tag.PROJ,y,v=z,resume=(Op.REC_APPLY,x,r['free']))
         elif op==Op.S_REC_RIGHT:
-            self.allocate(Tag.PROJ,y,v=5,resume=(Op.S_REC_APPLY,x,z,r['free']))
+            self.allocate(Tag.PROJ,y,v=w,resume=(Op.S_REC_APPLY,x,z,r['free']))
         elif op==Op.S_REC_APPLY:
             self.allocate(Tag.APP,x,y,resume=(Op.REC_APPLY,r['free'],z))
         elif op == Op.W_BETA:
@@ -834,14 +856,22 @@ class SpecMachine:
             else:self.tail(Op.S_HEAD,x,y,z,w)
         elif op==Op.S_HEAD:
             record=next((record for record in ONE_FIELD_RECORDS.values() if record['code']==self.node(x)[3] and record['data']),None)
-            if self.node(x)[0]!=Tag.BUILTIN or (not record and self.node(x)[3]!=32):self.ret(0)
-            else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,record['projection']if record else 4))
+            pair=next((record for record in TWO_FIELD_RECORDS.values()if record['code']==self.node(x)[3]),None)
+            if self.node(x)[0]!=Tag.BUILTIN or (not record and not pair and self.node(x)[3]!=32):self.ret(0)
+            else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w,(record or pair)['projection']if record or pair else 4))
         elif op==Op.S_RIGHT_TYPE:
             self.call(Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y,w))
         elif op==Op.S_SAME_TYPE:
             if not result:self.ret(0)
             elif z==PROJECTION_COUNT:self.ret(1)
+            elif z in {record['projection']for record in TWO_FIELD_RECORDS.values()}:
+                self.call(Op.S_PAIR_FIELD,x,y,z,continuation=(Op.S_PAIR_NEXT,x,y,z+1))
             else:self.allocate(Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        elif op==Op.S_PAIR_FIELD:
+            self.allocate(Tag.PROJ,x,v=z,resume=(Op.S_RIGHT_VAL,y,r['free'],z))
+        elif op==Op.S_PAIR_NEXT:
+            if not result:self.ret(0)
+            else:self.tail(Op.S_PAIR_FIELD,x,y,z)
         elif op==Op.S_RIGHT_VAL:
             self.allocate(Tag.PROJ,x,v=z,resume=(Op.CONV,y,r['free']))
         elif op == Op.E_TYPE:

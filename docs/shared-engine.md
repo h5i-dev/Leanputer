@@ -5,6 +5,11 @@ implementation of the explicit machine in `machine_spec.py`, with a separately
 structured recursive oracle in `dependent.py`. The compiler takes configuration
 only, never a proof or its expected answer.
 
+The memory implementation below describes the sparse reference backend. The
+[native backend](native-backend.md) lowers the same semantic IR into stock
+Qwen3.5 layers with GatedDeltaNet RAM and stock forward/cache. The reference
+attention tensors described here are not that stock architecture.
+
 State has an immutable postorder DAG for syntax, a declaration environment, an
 explicit context stack, continuation frames, control/result registers, heap
 allocation pointer, fuel, and absorbing outcomes. Variable indices are de Bruijn
@@ -16,8 +21,10 @@ checks have dedicated semantic phases; there is no general CPU instruction set.
 
 Ground universe typing uses Sort u : Sort (u+1) and Lean's numeric imax rule:
 Pi has level zero when its codomain is in Prop, otherwise the maximum domain and
-codomain levels. Universe overflow is a resource outcome. The current machine has contextual eta and proof irrelevance, but no symbolic
-universe equations, inductives or recursors. Tests of these rules do not establish correspondence
+codomain levels. Universe overflow is a resource outcome. The machine has
+contextual eta and proof irrelevance, plus the explicitly listed fixed
+[primitive recursors](input-and-trust.md). Symbolic universe constraints and
+general user inductive admission remain unsupported. Tests do not establish correspondence
 with all Lean terms, and a restricted-calculus rejection need not be a Lean
 rejection.
 
@@ -62,7 +69,8 @@ execution can cost substantially more than the baseline's single unrolling.
 
 Tests compare every state bit at every step for eight positive dependent,
 conversion-required, environment and capture cases, plus malformed/negative
-and resource cases. All 49 current operational phases are covered by the expanded tests. CPU/CUDA traces
+and resource cases. All 49 phases at that original checkpoint were covered by
+the expanded tests; later fixed constructs have separate targeted evidence. CPU/CUDA traces
 match the independent operational specification; terminal states absorb further
 steps; buffer storage identities remain fixed across execution. The recursive
 oracle separately checks expected judgments and seeded generated terms.

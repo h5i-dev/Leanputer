@@ -46,6 +46,16 @@ for _family, _record in ONE_FIELD_RECORDS.items():
     if not _record['data']:
         REC_CONSTRUCTORS[_record['code']+2]=(_record['code']+1,)
         REC_MAJOR_ARITIES[_record['code']+2]=2
+TWO_FIELD_RECORDS = {
+    'PProd':dict(code=80, projection=15, type_carrier=False),
+    'Prod':dict(code=83, projection=17, type_carrier=True),
+}
+for _family,_record in TWO_FIELD_RECORDS.items():
+    for _offset,_name in enumerate((_family,_family+'.mk',_family+'.rec')):
+        PRIMITIVE_CODES[_name]=_record['code']+_offset
+        PRIMITIVE_UNIVERSES[_name]=3 if _offset==2 else 2
+    PROJECTION_FAMILIES[_family]=_record['projection']
+    REC_ARITIES[_record['code']+2]=5
 PROJECTION_ARITIES={family:1 if family in ONE_FIELD_RECORDS else 2 for family in PROJECTION_FAMILIES}
 PROJECTION_COUNT=max(PROJECTION_FAMILIES[family]+count for family,count in PROJECTION_ARITIES.items())
 PRIMITIVE_CODES.update({'Nat':64,'Nat.zero':65,'Nat.succ':66,'Nat.rec':67})
@@ -73,6 +83,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.split('.')[0] in TWO_FIELD_RECORDS:return _pair_type(expression)
     if name.startswith('PUnit'):return _unit_type(expression)
     if name in ('Nat','Nat.zero','Nat.succ','Nat.rec'):return _natural_type(expression)
     if name.split('.')[0] in ONE_FIELD_RECORDS:return _one_record_type(expression)
@@ -301,6 +312,27 @@ def _one_record_type(expression):
     return _close_schema(bind('alpha',('sort',carrier_sort),tail))
 
 
+def _pair_type(expression):
+    name=expression[1];family=name.split('.')[0];record=TWO_FIELD_RECORDS[family]
+    levels=expression[3:]if name.endswith('.rec')else expression[2:]
+    u,v=levels
+    successor=lambda level:level+1 if isinstance(level,int)and level>=0 else ('succ',level)
+    maximum=lambda *values:max(values)if all(isinstance(value,int)and value>=0 for value in values)else ('max',)+values
+    left_sort,right_sort=(successor(u),successor(v))if record['type_carrier']else (u,v)
+    variable=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,beta,left,right,motive,major=map(variable,('alpha','beta','left','right','motive','major'))
+    pair=apps(('builtin',family,u,v),alpha,beta)
+    constructor=apps(('builtin',family+'.mk',u,v),alpha,beta,left,right)
+    if name==family:tail=('sort',maximum(left_sort,right_sort)if record['type_carrier']else maximum(1,u,v))
+    elif not name.endswith('.rec'):tail=bind('left',alpha,bind('right',beta,pair))
+    else:
+        minor=bind('left',alpha,bind('right',beta,apps(motive,constructor)))
+        tail=bind('motive',bind('major',pair,('sort',expression[2])),bind('minor',minor,bind('major',pair,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',left_sort),bind('beta',('sort',right_sort),tail)))
+
+
 def _natural_type(expression):
     name=expression[1];natural=('builtin','Nat')
     if name=='Nat':return ('sort',1)
@@ -340,7 +372,7 @@ def type_schema(expression):
             a,b=visit(term[1]),visit(term[2]); code={'pi':3,'app':5}[tag]; value=0
         elif tag=='builtin':
             code,value=7,primitive_code(term)
-            a=term[2] if len(term)>2 else 0;b=term[3] if len(term)>3 else 0
+            a=tuple(term[2:]);b=0
         else: code,value={'var':1,'sort':2}[tag],term[1]
         pointer=len(rows);rows.append((code,a,b,value));cache[term]=pointer
         return pointer
@@ -348,6 +380,7 @@ def type_schema(expression):
     return tuple(rows)
 
 
-PRIMITIVE_SCHEMAS = {code:type_schema(primitive_type(('builtin',name)+tuple(-1-i for i in range(PRIMITIVE_UNIVERSES.get(name,0)))))
+UNIVERSE_MARKERS=(-1,-2,-6)
+PRIMITIVE_SCHEMAS = {code:type_schema(primitive_type(('builtin',name)+UNIVERSE_MARKERS[:PRIMITIVE_UNIVERSES.get(name,0)]))
                      for name,code in PRIMITIVE_CODES.items()}
 EMPTY_ELIMINATOR = PRIMITIVE_SCHEMAS[1]

@@ -11,11 +11,11 @@ Research quality and formal soundness remain goals, not established labels.
 | Dependent calculus | Ground sorts/Prop, Pi/Lam/App/let, capture avoidance, beta/delta/zeta, typed eta and proof irrelevance; all environment types/values checked |
 | Native compilation | Stock RMSNorm/SwiGLU/GDN/forward/cache; generated BF16 weights, tested bounded binary domain; broad numerical correspondence still pending |
 | Layout | Earlier matched downsizing4.021B→668.6M; newer full74-primitive Eq batch1.356B→1.221B, same capacities/fuel/results, GPUforward159.093→158.515s (no demonstrated speedup) |
-| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat, OfNat, PUnit and LT/LE records; selected targeted native checks |
+| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat, OfNat, PUnit, LT/LE and PProd/Prod records; selected targeted native checks |
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest80-primitive/112phase syntax refresh412EXPORTED445UNSUPPORTED; not412proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest86-primitive/114phase syntax refresh425EXPORTED432UNSUPPORTED; not425proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -45,9 +45,14 @@ LT/LE now pass the focused native20case batch12A4R4RESOURCE, including negative
 relation/family checks and retained Eq/PUnit behavior. The four new swap source
 closures also accept natively at1024heap/f4480, matching4443/4449planned steps,
 four checked dependencies and noaxioms each. Fixed GPU execution698.739s remains slow.
-Report resource outcomes separately from acceptances. Next structural blockers
-include PProd/Prod and heterogeneous records; supporting their recursors needs
-an explicit ground-universe tuple ABI beyond the current two-universe limit.
+Report resource outcomes separately from acceptances. PProd/Prod now pass the
+native19case batch14A5R, including actual Function.uncurry_def4295steps/Gamma4/
+noaxioms and retained Eq/PUnit/Subtype. Ground-universe tuple lanes support three
+recursor parameters, with each lane/padding checked inside weights; source JSON
+is unchanged. Native2.064Bparams/heap1024/f4352 executes657.889s, still slow.
+Next measured structural blockers include Membership(two parameter types and
+a reversed relation field) and HAdd/HMul(four recursor universes); these require
+their actual Lean schemas, not a scalar lookup or an assumed field order.
 
 Stock fallback latency and eager allocation/environment rechecking are material
 limits: an individual small native source proof can take minutes. After a safe

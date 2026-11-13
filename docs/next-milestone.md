@@ -33,10 +33,13 @@ need their actual parameters and proof fields. Recursive/indexed inductives,
 beyond the fixed Nat rules and symbolic universe constraints remain distinct
 unimplemented work. LT/LE now use the one-field relation schema; all four new
 swap source candidates have native confirmation at1024heap/f4480. PProd/Prod
-require three ground recursor universes and correctly typed two-field eta,
-including their Prop/data boundary; the current two-universe ABI must first
-be extended explicitly. Preserve the complete existing feature set and stock
-forward/cache while doing that work.
+now pass native19cases14A5R, including Function.uncurry_def, using three ground
+recursor universes and correctly typed two-field eta. PProd always has a data
+sort, including at0/0. The packed universe ABI validates every lane/padding in
+weights; the public JSON stays unchanged. Preserve all features/stockforward/
+cache for the next slice. Membership needs its actual γ→α→Prop field order and
+two uniform Type parameters; HAdd/HMul need four recursor universes. General
+multi-field/inherited records remain a separate admission problem.
 
 Native speed is an unresolved research limit. Minimum required efficiency work
 must retain stock forward/cache, the numerical domain, syntax boundary, feature

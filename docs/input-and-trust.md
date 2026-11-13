@@ -145,7 +145,8 @@ checker's typed weak-head-normalization invariant, as does its existing
 conversion algorithm. No formal proof of that invariant or whole-compiler
 soundness is claimed. Internally derived head/arity registers track partial
 recursor applications; they are not input certificates or heap annotations.
-General indexed inductive definitions, HEq and quotient rules remain unsupported.
+General indexed inductive declarations remain outside the fixed catalog.
+The later HEq and quotient slices are documented below.
 
 
 ## Let and true proposition
@@ -326,3 +327,21 @@ but a neutral major cannot reduce a data-valued recursor. Constructor iota still
 applies. At positive carrier universes, empty-record data eta permits neutral
 recursion. Typed equality first checks the exact PUnit type; different universes
 do not merge. This distinction is checked against actual Lean rfl judgments.
+
+## Fixed relation and pair records
+
+LT/LE store α→α→Prop over a Type-u carrier. They use typed data eta; different
+relation values are not proofs and cannot collapse by proof irrelevance.
+PProd/Prod have two uniform parameters and two fields. PProd has
+Sort(max(max1u)v), always data; Prod has Type(maxuv). Their recursor universe
+order is result, left carrier, right carrier. Conversion checks both exact
+record types and both fields; a mismatched family or either distinct field
+rejects. General input structure declarations remain unsupported.
+
+The [ground-universe encoding](ground-universes.md) changes only the internal
+state ABI. Public builtin arrays retain each ground level separately. The
+encoder packs scalar lanes without inference or reduction, and weighted
+validation enforces lane bounds, unused padding and reserved zeros. Fixed
+schema max/successor calculations run inside weights. Symbolic universe
+constraints are still unsupported; targeted Lean/native agreement is not a
+formal proof of the compiler or the typed normalization invariant.
