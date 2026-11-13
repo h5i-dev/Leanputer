@@ -30,7 +30,13 @@ The completed one-field checkpoint meets these criteria with a native12case
 Then select a measured next slice. The remaining Monoid/AddMonoid closures need
 multiple-field/inherited records; cancellation classes now exposed by Mul/Add
 need their actual parameters and proof fields. Recursive/indexed inductives,
-Nat and symbolic universe constraints remain distinct unimplemented work.
+beyond the fixed Nat rules and symbolic universe constraints remain distinct
+unimplemented work. LT/LE now use the one-field relation schema; their new
+source candidates still need native confirmation at a larger budget. PProd/Prod
+require three ground recursor universes and correctly typed two-field eta,
+including their Prop/data boundary; the current two-universe ABI must first
+be extended explicitly. Preserve the complete existing feature set and stock
+forward/cache while doing that work.
 
 Native speed is an unresolved research limit. Minimum required efficiency work
 must retain stock forward/cache, the numerical domain, syntax boundary, feature

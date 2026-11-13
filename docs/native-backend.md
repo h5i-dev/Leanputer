@@ -494,3 +494,31 @@ Forward159.093→158.515s is effectively unchanged, not an established speedup.
 accumulate/64 is now default. No precision, semantic, stock-forward or cache
 change. See [matched evidence](native-downsizing.md) for setup, memory peaks,
 negative ablation and separate unexecuted large-capacity plans.
+
+## Fixed LT and LE relation records
+
+The catalog now includes LT/LE, their constructors, recursors and projections
+(80 fixed primitives,112 phases). The fixed field is `α → α → Prop`, with α in
+Type-u. These are data records: typed eta and neutral data recursion apply,
+but arbitrary relation values are not definitionally proof-irrelevant. The
+compiler instantiates constructor type schemas inside weights to type fields.
+A different family or a non-relation field rejects. Source export is syntax
+only, and ordinary projection definitions remain checked dependencies.
+
+Focused weighted8cases pass5A3R in70.771s. Actual Lean source compilation and
+relative1A3R agree. Native20cases pass12A4R4RESOURCE, matching all planned
+outcomes, reasons, semantic steps and allocated heap counts. The batch contains
+seven source schema/field/eta/iota fixtures, four relative positive/negative
+checks, three previous Eq cases, two PUnit eta cases, and four newly exportable
+real mathlib sources retained as RESOURCE/FUEL at the smaller checking budget.
+Heap512/stack32/context16/constants8/fuel2624, BF16, defaultaccumulate/max64:
+1,288,391,308parameters/2,576,782,616weightbytes, hidden4864/71layers/FFN1024;
+compile28.582s,93boot+2626stockforwards273.017s, peakCUDA2,955,234,816bytes,
+hostRSS1,769,213,952bytes. CPU validation overlapped this development run;
+these are not controlled latency comparisons. Exact evidence: relations-*.
+
+The complete syntax-only857-source refresh is412EXPORTED445UNSUPPORTED in
+9.479s. The four new candidates are Function.swap_lt/gt/le/ge@[1], each with
+four dependencies and no axioms. They pass the independent spec and actual
+Lean replay; larger-budget native checking remains pending at this checkpoint.
+This is not412verified proofs or an updated native population fraction.

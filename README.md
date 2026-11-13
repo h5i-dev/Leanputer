@@ -28,6 +28,7 @@ Option includes its zero/one-field constructors and dependent data recursor,
 with successor universes for its Type-valued carrier.
 Fixed one-field records cover Inhabited, Mul, Add and Subsingleton, including
 dependent field typing. Zero and One use the same fixed data-record path.
+LT and LE add relation-valued fields, preserving typed data eta and family checks.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
 are also supported. OfNat retains both uniform parameters and the stored
 field, so ordinary numerals check their actual instance definitions.

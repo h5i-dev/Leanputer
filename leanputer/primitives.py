@@ -34,6 +34,8 @@ ONE_FIELD_RECORDS = {
     'Zero':dict(code=58, projection=10, constructor='mk', field='value', data=True, type_carrier=True),
     'One':dict(code=61, projection=11, constructor='mk', field='value', data=True, type_carrier=True),
     'OfNat':dict(code=68, projection=12, constructor='mk', field='value', data=True, type_carrier=True, parameters=2),
+    'LT':dict(code=74, projection=13, constructor='mk', field='relation', data=True, type_carrier=True),
+    'LE':dict(code=77, projection=14, constructor='mk', field='relation', data=True, type_carrier=True),
 }
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
@@ -284,7 +286,9 @@ def _one_record_type(expression):
     record_type=apps(('builtin',family,carrier),*parameters)
     if record['field']=='value':field_type=alpha
     elif record['field']=='binary':field_type=bind('left',alpha,bind('right',alpha,alpha))
-    else:field_type=bind('left',alpha,bind('right',alpha,apps(('builtin','Eq',carrier),alpha,v('left'),v('right'))))
+    elif record['field']=='relation':field_type=bind('left',alpha,bind('right',alpha,('sort',0)))
+    elif record['field']=='equality':field_type=bind('left',alpha,bind('right',alpha,apps(('builtin','Eq',carrier),alpha,v('left'),v('right'))))
+    else:raise ValueError('unknown fixed record field schema')
     if name==family:
         level=carrier_sort if record['type_carrier'] else (max(1,carrier) if carrier>=0 else -3) if record['data'] else 0
         tail=('sort',level)
