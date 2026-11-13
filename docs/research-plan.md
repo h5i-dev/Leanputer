@@ -263,3 +263,13 @@ source Decidable.or_not_of_imp is running at heap1024/fuel5504 against a5390step
 plan; no broad theorem replay. The earlier ~41kfunext closures remain outside
 this targeted budget. Next subtype projections/constructor semantics are under
 assessment from the remaining blockers, with current feature work preserved.
+
+
+Subtype milestone:91semantic phases, fixed data family universe floor,
+dependent projections, constructor reduction and typed record/recursor eta.
+Native11case9A2Rmatchesweighted/Lean, model671.2MBF16params at256heap. Of95
+currentfirstSubtypeblockers11syntax-export;two inspected classicalclosures
+need~20ksteps/~3knodes andexplicitClassical.choice,notnativeacceptedcounts.
+Next core feature candidate HEq is measured among14oldEq-subsetblockers.
+Broader validation remains deferred; high eager substitution/environment cost
+and nativefallbacklatency remain concrete research limitations.

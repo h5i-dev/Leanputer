@@ -45,9 +45,13 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Quot.mk" then return .const ``Quot.mk [level]
       if name == "Quot.ind" then return .const ``Quot.ind [level]
       if name == "Decidable.rec" then return .const ``Decidable.rec [level]
+      if name == "Subtype" then return .const ``Subtype [level]
+      if name == "Subtype.mk" then return .const ``Subtype.mk [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
+    if name == "Subtype.rec" && fields.size == 4 then
+      return .const ``Subtype.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Quot.lift" && fields.size == 4 then
       return .const ``Quot.lift [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Eq.rec" && fields.size == 4 then
@@ -57,7 +61,7 @@ partial def expression (json : Json) : Except String Expr := do
     let family ← fields[1]!.getStr?
     let index ← fields[2]!.getNat?
     let inner ← expression fields[3]!
-    if index < 2 && (family == "Iff" || family == "And") then
+    if index < 2 && (family == "Iff" || family == "And" || family == "Subtype") then
       return .proj family.toName index inner
     throw "unsupported replay projection"
   if tag == "let" && fields.size == 4 then
@@ -115,7 +119,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))

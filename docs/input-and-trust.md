@@ -222,3 +222,22 @@ Lean replay includes the actual closed Not definition before reconstructing
 the standard Decidable inductive declaration, whose isFalse type refers to Not.
 The weighted rule expands that definition as p → False. Neither side introduces
 an axiom for negation, and ordinary exported Not dependencies remain checked.
+
+
+## Fixed Subtype records
+
+Subtype and Subtype.mk take one carrier universe u; Subtype.rec takes result
+universe then carrier universe. The family lands in Sort(max 1 u), including
+when the carrier is Prop. The weighted schema constructor computes that numeric
+universe floor. Projection syntax accepts Subtype indices0(val)/1(property).
+Val has carrier type; property has predicate(val), constructed inside weights.
+Projection substitution/shift preserves binding, and constructor iota selects
+the corresponding field.
+
+Subtype is data. Unlike And/Iff proofs, a neutral subtype value supports record
+eta, and its recursor may expand the data major through its projections.
+Conversion first identifies the left subtype and checks that the right value
+has the same subtype, then compares their vals. The proof fields follow by typed
+proof irrelevance. Different data vals reject. Non-Subtype fallback probes
+return false rather than aborting outer proof-irrelevance comparisons. General
+record declarations remain unsupported; this is a fixed checked catalog slice.

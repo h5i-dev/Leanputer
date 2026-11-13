@@ -54,7 +54,7 @@ def parse_expr(value):
                 return tuple(value)
         raise Unsupported('unsupported logical primitive or universe arity')
     if tag == 'proj':
-        if len(value)==4 and value[1] in ('Iff','And') and type(value[2]) is int and 0<=value[2]<2:
+        if len(value)==4 and value[1] in ('Iff','And','Subtype') and type(value[2]) is int and 0<=value[2]<2:
             return (tag,value[1],value[2],parse_expr(value[3]))
         raise Unsupported('unsupported structure projection')
     if tag in ('pi', 'lam', 'app') and len(value) == 3:
@@ -143,7 +143,8 @@ class Oracle:
         if term[0]=='proj':
             base=self.whnf(term[3],context); head=base; arguments=[]
             while head[0]=='app': arguments.insert(0,head[2]);head=head[1]
-            if head==('builtin',term[1]+'.intro') and len(arguments)==4:
+            constructor=term[1]+('.mk' if term[1]=='Subtype' else '.intro')
+            if head[0]=='builtin' and head[1]==constructor and len(arguments)==4:
                 return self.whnf(arguments[2+term[2]],context)
             return ('proj',term[1],term[2],base)
         if term[0] == 'app':
@@ -158,6 +159,8 @@ class Oracle:
                 if name=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
                     return self.whnf(arguments[3],context)
                 if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
+                if name=='Subtype.rec' and len(arguments)==5:
+                    return self.whnf(apps(arguments[3],('proj','Subtype',0,arguments[4]),('proj','Subtype',1,arguments[4])),context)
                 count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6,'Decidable.rec':5}.get(name)
                 if count and len(arguments)==count:
                     major=self.whnf(arguments[-1],context);ctor=major;fields=[]
@@ -198,6 +201,11 @@ class Oracle:
             classifier = self.whnf(self.infer(left_type,context),context)
             if classifier == ('sort', 0) and self.convert(left_type, self.infer(right, context), context):
                 return True
+        head=left_type;arguments=[]
+        while head[0]=='app':arguments.insert(0,head[2]);head=head[1]
+        if head[0]=='builtin' and head[1]=='Subtype' and len(arguments)==2:
+            if self.convert(left_type,self.infer(right,context),context):
+                return self.convert(('proj','Subtype',0,left),('proj','Subtype',0,right),context)
         if (left[0] == 'lam') != (right[0] == 'lam'):
             lam, neutral = (left, right) if left[0] == 'lam' else (right, left)
             fn_type = self.whnf(self.infer(neutral,context),context)
@@ -220,10 +228,12 @@ class Oracle:
             return primitive_type(term)
         if tag=='proj':
             inferred=self.whnf(self.infer(term[3],context),context)
-            if inferred[0]!='app' or inferred[1][0]!='app' or inferred[1][1]!=('builtin',term[1]):
+            head=inferred[1][1] if inferred[0]=='app' and inferred[1][0]=='app' else ()
+            if not head or head[0]!='builtin' or head[1]!=term[1]:
                 raise Rejected('projection family mismatch')
             left,right=inferred[1][2],inferred[2]
             if term[1]=='And': return (left,right)[term[2]]
+            if term[1]=='Subtype':return left if term[2]==0 else ('app',right,('proj','Subtype',0,term[3]))
             domain,codomain=(left,right) if term[2]==0 else (right,left)
             return ('pi',domain,self.shift(codomain,1))
         if tag == 'sort':

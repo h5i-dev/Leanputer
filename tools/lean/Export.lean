@@ -63,11 +63,12 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
     if (name == ``False.rec || name == ``True.rec || name == ``And.rec || name == ``Iff.rec ||
         name == ``Nonempty || name == ``Nonempty.intro || name == ``Nonempty.rec ||
         name == ``Exists || name == ``Exists.intro || name == ``Exists.rec ||
-        name == ``Quot || name == ``Quot.mk || name == ``Quot.ind || name == ``Decidable.rec) && values.length == 1 then
+        name == ``Quot || name == ``Quot.mk || name == ``Quot.ind || name == ``Decidable.rec ||
+        name == ``Subtype || name == ``Subtype.mk) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
-    if (name == ``Eq.rec || name == ``Quot.lift) && values.length == 2 then
+    if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
@@ -75,7 +76,7 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .letE _ type value body _ =>
     return jsonArray [text "let", ← encodeExpr env type, ← encodeExpr env value, ← encodeExpr env body]
   | .proj name index inner =>
-    if (name == ``Iff || name == ``And) && index < 2 then
+    if (name == ``Iff || name == ``And || name == ``Subtype) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     throw s!"unsupported structure projection {name}.{index}"
   | .lit .. => throw "unsupported literal"

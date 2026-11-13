@@ -291,3 +291,22 @@ throughput or a size/speed comparison with a smaller configuration. Only114
 fuel steps beyond planned checking work were provisioned. Of133Decidable-first
 blockers29now syntax-export; one new source was checked natively. Exact reports,
 inputs and configs are under benchmarks/native/decidable-{small,real}*.
+
+
+## Subtype record checkpoint
+
+The fixed Subtype family/mk/rec plus dependent projections and typed data eta
+extend the shared IR to91phases. Actual Lean aliases exercise the universe floor
+at carrier0/1 and recursor order{result,carrier}. Eleven targeted native cases
+pass9A2R, including dependent property projection, neutral record/recursor eta,
+rejection of different vals and wrong projection family. The same cases passed
+weighted CPU checking(70.007s); five relative cases agree with Lean(2.167s).
+
+At heap256/stack32/context16/constants8/fuel2304:44boot+2306forwards181.295s,
+671,183,338BF16parameters/1,342,366,676weightbytes/H3328/54layers,CUDApeak
+1,459,555,328bytes/host1,702,318,080bytes. This is a new feature/case set, not a
+matched performance comparison. Elevenof95current subtype-first blockers now
+syntax-export. Inspected Classical.some_spec₂ and axiom_of_choice closures
+plan at19,696/21,373steps and2,786/3,041nodes, with genuine Classical.choice
+assumptions; these are not native verified proofs. Small fixture evidence and
+exact configs/inputs are under benchmarks/native/subtype-*.

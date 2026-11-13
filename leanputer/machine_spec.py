@@ -117,6 +117,16 @@ class Op(IntEnum):
     REC_PICK = 78
     REC_APPLY = 79
     REC_MAJOR = 80
+    I_SUBTYPE_PROPERTY = 81
+    S_REC_LEFT = 82
+    S_REC_RIGHT = 83
+    S_REC_APPLY = 84
+    S_TYPE = 85
+    S_FN = 86
+    S_HEAD = 87
+    S_RIGHT_TYPE = 88
+    S_SAME_TYPE = 89
+    S_RIGHT_VAL = 90
 
 
 @dataclass(frozen=True)
@@ -275,14 +285,17 @@ class SpecMachine:
                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE,
                   Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
-                  Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR):
+                  Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
+                  Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
-        if op==Op.REC_SPINE:pointers.append(result)
-        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK):
+        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE):pointers.append(result)
+        if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
+                  Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL):
             pointers.append(y)
+        if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -294,7 +307,7 @@ class SpecMachine:
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
                 elif tag == Tag.PROJ:
-                    valid &= 0<a<i and b==0 and v<4
+                    valid &= 0<a<i and b==0 and v<6
                 elif tag == Tag.LET:
                     valid &= all(0<child<i for child in (a,b,v))
                 elif tag == Tag.BUILTIN:
@@ -320,7 +333,7 @@ class SpecMachine:
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(schema) else None
                 u=w&((1<<cfg.universe_bits)-1); second=w>>cfg.universe_bits
-                resolve=lambda value:u if value==-1 else second if value==-2 else value
+                resolve=lambda value:u if value==-1 else second if value==-2 else max(1,u) if value==-3 else value
                 self.allocate(tag,z+a if binary else resolve(a),z+b if binary else resolve(b),resolve(v),resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
@@ -399,15 +412,19 @@ class SpecMachine:
             else: self.tail(Op.I_PROJ_HEAD,a,y,b,z)
         elif op==Op.I_PROJ_HEAD:
             tag,a,_,v=self.node(x); projection=self.node(y)[3]
-            expected=2 if projection<2 else 4
-            if tag!=Tag.BUILTIN or a or v!=expected:
+            expected=2 if projection<2 else 4 if projection<4 else 32
+            if tag!=Tag.BUILTIN or (expected!=32 and a) or v!=expected:
                 self.stop(Outcome.REJECT,Reason.EXPECT_STRUCTURE)
+            elif projection==4:self.ret(z)
+            elif projection==5:self.allocate(Tag.PROJ,self.node(y)[1],v=4,resume=(Op.I_SUBTYPE_PROPERTY,w))
             elif projection>=2: self.ret(w if projection%2 else z)
             else:
                 domain,codomain=(z,w) if projection==0 else (w,z)
                 self.call(Op.SHIFT,codomain,0,1,continuation=(Op.I_PROJ_ARROW,domain))
         elif op==Op.I_PROJ_ARROW:
             self.allocate(Tag.PI,x,result)
+        elif op==Op.I_SUBTYPE_PROPERTY:
+            self.allocate(Tag.APP,x,result)
         elif op == Op.I_DOM:
             self.call(Op.WHNF, result, continuation=(Op.I_BIND, x))
         elif op == Op.I_BIND:
@@ -480,7 +497,8 @@ class SpecMachine:
         elif op==Op.PROJ_FIELDS:
             tag,a,b,_=self.node(x)
             if tag==Tag.APP:
-                ctor=3 if self.node(y)[3]<2 else 5
+                projection=self.node(y)[3]
+                ctor=3 if projection<2 else 5 if projection<4 else 33
                 self.call(Op.PROJ_HEAD,a,2,ctor,continuation=(Op.PROJ_SELECT,y,z,b,w))
             else: self.neutral_projection(y,z)
         elif op==Op.PROJ_HEAD:
@@ -488,7 +506,7 @@ class SpecMachine:
             if y:
                 if tag==Tag.APP: self.tail(Op.PROJ_HEAD,a,y-1,z)
                 else: self.ret(0)
-            else: self.ret(int(tag==Tag.BUILTIN and a==0 and v==z))
+            else: self.ret(int(tag==Tag.BUILTIN and (a==0 or z==33) and v==z))
         elif op==Op.PROJ_SELECT:
             if result: self.tail(Op.WHNF,w if self.node(x)[3]%2 else z)
             else: self.neutral_projection(x,y)
@@ -503,6 +521,7 @@ class SpecMachine:
                     else:self.allocate(Tag.APP,result,y,head=head,arity=r['arity']+1)
                 elif head==8:self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
+                elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
                 else:
                     self.call(Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
             elif result == self.node(x)[1]:
@@ -547,6 +566,12 @@ class SpecMachine:
             self.tail(Op.REC_APPLY,self.node(x)[2],y)
         elif op==Op.REC_APPLY:
             self.allocate(Tag.APP,x,y,resume=(Op.W_BETA,))
+        elif op==Op.S_REC_LEFT:
+            self.allocate(Tag.PROJ,y,v=4,resume=(Op.S_REC_RIGHT,x,y,r['free']))
+        elif op==Op.S_REC_RIGHT:
+            self.allocate(Tag.PROJ,y,v=5,resume=(Op.S_REC_APPLY,x,z,r['free']))
+        elif op==Op.S_REC_APPLY:
+            self.allocate(Tag.APP,x,y,resume=(Op.REC_APPLY,r['free'],z))
         elif op == Op.W_BETA:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):
@@ -669,7 +694,7 @@ class SpecMachine:
             elif v == 0:
                 self.call(Op.INFER, y, continuation=(Op.F_Y, x, y, z))
             else:
-                self.tail(Op.ETA, x, y)
+                self.tail(Op.ETA, x, y,z)
         elif op == Op.F_Y:
             self.call(Op.CONV, z, result, continuation=(Op.F_PROOF_RESULT, x, y))
         elif op == Op.F_PROOF_RESULT:
@@ -680,11 +705,25 @@ class SpecMachine:
         elif op == Op.ETA:
             left_lam, right_lam = self.node(x)[0] == Tag.LAM, self.node(y)[0] == Tag.LAM
             if left_lam == right_lam:
-                self.ret(0)
+                if z:self.tail(Op.S_TYPE,z,x,y,z)
+                else:self.ret(0)
             elif left_lam:
                 self.call(Op.INFER, y, continuation=(Op.E_TYPE, x, y))
             else:
                 self.call(Op.INFER, x, continuation=(Op.E_TYPE, y, x))
+        elif op in (Op.S_TYPE,Op.S_FN):
+            if self.node(x)[0]!=Tag.APP:self.ret(0)
+            else:self.tail(Op.S_FN if op==Op.S_TYPE else Op.S_HEAD,self.node(x)[1],y,z,w)
+        elif op==Op.S_HEAD:
+            if self.node(x)[0]!=Tag.BUILTIN or self.node(x)[3]!=32:self.ret(0)
+            else:self.call(Op.INFER,z,continuation=(Op.S_RIGHT_TYPE,y,z,w))
+        elif op==Op.S_RIGHT_TYPE:
+            self.call(Op.CONV,z,result,continuation=(Op.S_SAME_TYPE,x,y))
+        elif op==Op.S_SAME_TYPE:
+            if not result:self.ret(0)
+            else:self.allocate(Tag.PROJ,x,v=4,resume=(Op.S_RIGHT_VAL,y,r['free']))
+        elif op==Op.S_RIGHT_VAL:
+            self.allocate(Tag.PROJ,x,v=4,resume=(Op.CONV,y,r['free']))
         elif op == Op.E_TYPE:
             self.call(Op.WHNF, result, continuation=(Op.E_TYPE_WHNF, x, y))
         elif op == Op.E_TYPE_WHNF:

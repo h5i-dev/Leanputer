@@ -11,12 +11,14 @@ PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.in
                    'True.rec':11,'And.rec':12,'Iff.rec':13,'Nonempty':14,'Nonempty.intro':15,'Nonempty.rec':16,
                    'Exists':17,'Exists.intro':18,'Exists.rec':19,'Or':20,'Or.inl':21,'Or.inr':22,'Or.rec':23,
                    'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27,
-                   'Decidable':28,'Decidable.isFalse':29,'Decidable.isTrue':30,'Decidable.rec':31}
+                   'Decidable':28,'Decidable.isFalse':29,'Decidable.isTrue':30,'Decidable.rec':31,
+                   'Subtype':32,'Subtype.mk':33,'Subtype.rec':34}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
                        'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1,
-                       'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2,'Decidable.rec':1}
-PROJECTION_FAMILIES = {'Iff':0,'And':2}
-REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5}
+                       'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2,'Decidable.rec':1,
+                       'Subtype':1,'Subtype.mk':1,'Subtype.rec':2}
+PROJECTION_FAMILIES = {'Iff':0,'And':2,'Subtype':4}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5}
 REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,),31:(29,30)}
 REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3,31:2}
 
@@ -38,6 +40,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.startswith('Subtype'):return _subtype_type(expression)
     if name.startswith('Decidable'):return _decidable_type(expression)
     if name in ('Quot','Quot.mk','Quot.ind','Quot.lift'):return _quotient_type(expression)
     if name in ('True.rec','And.rec','Iff.rec','Nonempty','Nonempty.intro','Nonempty.rec','Exists','Exists.intro','Exists.rec','Or','Or.inl','Or.inr','Or.rec'):
@@ -155,6 +158,26 @@ def _decidable_type(expression):
     true_minor=bind('positive',p,apps(motive,apps(('builtin','Decidable.isTrue'),p,v('positive'))))
     tree=bind('p',sort,bind('motive',bind('motive_arg',decidable,('sort',expression[2])),
          bind('minor_false',false_minor,bind('minor_true',true_minor,bind('major',decidable,apps(motive,major))))))
+    return _close_schema(tree)
+
+
+def _subtype_type(expression):
+    name=expression[1]
+    carrier=expression[3] if name=='Subtype.rec' else expression[2]
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,p,motive,major=map(v,('alpha','p','motive','major'))
+    subtype=apps(('builtin','Subtype',carrier),alpha,p)
+    pred=bind('pred_arg',alpha,('sort',0))
+    wrap=lambda tail:bind('alpha',('sort',carrier),bind('p',pred,tail))
+    if name=='Subtype':tree=wrap(('sort',-3 if carrier<0 else max(1,carrier)))
+    elif name=='Subtype.mk':tree=wrap(bind('value',alpha,bind('property',apps(p,v('value')),subtype)))
+    else:
+        ctor=apps(('builtin','Subtype.mk',carrier),alpha,p,v('value'),v('property'))
+        minor=bind('value',alpha,bind('property',apps(p,v('value')),apps(motive,ctor)))
+        tree=wrap(bind('motive',bind('motive_arg',subtype,('sort',expression[2])),
+                  bind('minor',minor,bind('major',subtype,apps(motive,major)))))
     return _close_schema(tree)
 
 
