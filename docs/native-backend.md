@@ -404,3 +404,34 @@ padding. Exact input/config/report are in benchmarks/native/one-field-*.
 The smaller256cell774.4Mparameter shape is a compiler plan only, not this
 measured native batch. Of96prior one-field-first blockers38now syntax-export;
 this checkpoint adds one real native mathlib acceptance, not38proved.
+
+## Bounded natural literals and recursion
+
+Nat/zero/succ/rec and Zero/One add109semantic phases/68intrinsics. Nat literals
+are atomic syntax with an explicit scalar-word bound. Zero/successor reduction
+and recursive step construction happen inside weights. Both literal recursion
+and Nat.succ n with a neutral predecessor reduce; a neutral major stays neutral.
+Forced successor overflow is RESOURCE/NATURAL, never wrapped arithmetic. Ordinary
+numerals still expose their unimplemented OfNat dependency in this checkpoint.
+
+The13case native smoke passes9A3R1RESOURCE, with matched spec steps, including
+recursive computation1688, successor-of-neutral590, wrong recursive result2619R,
+and numeric overflow136RESOURCE. The weighted focused unit passes341.930s.
+ActualLean agrees on the three negative judgments and constructor-neutral
+positive(2.422s/2.379s). The resource case remains indeterminate in weights;
+Lean rejects that false claim, and no false wrapped acceptance occurs.
+
+At heap512/stack32/context16/constants8/fuel2688:38boot+2690stockforwards,
+302.581s forward,26.753s compile,1,356,195,212BF16parameters/2,712,390,424
+weightbytes/H5120/71layers/inter1024; CUDApeak2,858,612,224bytes and
+host1,771,450,368bytes. This development run overlapped focused CPU validation;
+it is not a controlled device/speed comparison. Evidence:benchmarks/native/natural-*.
+A missing neutral-constructor reduction and a stale literal conversion guard
+were caught in uncommitted prototypes and corrected before this checkpoint.
+
+Only one of44currentNat/Zero/One-first blockers newly syntax-exports:
+Nat.succ_injective. Its independent spec plan accepts25397steps/free2845 with
+eight checked dependencies at heap8192/stack128/context64/fuel131072. It is NOT
+native checked. No expensive large native proof run or new mathlib native
+acceptance is claimed for this slice. Nat.add/mul's actual brecOn dependency
+closures require further constructs; no arithmetic shortcut replaces them.

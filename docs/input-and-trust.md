@@ -281,3 +281,23 @@ may expand a neutral Inhabited/Mul/Add through that field. Subsingleton is Prop
 and retains constructor-only data reduction, matching the targeted actual Lean
 boundary. General user record/inductive admission remains unsupported. Current
 validation is targeted and provisional; the whole checker is not formally proved.
+
+## Bounded natural literals and recursion
+
+The literal node is ["nat",n], with unsigned n stored in one scalar word. Its
+weighted inferred type is Nat. Nat.zero normalizes to literal0; Nat.succ on a
+literal uses a guarded in-weight addition. Literal input bounds are the scalar
+encoding bounds; for heap512 the10bit word represents literals0..1023.
+Forced normalization of succ1023 produces RESOURCE/NATURAL, never wraparound.
+Constructor expressions can still be well typed without forcing that numeric
+normalization. The bounds concern the checking representation and computation,
+not a claim that Lean's mathematical naturals are bounded.
+
+Nat.rec builds the step application and recursive call inside weights. It
+handles both literal majors and Nat.succ n with a neutral n; a neutral major
+stays neutral. Shift/substitution treat literals as closed atoms. Zero/One use
+the fixed one-field data-record path. General recursive inductive admission,
+arithmetic primitive optimizations and the indexed OfNat class remain outside
+this slice. Ordinary numeral notation retains its OfNat dependency; preparation
+never rewrites it to a literal to evade environment checking. The focused source
+uses Lean's nat_lit syntax to request actual raw literals explicitly.

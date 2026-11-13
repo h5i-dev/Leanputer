@@ -58,7 +58,7 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .app fn arg => return jsonArray [text "app", ← encodeExpr env fn, ← encodeExpr env arg]
   | .const name levels =>
     let values ← levels.mapM (fun level => (liftM (groundLevel level) : ExportM Nat))
-    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro || name == ``True || name == ``True.intro || name == ``Or || name == ``Or.inl || name == ``Or.inr || name == ``Or.rec || name == ``Decidable || name == ``Decidable.isFalse || name == ``Decidable.isTrue || name == ``Bool || name == ``Bool.false || name == ``Bool.true) && values.isEmpty then
+    if (name == ``False || name == ``Iff || name == ``Iff.intro || name == ``And || name == ``And.intro || name == ``True || name == ``True.intro || name == ``Or || name == ``Or.inl || name == ``Or.inr || name == ``Or.rec || name == ``Decidable || name == ``Decidable.isFalse || name == ``Decidable.isTrue || name == ``Bool || name == ``Bool.false || name == ``Bool.true || name == ``Nat || name == ``Nat.zero || name == ``Nat.succ) && values.isEmpty then
       return jsonArray [text "builtin",text name.toString]
     if (name == ``False.rec || name == ``True.rec || name == ``And.rec || name == ``Iff.rec ||
         name == ``Nonempty || name == ``Nonempty.intro || name == ``Nonempty.rec ||
@@ -67,12 +67,13 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
         name == ``Subtype || name == ``Subtype.mk || name == ``Bool.rec ||
         name == ``Option || name == ``Option.none || name == ``Option.some ||
         name == ``Inhabited || name == ``Inhabited.mk || name == ``Mul || name == ``Mul.mk ||
-        name == ``Add || name == ``Add.mk || name == ``Subsingleton || name == ``Subsingleton.intro) && values.length == 1 then
+        name == ``Add || name == ``Add.mk || name == ``Subsingleton || name == ``Subsingleton.intro ||
+        name == ``Zero || name == ``Zero.mk || name == ``One || name == ``One.mk || name == ``Nat.rec) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl || name == ``HEq || name == ``HEq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec || name == ``Option.rec ||
-        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec) && values.length == 2 then
+        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec || name == ``Zero.rec || name == ``One.rec) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
@@ -82,9 +83,10 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .proj name index inner =>
     if (name == ``Iff || name == ``And || name == ``Subtype) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
-    if (name == ``Inhabited || name == ``Mul || name == ``Add || name == ``Subsingleton) && index == 0 then
+    if (name == ``Inhabited || name == ``Mul || name == ``Add || name == ``Subsingleton || name == ``Zero || name == ``One) && index == 0 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     throw s!"unsupported structure projection {name}.{index}"
+  | .lit (.natVal value) => return jsonArray [text "nat",toJson value]
   | .lit .. => throw "unsupported literal"
   | .fvar .. => throw "unsupported free variable"
   | .mvar .. => throw "unsupported expression metavariable"

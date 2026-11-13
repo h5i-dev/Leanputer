@@ -31,9 +31,10 @@ class Tag(IntEnum):
     BUILTIN = 7
     PROJ = 8
     LET = 9
+    NAT = 10
 
 
-TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN, 'proj':Tag.PROJ, 'let':Tag.LET}
+TAGS = {'var': Tag.VAR, 'sort': Tag.SORT, 'pi': Tag.PI, 'lam': Tag.LAM, 'app': Tag.APP, 'const': Tag.CONST, 'builtin':Tag.BUILTIN, 'proj':Tag.PROJ, 'let':Tag.LET, 'nat':Tag.NAT}
 
 
 def parse_expr(value):
@@ -42,7 +43,7 @@ def parse_expr(value):
     tag = value[0]
     if tag not in TAGS:
         raise Unsupported(f'unsupported expression: {tag}')
-    if tag in ('var', 'sort') and len(value) == 2 and type(value[1]) is int and value[1] >= 0:
+    if tag in ('var', 'sort', 'nat') and len(value) == 2 and type(value[1]) is int and value[1] >= 0:
         return (tag, value[1])
     if tag == 'const' and len(value) == 2 and isinstance(value[1], str) and value[1]:
         return (tag, value[1])
@@ -106,7 +107,7 @@ class Oracle:
         tag = term[0]
         if tag == 'var':
             return ('var', term[1] + (delta if term[1] >= cutoff else 0))
-        if tag in ('sort', 'const', 'builtin'):
+        if tag in ('sort', 'const', 'builtin', 'nat'):
             return term
         if tag=='proj': return (tag,term[1],term[2],self.shift(term[3],delta,cutoff))
         if tag=='let':
@@ -123,7 +124,7 @@ class Oracle:
             if index == depth:
                 return self.shift(replacement, depth)
             return ('var', index - int(index > depth))
-        if tag in ('sort', 'const', 'builtin'):
+        if tag in ('sort', 'const', 'builtin', 'nat'):
             return term
         if tag=='proj': return (tag,term[1],term[2],self.substitute(term[3],replacement,depth))
         if tag=='let':
@@ -134,6 +135,7 @@ class Oracle:
 
     def whnf(self, term, context=()):
         self.tick()
+        if term==('builtin','Nat.zero'):return ('nat',0)
         if term[0]=='let':
             return self.whnf(self.substitute(term[3],term[2]),context)
         if term[0] == 'const':
@@ -159,6 +161,15 @@ class Oracle:
             if head[0]=='builtin':
                 name=head[1]
                 apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+                if name=='Nat.succ' and len(arguments)==1:
+                    number=self.whnf(arguments[0],context)
+                    if number[0]=='nat':return ('nat',number[1]+1)
+                if name=='Nat.rec' and len(arguments)==4:
+                    number=self.whnf(arguments[3],context)
+                    if number==('nat',0):return self.whnf(arguments[1],context)
+                    pred=('nat',number[1]-1) if number[0]=='nat' else number[2] if number[0]=='app' and number[1]==('builtin','Nat.succ') else None
+                    if pred is not None:
+                        return self.whnf(apps(arguments[2],pred,apps(head,*arguments[:3],pred)),context)
                 if name=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
                     return self.whnf(arguments[3],context)
                 if name=='HEq.rec' and len(arguments)==7 and self.convert(arguments[0],arguments[4],context) and self.convert(arguments[1],arguments[5],context):
@@ -246,6 +257,7 @@ class Oracle:
     def infer(self, term, context=()):
         self.tick()
         tag = term[0]
+        if tag=='nat':return ('builtin','Nat')
         if tag=='let':
             if self.whnf(self.infer(term[1],context),context)[0]!='sort':
                 raise Rejected('let annotation is not a type')

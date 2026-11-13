@@ -195,3 +195,11 @@ All current-fragment rows still have checking_status NOT_RUN_IN_THIS_REFRESH;
 targeted source native checks are separate evidence. These exports include
 large classical dependency closures beyond small native budgets. No declaration
 was dropped or replaced by an unchecked environment assumption.
+
+The raw-Nat109-phase syntax snapshot retains405EXPORTED/452UNSUPPORTED of857,
+export14.779265s during development CPU/GPU validation. It adds only the syntax
+candidate Nat.succ_injective from44Nat/Zero/One-first rows. The ordinary-number
+OfNat class is now exposed as a further blocker. Its large spec plan is not
+native proof evidence. Complete current-fragment records preserve all names,
+assumptions and unknown unsupported closure metadata; checking_status remains
+NOT_RUN_IN_THIS_REFRESH for every row.

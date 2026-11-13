@@ -33,6 +33,7 @@ class Reason(IntEnum):
     INDEX = 11
     INTERNAL = 12
     EXPECT_STRUCTURE = 13
+    NATURAL = 14
 
 
 class Op(IntEnum):
@@ -139,6 +140,12 @@ class Op(IntEnum):
     I_ONE_CTOR = 100
     I_ONE_FIELD = 101
     ONE_REC = 102
+    N_SUCC = 103
+    N_SUCC_VALUE = 104
+    N_REC_PRED = 105
+    N_REC_CALL = 106
+    N_REC_STEP = 107
+    N_CTOR = 108
 
 
 @dataclass(frozen=True)
@@ -207,7 +214,7 @@ def prepare(config, term, claim, declarations=()):
         else:
             v = expr[1]
         if max(a,b,v) >= 1 << config.word_bits:
-            raise Exhausted('syntax scalar encoding capacity')
+            raise Exhausted('natural scalar encoding capacity' if tag=='nat' else 'syntax scalar encoding capacity')
         if len(heap) >= config.heap:
             raise Exhausted('input heap capacity')
         idx = len(heap)
@@ -299,17 +306,18 @@ class SpecMachine:
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC):
+                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE, Op.I_ONE_CTOR, Op.ONE_REC,
+                  Op.N_SUCC, Op.N_REC_PRED, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
-        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE,Op.I_ONE_CTOR,Op.I_ONE_FIELD):pointers.append(result)
+        if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE,Op.I_ONE_CTOR,Op.I_ONE_FIELD,Op.N_SUCC_VALUE):pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
                   Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC):
+                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE, Op.ONE_REC, Op.N_REC_CALL, Op.N_REC_STEP, Op.N_CTOR):
             pointers.append(y)
-        if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE) or (op==Op.ETA and z):pointers.append(z)
+        if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE,Op.N_REC_STEP,Op.N_CTOR) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         if op == Op.VALIDATE:
@@ -317,7 +325,7 @@ class SpecMachine:
                 self.tail(Op.ENV)
             else:
                 i = r['scan']; tag, a, b, v = s['heap'][i]
-                valid = 1 <= tag <= int(Tag.LET)
+                valid = 1 <= tag <= int(Tag.NAT)
                 if tag in (Tag.PI, Tag.LAM, Tag.APP):
                     valid &= 0 < a < i and 0 < b < i and v == 0
                 elif tag == Tag.PROJ:
@@ -394,6 +402,7 @@ class SpecMachine:
                     self.stop(Outcome.REJECT, Reason.UNBOUND)
                 else:
                     self.tail(Op.SHIFT, s['context'][r['ctx']-1-v][0], 0, v+1)
+            elif tag==Tag.NAT:self.allocate(Tag.BUILTIN,v=64)
             elif tag == Tag.SORT:
                 if v >= cfg.universe:
                     self.stop(Outcome.RESOURCE, Reason.UNIVERSE)
@@ -512,7 +521,8 @@ class SpecMachine:
                     self.tail(Op.WHNF, s['constants'][v][2])
                 else:
                     self.ret(x)
-            elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.BUILTIN):
+            elif tag==Tag.BUILTIN and v==65:self.allocate(Tag.NAT,v=0)
+            elif tag in (Tag.VAR, Tag.SORT, Tag.PI, Tag.LAM, Tag.BUILTIN, Tag.NAT):
                 self.ret(x,v if tag==Tag.BUILTIN and v in REC_ARITIES else 0)
             else:
                 self.stop(Outcome.REJECT, Reason.SYNTAX)
@@ -550,6 +560,7 @@ class SpecMachine:
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
                 elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
                 elif head==37:self.call(Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
+                elif head==66:self.call(Op.N_SUCC,y,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head in {record['code']+2 for record in ONE_FIELD_RECORDS.values() if record['data']}:
                     projection=next(record['projection'] for record in ONE_FIELD_RECORDS.values() if record['code']+2==head)
                     self.tail(Op.ONE_REC,self.node(result)[2],y,projection)
@@ -584,6 +595,13 @@ class SpecMachine:
         elif op==Op.H_VALUE:
             if result:self.tail(Op.CONV,x,y)
             else:self.ret(0)
+        elif op==Op.N_SUCC:
+            self.call(Op.WHNF,x,continuation=(Op.N_SUCC_VALUE,))
+        elif op==Op.N_SUCC_VALUE:
+            tag,_,_,value=self.node(result)
+            if tag!=Tag.NAT:self.ret(0)
+            elif value==(1<<cfg.word_bits)-1:self.stop(Outcome.RESOURCE,Reason.NATURAL)
+            else:self.allocate(Tag.NAT,v=value+1)
         elif op==Op.REC_MAJOR:
             self.call(Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
         elif op==Op.REC_SPINE:
@@ -594,11 +612,25 @@ class SpecMachine:
                 if ctor==40:self.ret(self.node(x)[2])
                 elif ctor==39:self.tail(Op.B_PICK,self.node(x)[1])
                 else:self.ret(0)
+            elif y==67:
+                if tag==Tag.APP:self.tail(Op.N_CTOR,a,x,b)
+                elif tag!=Tag.NAT:self.ret(0)
+                elif self.node(result)[3]==0:self.tail(Op.B_PICK,self.node(x)[1])
+                else:self.tail(Op.N_REC_PRED,x,self.node(result)[3]-1)
             elif tag!=Tag.APP:self.ret(0)
             elif y==45:self.tail(Op.O_SPINE,a,x,b)
             else:self.call(Op.REC_SCAN,a,REC_MAJOR_ARITIES[y]-1,continuation=(Op.REC_SELECT,x,y,b,a))
         elif op==Op.B_PICK:
             self.ret(self.node(x)[2])
+        elif op==Op.N_REC_PRED:
+            self.allocate(Tag.NAT,v=y,resume=(Op.N_REC_CALL,x,r['free']))
+        elif op==Op.N_REC_CALL:
+            self.allocate(Tag.APP,x,y,resume=(Op.N_REC_STEP,x,y,r['free']))
+        elif op==Op.N_REC_STEP:
+            self.allocate(Tag.APP,self.node(x)[2],y,resume=(Op.REC_APPLY,r['free'],z))
+        elif op==Op.N_CTOR:
+            if self.node(x)[0]==Tag.BUILTIN and self.node(x)[3]==66:self.tail(Op.N_REC_CALL,y,z)
+            else:self.ret(0)
         elif op==Op.O_SPINE:
             tag,a,_,v=self.node(x)
             if tag==Tag.BUILTIN and v==43:self.tail(Op.B_PICK,self.node(y)[1])
@@ -638,7 +670,7 @@ class SpecMachine:
             self.tail(Op.WHNF, result)
         elif op in (Op.SHIFT, Op.SUBST):
             tag, a, b, v = self.node(x)
-            if tag in (Tag.SORT, Tag.CONST,Tag.BUILTIN) or (op == Op.SHIFT and z == 0):
+            if tag in (Tag.SORT, Tag.CONST,Tag.BUILTIN,Tag.NAT) or (op == Op.SHIFT and z == 0):
                 self.ret(x)
             elif tag == Tag.VAR:
                 if op == Op.SHIFT:
@@ -708,7 +740,7 @@ class SpecMachine:
             elif tx==Tag.PROJ:
                 if vx==vy: self.call(Op.CONV,ax,ay,continuation=(Op.C_AFTER_CHILD,x,result))
                 else: self.tail(Op.FALLBACK,x,result)
-            elif tx in (Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN):
+            elif tx in (Tag.VAR, Tag.SORT, Tag.CONST,Tag.BUILTIN,Tag.NAT):
                 if vx == vy and (tx != Tag.BUILTIN or (ax==ay and bx==by)):
                     self.ret(1)
                 else:

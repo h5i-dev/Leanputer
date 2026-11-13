@@ -28,6 +28,9 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Bool" then return .const ``Bool []
       if name == "Bool.false" then return .const ``Bool.false []
       if name == "Bool.true" then return .const ``Bool.true []
+      if name == "Nat" then return .const ``Nat []
+      if name == "Nat.zero" then return .const ``Nat.zero []
+      if name == "Nat.succ" then return .const ``Nat.succ []
       if name == "Iff" then return .const ``Iff []
       if name == "Iff.intro" then return .const ``Iff.intro []
       if name == "And" then return .const ``And []
@@ -62,6 +65,11 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Add.mk" then return .const ``Add.mk [level]
       if name == "Subsingleton" then return .const ``Subsingleton [level]
       if name == "Subsingleton.intro" then return .const ``Subsingleton.intro [level]
+      if name == "Zero" then return .const ``Zero [level]
+      if name == "Zero.mk" then return .const ``Zero.mk [level]
+      if name == "One" then return .const ``One [level]
+      if name == "One.mk" then return .const ``One.mk [level]
+      if name == "Nat.rec" then return .const ``Nat.rec [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -71,7 +79,7 @@ partial def expression (json : Json) : Except String Expr := do
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Option.rec" && fields.size == 4 then
       return .const ``Option.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
-    if fields.size == 4 && (name == "Inhabited.rec" || name == "Mul.rec" || name == "Add.rec" || name == "Subsingleton.rec") then
+    if fields.size == 4 && (name == "Inhabited.rec" || name == "Mul.rec" || name == "Add.rec" || name == "Subsingleton.rec" || name == "Zero.rec" || name == "One.rec") then
       return .const name.toName [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Subtype.rec" && fields.size == 4 then
       return .const ``Subtype.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
@@ -86,16 +94,17 @@ partial def expression (json : Json) : Except String Expr := do
     let inner ← expression fields[3]!
     if index < 2 && (family == "Iff" || family == "And" || family == "Subtype") then
       return .proj family.toName index inner
-    if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton") then
+    if index == 0 && (family == "Inhabited" || family == "Mul" || family == "Add" || family == "Subsingleton" || family == "Zero" || family == "One") then
       return .proj family.toName index inner
     throw "unsupported replay projection"
   if tag == "let" && fields.size == 4 then
     return .letE `x (← expression fields[1]!) (← expression fields[2]!) (← expression fields[3]!) false
-  let expected := if tag == "var" || tag == "sort" || tag == "const" then 2 else 3
+  let expected := if tag == "var" || tag == "sort" || tag == "const" || tag == "nat" then 2 else 3
   if fields.size != expected then throw "malformed replay expression arity"
   match tag with
   | "var" => return .bvar (← fields[1]!.getNat?)
   | "sort" => return .sort (numericLevel (← fields[1]!.getNat?))
+  | "nat" => return .lit (.natVal (← fields[1]!.getNat?))
   | "const" => return .const (.str (.str .anonymous "_leanputer_user") (← fields[1]!.getStr?)) []
   | "pi" => return .forallE `x (← expression fields[1]!) (← expression fields[2]!) .default
   | "lam" => return .lam `x (← expression fields[1]!) (← expression fields[2]!) .default
@@ -144,7 +153,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option, ``Inhabited, ``Mul, ``Add, ``Subsingleton, ``Zero, ``One, ``Nat] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))

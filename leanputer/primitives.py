@@ -31,6 +31,8 @@ ONE_FIELD_RECORDS = {
     'Mul':dict(code=49, projection=7, constructor='mk', field='binary', data=True, type_carrier=True),
     'Add':dict(code=52, projection=8, constructor='mk', field='binary', data=True, type_carrier=True),
     'Subsingleton':dict(code=55, projection=9, constructor='intro', field='equality', data=False, type_carrier=False),
+    'Zero':dict(code=58, projection=10, constructor='mk', field='value', data=True, type_carrier=True),
+    'One':dict(code=61, projection=11, constructor='mk', field='value', data=True, type_carrier=True),
 }
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
@@ -43,6 +45,10 @@ for _family, _record in ONE_FIELD_RECORDS.items():
         REC_MAJOR_ARITIES[_record['code']+2]=2
 PROJECTION_ARITIES={family:1 if family in ONE_FIELD_RECORDS else 2 for family in PROJECTION_FAMILIES}
 PROJECTION_COUNT=max(PROJECTION_FAMILIES[family]+count for family,count in PROJECTION_ARITIES.items())
+PRIMITIVE_CODES.update({'Nat':64,'Nat.zero':65,'Nat.succ':66,'Nat.rec':67})
+PRIMITIVE_UNIVERSES['Nat.rec']=1
+# Nat.succ is also a reducible head on literal arguments.
+REC_ARITIES.update({66:1,67:4})
 
 
 def primitive_code(expression): return PRIMITIVE_CODES[expression[1]]
@@ -62,6 +68,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name in ('Nat','Nat.zero','Nat.succ','Nat.rec'):return _natural_type(expression)
     if name.split('.')[0] in ONE_FIELD_RECORDS:return _one_record_type(expression)
     if name.startswith('Option'):return _option_type(expression)
     if name.startswith('Bool'):return _bool_type(expression)
@@ -282,6 +289,20 @@ def _one_record_type(expression):
         tail=bind('motive',bind('motive_arg',record_type,('sort',expression[2])),
              bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record_type,apps(motive,major))))
     return _close_schema(bind('alpha',('sort',carrier_sort),tail))
+
+
+def _natural_type(expression):
+    name=expression[1];natural=('builtin','Nat')
+    if name=='Nat':return ('sort',1)
+    if name=='Nat.zero':return natural
+    if name=='Nat.succ':return ('pi',natural,natural)
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    motive,number=map(v,('motive','number'))
+    step=bind('number',natural,bind('hypothesis',apps(motive,number),apps(motive,apps(('builtin','Nat.succ'),number))))
+    return _close_schema(bind('motive',bind('motive_arg',natural,('sort',expression[2])),
+        bind('zero',apps(motive,('builtin','Nat.zero')),bind('step',step,bind('major',natural,apps(motive,v('major')))))))
 
 
 def type_schema(expression):
