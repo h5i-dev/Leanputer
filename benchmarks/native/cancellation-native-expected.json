@@ -1,0 +1,174 @@
+[
+  {
+    "name": "IsLeftCancelMul-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1283,
+    "allocated_heap_nodes": 152,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsRightCancelMul-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1284,
+    "allocated_heap_nodes": 159,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsLeftCancelAdd-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1283,
+    "allocated_heap_nodes": 152,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsRightCancelAdd-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1284,
+    "allocated_heap_nodes": 159,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "cancellation-wrong-instance",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1875,
+    "allocated_heap_nodes": 278,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "cancellation-wrong-family",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 704,
+    "allocated_heap_nodes": 111,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "cancellation-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 3435,
+    "allocated_heap_nodes": 350,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "cancellation-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 3547,
+    "allocated_heap_nodes": 365,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "cancellation-dependent-field-type",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1369,
+    "allocated_heap_nodes": 171,
+    "environment_declarations": 0,
+    "assumptions": []
+  },
+  {
+    "name": "IsRightCancelMul.mul_right_cancel@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5758,
+    "allocated_heap_nodes": 908,
+    "environment_declarations": 6,
+    "assumptions": []
+  },
+  {
+    "name": "IsRightCancelAdd.add_right_cancel@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5758,
+    "allocated_heap_nodes": 908,
+    "environment_declarations": 6,
+    "assumptions": []
+  },
+  {
+    "name": "IsLeftCancelMul.mul_left_cancel@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5757,
+    "allocated_heap_nodes": 907,
+    "environment_declarations": 6,
+    "assumptions": []
+  },
+  {
+    "name": "IsLeftCancelAdd.add_left_cancel@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5757,
+    "allocated_heap_nodes": 907,
+    "environment_declarations": 6,
+    "assumptions": []
+  },
+  {
+    "name": "Function.const_def@[1,1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1213,
+    "allocated_heap_nodes": 163,
+    "environment_declarations": 2,
+    "assumptions": []
+  },
+  {
+    "name": "relative-K",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1241,
+    "allocated_heap_nodes": 122,
+    "environment_declarations": 5,
+    "assumptions": [
+      "A",
+      "a",
+      "q",
+      "P",
+      "h"
+    ]
+  },
+  {
+    "name": "wrong-refl-endpoint",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 383,
+    "allocated_heap_nodes": 45,
+    "environment_declarations": 3,
+    "assumptions": [
+      "A",
+      "a",
+      "b"
+    ]
+  },
+  {
+    "name": "CommMagma.mul_comm@[1]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 5022,
+    "allocated_heap_nodes": 742,
+    "environment_declarations": 5,
+    "assumptions": []
+  },
+  {
+    "name": "LeanputerUnits.data_eta@[]",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 291,
+    "allocated_heap_nodes": 34,
+    "environment_declarations": 0,
+    "assumptions": []
+  }
+]

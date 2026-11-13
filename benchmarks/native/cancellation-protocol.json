@@ -1,0 +1,43 @@
+{
+  "format": "leanputer.targeted-feature-protocol.v1",
+  "feature": "Four fixed Prop cancellation classes with uniform operation instances",
+  "compiled_base": "c0a2d79",
+  "compiled_with_uncommitted_feature": true,
+  "source_sha256": {
+    "leanputer/primitives.py": "47d4b7b7ac5304d11e45151e38275d5ce0df7cac32589b2439fa8f391c4a0d43",
+    "leanputer/dependent.py": "cca4f78a61b0e02369a4936834c5c03dccc8cf71bd727ac45edc14cd4cbb49d1",
+    "leanputer/machine_spec.py": "b687b2c54477fc5fd4e31889bc4d057b9c6fea3082194f7d2bcfb7cccbbdbaa1",
+    "leanputer/transition.py": "fc49e7f76ee8b9d54c3d4c5c1e0146efcefe93f60e8dbd2ee974358fb604bf7d",
+    "leanputer/native_machine.py": "db48247210a7f7afe72c0be81b19861c1288663c85b2a4da16926af753a61a2d",
+    "leanputer/native.py": "a4fd6647c6f10824283ab144f21973244d8156a889191d644fccacd5f891baef",
+    "leanputer/native_vendor/qwenputer/emit.py": "fa23bef6d7b195919c3868a565f1b8571676e200e790c431e2c092122276b7b5",
+    "leanputer/native_vendor/qwenputer/ir.py": "80531615df1bd7aa2de9193b153033978150c2fbb8594a53b1af80fca38bf3ee",
+    "tools/lean/Export.lean": "c51aaa3bbb87840f11abea4c13f08d12293ad019a3ccea6f6cdd3145f7d2e0b7",
+    "tools/lean/Validate.lean": "4d8aa1a2a40040ae1de5b6709171605790f1ce68f38f85723e41c2808930c299"
+  },
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean": "4.31.0",
+  "torch": "2.8.0+cu128",
+  "transformers": "5.19.0",
+  "device": "NVIDIA A10G",
+  "dtype": "bfloat16",
+  "stock_forward_and_cache": true,
+  "custom_runtime_or_external_checker_at_inference": false,
+  "source_population": 857,
+  "syntax_exported": 509,
+  "syntax_unsupported": 348,
+  "full_population_native": "NOT_RUN",
+  "broad_differentials": "DEFERRED",
+  "targeted_native_cases": 18,
+  "new_actual_source_candidates": [
+    "IsLeftCancelMul.mul_left_cancel@[1]",
+    "IsRightCancelMul.mul_right_cancel@[1]",
+    "IsLeftCancelAdd.add_left_cancel@[1]",
+    "IsRightCancelAdd.add_right_cancel@[1]"
+  ],
+  "dependency_policy": "All six Gamma dependencies checked for each new getter, no axioms; actual operation is a uniform parameter.",
+  "known_incompleteness": "Inherited distinct-neutral law-record conversion cycle remains; not exercised in this batch.",
+  "timing_scope": "Single development run. Compile timer excludes imports; forward timer includes syntax boot forward and fixed fuel+2 stock forwards plus final decode, excludes host parsing/boot materialization. No end-to-end cold or repeated steady measurement for this feature; overlapping CPU development means no controlled performance comparison.",
+  "command": "python -m leanputer.native_machine --input benchmarks/native/cancellation-input.jsonl --config benchmarks/native/cancellation-config.json --device cuda --batch-size 18 --report /mnt/scratch/cancellation-report.json",
+  "reference_replay": "Inside pinned mathlib lake env: lean --run tools/lean/Validate.lean INPUT OUTPUT --module Mathlib.Algebra.Group.Defs"
+}

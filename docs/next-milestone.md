@@ -70,5 +70,7 @@ Law-record native20case confirmation now passes15A4R1STACKresource, including
 CommMagma.mul_comm and AddCommMagma.add_comm with fullGamma5/noaxioms each.
 The next implementation is four cancellation Prop classes with two uniform
 parameters(carrier andactualoperationinstance), fixed injectivity proof fields
-and constructor-only singleton-Prop data elimination. The isolated119intrinsic
-prototype passes minimalweighted checks; nativeconfirmation is stillpending.
+and constructor-only singleton-Prop data elimination. The119intrinsic slice passes native18cases14A4R, including four new real getters
+with fullGamma6/noaxioms. Std.Symm is next, preserving Sort-level carriers and
+relation parameters; a bounded atom pool is being assessed to fit its sources
+within1024heap without dropping dependencies.

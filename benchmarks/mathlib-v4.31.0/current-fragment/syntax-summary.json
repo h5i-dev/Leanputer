@@ -14,11 +14,11 @@
   "public_population": 857,
   "ground_instances_per_source": 1,
   "counts": {
-    "UNSUPPORTED": 384,
-    "EXPORTED": 473
+    "UNSUPPORTED": 348,
+    "EXPORTED": 509
   },
-  "export_seconds": 11.41377671599912,
-  "enumeration_seconds": 4.465618450994953,
+  "export_seconds": 11.246576726989588,
+  "enumeration_seconds": 4.57977521099383,
   "unsupported_reasons": {
     "unsupported inductive/constructor/recursor/quotient dependency IsCancelMul": 5,
     "unsupported inductive/constructor/recursor/quotient dependency IsAddRegular": 2,
@@ -36,7 +36,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency AddLeftCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency Fact": 3,
     "unsupported inductive/constructor/recursor/quotient dependency AddRightCancelSemigroup": 3,
-    "unsupported inductive/constructor/recursor/quotient dependency IsRightCancelMul": 10,
     "unsupported inductive/constructor/recursor/quotient dependency IsAddCommutative": 6,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Symm": 8,
     "unsupported inductive/constructor/recursor/quotient dependency InvOneClass": 2,
@@ -46,9 +45,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsRegular": 2,
     "unsupported inductive/constructor/recursor/quotient dependency AddLeftCancelMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency AddZeroClass": 6,
-    "unsupported inductive/constructor/recursor/quotient dependency IsLeftCancelMul": 10,
-    "unsupported inductive/constructor/recursor/quotient dependency IsRightCancelAdd": 10,
-    "unsupported inductive/constructor/recursor/quotient dependency IsLeftCancelAdd": 10,
     "unsupported inductive/constructor/recursor/quotient dependency IsAddCommutative.mk": 1,
     "unsupported inductive/constructor/recursor/quotient dependency AddCancelMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Nontrivial": 4,
@@ -65,6 +61,7 @@
     "unsupported inductive/constructor/recursor/quotient dependency LeftCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Total": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Preorder": 2,
+    "unsupported inductive/constructor/recursor/quotient dependency IsCancelAdd.mk": 2,
     "unsupported inductive/constructor/recursor/quotient dependency SMul": 2,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommGroup": 7,
     "unsupported inductive/constructor/recursor/quotient dependency InvolutiveNeg": 2,
@@ -75,6 +72,7 @@
     "unsupported inductive/constructor/recursor/quotient dependency AddCancelCommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency LeftCancelMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Refl": 2,
+    "unsupported inductive/constructor/recursor/quotient dependency IsCancelMul.mk": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Antisymm": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CancelMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency DivisionMonoid": 8,
@@ -102,9 +100,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsMulCommutative.mk": 1,
     "unsupported inductive/constructor/recursor/quotient dependency HDiv": 1
   },
-  "exporter_sha256": "234ec9a8a4341d4e7998dcfc20f8961c811249b9e5e8ac3ab954d4c37cef1732",
-  "corpus_sha256": "4f3a3a49779b9b4d92448675ddf113f276e51e92b97fed0745c454495d61f1cd",
-  "all_outcomes_sha256": "ae84ae401ab437da77e0af967b0914be5c27bc2d113a2fca06ebc7a6036e570d",
-  "leanputer_feature_boundary": "107 fixed intrinsics, 116 phases; four inherited law records; syntax only",
+  "exporter_sha256": "c51aaa3bbb87840f11abea4c13f08d12293ad019a3ccea6f6cdd3145f7d2e0b7",
+  "corpus_sha256": "9c46bdc5f376bfedd60b3acbb983856eed07c29e69ca0f76bf3d74b0995f4b8e",
+  "all_outcomes_sha256": "4fa03ba666b8330e696b419465122f6dfa6e4bef77a34d13a1f5b2d9a5546a59",
+  "leanputer_feature_boundary": "119 fixed intrinsics, 116 phases; dependent cancellation instance parameters; syntax only",
   "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh."
 }

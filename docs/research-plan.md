@@ -15,7 +15,7 @@ Research quality and formal soundness remain goals, not established labels.
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest107-primitive/116phase syntax refresh473EXPORTED384UNSUPPORTED; not473proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest119-primitive/116phase syntax refresh509EXPORTED348UNSUPPORTED; not509proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -354,3 +354,22 @@ conversion-cycle incompleteness, never an acceptance. Same857syntax snapshot
 to four operation-parameterized cancellation Prop classes (40first blockers),
 whose isolated prototype and minimal weighted/Lean checks already pass. Require
 stock native confirmation of four small real getters before claiming that slice.
+
+The cancellation slice is now implemented on main (119 intrinsics,116 phases).
+Its four Prop classes retain actual operation instances as uniform parameters.
+Minimal weighted and Lean checks pass; stock native18case14A4Rconfirmation passes, including four real getters with six checked dependencies each. Same
+857syntaxsnapshot509EXPORTED348UNSUPPORTED remains separate from proof checking.
+Next candidate is Std.Symm (eight first blockers), requiring Sort-valued carriers,
+uniform binary relations and namespace-preserving family identification. Keep
+its prototype isolated while the current native catalog is frozen.
+
+Cancellation native checkpoint passes all18cases14A4R, with exact outcomes,
+reasons, steps and heap counts. Four new actual IsLeft/RightCancelMul/Add getters
+accept5757/5758steps, checking six dependencies/noaxioms each. Word widths remain
+unchanged; generic constructor-spine arity retains both uniform parameters.
+At1024heap/f5792 the stock model has2.805B BF16parameters/5.609GBweights,
+H7168/L105/FFN1024, compile59.460s and fixedforward920.275s. This development run
+has overlapping CPU work; it is not a speed comparison or population coverage.
+Same857syntax snapshot509EXPORTED348UNSUPPORTED remains separate from native proof
+checking. Continue Std.Symm and the minimum bounded atom allocation improvement
+needed to keep its real closures within1024heap; broad validation stays deferred.

@@ -35,6 +35,9 @@ Semigroup/AddSemigroup and CommMagma/AddCommMagma retain a Mul/Add parent and
 its dependent associativity/commutativity proof. Projection typing substitutes
 the actual parent; typed eta compares the data parent and uses proof irrelevance
 for the law field. These are four fixed schemas, not general structure support.
+Four cancellation Prop classes retain their actual Mul/Add instance as a uniform
+parameter and check left/right translation injectivity; singleton data recursion
+reduces on genuine constructors.
 PProd and Prod add two-field records with typed eta and dependent recursors;
 [ground-universe tuples](docs/ground-universes.md) retain all three recursor levels.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
@@ -205,7 +208,7 @@ traces, seeded tests and external replay provide evidence, not formal soundness.
 
 
 The current complete syntax refresh retains all 857 selected public theorems:
-473 export and 384 remain unsupported. EXPORTED is not proof acceptance; a
+509 export and 348 remain unsupported. EXPORTED is not proof acceptance; a
 new full-population native check has not been run. The [complete syntax
 outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
 assumptions, input sizes and every unsupported row. Monoid is the largest current

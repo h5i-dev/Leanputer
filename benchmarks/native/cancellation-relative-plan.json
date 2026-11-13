@@ -1,0 +1,74 @@
+[
+  {
+    "name": "IsLeftCancelMul-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1283,
+    "free": 153,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "IsRightCancelMul-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1284,
+    "free": 160,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "IsLeftCancelAdd-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1283,
+    "free": 153,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "IsRightCancelAdd-constructor",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1284,
+    "free": 160,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "cancellation-wrong-instance",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 1875,
+    "free": 279,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "cancellation-wrong-family",
+    "status": "REJECT",
+    "reason": "EXPECT_STRUCTURE",
+    "steps": 704,
+    "free": 112,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "cancellation-constructor-data-rec",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 3435,
+    "free": 351,
+    "oracle": "ACCEPT"
+  },
+  {
+    "name": "cancellation-wrong-data-rec-result",
+    "status": "REJECT",
+    "reason": "CONVERSION",
+    "steps": 3547,
+    "free": 366,
+    "oracle": "REJECT"
+  },
+  {
+    "name": "cancellation-dependent-field-type",
+    "status": "ACCEPT",
+    "reason": "NONE",
+    "steps": 1369,
+    "free": 172,
+    "oracle": "ACCEPT"
+  }
+]

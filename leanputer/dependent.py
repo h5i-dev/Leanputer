@@ -202,10 +202,10 @@ class Oracle:
                 if record and name.endswith('.rec') and len(arguments)==parameters+3:
                     if record['data']:
                         return self.whnf(apps(arguments[parameters+1],('proj',name.split('.')[0],0,arguments[parameters+2])),context)
-                    ctor=self.whnf(arguments[3],context);fields=[]
+                    ctor=self.whnf(arguments[parameters+2],context);fields=[]
                     while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
-                    if ctor[0]=='builtin' and ctor[1]==name.split('.')[0]+'.'+record['constructor'] and len(fields)==2:
-                        return self.whnf(apps(arguments[2],fields[1]),context)
+                    if ctor[0]=='builtin' and ctor[1]==name.split('.')[0]+'.'+record['constructor'] and len(fields)==parameters+1:
+                        return self.whnf(apps(arguments[parameters+1],fields[-1]),context)
                 count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6,'Decidable.rec':5}.get(name)
                 if count and len(arguments)==count:
                     major=self.whnf(arguments[-1],context);ctor=major;fields=[]

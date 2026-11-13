@@ -393,3 +393,14 @@ Evaluation can select the actual mathlib replay basis with `--lean --lean-module
 Mathlib.Algebra.Group.Defs`, invoked inside the pinned checkout's `lake env`.
 The Python `lean_replay(..., module=...)` adapter exposes the same option.
 This only changes the independent offline reference, never model inference.
+
+Four fixed cancellation Prop classes retain two uniform parameters: a carrier
+of Type u and its actual Mul/Add instance. IsLeftCancelMul/IsRightCancelMul and
+IsLeftCancelAdd/IsRightCancelAdd each store a proof that the appropriate
+translation is injective. Fixed schemas express Function.Injective and ordinary
+operation aliases in definitionally equal normalized form. Exported alias
+bodies remain checked dependencies. The family returns Prop; it is not a data
+record with a field that can be invented from a neutral proof. Its singleton
+Prop recursor can eliminate into Sort, with data reduction on a genuine
+constructor. Constructor-spine checking retains both uniform parameters.
+Projection inference substitutes both the carrier and operation instance.

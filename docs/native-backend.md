@@ -663,3 +663,26 @@ host peak RSS 1,805,070,336 bytes. This single development run overlaps CPU
 checks and is not a controlled speed comparison or end-to-end throughput result.
 See benchmarks/native/laws-{input.jsonl,config.json,smoke.json,protocol.json};
 large tensors remain on scratch. Broad native/differential validation is deferred.
+
+Four fixed cancellation Prop classes now retain both uniform parameters: a
+Type-valued carrier and its actual Mul/Add instance. The proof field expresses
+injectivity of left/right translation. Projection typing substitutes both
+parameters; singleton-Prop data elimination reduces on a genuine constructor.
+The generic constructor-spine check uses parameters+1, preserving both uniform
+arguments. This slice has119intrinsics/116phases and unchanged word widths.
+
+The targeted stock CUDA18case batch passes14A4R, all outcomes/reasons/semantic
+steps/allocatednodes matching Spec. Four new actual getters accept with six
+checked dependencies and noaxioms: IsLeftCancelMul.mul_left_cancel and
+IsLeftCancelAdd.add_left_cancel5757steps/907nodes; IsRightCancelMul.mul_right_cancel
+and IsRightCancelAdd.add_right_cancel5758steps/908nodes. Wrong instance, projection
+family and data-recursion result reject. Eq3, CommMagma getter and PUnit eta retain
+their results. The PUnit case specifically guards the moved eta-selector sentinel.
+
+Heap1024/stack32/context16/constants8/universe4/fuel5792 yield117boot tokens and
+5794stockforwards. The model has2,804,589,264BF16parameters/5,609,178,528weightbytes,
+H7168/L105/FFN1024, compile59.460s/forward920.275s. ForwardCUDApeak6,030,639,104bytes,
+hostprocesspeakRSS1,810,632,704bytes. Overlapping CPU development and a single run
+preclude a controlled speed/throughput claim. Full native population NOT_RUN;
+syntax-only snapshot509EXPORTED348UNSUPPORTED/857 in11.247s is separate.
+Compact input/config/protocol/results are benchmarks/native/cancellation-*.

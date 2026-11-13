@@ -43,6 +43,13 @@ ONE_FIELD_RECORDS = {
     'HMul':dict(code=92,projection=21,constructor='mk',field='heterogeneous',data=True,
                 type_carrier=True,parameters=3,universe_parameters=3),
 }
+# Prop classes whose second uniform parameter is an actual operation instance.
+for _index, (_family, _parent, _side) in enumerate((
+        ('IsLeftCancelMul','Mul','left'),('IsRightCancelMul','Mul','right'),
+        ('IsLeftCancelAdd','Add','left'),('IsRightCancelAdd','Add','right'))):
+    ONE_FIELD_RECORDS[_family]=dict(code=107+3*_index,projection=30+_index,
+        constructor='mk',field='cancellation',data=False,type_carrier=True,
+        parameters=2,parent=_parent,side=_side)
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
@@ -51,7 +58,7 @@ for _family, _record in ONE_FIELD_RECORDS.items():
     REC_ARITIES[_record['code']+2]=_record.get('parameters',1)+3
     if not _record['data']:
         REC_CONSTRUCTORS[_record['code']+2]=(_record['code']+1,)
-        REC_MAJOR_ARITIES[_record['code']+2]=2
+        REC_MAJOR_ARITIES[_record['code']+2]=_record.get('parameters',1)+1
 TWO_FIELD_RECORDS = {
     'PProd':dict(code=80, projection=15, type_carrier=False),
     'Prod':dict(code=83, projection=17, type_carrier=True),
@@ -309,6 +316,7 @@ def _one_record_type(expression):
     name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
     if record['field']=='membership':return _membership_type(expression)
     if record['field']=='heterogeneous':return _heterogeneous_type(expression)
+    if record['field']=='cancellation':return _cancellation_type(expression)
     carrier=expression[3] if name.endswith('.rec') else expression[2]
     carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
     v=lambda n:('named',n)
@@ -332,6 +340,33 @@ def _one_record_type(expression):
              bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record_type,apps(motive,major))))
     if record.get('parameters',1)==2:tail=bind('index',('builtin','Nat'),tail)
     return _close_schema(bind('alpha',('sort',carrier_sort),tail))
+
+
+def _cancellation_type(expression):
+    name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
+    carrier=expression[3]if name.endswith('.rec')else expression[2]
+    level=carrier+1 if carrier>=0 else ('succ',carrier)
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,parent,field,motive,major=map(v,('alpha','parent','field','motive','major'))
+    operator=('proj',record['parent'],0,parent)
+    op=lambda x,y:apps(operator,x,y)
+    eq=lambda x,y:apps(('builtin','Eq',level),alpha,x,y)
+    a,x,y=map(v,('anchor','left','right'))
+    image=lambda x:op(a,x)if record['side']=='left'else op(x,a)
+    cancellation=bind('anchor',alpha,bind('left',alpha,bind('right',alpha,
+        bind('equal',eq(image(x),image(y)),eq(x,y)))))
+    parent_type=apps(('builtin',record['parent'],carrier),alpha)
+    proof_type=apps(('builtin',family,carrier),alpha,parent)
+    if name==family:tail=('sort',0)
+    elif name.endswith('.mk'):tail=bind('field',cancellation,proof_type)
+    else:
+        constructor=apps(('builtin',family+'.mk',carrier),alpha,parent,field)
+        tail=bind('motive',bind('major',proof_type,('sort',expression[2])),
+            bind('minor',bind('field',cancellation,apps(motive,constructor)),
+            bind('major',proof_type,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',level),bind('parent',parent_type,tail)))
 
 
 def _pair_type(expression):
