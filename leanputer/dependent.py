@@ -158,6 +158,8 @@ class Oracle:
                 apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
                 if name=='Eq.rec' and len(arguments)==6 and self.convert(arguments[1],arguments[4],context):
                     return self.whnf(arguments[3],context)
+                if name=='HEq.rec' and len(arguments)==7 and self.convert(arguments[0],arguments[4],context) and self.convert(arguments[1],arguments[5],context):
+                    return self.whnf(arguments[3],context)
                 if name=='True.rec' and len(arguments)==3:return self.whnf(arguments[1],context)
                 if name=='Subtype.rec' and len(arguments)==5:
                     return self.whnf(apps(arguments[3],('proj','Subtype',0,arguments[4]),('proj','Subtype',1,arguments[4])),context)

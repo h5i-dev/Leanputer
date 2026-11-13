@@ -100,20 +100,24 @@ class RuleCompiler:
                    Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.I_PROJ, Op.I_PROJ_TYPE, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                    Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
-                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL)
+                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
+                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
                    Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
-                                           Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL)),
+                                           Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
+                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE)),
                              (self.r['z'],(Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
             bad = self.OR(bad, self.AND(required, invalid))
         known_head=self.OR(self.eq(self.r['head'],0),*(self.eq(self.r['head'],code)for code in REC_ARITIES))
         bad=self.OR(bad,self.AND(self.eq(self.r['mode'],Op.ETA),self.NOT(self.eq(self.r['z'],0)),self.NOT(self.lt(self.r['z'],self.r['free']))))
-        bad=self.OR(bad,self.NOT(known_head),self.lt(5,self.r['arity']),self.AND(self.eq(self.r['head'],0),self.NOT(self.eq(self.r['arity'],0))))
+        arity_bad=self.OR(self.AND(self.eq(self.r['head'],0),self.NOT(self.eq(self.r['arity'],0))),
+                          *(self.AND(self.eq(self.r['head'],code),self.NOT(self.lt(self.r['arity'],arity)))for code,arity in REC_ARITIES.items()))
+        bad=self.OR(bad,self.NOT(known_head),arity_bad)
         self.stop(self.AND(self.active, bad), Outcome.REJECT, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(bad))
 
@@ -379,6 +383,7 @@ class RuleCompiler:
             if head==8:self.call(complete,Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             elif head==11:self.tail(complete,Op.WHNF,hr['b'])
             elif head==34:self.tail(complete,Op.S_REC_LEFT,hr['b'],y)
+            elif head==37:self.call(complete,Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
             else:self.call(complete,Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
             partial=self.AND(recursor,self.NOT(full))
             self.ret(self.AND(partial,same),x,head=head,arity=self.add(r['arity'],1))
@@ -400,6 +405,18 @@ class RuleCompiler:
         same_fn=self.eq(hx['a'],y)
         self.ret(self.AND(phase,self.NOT(good),same_fn),x)
         self.allocate(self.AND(phase,self.NOT(good),self.NOT(same_fn)),Tag.APP,y,z)
+        for operation in (Op.H_REC,Op.H_CARRIER,Op.H_MINOR,Op.H_MOTIVE,Op.H_ANCHOR,Op.H_ALPHA):
+            phase=self.mode(operation);app=self.tag(hx,Tag.APP);work=self.AND(phase,app)
+            self.stop(self.AND(phase,self.NOT(app)),Outcome.REJECT,Reason.SYNTAX)
+            if operation==Op.H_REC:self.tail(work,Op.H_CARRIER,hx['a'],hx['b'])
+            elif operation==Op.H_CARRIER:self.tail(work,Op.H_MINOR,hx['a'],hx['b'],y)
+            elif operation==Op.H_MINOR:self.call(work,Op.H_MOTIVE,hx['a'],y,z,continuation=(Op.EQ_SELECT,hx['b']))
+            elif operation==Op.H_MOTIVE:self.tail(work,Op.H_ANCHOR,hx['a'],y,z)
+            elif operation==Op.H_ANCHOR:self.tail(work,Op.H_ALPHA,hx['a'],y,hx['b'],z)
+            else:self.call(work,Op.CONV,hx['b'],y,continuation=(Op.H_VALUE,z,w))
+        phase=self.mode(Op.H_VALUE);good=self.NOT(self.eq(result,0))
+        self.ret(self.AND(phase,self.NOT(good)),0)
+        self.tail(self.AND(phase,good),Op.CONV,x,y)
         self.call(self.mode(Op.REC_MAJOR),Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
         phase=self.mode(Op.REC_SPINE);app=self.tag(hr,Tag.APP)
         self.ret(self.AND(phase,self.NOT(app)),0)

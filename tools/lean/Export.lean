@@ -66,9 +66,9 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
         name == ``Quot || name == ``Quot.mk || name == ``Quot.ind || name == ``Decidable.rec ||
         name == ``Subtype || name == ``Subtype.mk) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
-    if (name == ``Eq || name == ``Eq.refl) && values.length == 1 then
+    if (name == ``Eq || name == ``Eq.refl || name == ``HEq || name == ``HEq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
-    if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec) && values.length == 2 then
+    if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]

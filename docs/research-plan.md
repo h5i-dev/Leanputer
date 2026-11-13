@@ -273,3 +273,12 @@ need~20ksteps/~3knodes andexplicitClassical.choice,notnativeacceptedcounts.
 Next core feature candidate HEq is measured among14oldEq-subsetblockers.
 Broader validation remains deferred; high eager substitution/environment cost
 and nativefallbacklatency remain concrete research limitations.
+
+HEq fixed family/refl/rec now has explicit carrier+value K checks, seven-arg
+spines and per-head arity guards(98phases). Weighted seven cases and actual
+Lean agree on K/iota and rejection when either index differs. Native small
+check active. Complete syntax refresh retains all857names:236EXPORTED,
+621UNSUPPORTED; not236proved. Bool is now largest first blocker(142), so it
+supersedes generic-record work as the next coherent feature slice. Preserve
+exact source/trust/resource boundaries. No broad expensive differential run
+has occurred in this syntax refresh.

@@ -1,0 +1,227 @@
+{
+  "format": "leanputer.native-report.v1",
+  "results": [
+    {
+      "name": "LeanputerHEq.family@[]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 157
+    },
+    {
+      "name": "LeanputerHEq.refl@[]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 359
+    },
+    {
+      "name": "LeanputerHEq.rec01@[]",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [],
+      "semantic_steps": 1860
+    },
+    {
+      "name": "relative-HEq-K",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [
+        "A",
+        "a",
+        "q",
+        "P",
+        "k"
+      ],
+      "semantic_steps": 1853
+    },
+    {
+      "name": "HEq-unequal-values-no-K",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [
+        "A",
+        "a",
+        "b",
+        "q",
+        "P",
+        "k"
+      ],
+      "semantic_steps": 1916
+    },
+    {
+      "name": "HEq-unequal-carriers-no-K",
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "assumptions": [
+        "A",
+        "a",
+        "B",
+        "b",
+        "q",
+        "P",
+        "k"
+      ],
+      "semantic_steps": 1915
+    },
+    {
+      "name": "relative-HEq-iota",
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "assumptions": [
+        "A",
+        "a",
+        "P",
+        "k"
+      ],
+      "semantic_steps": 1838
+    }
+  ],
+  "counts": {
+    "ACCEPT": 5,
+    "REJECT": 2
+  },
+  "config": {
+    "heap": 256,
+    "stack": 32,
+    "context": 16,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 2304
+  },
+  "batches": [
+    {
+      "forward_seconds": 182.53682805900462,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 3403,
+        "persistent_channels": 359,
+        "subtract_handovers": 8084,
+        "head_clears": 141,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 53,
+          "dims": 11629,
+          "heads": 12,
+          "ffn_units": 13136,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "primitive_basis": [
+        "False",
+        "False.rec",
+        "Iff",
+        "Iff.intro",
+        "And",
+        "And.intro",
+        "Eq",
+        "Eq.refl",
+        "Eq.rec",
+        "True",
+        "True.intro",
+        "True.rec",
+        "And.rec",
+        "Iff.rec",
+        "Nonempty",
+        "Nonempty.intro",
+        "Nonempty.rec",
+        "Exists",
+        "Exists.intro",
+        "Exists.rec",
+        "Or",
+        "Or.inl",
+        "Or.inr",
+        "Or.rec",
+        "Quot",
+        "Quot.mk",
+        "Quot.ind",
+        "Quot.lift",
+        "Decidable",
+        "Decidable.isFalse",
+        "Decidable.isTrue",
+        "Decidable.rec",
+        "Subtype",
+        "Subtype.mk",
+        "Subtype.rec",
+        "HEq",
+        "HEq.refl",
+        "HEq.rec"
+      ],
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 722805994,
+      "weight_bytes": 1445611988,
+      "cuda_peak_allocated_bytes": 1532254208,
+      "host_process_peak_rss_bytes": 1689567232,
+      "hidden_size": 3584,
+      "native_layers": 54,
+      "boot_tokens": 45,
+      "applied_steps": 2306,
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  ],
+  "parameters": 722805994,
+  "weight_bytes": 1445611988,
+  "primitive_basis": [
+    "False",
+    "False.rec",
+    "Iff",
+    "Iff.intro",
+    "And",
+    "And.intro",
+    "Eq",
+    "Eq.refl",
+    "Eq.rec",
+    "True",
+    "True.intro",
+    "True.rec",
+    "And.rec",
+    "Iff.rec",
+    "Nonempty",
+    "Nonempty.intro",
+    "Nonempty.rec",
+    "Exists",
+    "Exists.intro",
+    "Exists.rec",
+    "Or",
+    "Or.inl",
+    "Or.inr",
+    "Or.rec",
+    "Quot",
+    "Quot.mk",
+    "Quot.ind",
+    "Quot.lift",
+    "Decidable",
+    "Decidable.isFalse",
+    "Decidable.isTrue",
+    "Decidable.rec",
+    "Subtype",
+    "Subtype.mk",
+    "Subtype.rec",
+    "HEq",
+    "HEq.refl",
+    "HEq.rec"
+  ],
+  "validation_scope": "Experimental native backend; broad differential validation pending",
+  "compile_seconds": 12.354925951003679,
+  "device": "cuda",
+  "hidden_size": 3584,
+  "native_layers": 54,
+  "intermediate_size": 1024,
+  "measurement_scope": "Single focused semantic development run; not repeated latency",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "syntax_reexport": {
+    "selected_current_heq_first_blockers": 24,
+    "exported_candidates": 13,
+    "new_native_real_mathlib_proofs": 0
+  }
+}

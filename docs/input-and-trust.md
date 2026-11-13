@@ -241,3 +241,14 @@ has the same subtype, then compares their vals. The proof fields follow by typed
 proof irrelevance. Different data vals reject. Non-Subtype fallback probes
 return false rather than aborting outer proof-irrelevance comparisons. General
 record declarations remain unsupported; this is a fixed checked catalog slice.
+
+## Fixed heterogeneous equality
+
+HEq and HEq.refl take one carrier universe; HEq.rec takes result then carrier
+universe. Its motive quantifies over the endpoint's carrier and value. The
+seven-argument recursor's K-like reduction first compares carrier types, then
+values. Both must be definitionally equal before returning the minor. An assumed
+heterogeneous equality does not make distinct carriers or values definitionally
+equal. The same typed-normalization premise as Eq applies. Per-head arity bounds
+protect partial-spine metadata. The controller has98phases; this remains a fixed
+bounded fragment, not general inductive checking or formal soundness verification.

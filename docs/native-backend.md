@@ -310,3 +310,14 @@ syntax-export. Inspected Classical.some_spec₂ and axiom_of_choice closures
 plan at19,696/21,373steps and2,786/3,041nodes, with genuine Classical.choice
 assumptions; these are not native verified proofs. Small fixture evidence and
 exact configs/inputs are under benchmarks/native/subtype-*.
+
+## Heterogeneous equality checkpoint
+
+HEq/refl/rec adds seven-argument spines and carrier+value K checks to98semantic
+phases. Seven native cases pass5A2R, including rejection when either carrier or
+value differs. At heap256/stack32/context16/constants8/fuel2304:45boot+2306
+forwards182.537s,compile12.355s,722,805,994BF16params/1,445,611,988weightbytes,
+H3584/54layers,CUDApeak1,532,254,208bytes/host1,689,567,232bytes. Weighted
+unit50.865s and actualLean four relative cases2.096sagree. Actual mathlib cast
+closures plan at~8.5ksteps/~1.2knodes, outside this small native smoke; no new
+native mathlib acceptance for this slice. Evidence under benchmarks/native/heq-*.

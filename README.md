@@ -17,7 +17,7 @@ dependent Pi, annotated Lam, App, checked acyclic dependencies and let
 expressions. Fixed kernel primitives provide False and its eliminator, Iff/And
 constructors, projections and dependent recursors; True/True.intro/True.rec;
 Nonempty, Exists and Or with their fixed constructors and recursors; and
-Eq/refl/dependent Eq.rec. Decidable provides its two constructors and dependent
+Eq/refl/dependent Eq.rec and HEq with carrier/value K checks. Decidable provides its two constructors and dependent
 data recursor. Subtype includes dependent fields and typed record eta.
 Fixed Quot/Mk/Ind/Lift rules include checked
 relation respectfulness for lifting.
@@ -176,3 +176,12 @@ states without axioms. It also proves bounded n-ary gate arithmetic using Lean
 standard axioms (`propext`, `Quot.sound`), with no admitted lemmas. It does not verify the complete circuit
 compiler, attention implementation or typing machine. Full-state differential
 traces, seeded tests and external replay provide evidence, not formal soundness.
+
+
+The current complete syntax refresh retains all 857 selected public theorems:
+236 export and 621 remain unsupported. EXPORTED is not proof acceptance; a
+new full-population native check has not been run. The [complete syntax
+outcomes](benchmarks/mathlib-v4.31.0/current-fragment/syntax-summary.json) retain
+assumptions, input sizes and every unsupported row. Bool is the largest current
+first blocker (142 rows). This refresh is separate from the earlier 4/857
+reference-backend proof result.

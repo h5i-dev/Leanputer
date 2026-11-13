@@ -127,6 +127,13 @@ class Op(IntEnum):
     S_RIGHT_TYPE = 88
     S_SAME_TYPE = 89
     S_RIGHT_VAL = 90
+    H_REC = 91
+    H_CARRIER = 92
+    H_MINOR = 93
+    H_MOTIVE = 94
+    H_ANCHOR = 95
+    H_ALPHA = 96
+    H_VALUE = 97
 
 
 @dataclass(frozen=True)
@@ -277,7 +284,7 @@ class SpecMachine:
         # Check address domains before any semantic read or update. The weighted
         # engine uses the same guards before interpreting an attention result.
         if (not 1 <= r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['ctx'] > cfg.context
-                or not r['decl'] <= r['decl_count'] <= cfg.constants or (r['head']!=0 and r['head']not in REC_ARITIES) or r['arity']>5 or (r['head']==0 and r['arity']!=0)):
+                or not r['decl'] <= r['decl_count'] <= cfg.constants or (r['head']!=0 and r['head']not in REC_ARITIES) or r['arity']>=REC_ARITIES.get(r['head'],1)):
             self.stop(Outcome.REJECT, Reason.SYNTAX); return s
         pointers = []
         if op in (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
@@ -286,14 +293,16 @@ class SpecMachine:
                   Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.I_PROJ_ARROW, Op.W_PROJ, Op.PROJ_FIELDS, Op.PROJ_HEAD, Op.PROJ_SELECT, Op.TREE_PROJ, Op.EQ_REC, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
-                  Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL):
+                  Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
+                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
             pointers.append(result)
         if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE):pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
-                  Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL):
+                  Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
+                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE):
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
@@ -522,6 +531,7 @@ class SpecMachine:
                 elif head==8:self.call(Op.EQ_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 elif head==11:self.tail(Op.WHNF,self.node(result)[2])
                 elif head==34:self.tail(Op.S_REC_LEFT,self.node(result)[2],y)
+                elif head==37:self.call(Op.H_REC,result,continuation=(Op.EQ_RESULT,x,result,y))
                 else:
                     self.call(Op.REC_MAJOR,result,y,head,continuation=(Op.EQ_RESULT,x,result,y))
             elif result == self.node(x)[1]:
@@ -541,6 +551,18 @@ class SpecMachine:
             if result: self.tail(Op.WHNF,result)
             elif self.node(x)[1]==y: self.ret(x)
             else: self.allocate(Tag.APP,y,z)
+        elif op in (Op.H_REC,Op.H_CARRIER,Op.H_MINOR,Op.H_MOTIVE,Op.H_ANCHOR,Op.H_ALPHA):
+            tag,a,b,_=self.node(x)
+            if tag!=Tag.APP:self.stop(Outcome.REJECT,Reason.SYNTAX)
+            elif op==Op.H_REC:self.tail(Op.H_CARRIER,a,b)
+            elif op==Op.H_CARRIER:self.tail(Op.H_MINOR,a,b,y)
+            elif op==Op.H_MINOR:self.call(Op.H_MOTIVE,a,y,z,continuation=(Op.EQ_SELECT,b))
+            elif op==Op.H_MOTIVE:self.tail(Op.H_ANCHOR,a,y,z)
+            elif op==Op.H_ANCHOR:self.tail(Op.H_ALPHA,a,y,b,z)
+            else:self.call(Op.CONV,b,y,continuation=(Op.H_VALUE,z,w))
+        elif op==Op.H_VALUE:
+            if result:self.tail(Op.CONV,x,y)
+            else:self.ret(0)
         elif op==Op.REC_MAJOR:
             self.call(Op.WHNF,y,continuation=(Op.REC_SPINE,x,z))
         elif op==Op.REC_SPINE:
