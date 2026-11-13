@@ -33,13 +33,14 @@ ONE_FIELD_RECORDS = {
     'Subsingleton':dict(code=55, projection=9, constructor='intro', field='equality', data=False, type_carrier=False),
     'Zero':dict(code=58, projection=10, constructor='mk', field='value', data=True, type_carrier=True),
     'One':dict(code=61, projection=11, constructor='mk', field='value', data=True, type_carrier=True),
+    'OfNat':dict(code=68, projection=12, constructor='mk', field='value', data=True, type_carrier=True, parameters=2),
 }
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
         PRIMITIVE_UNIVERSES[_name]=2 if _offset==2 else 1
     PROJECTION_FAMILIES[_family]=_record['projection']
-    REC_ARITIES[_record['code']+2]=4
+    REC_ARITIES[_record['code']+2]=_record.get('parameters',1)+3
     if not _record['data']:
         REC_CONSTRUCTORS[_record['code']+2]=(_record['code']+1,)
         REC_MAJOR_ARITIES[_record['code']+2]=2
@@ -276,7 +277,8 @@ def _one_record_type(expression):
     bind=lambda n,t,b:('bind',n,t,b)
     apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
     alpha,motive,major,field=map(v,('alpha','motive','major','field'))
-    record_type=apps(('builtin',family,carrier),alpha)
+    parameters=[alpha]+([v('index')]if record.get('parameters',1)==2 else [])
+    record_type=apps(('builtin',family,carrier),*parameters)
     if record['field']=='value':field_type=alpha
     elif record['field']=='binary':field_type=bind('left',alpha,bind('right',alpha,alpha))
     else:field_type=bind('left',alpha,bind('right',alpha,apps(('builtin','Eq',carrier),alpha,v('left'),v('right'))))
@@ -285,9 +287,10 @@ def _one_record_type(expression):
         tail=('sort',level)
     elif not name.endswith('.rec'):tail=bind('field',field_type,record_type)
     else:
-        ctor=apps(('builtin',family+'.'+record['constructor'],carrier),alpha,field)
+        ctor=apps(('builtin',family+'.'+record['constructor'],carrier),*parameters,field)
         tail=bind('motive',bind('motive_arg',record_type,('sort',expression[2])),
              bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record_type,apps(motive,major))))
+    if record.get('parameters',1)==2:tail=bind('index',('builtin','Nat'),tail)
     return _close_schema(bind('alpha',('sort',carrier_sort),tail))
 
 

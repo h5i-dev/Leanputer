@@ -149,8 +149,8 @@ class Oracle:
             from .primitives import ONE_FIELD_RECORDS
             record=ONE_FIELD_RECORDS.get(term[1])
             constructor=term[1]+('.'+record['constructor'] if record else '.mk' if term[1]=='Subtype' else '.intro')
-            if head[0]=='builtin' and head[1]==constructor and len(arguments)==(2 if record else 4):
-                return self.whnf(arguments[1 if record else 2+term[2]],context)
+            if head[0]=='builtin' and head[1]==constructor and len(arguments)==(record.get('parameters',1)+1 if record else 4):
+                return self.whnf(arguments[-1 if record else 2+term[2]],context)
             return ('proj',term[1],term[2],base)
         if term[0] == 'app':
             fn = self.whnf(term[1],context)
@@ -190,9 +190,10 @@ class Oracle:
                     return self.whnf(apps(arguments[3],('proj','Subtype',0,arguments[4]),('proj','Subtype',1,arguments[4])),context)
                 from .primitives import ONE_FIELD_RECORDS
                 record=ONE_FIELD_RECORDS.get(name.split('.')[0])
-                if record and name.endswith('.rec') and len(arguments)==4:
+                parameters=record.get('parameters',1)if record else 0
+                if record and name.endswith('.rec') and len(arguments)==parameters+3:
                     if record['data']:
-                        return self.whnf(apps(arguments[2],('proj',name.split('.')[0],0,arguments[3])),context)
+                        return self.whnf(apps(arguments[parameters+1],('proj',name.split('.')[0],0,arguments[parameters+2])),context)
                     ctor=self.whnf(arguments[3],context);fields=[]
                     while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
                     if ctor[0]=='builtin' and ctor[1]==name.split('.')[0]+'.'+record['constructor'] and len(fields)==2:
@@ -244,7 +245,7 @@ class Oracle:
                 return self.convert(('proj','Subtype',0,left),('proj','Subtype',0,right),context)
         from .primitives import ONE_FIELD_RECORDS
         record=ONE_FIELD_RECORDS.get(head[1]) if head[0]=='builtin' else None
-        if record and record['data'] and len(arguments)==1 and self.convert(left_type,self.infer(right,context),context):
+        if record and record['data'] and len(arguments)==record.get('parameters',1) and self.convert(left_type,self.infer(right,context),context):
             return self.convert(('proj',head[1],0,left),('proj',head[1],0,right),context)
         if (left[0] == 'lam') != (right[0] == 'lam'):
             lam, neutral = (left, right) if left[0] == 'lam' else (right, left)
@@ -271,11 +272,14 @@ class Oracle:
             inferred=self.whnf(self.infer(term[3],context),context)
             from .primitives import ONE_FIELD_RECORDS,primitive_type
             if term[1] in ONE_FIELD_RECORDS:
-                if inferred[0]!='app' or inferred[1][0]!='builtin' or inferred[1][1]!=term[1]:
+                head=inferred;parameters=[]
+                while head[0]=='app':parameters.insert(0,head[2]);head=head[1]
+                if head[0]!='builtin' or head[1]!=term[1] or len(parameters)!=ONE_FIELD_RECORDS[term[1]].get('parameters',1):
                     raise Rejected('projection family mismatch')
                 ctor=term[1]+'.'+ONE_FIELD_RECORDS[term[1]]['constructor']
-                ctor_type=primitive_type(('builtin',ctor,inferred[1][2]))
-                return self.substitute(ctor_type[2],inferred[2])[1]
+                ctor_type=primitive_type(('builtin',ctor,head[2]))
+                for parameter in parameters:ctor_type=self.substitute(ctor_type[2],parameter)
+                return ctor_type[1]
             head=inferred[1][1] if inferred[0]=='app' and inferred[1][0]=='app' else ()
             if not head or head[0]!='builtin' or head[1]!=term[1]:
                 raise Rejected('projection family mismatch')

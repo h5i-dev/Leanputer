@@ -203,3 +203,11 @@ OfNat class is now exposed as a further blocker. Its large spec plan is not
 native proof evidence. Complete current-fragment records preserve all names,
 assumptions and unknown unsupported closure metadata; checking_status remains
 NOT_RUN_IN_THIS_REFRESH for every row.
+
+The OfNat110-phase syntax refresh is still405EXPORTED/452UNSUPPORTED,
+export8.858025s, preserving the same857selected names. Twelve priorOfNat-first
+rows now expose PUnit6/HAdd3/HPow2/LT1, with no new complete syntax export or
+native mathlib acceptance in this slice. Current-fragment outcomes retain their
+unknown unsupported closure metadata and NOT_RUN checking labels. Native CLI
+reports now also retain known dependency/assumption/input-node metadata on
+encoding-resource rows and null values where the closure is unavailable.

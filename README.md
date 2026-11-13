@@ -25,7 +25,9 @@ with successor universes for its Type-valued carrier.
 Fixed one-field records cover Inhabited, Mul, Add and Subsingleton, including
 dependent field typing. Zero and One use the same fixed data-record path.
 Bounded raw Nat literals, zero/successor normalization and dependent Nat.rec
-are also supported. Data records support typed eta; the Prop-valued
+are also supported. OfNat retains both uniform parameters and the stored
+field, so ordinary numerals check their actual instance definitions.
+Data records support typed eta; the Prop-valued
 Subsingleton keeps constructor-only data reduction.
 Fixed Quot/Mk/Ind/Lift rules include checked
 relation respectfulness for lifting.

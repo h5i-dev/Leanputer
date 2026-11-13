@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "leanputer"
 version = "0.1.0"
-description = "Bounded lambda-calculus checking compiled into residual ReLU weights"
+description = "Bounded Lean-kernel fragment checking compiled into stock Transformer weights"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["torch>=2.6"]

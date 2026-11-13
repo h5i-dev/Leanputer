@@ -151,8 +151,10 @@ class NativeMachine:
                               for name,s in self.register_layout.slices.items()})
         results = [dict(name=document.get('name',str(index)),status=Outcome(r['status']).name,
                         reason=Reason(r['reason']).name,assumptions=[declaration.name for declaration in judgment[2] if declaration.value is None],
+                        environment_declarations=len(judgment[2]),input_heap_nodes=initial_state['regs']['free']-1,
+                        allocated_heap_nodes=r['free']-1,
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==Reason.FUEL))
-                   for index,(document,judgment,r) in enumerate(zip(documents,parsed,registers))]
+                   for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]
         return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
                     layout_policy=self.layout_policy,layout_statistics=self.layout_statistics,
                     primitive_basis=list(PRIMITIVE_CODES),
@@ -283,14 +285,18 @@ def check_documents(machine, documents, batch_size=4):
     results=[];pending=[];positions=[];batches=[]
     for index,document in enumerate(documents):
         name=document.get('name',str(index)) if isinstance(document,dict) else str(index)
-        result=dict(name=name)
+        result=dict(name=name,environment_declarations=None,assumptions=None,input_heap_nodes=None)
         results.append(result)
         if isinstance(document,dict) and document.get('format')=='leanputer.dependent.v1' and document.get('status')=='UNSUPPORTED':
             result.update(status='UNSUPPORTED',reason=document.get('reason','unsupported preparation input'))
             continue
         try:
             # Encoding only: no type checking or semantic-step planning.
-            prepare(machine.config,*parse_document(document))
+            judgment=parse_document(document)
+            result.update(environment_declarations=len(judgment[2]),
+                          assumptions=[d.name for d in judgment[2]if d.value is None])
+            initial_state=prepare(machine.config,*judgment)
+            result['input_heap_nodes']=initial_state['regs']['free']-1
         except Unsupported as error: result.update(status='UNSUPPORTED',reason=str(error))
         except Exhausted as error: result.update(status='RESOURCE',reason=str(error))
         except (ValueError,TypeError,KeyError,RecursionError) as error: result.update(status='MALFORMED',reason=str(error))

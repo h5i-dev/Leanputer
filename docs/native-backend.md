@@ -435,3 +435,27 @@ eight checked dependencies at heap8192/stack128/context64/fuel131072. It is NOT
 native checked. No expensive large native proof run or new mathlib native
 acceptance is claimed for this slice. Nat.add/mul's actual brecOn dependency
 closures require further constructs; no arithmetic shortcut replaces them.
+
+## OfNat checkpoint
+
+The fixed OfNat family/mk/rec expands the catalog to71intrinsics/110phases.
+A general weighted parameter-spine scan instantiates constructor types using
+stacked substitution; the Nat label remains part of the record type. The field
+value is independent:the label3/value5 source instance returns5, and the false
+claim that it returns3 rejects. Ordinary numerals preserve both checked instance
+definitions, without exporter normalization or an unchecked library shortcut.
+
+Native12cases pass9A3R with exact planned steps:five actual Lean source judgments,
+neutral recursor, three required rejections and retained Mul/Subtype/Nat cases.
+The focused weighted unit passes260.707s; four relative cases agree with
+Lean(2.659s). At heap512/stack32/context16/constants8/fuel2048:48boot+2050stock
+forwards233.296s,compile27.403s,1,356,195,212BF16parameters/2,712,390,424weightbytes,
+H5120/71layers/inter1024; CUDApeak2,835,833,344bytes,host1,773,715,456bytes.
+Development validation overlapped CPU/GPU work; this is not a speed comparison
+with the higher-fuel Nat batch. Evidence under benchmarks/native/ofnat-*.
+
+All12priorOfNat-first mathlib rows remain explicit unsupported records, now
+blocked by PUnit6/HAdd3/HPow2/LT1. No new mathlib acceptance or syntax-coverage
+increase is claimed. Ordinary numeral support is a prerequisite for those
+closures, not proof that they are already checked. General multi-universe and
+inductive/indexed declaration support remain separate work.

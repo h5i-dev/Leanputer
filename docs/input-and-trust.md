@@ -297,7 +297,23 @@ Nat.rec builds the step application and recursive call inside weights. It
 handles both literal majors and Nat.succ n with a neutral n; a neutral major
 stays neutral. Shift/substitution treat literals as closed atoms. Zero/One use
 the fixed one-field data-record path. General recursive inductive admission,
-arithmetic primitive optimizations and the indexed OfNat class remain outside
-this slice. Ordinary numeral notation retains its OfNat dependency; preparation
-never rewrites it to a literal to evade environment checking. The focused source
-uses Lean's nat_lit syntax to request actual raw literals explicitly.
+arithmetic primitive optimizations remain outside this slice. Ordinary numeral
+notation retains its OfNat dependency and its actual instance definition;
+preparation never rewrites it to a literal to evade environment checking.
+The raw-literal fixture uses nat_lit syntax explicitly.
+
+## OfNat and uniform record parameters
+
+OfNat has two uniform parameters:the Type-u carrier and a Nat label. Its single
+field has the carrier type and may differ from that label. For example an
+OfNat Nat3 instance may store5. Constructor projection returns5, never3.
+The ordinary instOfNatNat definition that stores the label itself is exported
+and checked as a definition, not assumed or applied by the encoder.
+
+The weighted record-parameter scan traverses the inferred family spine, checks
+the expected fixed family head, builds its fixed constructor schema, and uses
+stacked substitutions to instantiate all parameters in order. The resulting
+field-binder domain is the projection type. Conversion first checks the whole
+record type, including its label, before typed data eta. OfNat.rec carries
+result/carrier universes and may expand a neutral data record through its field.
+No arbitrary indexed inductive declaration admission is provided by this rule.

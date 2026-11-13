@@ -11,11 +11,11 @@ Research quality and formal soundness remain goals, not established labels.
 | Dependent calculus | Ground sorts/Prop, Pi/Lam/App/let, capture avoidance, beta/delta/zeta, typed eta and proof irrelevance; all environment types/values checked |
 | Native compilation | Stock RMSNorm/SwiGLU/GDN/forward/cache; generated BF16 weights, tested bounded binary domain; broad numerical correspondence still pending |
 | Layout | Matched downsizing completed:4.021B→668.6Mparameters, same capacities/fuel/outcomes; GPUforward372.825→315.196s, far from efficient |
-| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One and bounded Nat; selected targeted native checks |
+| Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat and OfNat; selected targeted native checks |
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest109phase syntax refresh405EXPORTED452UNSUPPORTED; not405proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest110phase syntax refresh405EXPORTED452UNSUPPORTED; not405proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -26,11 +26,11 @@ also accepted4930steps/three checked dependencies/noaxioms. These are selected
 source judgments, not a new full-population coverage fraction. Preserve exact
 input/config/model measurements; full native checking of857rows is unrun.
 
-The next coherent slice is indexed OfNat, needed for ordinary numerals. Its
-Nat label is a type parameter, not the field value; constructor-field extraction
-and matching both parameters must be computed inside weights. An isolated
-worktree prototype has five actual Lean source spec acceptances; no native
-OfNat claim yet. Nat.succ_injective only plans at~25ksteps/~2.8knodes and has
+OfNat now passes native12cases9A3R, including ordinary numerals with their two
+checked instance definitions and an independent label3/value5 instance. The
+next coherent slice is PUnit, now exposed by six OfNat-first closures. Actual
+Lean assessment distinguishes Prop0 constructor-only data recursion from
+positive-universe data eta/recursion; no PUnit production support yet. Nat.succ_injective only plans at~25ksteps/~2.8knodes and has
 not been checked natively. Other remaining first blockers:
 Monoid/AddMonoid require multiple-field/inherited records; several Mul/Add
 closures now expose cancellation-property classes. General recursive/indexed
