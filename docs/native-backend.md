@@ -558,3 +558,30 @@ not13newnativeacceptances. The independent targeted native source count is not
 a matched425/857coverage result. SourceΓcosts, unsupported and resource rows
 remain explicit. The native128-dimensional value head reserves two references;
 six-word stack payloads require word width<=21, checked before allocation.
+
+## Membership with two carrier types
+
+Membership adds a fixed one-field data record with two uniform Type parameters
+and field container→element→Prop (89primitives/114phases). Its recursor has three
+universe parameters. Field inference retains both carrier levels; typed data
+eta and neutral recursion use the generic record path. Actual Lean replay adds
+the checked standard outParam definition before the genuine Membership
+inductive declaration, never an axiom. Exported specialized outParam values
+remain ordinary checked dependencies. No host inference or unchecked relation
+normalization is used.
+
+Native17cases pass13A4R, matching every expected result/reason/step/heap count.
+Both real Membership.mem.ne_of_notMem@[1,1] and its primed variant accept6683
+steps, six checked definitions/noaxioms each,116input/955allocatednodes. Tests
+also cover reversed domains, distinct relations, wrong family, different
+universes and retained Eq/PUnit/PProd eta. Weighted6case3A3R passed102.492s;
+source/relative/real judgments agree with actual Lean and independent references.
+Heap1024/stack32/context16/constants8/fuel6720:123boot+6722stockforwards1049.173s,
+compile43.088s,2,063,527,628BF16params/4,127,055,256bytes,H5376/103layers/FFN1024;
+peak forwardCUDA4,565,284,352bytes/hostRSS1,796,030,464bytes. Development CPU
+checks/export overlapped; no controlled timing comparison. Exact evidence:
+membership-*. Dense parameter shape is unchanged from the pair checkpoint at
+these memory capacities/fuel bit width, with different checker weights.
+
+The same857-name syntax refresh is435EXPORTED422UNSUPPORTED15.455s; ten new
+exports, two new targeted native acceptances, no full native population run.

@@ -345,3 +345,13 @@ validation enforces lane bounds, unused padding and reserved zeros. Fixed
 schema max/successor calculations run inside weights. Symbolic universe
 constraints are still unsupported; targeted Lean/native agreement is not a
 formal proof of the compiler or the typed normalization invariant.
+
+Membership has two uniform Type parameters and field γ→α→Prop, in that order.
+Its family/constructor carry element/container universes; its recursor carries
+result/element/container universes. The fixed schema uses the definitionally
+equal normalized form of the standard outParam annotation. Source aliases and
+ordinary projection definitions still export their actual specialized outParam
+dependencies for checking. Lean replay adds the standard polymorphic outParam
+definition by kernel-checked declaration before adding Membership's genuine
+inductive declaration. It does not add an axiom. Different carriers, reversed
+field arguments or arbitrary distinct relation values cannot be identified.

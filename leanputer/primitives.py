@@ -36,11 +36,13 @@ ONE_FIELD_RECORDS = {
     'OfNat':dict(code=68, projection=12, constructor='mk', field='value', data=True, type_carrier=True, parameters=2),
     'LT':dict(code=74, projection=13, constructor='mk', field='relation', data=True, type_carrier=True),
     'LE':dict(code=77, projection=14, constructor='mk', field='relation', data=True, type_carrier=True),
+    'Membership':dict(code=86, projection=19, constructor='mk', field='membership', data=True,
+                      type_carrier=True,parameters=2,universe_parameters=2),
 }
 for _family, _record in ONE_FIELD_RECORDS.items():
     for _offset, _name in enumerate((_family, _family+'.'+_record['constructor'], _family+'.rec')):
         PRIMITIVE_CODES[_name]=_record['code']+_offset
-        PRIMITIVE_UNIVERSES[_name]=2 if _offset==2 else 1
+        PRIMITIVE_UNIVERSES[_name]=_record.get('universe_parameters',1)+int(_offset==2)
     PROJECTION_FAMILIES[_family]=_record['projection']
     REC_ARITIES[_record['code']+2]=_record.get('parameters',1)+3
     if not _record['data']:
@@ -287,6 +289,7 @@ def _option_type(expression):
 
 def _one_record_type(expression):
     name=expression[1];family=name.split('.')[0];record=ONE_FIELD_RECORDS[family]
+    if record['field']=='membership':return _membership_type(expression)
     carrier=expression[3] if name.endswith('.rec') else expression[2]
     carrier_sort=(carrier+1 if carrier>=0 else -4 if carrier==-1 else -5) if record['type_carrier'] else carrier
     v=lambda n:('named',n)
@@ -331,6 +334,27 @@ def _pair_type(expression):
         minor=bind('left',alpha,bind('right',beta,apps(motive,constructor)))
         tail=bind('motive',bind('major',pair,('sort',expression[2])),bind('minor',minor,bind('major',pair,apps(motive,major))))
     return _close_schema(bind('alpha',('sort',left_sort),bind('beta',('sort',right_sort),tail)))
+
+
+def _membership_type(expression):
+    name=expression[1]
+    u,v=expression[3:]if name.endswith('.rec')else expression[2:]
+    successor=lambda level:level+1 if isinstance(level,int)and level>=0 else ('succ',level)
+    sorts=(successor(u),successor(v))
+    level=max(sorts)if all(isinstance(value,int)and value>=0 for value in sorts)else ('max',)+sorts
+    variable=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,container,field,motive,major=map(variable,('alpha','container','field','motive','major'))
+    record=apps(('builtin','Membership',u,v),alpha,container)
+    field_type=bind('collection',container,bind('element',alpha,('sort',0)))
+    if name=='Membership':tail=('sort',level)
+    elif name=='Membership.mk':tail=bind('field',field_type,record)
+    else:
+        ctor=apps(('builtin','Membership.mk',u,v),alpha,container,field)
+        tail=bind('motive',bind('major',record,('sort',expression[2])),
+             bind('minor',bind('field',field_type,apps(motive,ctor)),bind('major',record,apps(motive,major))))
+    return _close_schema(bind('alpha',('sort',sorts[0]),bind('container',('sort',sorts[1]),tail)))
 
 
 def _natural_type(expression):

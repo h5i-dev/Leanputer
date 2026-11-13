@@ -15,7 +15,7 @@ Research quality and formal soundness remain goals, not established labels.
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
 | Real Lean input | Syntax-only Expr export, full supported dependency closure, explicit genuine axioms, opaque bodies checked, independent kernel replay |
-| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest86-primitive/114phase syntax refresh425EXPORTED432UNSUPPORTED; not425proofs. Complete native population NOT_RUN |
+| Mathlib denominator | Same857public source theorems/four modules/pin, one ground instance each. Latest89-primitive/114phase syntax refresh435EXPORTED422UNSUPPORTED; not435proofs. Complete native population NOT_RUN |
 | Evaluation | Old custom-backend834case differential and61test checkpoint passed; latest native features have targeted checks. Broad native/differential campaign explicitly deferred |
 | Release tooling | CLI, reference artifact fingerprints, stock model serialization prototype, CI and compact evidence. Full research release criteria incomplete |
 
@@ -50,9 +50,15 @@ native19case batch14A5R, including actual Function.uncurry_def4295steps/Gamma4/
 noaxioms and retained Eq/PUnit/Subtype. Ground-universe tuple lanes support three
 recursor parameters, with each lane/padding checked inside weights; source JSON
 is unchanged. Native2.064Bparams/heap1024/f4352 executes657.889s, still slow.
-Next measured structural blockers include Membership(two parameter types and
-a reversed relation field) and HAdd/HMul(four recursor universes); these require
-their actual Lean schemas, not a scalar lookup or an assumed field order.
+Membership now passes native17cases13A4R, including both actual ne_of_notMem
+variants6683steps/sixcheckeddependencies/noaxioms each. Typed fields retain both
+carrier universes and the actual container-first argument order. Native2.064B
+params/f6720 executes1049.173s. Current isolated HAdd/HMul draft supports four
+recursor universes without widening512/1024word sizes; focused weighted10cases
+passed. Its new smallest real closures plan at30ksteps/4.3knodes, so resource
+feasibility is a concrete blocker before a large native source run. No native
+arithmetic claim yet; use only minimum required reuse/layout work, then resume
+features. Do not launch an uncontrolled hour-scale validation campaign.
 
 Stock fallback latency and eager allocation/environment rechecking are material
 limits: an individual small native source proof can take minutes. After a safe

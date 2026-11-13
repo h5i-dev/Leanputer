@@ -74,9 +74,9 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
     if (name == ``Eq || name == ``Eq.refl || name == ``HEq || name == ``HEq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec || name == ``Option.rec ||
-        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec || name == ``Zero.rec || name == ``One.rec || name == ``OfNat.rec || name == ``PUnit.rec || name == ``LT.rec || name == ``LE.rec || name == ``PProd || name == ``PProd.mk || name == ``Prod || name == ``Prod.mk) && values.length == 2 then
+        name == ``Inhabited.rec || name == ``Mul.rec || name == ``Add.rec || name == ``Subsingleton.rec || name == ``Zero.rec || name == ``One.rec || name == ``OfNat.rec || name == ``PUnit.rec || name == ``LT.rec || name == ``LE.rec || name == ``PProd || name == ``PProd.mk || name == ``Prod || name == ``Prod.mk || name == ``Membership || name == ``Membership.mk) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
-    if (name == ``PProd.rec || name == ``Prod.rec) && values.length == 3 then
+    if (name == ``PProd.rec || name == ``Prod.rec || name == ``Membership.rec) && values.length == 3 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!,toJson values[2]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]
@@ -86,7 +86,7 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
   | .proj name index inner =>
     if (name == ``Iff || name == ``And || name == ``Subtype || name == ``PProd || name == ``Prod) && index < 2 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
-    if (name == ``Inhabited || name == ``Mul || name == ``Add || name == ``Subsingleton || name == ``Zero || name == ``One || name == ``OfNat || name == ``LT || name == ``LE) && index == 0 then
+    if (name == ``Inhabited || name == ``Mul || name == ``Add || name == ``Subsingleton || name == ``Zero || name == ``One || name == ``OfNat || name == ``LT || name == ``LE || name == ``Membership) && index == 0 then
       return jsonArray [text "proj",text name.toString,toJson index,← encodeExpr env inner]
     throw s!"unsupported structure projection {name}.{index}"
   | .lit (.natVal value) => return jsonArray [text "nat",toJson value]

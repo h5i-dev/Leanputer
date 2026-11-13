@@ -293,7 +293,7 @@ class Oracle:
                 if head[0]!='builtin' or head[1]!=term[1] or len(parameters)!=ONE_FIELD_RECORDS[term[1]].get('parameters',1):
                     raise Rejected('projection family mismatch')
                 ctor=term[1]+'.'+ONE_FIELD_RECORDS[term[1]]['constructor']
-                ctor_type=primitive_type(('builtin',ctor,head[2]))
+                ctor_type=primitive_type(('builtin',ctor)+tuple(head[2:]))
                 for parameter in parameters:ctor_type=self.substitute(ctor_type[2],parameter)
                 return ctor_type[1]
             head=inferred[1][1] if inferred[0]=='app' and inferred[1][0]=='app' else ()

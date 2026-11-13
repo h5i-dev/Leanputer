@@ -37,8 +37,12 @@ now pass native19cases14A5R, including Function.uncurry_def, using three ground
 recursor universes and correctly typed two-field eta. PProd always has a data
 sort, including at0/0. The packed universe ABI validates every lane/padding in
 weights; the public JSON stays unchanged. Preserve all features/stockforward/
-cache for the next slice. Membership needs its actual γ→α→Prop field order and
-two uniform Type parameters; HAdd/HMul need four recursor universes. General
+cache for the next slice. Membership now passes native17cases13A4R, including
+two real ne_of_notMem source judgments and its γ→α→Prop field order with two
+uniform Type parameters. HAdd/HMul need four recursor universes; the isolated
+draft passes targeted CPU/reference checks, with native checking pending.
+Its16dependency source closures plan at30ksteps/4.3knodes, requiring a specific
+resource fix before large native replay. General
 multi-field/inherited records remain a separate admission problem.
 
 Native speed is an unresolved research limit. Minimum required efficiency work
