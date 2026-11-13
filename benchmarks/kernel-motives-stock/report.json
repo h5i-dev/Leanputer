@@ -1,0 +1,1134 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 4,
+      "reason": 29,
+      "fuel": 83,
+      "free": 205,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 2,
+      "ctx": 5,
+      "x": 0,
+      "depth": 0,
+      "task": 56,
+      "r": 204,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 0,
+      "substitution": 182,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 197,
+      "domain": 129,
+      "binder_info": 0,
+      "abstract_uid": 182,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 2,
+      "lookup_level": 2,
+      "const_original": 8,
+      "expr_depth": 2,
+      "vec_length": 1,
+      "vec_left": 1,
+      "vec_build": 1,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 129,
+      "left_tag": 68,
+      "left_a": 113,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 141,
+      "constructor_right": 1,
+      "constructor_stage": 5,
+      "left_base": 2,
+      "left_offset": 1,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 4,
+      "vector_expected_role": 4,
+      "vector_remaining": 1,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 2,
+      "lookup_uid": 149,
+      "lookup_index": 4,
+      "lookup_type": 143,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 1,
+      "env_ready": 1,
+      "signature_type": 18,
+      "parameter_vector": 57,
+      "level_vector": 7,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 1,
+      "zip_remaining": 0,
+      "zip_symbol": 2,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 107,
+      "name_table_left": 2,
+      "name_table_next": 102,
+      "name_second": 89,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 1,
+      "kernel_zero": 108,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 0,
+      "reuse_base": 2,
+      "reuse_end": 4,
+      "reuse_index": 4,
+      "reuse_whnf": 1,
+      "reuse_body": 180,
+      "reuse_domain": 129,
+      "occurrence_internal": 0,
+      "occurrence_mark": 4,
+      "occurrence_found": 0,
+      "lookup_head": 170,
+      "header_parameters": 57,
+      "header_parameter_count": 2,
+      "header_vector": 55,
+      "header_head": 140,
+      "header_seen": 1,
+      "header_parameter_base": 2,
+      "header_parameter_end": 4,
+      "header_symbol": 3,
+      "header_type": 18,
+      "header_raw": 48,
+      "header_remaining": 0,
+      "header_next": 0,
+      "header_indices": 1,
+      "header_current_level": 1,
+      "header_result_level": 1,
+      "header_meta": 137,
+      "header_scheme": 138,
+      "header_signature": 139,
+      "family_set_cursor": 4,
+      "family_set_remaining": 0,
+      "family_set_next": 0,
+      "formal_count": 1,
+      "formal_remaining": 0,
+      "formal_i": 0,
+      "formal_head": 110,
+      "formal_value": 109,
+      "header_levels": 111,
+      "app_args": 166,
+      "app_arity": 3,
+      "app_symbol": 3,
+      "app_levels": 7,
+      "app_signature": 139,
+      "app_remaining": 1,
+      "app_context_index": 3,
+      "app_argument": 133,
+      "app_next": 0,
+      "abstract_base": 0,
+      "abstract_end": 0,
+      "scope_cursor": 0,
+      "scope_dest": 0,
+      "reverse_length": 1,
+      "reverse_remaining": 0,
+      "reverse_head": 203,
+      "recursive_mark": 0,
+      "recursive_prefix_rev": 0,
+      "recursive_prefix_count": 0,
+      "recursive_prefix_value": 0,
+      "recursive_family": 0,
+      "recursive_skip": 0,
+      "recursive_indices": 0,
+      "recursive_index_remaining": 0,
+      "recursive_index_rev": 0,
+      "recursive_index_next": 0,
+      "recursive_index_vector": 0,
+      "typing_active": 1,
+      "typing_head": 175,
+      "core_operation": 1,
+      "core_index": 0,
+      "ctor_family_cursor": 0,
+      "ctor_families_remaining": 0,
+      "ctor_family_next": 0,
+      "ctor_family_signature": 139,
+      "ctor_remaining": 0,
+      "ctor_next": 0,
+      "ctor_symbol": 1,
+      "ctor_type": 14,
+      "ctor_field_count": 0,
+      "ctor_field_rev": 0,
+      "ctor_active_pi": 0,
+      "ctor_field_domain": 0,
+      "ctor_field_level": 0,
+      "ctor_recursive": 0,
+      "ctor_field_tail": 0,
+      "ctor_field_info": 0,
+      "ctor_result_args": 166,
+      "ctor_field_vector": 167,
+      "ctor_meta": 168,
+      "ctor_pending": 169,
+      "ctor_names": 170,
+      "name_parent_symbol": 3,
+      "name_candidate_symbol": 4,
+      "recname_parent_path": 82,
+      "recname_candidate_path": 91,
+      "recname_length": 1,
+      "recname_head": 81,
+      "recname_remaining": 0,
+      "recname_right": 90,
+      "recname_next_left": 0,
+      "recname_next_right": 89,
+      "recname_part_left": 62,
+      "recname_part_right": 62,
+      "recname_part_tag": 80,
+      "recname_part_value": 61,
+      "recname_byte_index": 2,
+      "core_names_remaining": 0,
+      "core_rec_names": 171,
+      "core_name_next": 0,
+      "core_name_family": 139,
+      "core_name_family_symbol": 3,
+      "core_name_symbol": 4,
+      "decl_ctor_families": 0,
+      "core_ctor_declared": 1,
+      "decl_ctor_family": 139,
+      "decl_ctor_name_next": 0,
+      "decl_ctor_remaining": 0,
+      "decl_ctor_ordinal": 1,
+      "decl_ctor_next": 0,
+      "decl_ctor_symbol": 1,
+      "decl_ctor_type": 14,
+      "decl_ctor_fields": 167,
+      "decl_ctor_info": 172,
+      "decl_ctor_scheme": 173,
+      "decl_ctor_signature": 174,
+      "core_K": 1,
+      "core_elim_level": 176,
+      "core_elim_info": 179,
+      "core_rec_parameters": 178,
+      "elim_large": 1,
+      "elim_arguments": 166,
+      "elim_remaining": 0,
+      "elim_head": 0,
+      "elim_next": 0,
+      "elim_record": 0,
+      "elim_local": 0,
+      "elim_old_head": 6,
+      "elim_fresh": 1,
+      "elim_cursor": 0,
+      "elim_symbol_head": 177,
+      "fold_base": 4,
+      "fresh_local": 198,
+      "fresh_domain": 197,
+      "fresh_record": 199,
+      "apply_base": 4,
+      "apply_end": 5,
+      "apply_cursor": 5,
+      "apply_body": 187,
+      "core_motives": 204,
+      "motive_remaining": 0,
+      "motive_rev": 202,
+      "motive_family": 139,
+      "motive_symbol": 4,
+      "motive_next": 0,
+      "motive_mark": 4,
+      "motive_family_symbol": 3,
+      "motive_major": 189,
+      "motive_index_count": 1,
+      "motive_snapshot_remaining": 0,
+      "motive_snapshot_head": 190,
+      "motive_snapshot_cursor": 4,
+      "motive_indices": 191,
+      "motive_local": 199,
+      "motive_telescope": 200,
+      "motive_info": 201
+    },
+    {
+      "mode": 1,
+      "status": 4,
+      "reason": 29,
+      "fuel": 448,
+      "free": 113,
+      "sp": 1,
+      "decl": 0,
+      "decl_count": 2,
+      "ctx": 2,
+      "x": 0,
+      "depth": 0,
+      "task": 56,
+      "r": 112,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 0,
+      "substitution": 93,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 105,
+      "domain": 100,
+      "binder_info": 0,
+      "abstract_uid": 101,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 4,
+      "expr_depth": 1,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 64,
+      "left_a": 70,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 91,
+      "constructor_right": 1,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0,
+      "merge_l": 0,
+      "merge_r": 0,
+      "merge_hl": 0,
+      "merge_tl": 0,
+      "merge_hr": 0,
+      "merge_tr": 0,
+      "merge_rev": 0,
+      "merge_acc": 0,
+      "merge_anchor": 0,
+      "merge_chosen": 0,
+      "merge_explicit": 0,
+      "merge_exp_offset": 0,
+      "merge_max_offset": 0,
+      "geq_left": 0,
+      "geq_right": 0,
+      "left_c": 4,
+      "vector_expected_role": 4,
+      "vector_remaining": 1,
+      "comparison_root": 0,
+      "pending_infer": 0,
+      "local_base": 1,
+      "lookup_uid": 0,
+      "lookup_index": 0,
+      "lookup_type": 0,
+      "convert_left_level": 0,
+      "raw_index": 0,
+      "env_head": 0,
+      "env_next": 0,
+      "query_symbol": 2,
+      "env_ready": 1,
+      "signature_type": 2,
+      "parameter_vector": 16,
+      "level_vector": 3,
+      "parameter_head": 0,
+      "level_head": 0,
+      "zip_count": 0,
+      "zip_remaining": 0,
+      "zip_symbol": 0,
+      "zip_parameter_next": 0,
+      "pending_scope": 0,
+      "symbols_root": 45,
+      "name_table_left": 1,
+      "name_table_next": 41,
+      "name_second": 36,
+      "name_part": 0,
+      "name_length": 0,
+      "name_index": 0,
+      "target_index": 1,
+      "kernel_zero": 46,
+      "active_kind": 0,
+      "active_symbol": 0,
+      "active_parameters": 0,
+      "active_type": 0,
+      "active_value": 0,
+      "active_extra": 0,
+      "commit_scheme": 0,
+      "commit_signature": 0,
+      "pending_reuse": 0,
+      "reuse_root": 0,
+      "reuse_base": 1,
+      "reuse_end": 1,
+      "reuse_index": 1,
+      "reuse_whnf": 1,
+      "reuse_body": 0,
+      "reuse_domain": 0,
+      "occurrence_internal": 0,
+      "occurrence_mark": 4,
+      "occurrence_found": 1,
+      "lookup_head": 90,
+      "header_parameters": 16,
+      "header_parameter_count": 0,
+      "header_vector": 14,
+      "header_head": 53,
+      "header_seen": 1,
+      "header_parameter_base": 1,
+      "header_parameter_end": 1,
+      "header_symbol": 2,
+      "header_type": 2,
+      "header_raw": 11,
+      "header_remaining": 0,
+      "header_next": 0,
+      "header_indices": 0,
+      "header_current_level": 1,
+      "header_result_level": 1,
+      "header_meta": 50,
+      "header_scheme": 51,
+      "header_signature": 52,
+      "family_set_cursor": 2,
+      "family_set_remaining": 0,
+      "family_set_next": 0,
+      "formal_count": 0,
+      "formal_remaining": 0,
+      "formal_i": 0,
+      "formal_head": 0,
+      "formal_value": 0,
+      "header_levels": 47,
+      "app_args": 0,
+      "app_arity": 0,
+      "app_symbol": 2,
+      "app_levels": 3,
+      "app_signature": 52,
+      "app_remaining": 0,
+      "app_context_index": 0,
+      "app_argument": 0,
+      "app_next": 0,
+      "abstract_base": 0,
+      "abstract_end": 0,
+      "scope_cursor": 0,
+      "scope_dest": 0,
+      "reverse_length": 1,
+      "reverse_remaining": 0,
+      "reverse_head": 111,
+      "recursive_mark": 0,
+      "recursive_prefix_rev": 70,
+      "recursive_prefix_count": 1,
+      "recursive_prefix_value": 69,
+      "recursive_family": 52,
+      "recursive_skip": 0,
+      "recursive_indices": 0,
+      "recursive_index_remaining": 0,
+      "recursive_index_rev": 0,
+      "recursive_index_next": 0,
+      "recursive_index_vector": 73,
+      "typing_active": 1,
+      "typing_head": 90,
+      "core_operation": 1,
+      "core_index": 0,
+      "ctor_family_cursor": 0,
+      "ctor_families_remaining": 0,
+      "ctor_family_next": 0,
+      "ctor_family_signature": 52,
+      "ctor_remaining": 0,
+      "ctor_next": 0,
+      "ctor_symbol": 1,
+      "ctor_type": 6,
+      "ctor_field_count": 1,
+      "ctor_field_rev": 80,
+      "ctor_active_pi": 6,
+      "ctor_field_domain": 5,
+      "ctor_field_level": 1,
+      "ctor_recursive": 76,
+      "ctor_field_tail": 4,
+      "ctor_field_info": 79,
+      "ctor_result_args": 0,
+      "ctor_field_vector": 82,
+      "ctor_meta": 83,
+      "ctor_pending": 84,
+      "ctor_names": 85,
+      "name_parent_symbol": 2,
+      "name_candidate_symbol": 3,
+      "recname_parent_path": 29,
+      "recname_candidate_path": 38,
+      "recname_length": 1,
+      "recname_head": 28,
+      "recname_remaining": 0,
+      "recname_right": 37,
+      "recname_next_left": 0,
+      "recname_next_right": 36,
+      "recname_part_left": 19,
+      "recname_part_right": 19,
+      "recname_part_tag": 80,
+      "recname_part_value": 18,
+      "recname_byte_index": 2,
+      "core_names_remaining": 0,
+      "core_rec_names": 86,
+      "core_name_next": 0,
+      "core_name_family": 52,
+      "core_name_family_symbol": 2,
+      "core_name_symbol": 3,
+      "decl_ctor_families": 0,
+      "core_ctor_declared": 1,
+      "decl_ctor_family": 52,
+      "decl_ctor_name_next": 0,
+      "decl_ctor_remaining": 0,
+      "decl_ctor_ordinal": 1,
+      "decl_ctor_next": 0,
+      "decl_ctor_symbol": 1,
+      "decl_ctor_type": 6,
+      "decl_ctor_fields": 82,
+      "decl_ctor_info": 87,
+      "decl_ctor_scheme": 88,
+      "decl_ctor_signature": 89,
+      "core_K": 0,
+      "core_elim_level": 96,
+      "core_elim_info": 99,
+      "core_rec_parameters": 98,
+      "elim_large": 1,
+      "elim_arguments": 0,
+      "elim_remaining": 0,
+      "elim_head": 81,
+      "elim_next": 0,
+      "elim_record": 78,
+      "elim_local": 77,
+      "elim_old_head": 0,
+      "elim_fresh": 1,
+      "elim_cursor": 0,
+      "elim_symbol_head": 97,
+      "fold_base": 1,
+      "fresh_local": 106,
+      "fresh_domain": 105,
+      "fresh_record": 107,
+      "apply_base": 1,
+      "apply_end": 1,
+      "apply_cursor": 0,
+      "apply_body": 0,
+      "core_motives": 112,
+      "motive_remaining": 0,
+      "motive_rev": 110,
+      "motive_family": 52,
+      "motive_symbol": 3,
+      "motive_next": 0,
+      "motive_mark": 1,
+      "motive_family_symbol": 2,
+      "motive_major": 102,
+      "motive_index_count": 0,
+      "motive_snapshot_remaining": 0,
+      "motive_snapshot_head": 0,
+      "motive_snapshot_cursor": 0,
+      "motive_indices": 103,
+      "motive_local": 107,
+      "motive_telescope": 108,
+      "motive_info": 109
+    }
+  ],
+  "results": [
+    {
+      "name": "original-Eq-core-block",
+      "status": "GAP",
+      "reason": "GAP_RECURSOR_GENERATION",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 1,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 107,
+      "allocated_heap_nodes": 204,
+      "semantic_steps": 941
+    },
+    {
+      "name": "functional-core-block",
+      "status": "GAP",
+      "reason": "GAP_RECURSOR_GENERATION",
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "environment_declarations": 1,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 45,
+      "allocated_heap_nodes": 112,
+      "semantic_steps": 576
+    }
+  ],
+  "forward_seconds": 204.74912610001047,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 6275,
+    "persistent_channels": 2678,
+    "subtract_handovers": 21083,
+    "head_clears": 44,
+    "logic_units_per_layer": 256,
+    "reset_layers": 8,
+    "graph": {
+      "layers": 149,
+      "dims": 27403,
+      "heads": 5,
+      "ffn_units": 34793,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 25,
+  "primitive_basis": [],
+  "semantic_program": "kernel.inductive-core-operation.v1",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 2129074346,
+  "weight_bytes": 4258148692,
+  "cuda_peak_allocated_bytes": 4307555328,
+  "host_process_peak_rss_bytes": 1800151040,
+  "hidden_size": 6400,
+  "native_layers": 150,
+  "boot_tokens": 110,
+  "applied_steps": 945,
+  "early_stop": true,
+  "halt_interval": 8,
+  "completion_flush_forwards": 1,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 256,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 1024,
+    "word_bits": 9
+  },
+  "device": "cuda",
+  "compile_seconds": 44.23512421399937,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-core-operation.v1",
+      "operation": "analyze_core",
+      "name": "original-Eq-core-block",
+      "block": {
+        "families": [
+          {
+            "constructors": [
+              {
+                "name": [
+                  {
+                    "str": "Eq"
+                  },
+                  {
+                    "str": "refl"
+                  }
+                ],
+                "type": [
+                  "pi",
+                  1,
+                  [
+                    "sort",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u_1"
+                        }
+                      ]
+                    ]
+                  ],
+                  [
+                    "pi",
+                    0,
+                    [
+                      "var",
+                      0
+                    ],
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "const",
+                            [
+                              {
+                                "str": "Eq"
+                              }
+                            ],
+                            [
+                              [
+                                "param",
+                                [
+                                  {
+                                    "str": "u_1"
+                                  }
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "var",
+                            1
+                          ]
+                        ],
+                        [
+                          "var",
+                          0
+                        ]
+                      ],
+                      [
+                        "var",
+                        0
+                      ]
+                    ]
+                  ]
+                ]
+              }
+            ],
+            "name": [
+              {
+                "str": "Eq"
+              }
+            ],
+            "recursor_name": [
+              {
+                "str": "Eq"
+              },
+              {
+                "str": "rec"
+              }
+            ],
+            "type": [
+              "pi",
+              1,
+              [
+                "sort",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u_1"
+                    }
+                  ]
+                ]
+              ],
+              [
+                "pi",
+                0,
+                [
+                  "var",
+                  0
+                ],
+                [
+                  "pi",
+                  0,
+                  [
+                    "var",
+                    1
+                  ],
+                  [
+                    "sort",
+                    [
+                      "zero"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          }
+        ],
+        "kind": "inductive_block",
+        "level_params": [
+          [
+            {
+              "str": "u_1"
+            }
+          ]
+        ],
+        "parameters": 2,
+        "recursor_claims": [
+          {
+            "level_params": [
+              [
+                {
+                  "str": "u"
+                }
+              ],
+              [
+                {
+                  "str": "u_1"
+                }
+              ]
+            ],
+            "name": [
+              {
+                "str": "Eq"
+              },
+              {
+                "str": "rec"
+              }
+            ],
+            "type": [
+              "pi",
+              1,
+              [
+                "sort",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u_1"
+                    }
+                  ]
+                ]
+              ],
+              [
+                "pi",
+                1,
+                [
+                  "var",
+                  0
+                ],
+                [
+                  "pi",
+                  1,
+                  [
+                    "pi",
+                    0,
+                    [
+                      "var",
+                      1
+                    ],
+                    [
+                      "pi",
+                      0,
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "app",
+                            [
+                              "const",
+                              [
+                                {
+                                  "str": "Eq"
+                                }
+                              ],
+                              [
+                                [
+                                  "param",
+                                  [
+                                    {
+                                      "str": "u_1"
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ],
+                            [
+                              "var",
+                              2
+                            ]
+                          ],
+                          [
+                            "var",
+                            1
+                          ]
+                        ],
+                        [
+                          "var",
+                          0
+                        ]
+                      ],
+                      [
+                        "sort",
+                        [
+                          "param",
+                          [
+                            {
+                              "str": "u"
+                            }
+                          ]
+                        ]
+                      ]
+                    ]
+                  ],
+                  [
+                    "pi",
+                    0,
+                    [
+                      "app",
+                      [
+                        "app",
+                        [
+                          "var",
+                          0
+                        ],
+                        [
+                          "var",
+                          1
+                        ]
+                      ],
+                      [
+                        "app",
+                        [
+                          "app",
+                          [
+                            "const",
+                            [
+                              {
+                                "str": "Eq"
+                              },
+                              {
+                                "str": "refl"
+                              }
+                            ],
+                            [
+                              [
+                                "param",
+                                [
+                                  {
+                                    "str": "u_1"
+                                  }
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "var",
+                            2
+                          ]
+                        ],
+                        [
+                          "var",
+                          1
+                        ]
+                      ]
+                    ],
+                    [
+                      "pi",
+                      1,
+                      [
+                        "var",
+                        3
+                      ],
+                      [
+                        "pi",
+                        0,
+                        [
+                          "app",
+                          [
+                            "app",
+                            [
+                              "app",
+                              [
+                                "const",
+                                [
+                                  {
+                                    "str": "Eq"
+                                  }
+                                ],
+                                [
+                                  [
+                                    "param",
+                                    [
+                                      {
+                                        "str": "u_1"
+                                      }
+                                    ]
+                                  ]
+                                ]
+                              ],
+                              [
+                                "var",
+                                4
+                              ]
+                            ],
+                            [
+                              "var",
+                              3
+                            ]
+                          ],
+                          [
+                            "var",
+                            0
+                          ]
+                        ],
+                        [
+                          "app",
+                          [
+                            "app",
+                            [
+                              "var",
+                              3
+                            ],
+                            [
+                              "var",
+                              1
+                            ]
+                          ],
+                          [
+                            "var",
+                            0
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "dependencies": []
+    },
+    {
+      "format": "leanputer.kernel-core-operation.v1",
+      "operation": "analyze_core",
+      "name": "functional-core-block",
+      "block": {
+        "kind": "inductive_block",
+        "level_params": [],
+        "parameters": 0,
+        "recursor_claims": [],
+        "families": [
+          {
+            "name": [
+              {
+                "str": "F"
+              }
+            ],
+            "recursor_name": [
+              {
+                "str": "F"
+              },
+              {
+                "str": "rec"
+              }
+            ],
+            "type": [
+              "sort",
+              [
+                "zero"
+              ]
+            ],
+            "constructors": [
+              {
+                "name": [
+                  {
+                    "str": "F"
+                  },
+                  {
+                    "str": "mk"
+                  }
+                ],
+                "type": [
+                  "pi",
+                  0,
+                  [
+                    "pi",
+                    0,
+                    [
+                      "sort",
+                      [
+                        "zero"
+                      ]
+                    ],
+                    [
+                      "const",
+                      [
+                        {
+                          "str": "F"
+                        }
+                      ],
+                      []
+                    ]
+                  ],
+                  [
+                    "const",
+                    [
+                      {
+                        "str": "F"
+                      }
+                    ],
+                    []
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "dependencies": []
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "heap",
+      "row_bank": 1,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "constants",
+      "row_bank": 0,
+      "rows": 2,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "2 raw CORE block operations: actual Eq header/constructor and functional recursive field; weighted scope/type/universe/positivity/recursive descriptor/name checks, private constructor declarations, source elimination/K and all-family motive generation then GAP_RECURSOR_GENERATION; original-source nested staging and generation/restoration incomplete; NO declaration/theorem acceptance",
+  "operation_group": "typed-inductive-motives",
+  "full_kernel_native_support": false,
+  "tested_commit": "72cd7a0",
+  "command": "PYTHONPATH=/root/Leanputer /mnt/scratch/leanputer-native-venv/bin/python -u tools/kernel_core_smoke.py --device cuda --report /mnt/scratch/leanputer-runs/general-motives-stock/report.json"
+}
