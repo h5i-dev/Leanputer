@@ -14,6 +14,7 @@ from enum import IntEnum
 import torch
 from ..bitvec import pack_words, unpack_words
 from .arena import Arena, KernelError, LevelTag, Limits, ResourceError, Tag, children
+from .native_cells import CellTag
 
 
 class Outcome(IntEnum):
@@ -34,6 +35,7 @@ class Reason(IntEnum):
     CONTEXT = 7
     EXPECT_PI = 8
     EXPECT_LAM = 9
+    UNIVERSE = 10
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
 
@@ -49,6 +51,7 @@ class Task(IntEnum):
     ROUNDTRIP_TELESCOPE = 8     # Wrapper tests OPEN then the internal FOLD.
     ABSTRACT_ONE = 9            # Internal semantic subroutine only.
     FOLD_TELESCOPE = 10         # Internal: consumes derived Local records.
+    LEVEL_SCOPE = 11            # Internal typed-cell level walk/membership.
 
 
 class Mode(IntEnum):
@@ -69,7 +72,7 @@ CALL_BETA_ZETA = 16
 PENDING_ARGUMENT = 17
 CALL_TELESCOPE = 18
 CALL_FOLD = 19
-LOCAL_DECL_TAG = 32             # Internal record, never an input Expr tag.
+LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
 REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
@@ -97,7 +100,7 @@ class MachineConfig:
                 raise ValueError('memory capacities must be powers of two >=2')
         if type(self.fuel) is not int or self.fuel < 1:
             raise ValueError('positive fuel required')
-        if not 6 <= self.word_bits <= 21 or max(self.heap, self.stack, self.context, self.constants) >= 1 << self.word_bits:
+        if not 7 <= self.word_bits <= 21 or max(self.heap, self.stack, self.context, self.constants) >= 1 << self.word_bits:
             raise ValueError('memory pointers do not fit word width')
 
 
@@ -174,7 +177,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -261,7 +264,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.FOLD_BUILD or r['task'] > Task.FOLD_TELESCOPE
+                or r['mode'] > Mode.FOLD_BUILD or r['task'] > Task.LEVEL_SCOPE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
@@ -292,7 +295,10 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         tag, a, b, c = s['heap'][r['x']]
-        if (tag != LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else not Tag.BVAR <= tag <= Tag.MDATA):
+        level_scope = r['task'] == Task.LEVEL_SCOPE
+        valid_tag = (tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
+            CellTag.LEVEL_ZERO <= tag <= CellTag.LEVEL_PARAM if level_scope else Tag.BVAR <= tag <= Tag.MDATA)
+        if not valid_tag:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
@@ -384,18 +390,23 @@ class SpecMachine:
             elif s['context'][r['i']][0] == a:
                 if task == Task.OCCURS:
                     r.update(found=1, sp=0, r=r['root']); stop(Outcome.DONE)
+                elif level_scope:
+                    ret(r['x'])
                 else:
                     value = depth+r['count']-1-r['i']
                     if bounded(value):
                         alloc((Tag.BVAR, value, 0, 0))
             elif not r['i']:
-                ret(r['x'])
+                if level_scope: stop(Outcome.INVALID, Reason.UNIVERSE)
+                else: ret(r['x'])
             else:
                 r['i'] -= 1
             return s
         # Children have exactly the increments in arena.children, but no host
         # walk or supplied traversal schedule drives the actual transition.
-        child_list = ((a, b, c) if tag == Tag.LET else (a, b) if tag in (Tag.APP, Tag.PI, Tag.LAM)
+        child_list = (((a, b) if tag in (CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX) else
+                       (a,) if tag == CellTag.LEVEL_SUCC else ()) if level_scope else
+                      (a, b, c) if tag == Tag.LET else (a, b) if tag in (Tag.APP, Tag.PI, Tag.LAM)
                       else (c,) if tag == Tag.PROJ else (a,) if tag == Tag.MDATA else ())
         if r['mode'] == Mode.RESUME:
             if not r['sp']:
@@ -425,7 +436,7 @@ class SpecMachine:
                 r['sp'] -= 1
                 if tuple(refs) == child_list:
                     ret(original)
-                elif tag in (Tag.APP, Tag.PI, Tag.LAM):
+                elif tag in (Tag.APP, Tag.PI, Tag.LAM, CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX):
                     alloc((tag, refs[0], refs[1], c))
                 elif tag == Tag.LET:
                     alloc((tag, *refs))
@@ -442,6 +453,9 @@ class SpecMachine:
                 r.update(sp=r['sp']+1, mode=Mode.WALK, x=child_list[0])
         elif task == Task.ABSTRACT_ONE and tag == Tag.LOCAL and a == r['abstract_uid']:
             alloc((Tag.BVAR, depth, 0, 0))
+        elif level_scope and tag == CellTag.LEVEL_PARAM:
+            if not r['count']: stop(Outcome.INVALID, Reason.UNIVERSE)
+            else: r.update(mode=Mode.FIND, i=r['count']-1)
         elif task == Task.VARIABLE_SCOPE and (tag == Tag.LOCAL or tag == Tag.BVAR and a >= depth):
             stop(Outcome.INVALID, Reason.SCOPE)
         elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE, Task.INSTANTIATE_ONE):

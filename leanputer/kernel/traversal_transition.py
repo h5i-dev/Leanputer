@@ -5,6 +5,7 @@ has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
 from .arena import Tag
+from .native_cells import CellTag
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
     CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, LOCAL_DECL_TAG,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
@@ -63,7 +64,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.FOLD_BUILD, self.r['mode']), self.lt(Task.FOLD_TELESCOPE, self.r['task']),
+            self.lt(Mode.FOLD_BUILD, self.r['mode']), self.lt(Task.LEVEL_SCOPE, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
             self.NOT(self.OR(self.eq(self.r['fold_tag'], Tag.PI), self.eq(self.r['fold_tag'], Tag.LAM))))
@@ -71,8 +72,11 @@ class RuleCompiler:
         self.active = self.AND(self.active, self.NOT(invalid))
         needs_node = self.NOT(self.eq(self.r['mode'], Mode.RETURN))
         internal_record = self.eq(self.r['mode'], Mode.FOLD_RECORD)
+        level_scope = self.eq(self.r['task'], Task.LEVEL_SCOPE)
+        expression_tag_bad = self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
+        level_tag_bad = self.OR(self.lt(self.read['node']['tag'], CellTag.LEVEL_ZERO), self.lt(CellTag.LEVEL_PARAM, self.read['node']['tag']))
         tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
-            self.AND(self.NOT(internal_record), self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))))
+            self.AND(self.NOT(internal_record), self.OR(self.AND(level_scope, level_tag_bad), self.AND(self.NOT(level_scope), expression_tag_bad))))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -229,16 +233,21 @@ class RuleCompiler:
         found = self.AND(finding, valid, matched)
         self.emit(self.AND(found, self.task(Task.OCCURS)), found=1, sp=0, r=r['root'])
         self.stop(self.AND(found, self.task(Task.OCCURS)), Outcome.DONE)
-        adding, bound_index = self.checked_add(self.AND(found, self.NOT(self.task(Task.OCCURS))),
+        self.ret(self.AND(found, self.task(Task.LEVEL_SCOPE)), x)
+        adding, bound_index = self.checked_add(self.AND(found, self.NOT(self.OR(self.task(Task.OCCURS), self.task(Task.LEVEL_SCOPE)))),
             depth, self.sub(self.sub(r['count'], 1), r['i']))
         self.alloc(adding, (Tag.BVAR, bound_index, 0, 0))
         missing = self.AND(finding, valid, self.NOT(matched))
-        self.ret(self.AND(missing, self.eq(r['i'], 0)), x)
+        last = self.AND(missing, self.eq(r['i'], 0))
+        self.stop(self.AND(last, self.task(Task.LEVEL_SCOPE)), Outcome.INVALID, Reason.UNIVERSE)
+        self.ret(self.AND(last, self.NOT(self.task(Task.LEVEL_SCOPE))), x)
         self.emit(self.AND(missing, self.NOT(self.eq(r['i'], 0))), i=self.sub(r['i'], 1))
 
-        binary = self.tag(Tag.APP, Tag.PI, Tag.LAM)
+        binary = self.OR(self.tag(Tag.APP, Tag.PI, Tag.LAM),
+            self.AND(self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX)))
         let = self.tag(Tag.LET)
-        unary = self.tag(Tag.PROJ, Tag.MDATA)
+        unary = self.OR(self.tag(Tag.PROJ, Tag.MDATA),
+            self.AND(self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_SUCC)))
         branch = self.OR(binary, let, unary)
         walking = self.mode(Mode.WALK)
         descending = self.AND(walking, branch)
@@ -286,6 +295,8 @@ class RuleCompiler:
         scope_bad = self.AND(leaf, self.task(Task.VARIABLE_SCOPE),
             self.OR(self.tag(Tag.LOCAL), self.AND(self.tag(Tag.BVAR), self.NOT(self.lt(a, depth)))))
         self.stop(scope_bad, Outcome.INVALID, Reason.SCOPE)
+        unbound_level = self.AND(leaf, self.task(Task.LEVEL_SCOPE), self.tag(CellTag.LEVEL_PARAM), self.eq(r['count'], 0))
+        self.stop(unbound_level, Outcome.INVALID, Reason.UNIVERSE)
         abstract_one = self.AND(leaf, self.task(Task.ABSTRACT_ONE), self.tag(Tag.LOCAL), self.eq(a, r['abstract_uid']))
         self.alloc(abstract_one, (Tag.BVAR, depth, 0, 0))
         inst = self.OR(self.task(Task.INSTANTIATE), self.task(Task.INSTANTIATE_ONE))
@@ -317,9 +328,10 @@ class RuleCompiler:
         self.emit(self.AND(substituting, self.NOT(self.eq(depth, 0))),
             x=operand, depth=0, task=Task.LIFT, delta=depth, cutoff=0)
         searching = self.AND(leaf, self.OR(self.AND(self.tag(Tag.LOCAL), self.task(Task.ABSTRACT)),
-            self.AND(self.tag(Tag.CONST), self.task(Task.OCCURS))), self.NOT(self.eq(r['count'], 0)))
+            self.AND(self.tag(Tag.CONST), self.task(Task.OCCURS)),
+            self.AND(self.tag(CellTag.LEVEL_PARAM), self.task(Task.LEVEL_SCOPE))), self.NOT(self.eq(r['count'], 0)))
         self.emit(searching, mode=Mode.FIND, i=self.sub(r['count'], 1))
-        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one)), x)
+        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one), self.NOT(unbound_level)), x)
 
     def finish(self, memory_update='attention_delta', target=None):
         if memory_update != 'attention_delta':
