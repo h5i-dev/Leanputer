@@ -5,25 +5,29 @@ catalog was the wrong direction: ordinary inductives belong in checked input
 data, not in generated semantic branches. Its syntax-export counts do not
 measure generic kernel coverage.
 
-The new path starts with monomorphic finite nullary inductives in positive
-numeric Sorts. Bool-shaped and three-way enums must use one identical compiled
+The new path supports monomorphic nonrecursive inductives in positive numeric
+Sorts, with zero or one independent field per constructor. Bool-shaped and three-way enums must use one identical compiled
 model. The compilation API takes bounds only; declaration names, constructor
 counts and recursor signatures arrive as input data.
 
 An inductive header supplies its type and constructor count. Fixed weighted
 rules require a literal positive Sort, a complete contiguous constructor block,
 correct owners and ordinals, and each constructor's literal result type equal
-to its own family. The admitted class has no fields, parameters, indices or
-recursive occurrences: positivity is vacuous and these other forms are
-explicitly unsupported, rather than admitted using supplied positivity flags.
+to its own family. A field domain must be a literal reference to an earlier
+checked carrier whose type is a literal Sort no higher than the family Sort. Parameters, multiple/dependent fields, indices and recursive occurrences are
+explicitly unsupported. Since a field is an earlier closed carrier and no
+constructor domain can mention the current family, positivity follows from
+this restricted shape; it is not a supplied flag.
 
 A recursor supplies a family reference, ground result universe and claimed
 type. The checker constructs the expected dependent type inside weights:
-`(motive : F → Sort v) → motive c₀ → … → (x : F) → motive x`.
+`(motive : F → Sort v) → minor₀ → … → (x : F) → motive x`.
+A nullary minor is `motive c`; a one-field minor is
+`(a : A) → motive (c a)`, derived from the checked constructor AST.
 It checks the supplied type and compares it with this derived type. Arity and
 minor selection come from validated family/constructor data. Generic iota
 reduction checks the major's constructor owner and selects its corresponding
-minor; neither constructor names nor user-provided reduction answers are used.
+minor and applies its actual field when present; neither constructor names nor user-provided reduction answers are used.
 Prop inductives are outside this first admission class, so their elimination
 restrictions are not silently bypassed.
 
@@ -40,7 +44,7 @@ also be tested. A small matched example must report actual size and step costs;
 generic interpretation is not assumed faster. No broad campaign is required
 for this initial slice.
 
-Uniform parameters, constructor fields, strict positivity for recursive
+Uniform parameters, multiple/dependent constructor fields, strict positivity for recursive
 arguments, indexed results and generic recursor derivation for those larger
 classes remain explicit subsequent work. This design is not a soundness proof
 or a claim of general Lean support.
@@ -77,6 +81,29 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The active milestone after this slice is generic constructor fields, followed
-by uniform parameters and then recursive/indexed admission with real positivity
-and elimination checks. No per-name constructors should be added to obtain them.
+The active milestone after this slice is generic Prop admission/elimination and
+uniform parameters, then multiple/dependent fields and recursive/indexed
+admission with real positivity and elimination checks. No per-name constructors should be added to obtain them.
+
+
+Actual elaborated Lean input is available through:
+
+```bash
+.venv/bin/python -m leanputer.preparation --generic \
+  --source examples/GenericInductives.lean --targets examples/generic-targets.json \
+  --output /tmp/generic-source.jsonl
+```
+
+`ExportGeneric.lean` traverses raw Expr syntax and ordered dependency closures.
+It groups actual constructor declarations into input blocks and exports the
+actual specialized recursor type; the weighted checker independently validates
+both. It does not call inferType/whnf/isDefEq, emit kernel answers, normalize
+terms or export supplied recursor rules. Name dispatch is only identity lookup.
+The initial exporter rejects polymorphic/mutual/nested families and unsupported
+expression syntax rather than promoting dependencies to axioms. All source rows
+are retained, including UNSUPPORTED rows with unknown dependency counts.
+
+The source smoke contains three real elaborated declarations using Bool, a
+three-way enum and a mixed nullary/one-field datatype. Complete checked closures
+contain4/5/7declarations, with no axiom assumptions. These are explicit development
+sources, not a mathlib sample or a population coverage estimate.

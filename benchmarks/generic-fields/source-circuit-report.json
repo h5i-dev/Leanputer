@@ -1,0 +1,135 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.nonrecursive-unary-inductives.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "results": [
+    {
+      "name": "LeanputerGeneric.bool_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.bool_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "bool_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 810,
+      "allocated_heap_nodes": 68
+    },
+    {
+      "name": "LeanputerGeneric.signal_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.signal_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "signal_iota"
+          }
+        ]
+      },
+      "environment_declarations": 5,
+      "assumptions": [],
+      "input_heap_nodes": 33,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 998,
+      "allocated_heap_nodes": 80
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ]
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "semantic_steps": 964,
+      "allocated_heap_nodes": 85
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]-wrong-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ],
+        "mutation": "replace constructor field red with blue without changing proof"
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "semantic_steps": 1007,
+      "allocated_heap_nodes": 85
+    }
+  ],
+  "counts": {
+    "ACCEPT": 3,
+    "REJECT": 1
+  },
+  "syntax_seconds": 0.001436795006156899,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "forward_seconds": 5.300461500999518,
+      "applied_steps": 1057
+    }
+  ],
+  "total_check_seconds": 5.3190973099990515,
+  "validation_scope": "Restricted nonrecursive zero/one-field positive-Sort inductives; no full Lean/general inductive soundness claim",
+  "backend": "circuit",
+  "device": "cpu",
+  "compile_seconds": 0.2609783069929108,
+  "cold_compile_and_check_seconds": 5.58010633700178
+}

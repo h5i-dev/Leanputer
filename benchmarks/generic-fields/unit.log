@@ -1,0 +1,8 @@
+test_focused_weighted_transitions_and_metadata_guards (test_generic.GenericDeclarationSmoke) ... ok
+test_independent_lean_kernel_replay (test_generic.GenericDeclarationSmoke) ... ok
+test_renaming_is_identical_input_state (test_generic.GenericDeclarationSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 51.010s
+
+OK

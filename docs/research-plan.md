@@ -3,7 +3,9 @@
 ARCHITECTURAL CORRECTION: per-name expansion has stopped. The catalog below is
 historical evidence, not generic kernel coverage. Active work is
 [declaration-as-data checking](generic-kernel.md), beginning with validated
-finite nullary inductives and data-derived dependent recursor types/reductions.
+monomorphic nonrecursive inductives with0/1 independentfields perconstructor,
+validated earlier carrier/universe bounds and data-derived dependent recursor
+types/reductions. Syntax-only actual source export retains full closures.
 No completion percentage is established. Existing checkpoints are preserved.
 
 

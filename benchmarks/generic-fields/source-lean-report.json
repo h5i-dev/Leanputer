@@ -1,0 +1,6 @@
+[{"status": "ACCEPT", "name": "LeanputerGeneric.bool_iota@[]"},
+ {"status": "ACCEPT", "name": "LeanputerGeneric.signal_iota@[]"},
+ {"status": "ACCEPT", "name": "LeanputerGeneric.packet_iota@[]"},
+ {"status": "REJECT",
+  "reason": "Lean kernel rejected declaration",
+  "name": "LeanputerGeneric.packet_iota@[]-wrong-field"}]

@@ -17,7 +17,7 @@ def lean_tool(name):
     raise FileNotFoundError(f'packaged Lean helper not found: {name}')
 
 
-def export(source, module, targets, output, workdir, lean='lean'):
+def export(source, module, targets, output, workdir, lean='lean', helper='Export.lean'):
     workdir = Path(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
     working = Path(tempfile.mkdtemp(prefix='export-', dir=workdir))
@@ -37,7 +37,7 @@ def export(source, module, targets, output, workdir, lean='lean'):
         commands.append([str(lean), '--root='+str(package_root), '-o', str(olean), str(source)])
     config = working/'export-config.json'
     config.write_text(json.dumps(dict(modules=[module], targets=targets, output=str(Path(output).resolve()))))
-    commands.append([str(lean), '--run', str(lean_tool('Export.lean')), str(config)])
+    commands.append([str(lean), '--run', str(lean_tool(helper)), str(config)])
     for index, command in enumerate(commands):
         completed = subprocess.run(command, env=environment, capture_output=True, text=True, timeout=300)
         (working/f'command-{index}.log').write_text(completed.stdout+completed.stderr)
@@ -48,6 +48,7 @@ def export(source, module, targets, output, workdir, lean='lean'):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--generic', action='store_true', help='export declaration-as-data generic syntax')
     parser.add_argument('--source', type=Path, help='optional source module to compile externally')
     parser.add_argument('--module', help='module to import; defaults to source filename')
     parser.add_argument('--targets', required=True, type=Path, help='array of name/ground-level target objects')
@@ -62,7 +63,7 @@ def main(argv=None):
         if not isinstance(targets, list):
             raise ValueError('targets must be a JSON array')
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        print(json.dumps(export(args.source, module, targets, args.output, args.workdir), indent=2))
+        print(json.dumps(export(args.source, module, targets, args.output, args.workdir, helper='ExportGeneric.lean' if args.generic else 'Export.lean'), indent=2))
         return 0
     except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         parser.error(str(error))

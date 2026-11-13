@@ -1,0 +1,252 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.nonrecursive-unary-inductives.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1056
+  },
+  "results": [
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 810
+    },
+    {
+      "name": "Unrelated.Namespace-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 810
+    },
+    {
+      "name": "Traffic-elimination",
+      "environment_declarations": 5,
+      "assumptions": [],
+      "input_heap_nodes": 33,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 80,
+      "semantic_steps": 998
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 68,
+      "semantic_steps": 852
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 33
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 34
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 20,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 65
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 35
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 32
+    },
+    {
+      "name": "Bool-elimination",
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 28,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 31
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 37,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 84,
+      "semantic_steps": 963
+    },
+    {
+      "name": "OtherBox-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 37,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 84,
+      "semantic_steps": 963
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 1005
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 37,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 52
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 38,
+      "semantic_steps": 54
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 37,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 37,
+      "semantic_steps": 54
+    },
+    {
+      "name": "Parcel-field-iota",
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 34,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 36,
+      "semantic_steps": 127
+    }
+  ],
+  "counts": {
+    "ACCEPT": 5,
+    "REJECT": 8,
+    "UNSUPPORTED": 4
+  },
+  "syntax_seconds": 0.0035358580062165856,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "forward_seconds": 107.157123580997,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 1527,
+        "persistent_channels": 375,
+        "subtract_handovers": 6091,
+        "head_clears": 320,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 68,
+          "dims": 7939,
+          "heads": 11,
+          "ffn_units": 9258,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 6,
+      "primitive_basis": [],
+      "semantic_program": "generic.nonrecursive-unary-inductives.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 395580040,
+      "weight_bytes": 791160080,
+      "cuda_peak_allocated_bytes": 952261120,
+      "host_process_peak_rss_bytes": 1695817728,
+      "hidden_size": 1536,
+      "native_layers": 69,
+      "boot_tokens": 46,
+      "applied_steps": 1058
+    }
+  ],
+  "total_check_seconds": 108.19067355700827,
+  "validation_scope": "Restricted finite nullary positive-Sort inductives; no full Lean/general inductive soundness claim",
+  "backend": "native",
+  "device": "cuda",
+  "compile_seconds": 6.964121362005244,
+  "cold_compile_and_check_seconds": 115.1548199789977
+}

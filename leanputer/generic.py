@@ -16,6 +16,12 @@ def check_documents(model,documents,backend='native',batch_size=16):
     for i,document in enumerate(documents):
         name=document.get('name',str(i))if isinstance(document,dict)else str(i)
         record=dict(name=name)
+        if isinstance(document,dict) and 'provenance' in document:
+            record['provenance']=document['provenance']
+        if isinstance(document,dict) and document.get('format')=='leanputer.generic.v1' and document.get('status')=='UNSUPPORTED':
+            record.update(status='UNSUPPORTED',reason=document.get('reason','unsupported source syntax'),
+                          environment_declarations=None,assumptions=None,input_heap_nodes=None)
+            records.append(record);continue
         try:
             term,claim,ds=parse_document(document);state=prepare(model.config,term,claim,ds)
             record.update(environment_declarations=len(ds),assumptions=assumptions(ds),input_heap_nodes=state['regs']['free']-1)
@@ -50,7 +56,7 @@ def check_documents(model,documents,backend='native',batch_size=16):
     return dict(format='leanputer.generic-report.v1',semantic_program=program.program_name,primitive_basis=[],
                 config=asdict(model.config),results=records,counts=dict(Counter(r['status']for r in records)),
                 syntax_seconds=syntax_seconds,batches=batches,total_check_seconds=time.perf_counter()-started,
-                validation_scope='Restricted finite nullary positive-Sort inductives; no full Lean/general inductive soundness claim')
+                validation_scope='Restricted nonrecursive zero/one-field positive-Sort inductives; no full Lean/general inductive soundness claim')
 
 
 def main(argv=None):
