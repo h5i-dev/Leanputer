@@ -1,0 +1,76 @@
+"""Compile untrusted core claim validation, never a signature/admission input."""
+from .arena import Tag
+from .native_cells import VectorKind,CellTag
+from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_CLAIM_SEEN,CALL_CLAIM_LOOKUP,
+    CALL_CLAIM_PARAMETERS,CALL_CLAIM_SCOPE,CALL_CLAIM_INFER,CALL_CLAIM_WHNF,
+    CALL_CLAIM_RENAME,CALL_CLAIM_CONVERT,CALL_CLAIM_RESTORE)
+
+PRIVATE_PHASES=tuple(range(CALL_CLAIM_SEEN,CALL_CLAIM_RESTORE+1))
+NO_NODE=(Mode.CLAIM_STORE,)
+TAGS={Mode.WALK:CellTag.RAW_BLOCK,Mode.CLAIM_VECTOR:CellTag.VECTOR,
+    Mode.CLAIM_CELL:CellTag.VECTOR_CELL,Mode.CLAIM_RECORD:CellTag.RAW_RECURSOR_CLAIM,
+    Mode.CLAIM_SIGNATURE:CellTag.CHECKED_SIGNATURE,Mode.CLAIM_SCHEME:CellTag.CHECKED_SCHEME,
+    Mode.CLAIM_PARAMETER_VECTOR:CellTag.VECTOR}
+
+
+def emit_rules(c):
+    r,n,f=c.r,c.read['node'],c.read['frame'];top=c.sub(r['sp'],1)
+    returning=c.AND(c.mode(Mode.RETURN),c.NOT(c.eq(r['sp'],0)))
+    phase=lambda p:c.AND(returning,c.eq(f['phase'],p))
+    def call(guard,p,task,x,mode=Mode.WALK,**updates):
+        c.write('stack',guard,top,(p,0,0,Task.CHECK_RECURSOR_CLAIMS,0,0))
+        c.emit(guard,task=task,mode=mode,x=x,depth=0,**updates)
+    seen=phase(CALL_CLAIM_SEEN)
+    c.stop(c.AND(seen,c.NOT(c.eq(r['r'],0))),Outcome.INVALID,Reason.DUPLICATE_DECLARATION)
+    call(c.AND(seen,c.eq(r['r'],0)),CALL_CLAIM_LOOKUP,Task.SIGNATURE_VECTOR_LOOKUP,r['core_rec_signatures'],query_symbol=r['claim_symbol'])
+    looked=phase(CALL_CLAIM_LOOKUP)
+    c.stop(c.AND(looked,c.eq(r['r'],0)),Outcome.INVALID,Reason.UNKNOWN_CONSTANT)
+    c.emit(c.AND(looked,c.NOT(c.eq(r['r'],0))),task=Task.CHECK_RECURSOR_CLAIMS,mode=Mode.CLAIM_SIGNATURE,x=r['r'])
+    call(phase(CALL_CLAIM_PARAMETERS),CALL_CLAIM_SCOPE,Task.EXPR_SCOPE,r['claim_type'])
+    call(phase(CALL_CLAIM_SCOPE),CALL_CLAIM_INFER,Task.INFER,r['claim_type'],local_base=r['ctx'])
+    call(phase(CALL_CLAIM_INFER),CALL_CLAIM_WHNF,Task.BETA_ZETA,r['r'],Mode.BETA_ZETA)
+    c.emit(phase(CALL_CLAIM_WHNF),task=Task.CHECK_RECURSOR_CLAIMS,mode=Mode.CLAIM_SORT,x=r['r'])
+    call(phase(CALL_CLAIM_RENAME),CALL_CLAIM_CONVERT,Task.CONVERT_POSITIVE,r['claim_expected_type'],peer=r['r'])
+    compared=phase(CALL_CLAIM_CONVERT)
+    c.stop(c.AND(compared,c.eq(r['r'],0)),Outcome.INVALID,Reason.TYPE_MISMATCH)
+    c.emit(c.AND(compared,c.NOT(c.eq(r['r'],0))),task=Task.CHECK_RECURSOR_CLAIMS,mode=Mode.CLAIM_STORE)
+    restored=phase(CALL_CLAIM_RESTORE);c.emit(restored,task=Task.CHECK_RECURSOR_CLAIMS,local_base=r['ctx'],sp=top);c.ret(restored,1)
+    active=c.task(Task.CHECK_RECURSOR_CLAIMS);at=lambda m:c.AND(active,c.mode(m))
+    init=at(Mode.WALK);valid=c.AND(*(c.NOT(c.eq(r[key],0)) for key in ('core_rec_signatures','core_rec_parameters','core_rec_levels')));room=c.lt(r['sp'],c.cfg.stack)
+    c.stop(c.AND(init,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.stop(c.AND(init,valid,c.NOT(room)),Outcome.RESOURCE,Reason.STACK);init=c.AND(init,valid,room)
+    c.write('stack',init,r['sp'],(CALL_CLAIM_SEEN,0,0,Task.CHECK_RECURSOR_CLAIMS,0,0))
+    c.emit(init,sp=c.add(r['sp'],1),claim_expected_uparams=r['count'],claim_seen=0,claim_checked=0,mode=Mode.CLAIM_VECTOR,x=n['c'])
+    vector=at(Mode.CLAIM_VECTOR);valid=c.AND(c.eq(n['c'],VectorKind.REFERENCES),c.eq(c.mux(c.eq(n['a'],0),0,1),c.mux(c.eq(n['b'],0),0,1)))
+    c.stop(c.AND(vector,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    present=c.NOT(c.eq(n['a'],0));complete=c.eq(n['a'],r['header_seen'])
+    c.stop(c.AND(vector,valid,present,c.NOT(complete)),Outcome.INVALID,Reason.INVALID_DECLARATION)
+    call(c.AND(vector,valid,c.NOT(present)),CALL_CLAIM_RESTORE,Task.LOAD_PARAMETERS,r['core_rec_parameters'])
+    c.emit(c.AND(vector,valid,present,complete),claim_remaining=n['a'],mode=Mode.CLAIM_CELL,x=n['b'])
+    cell=at(Mode.CLAIM_CELL);more=c.lt(1,r['claim_remaining'])
+    valid=c.AND(c.NOT(c.eq(r['claim_remaining'],0)),c.eq(c.mux(c.eq(n['b'],0),0,1),c.mux(more,1,0)))
+    c.stop(c.AND(cell,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(cell,valid),claim_next=n['b'],mode=Mode.CLAIM_RECORD,x=n['a'])
+    record=at(Mode.CLAIM_RECORD);c.emit(record,claim_symbol=n['a'],claim_type=n['b'],claim_parameters=n['c'])
+    call(record,CALL_CLAIM_SEEN,Task.SYMBOL_MEMBER,r['claim_seen'],query_symbol=n['a'])
+    signature=at(Mode.CLAIM_SIGNATURE);valid=c.eq(n['a'],r['claim_symbol'])
+    c.stop(c.AND(signature,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(signature,valid),claim_expected_type=n['b'],mode=Mode.CLAIM_SCHEME,x=n['c'])
+    scheme=at(Mode.CLAIM_SCHEME);valid=c.AND(c.eq(n['b'],10),c.eq(n['a'],r['core_rec_parameters']))
+    c.stop(c.AND(scheme,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    c.emit(c.AND(scheme,valid),mode=Mode.CLAIM_PARAMETER_VECTOR,x=r['claim_parameters'])
+    params=at(Mode.CLAIM_PARAMETER_VECTOR);valid=c.AND(c.eq(n['c'],VectorKind.SYMBOLS),c.eq(c.mux(c.eq(n['a'],0),0,1),c.mux(c.eq(n['b'],0),0,1)))
+    c.stop(c.AND(params,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX)
+    arity=c.eq(n['a'],r['claim_expected_uparams'])
+    c.stop(c.AND(params,valid,c.NOT(arity)),Outcome.INVALID,Reason.UNIVERSE_ARITY)
+    call(c.AND(params,valid,arity),CALL_CLAIM_PARAMETERS,Task.LOAD_PARAMETERS,r['claim_parameters'])
+    sort=at(Mode.CLAIM_SORT);stable=c.tag(Tag.PI,Tag.LAM,Tag.BVAR,Tag.LOCAL,Tag.NAT,Tag.STRING)
+    c.stop(c.AND(sort,c.NOT(c.tag(Tag.SORT)),stable),Outcome.INVALID,Reason.EXPECT_SORT)
+    c.stop(c.AND(sort,c.NOT(c.tag(Tag.SORT)),c.NOT(stable)),Outcome.GAP,Reason.GAP_CONVERSION)
+    call(c.AND(sort,c.tag(Tag.SORT)),CALL_CLAIM_RENAME,Task.INSTANTIATE_SCHEME,r['claim_type'],parameter_vector=r['claim_parameters'],level_vector=r['core_rec_levels'])
+    store=at(Mode.CLAIM_STORE);room=c.lt(r['free'],c.cfg.heap)
+    c.stop(c.AND(store,c.NOT(room)),Outcome.RESOURCE,Reason.HEAP);store=c.AND(store,room);more=c.lt(1,r['claim_remaining'])
+    c.write('heap',store,r['free'],(CellTag.VECTOR_CELL,r['claim_symbol'],r['claim_seen'],0))
+    c.emit(store,free=c.add(r['free'],1),claim_seen=r['free'],claim_checked=c.add(r['claim_checked'],1),claim_remaining=c.sub(r['claim_remaining'],1))
+    c.emit(c.AND(store,more),mode=Mode.CLAIM_CELL,x=r['claim_next'])
+    call(c.AND(store,c.NOT(more)),CALL_CLAIM_RESTORE,Task.LOAD_PARAMETERS,r['core_rec_parameters'])

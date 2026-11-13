@@ -38,10 +38,12 @@ class SchemeInstantiationTest(unittest.TestCase):
                 source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls))
                 for _ in range(cfg.fuel+2):
                     machine.step()
+                    rr=machine.state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and machine.state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_ASSEMBLY:break
                     if machine.state['regs']['status']:break
                 ref=machine.state;state={'regs':{k:int(v) for k,v in ref['regs'].items()},
                     **{bank:[[int(v) for v in row] for row in ref[bank]] for bank in spec.BANK_FIELDS}}
-                self.assertEqual(state['regs']['status'],spec.Outcome.GAP)
+                self.assertEqual(state['regs']['status'],spec.Outcome.RUNNING)
                 sort=next(i for i,(tag,a,b,c) in enumerate(state['heap']) if tag==Tag.SORT and state['heap'][a][0]==CellTag.LEVEL_ZERO)
                 # These are genuine weighted FreshLocal calls, not supplied
                 # checked locals. The mapping must work with no free ctx slot.

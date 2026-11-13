@@ -50,7 +50,7 @@ def emit_rules(c):
     init=c.AND(init,room)
     c.write('stack',init,r['sp'],(CALL_HEADER_PARAMETERS,0,0,Task.ANALYZE_HEADERS,0,0))
     c.emit(init,sp=c.add(r['sp'],1),task=Task.LOAD_PARAMETERS,x=r['header_parameters'],
-        header_parameter_count=a,header_vector=b,header_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']),header_seen=0)
+        header_block=r['x'],header_parameter_count=a,header_vector=b,header_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']),header_seen=0)
     header=at_mode(Mode.HEADER_VECTOR)
     valid=c.AND(c.eq(n['c'],VectorKind.REFERENCES),c.NOT(c.eq(a,0)),c.NOT(c.eq(b,0)))
     c.stop(c.AND(header,c.NOT(valid)),Outcome.INVALID,Reason.INVALID_DECLARATION)

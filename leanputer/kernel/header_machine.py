@@ -64,7 +64,7 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
         else:
             s['stack'][r['sp']]=[CALL_HEADER_PARAMETERS,0,0,Task.ANALYZE_HEADERS,0,0]
             r.update(sp=r['sp']+1,task=Task.LOAD_PARAMETERS,x=r['header_parameters'],
-                header_parameter_count=a,header_vector=b,header_head=r['typing_head'] if r['typing_active'] else r['env_head'],header_seen=0)
+                header_block=r['x'],header_parameter_count=a,header_vector=b,header_head=r['typing_head'] if r['typing_active'] else r['env_head'],header_seen=0)
     elif r['mode']==Mode.HEADER_VECTOR:
         if c!=VectorKind.REFERENCES or not a or not b:stop(Outcome.INVALID,Reason.INVALID_DECLARATION)
         else:r.update(mode=Mode.HEADER_CELL,x=b,header_remaining=a)

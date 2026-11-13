@@ -29,9 +29,11 @@ class AssembleRecursorsTest(unittest.TestCase):
                     else:
                         ref=machine.step();state={'regs':{k:int(v) for k,v in ref['regs'].items()},
                             **{bank:[[int(v) for v in row] for row in ref[bank]] for bank in spec.BANK_FIELDS}}
+                    rr=state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_ASSEMBLY:break
                     if state['regs']['status']:break
                 r=state['regs'];self.assertIsNotNone(prefix)
-                self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+                self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
                 self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
                 self.assertEqual((r['ctx'],r['count'],r['arg_base']),(prefix['regs']['ctx'],prefix['regs']['count'],prefix['regs']['arg_base']))
                 self.assertEqual(state['context'],prefix['context'])
@@ -65,7 +67,6 @@ class AssembleRecursorsTest(unittest.TestCase):
                 while head!=prefix['regs']['typing_head']:
                     tag,sig,head,_=state['heap'][head];self.assertEqual(tag,CellTag.VECTOR_CELL);seen.append(sig)
                 self.assertEqual(seen,list(reversed(sigs)))
-                self.assertEqual(circuit.step(state),state)
 
 
 if __name__=='__main__':unittest.main()

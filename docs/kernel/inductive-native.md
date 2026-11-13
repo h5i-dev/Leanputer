@@ -386,3 +386,17 @@ its identity-substitution expectation must not override the pinned kernel.
 Input syntax uses a canonical shared DAG; replay of original Lean object sharing
 or byte-for-byte export/import is not claimed. Canonical exported level values
 and raw object-sensitive operation probes have separately stated expectations.
+
+Core recursor claims are optional untrusted assertions. The explicit core API
+follows `analyze_core`'s complete-set contract when claims are present: count must
+equal the current family count; names must be distinct and match only the
+generated current signatures. For each claim validate universe arity/uniqueness,
+closed Expr/universe scope, and infer/WHNF its type to Sort in the PRIVATE checked
+environment. Rename its universe binders with `INSTANTIATE_SCHEME`, then compare
+against the generated closed type. Full conversion may still GAP. No claim type
+is inserted into Γ. After generation the temporary term scope can be discarded;
+restore the generated universe scope for subsequent closed-record consumers.
+The original-source driver's post-restoration per-claim contract is separate and
+allows optional subsets, as in `environment.py`; it is not bypassed by this core
+API. Generic signature-vector lookup and immutable symbol membership serve these
+checks without a declaration-name catalog or raw type lookup.
