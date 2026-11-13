@@ -25,7 +25,7 @@ def metadata_cases():
         row['environment'][position][key] = value
         cases.append((row, 'REJECT'))
     recursive = deepcopy(base)
-    recursive['environment'][1]['type'] = ['pi', ['const', 'Bool'], ['const', 'Bool']]
+    recursive['environment'][1]['type'] = ['pi', ['pi', ['const', 'Bool'], ['const', 'Bool']], ['const', 'Bool']]
     cases.append((recursive, 'UNSUPPORTED'))
     unbounded = deepcopy(base)
     unbounded['environment'][3]['level'] = CFG.universe

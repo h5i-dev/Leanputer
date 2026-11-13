@@ -1,0 +1,433 @@
+{
+  "format": "leanputer.generic-report.v1",
+  "semantic_program": "generic.direct-recursive-fields.v1",
+  "primitive_basis": [],
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 8,
+    "universe": 4,
+    "fuel": 1408
+  },
+  "results": [
+    {
+      "name": "LeanputerGenericRecursive.recursive_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 39,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 97,
+      "semantic_steps": 1227
+    },
+    {
+      "name": "LeanputerGenericRecursive.renamed_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.renamed_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "renamed_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 39,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 97,
+      "semantic_steps": 1227
+    },
+    {
+      "name": "LeanputerGenericRecursive.nested_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.nested_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "nested_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 40,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 102,
+      "semantic_steps": 1355
+    },
+    {
+      "name": "missing-recursive-induction-hypothesis",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "missing-recursive-induction-hypothesis"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 36,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 66,
+      "semantic_steps": 345
+    },
+    {
+      "name": "negative-recursive-function-domain",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "negative-recursive-function-domain"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 40,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 40,
+      "semantic_steps": 48
+    },
+    {
+      "name": "unsupported-indexed-constructor-result",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "unsupported-indexed-constructor-result"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 40,
+      "status": "REJECT",
+      "reason": "DECLARATION",
+      "allocated_heap_nodes": 40,
+      "semantic_steps": 49
+    },
+    {
+      "name": "unsupported-recursive-prop-field",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "unsupported-recursive-prop-field"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 39,
+      "status": "UNSUPPORTED",
+      "reason": "UNSUPPORTED_DECLARATION",
+      "allocated_heap_nodes": 39,
+      "semantic_steps": 46
+    },
+    {
+      "name": "wrong-recursive-result",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "wrong-recursive-result"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "REJECT",
+      "reason": "CONVERSION",
+      "allocated_heap_nodes": 95,
+      "semantic_steps": 1227
+    },
+    {
+      "name": "recursive-projection-kernel-boundary",
+      "environment_declarations": 2,
+      "assumptions": [],
+      "input_heap_nodes": 6,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 8,
+      "semantic_steps": 68
+    },
+    {
+      "name": "deep-recursive-resource",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.recursive_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "recursive_iota"
+          }
+        ],
+        "mutation": "deep-recursive-resource"
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 50,
+      "status": "RESOURCE",
+      "reason": "STACK",
+      "allocated_heap_nodes": 95,
+      "semantic_steps": 1148
+    },
+    {
+      "name": "Function.mt@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "Function.mt",
+        "source_name_parts": [
+          {
+            "str": "Function"
+          },
+          {
+            "str": "mt"
+          }
+        ]
+      },
+      "environment_declarations": 3,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 90,
+      "semantic_steps": 805
+    },
+    {
+      "name": "LeanputerGenericRecords.projection_beta@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecords.projection_beta",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecords"
+          },
+          {
+            "str": "projection_beta"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 24,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 451
+    },
+    {
+      "name": "LeanputerGenericProp.singleton_k@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericProp.singleton_k",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericProp"
+          },
+          {
+            "str": "singleton_k"
+          }
+        ]
+      },
+      "environment_declarations": 6,
+      "assumptions": [],
+      "input_heap_nodes": 29,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 63,
+      "semantic_steps": 680
+    },
+    {
+      "name": "LeanputerGeneric.packet_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGeneric.packet_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGeneric"
+          },
+          {
+            "str": "packet_iota"
+          }
+        ]
+      },
+      "environment_declarations": 7,
+      "assumptions": [],
+      "input_heap_nodes": 38,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 85,
+      "semantic_steps": 968
+    },
+    {
+      "name": "LeanputerGenericRecursive.natural_iota@[]",
+      "provenance": {
+        "ground_levels": [],
+        "lean_version": "4.31.0",
+        "preparation": "syntax-only Expr traversal and universe instantiation",
+        "source_constant": "LeanputerGenericRecursive.natural_iota",
+        "source_name_parts": [
+          {
+            "str": "LeanputerGenericRecursive"
+          },
+          {
+            "str": "natural_iota"
+          }
+        ]
+      },
+      "environment_declarations": 4,
+      "assumptions": [],
+      "input_heap_nodes": 39,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "allocated_heap_nodes": 97,
+      "semantic_steps": 1227
+    }
+  ],
+  "counts": {
+    "ACCEPT": 9,
+    "REJECT": 3,
+    "UNSUPPORTED": 2,
+    "RESOURCE": 1
+  },
+  "syntax_seconds": 0.003387147997273132,
+  "batches": [
+    {
+      "input_positions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "forward_seconds": 143.97165026400762,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 1668,
+        "persistent_channels": 383,
+        "subtract_handovers": 6402,
+        "head_clears": 320,
+        "logic_units_per_layer": 512,
+        "reset_layers": 4,
+        "graph": {
+          "layers": 68,
+          "dims": 8391,
+          "heads": 11,
+          "ffn_units": 9774,
+          "max_units": 512,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 27,
+      "primitive_basis": [],
+      "semantic_program": "generic.direct-recursive-fields.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 445040968,
+      "weight_bytes": 890081936,
+      "cuda_peak_allocated_bytes": 1031423488,
+      "host_process_peak_rss_bytes": 1705951232,
+      "hidden_size": 1728,
+      "native_layers": 69,
+      "boot_tokens": 58,
+      "applied_steps": 1410
+    }
+  ],
+  "total_check_seconds": 145.08513139899878,
+  "validation_scope": "Restricted positive-Sort zero/one-field and nullary Prop inductives; no full Lean/general inductive soundness claim",
+  "backend": "native",
+  "device": "cuda",
+  "compile_seconds": 7.321625613985816,
+  "cold_compile_and_check_seconds": 152.40677993299323
+}

@@ -56,7 +56,7 @@ def check_documents(model,documents,backend='native',batch_size=16):
     return dict(format='leanputer.generic-report.v1',semantic_program=program.program_name,primitive_basis=[],
                 config=asdict(model.config),results=records,counts=dict(Counter(r['status']for r in records)),
                 syntax_seconds=syntax_seconds,batches=batches,total_check_seconds=time.perf_counter()-started,
-                validation_scope='Restricted positive-Sort zero/one-field and nullary Prop inductives; no full Lean/general inductive soundness claim')
+                validation_scope='Restricted positive-Sort zero/one-field inductives with direct-self recursion, and nullary Prop inductives; no full Lean/general inductive soundness claim')
 
 
 def main(argv=None):

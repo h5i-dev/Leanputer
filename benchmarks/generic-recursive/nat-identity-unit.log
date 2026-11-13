@@ -1,0 +1,6 @@
+test_actual_nat_and_arbitrary_tally_encode_identically (test_generic_recursive.GenericRecursiveSmoke) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

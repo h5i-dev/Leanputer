@@ -10,8 +10,9 @@ The active kernel development path is [declaration-as-data](docs/generic-kernel.
 Its compiler takes resource bounds only. Family names, constructor blocks and
 claimed recursor signatures are input data, validated by fixed weighted rules.
 One stock model checks two- and three-constructor enums, including arbitrary
-renamings. The initial class is monomorphic, nonrecursive inductives with zero or one independent field per
-constructor in positive numeric Sorts, plus nullary Prop families with checked
+renamings. The initial class is ground monomorphic inductives with zero or one field per
+constructor in positive numeric Sorts; each field is an earlier checked carrier
+or a direct recursive occurrence. It also supports nullary Prop families with checked
 elimination restrictions. Single-field projections use validated constructor
 data, including neutral comparison and substitution. Parameters, indices and Prop constructor fields remain
 unsupported. The checker derives dependent recursor types inside weights and
@@ -43,7 +44,9 @@ input dependencies checked and no axioms. Its False-claim mutation rejects.
 This is one targeted source smoke; the complete857source population has not been
 checked with this backend. The [eleven-case Prop evidence](benchmarks/generic-prop/README.md)
 reports6ACCEPT/4REJECT/1UNSUPPORTED using412.1M BF16 parameters and105.85s GPU
-forward time. General inductives, Eq and parameterized structures still require
+forward time. Actual constructor-only Nat uses the same data/rules as an arbitrary recursive
+Tally type, with no Nat-specific compilation. Raw literals, general inductives,
+Eq and parameterized structures still require
 further generic rules.
 
 The remainder documents the **historical per-name catalog backend**, retained

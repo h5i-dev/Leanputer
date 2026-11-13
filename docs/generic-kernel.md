@@ -5,7 +5,7 @@ catalog was the wrong direction: ordinary inductives belong in checked input
 data, not in generated semantic branches. Its syntax-export counts do not
 measure generic kernel coverage.
 
-The new path supports monomorphic nonrecursive inductives in positive numeric
+The new path supports ground monomorphic inductives in positive numeric
 Sorts, with zero or one independent field per constructor, and nullary Prop
 families. Bool-shaped and three-way enums must use one identical compiled
 model. The compilation API takes bounds only; declaration names, constructor
@@ -15,20 +15,26 @@ An inductive header supplies its type and constructor count. Fixed weighted
 rules require a literal Sort, a complete contiguous constructor block,
 correct owners and ordinals, and each constructor's literal result type equal
 to its own family. A field domain must be a literal reference to an earlier
-checked carrier whose type is a literal Sort no higher than the family Sort. Parameters, multiple/dependent fields, indices and recursive occurrences are
-explicitly unsupported. Since a field is an earlier closed carrier and no
-constructor domain can mention the current family, positivity follows from
-this restricted shape; it is not a supplied flag.
+checked carrier whose type is a literal Sort no higher than the family Sort,
+or a literal reference to its own family. The latter is a direct strictly
+positive recursive field. Parameters, multiple/dependent fields, indices and
+other recursive shapes are explicitly unsupported. Function domains and nested
+applications cannot smuggle negative occurrences into this class. Positivity
+is checked by this restricted AST shape; it is not a supplied flag.
 
 A recursor supplies a family reference, ground result universe and claimed
 type. The checker constructs the expected dependent type inside weights:
 `(motive : F → Sort v) → minor₀ → … → (x : F) → motive x`.
 A nullary minor is `motive c`; a one-field minor is
 `(a : A) → motive (c a)`, derived from the checked constructor AST.
+For a direct recursive field it is instead
+`(a : F) → motive a → motive (c a)`. The induction-hypothesis binder and its
+de Bruijn indices are built inside weights, not supplied by a trusted schema.
 It checks the supplied type and compares it with this derived type. Arity and
 minor selection come from validated family/constructor data. Generic iota
 reduction checks the major's constructor owner and selects its corresponding
-minor and applies its actual field when present; neither constructor names nor user-provided reduction answers are used.
+minor and applies its actual field when present. For a recursive field it
+also constructs the recursive recursor application as the induction hypothesis; neither constructor names nor user-provided reduction answers are used.
 Nullary Prop families can eliminate into Prop with any constructor count.
 Large elimination is admitted only for empty or singleton families. Singleton
 K reduction selects the sole minor even on a neutral proof major. These rules
@@ -86,9 +92,9 @@ compiled realization in BF16 using normalization compensation, gated MLPs and
 GatedDeltaNet cached memory. The ten-case observed correspondence does not prove
 floating-point equivalence for all bounds/inputs. Models remain large and slow:
 see the exact [focused evidence](../benchmarks/generic-enum/README.md).
-The active milestone after this slice is direct strictly-positive recursive
-fields with derived induction hypotheses, then uniform parameters,
-multiple/dependent fields and indexed admission. No per-name constructors should be added to obtain them.
+The next milestone is uniform parameters and a reusable constructor-telescope
+interpreter for multiple fields, followed by indexed admission. Direct-self
+recursion is implemented; nested/functional recursion remains unsupported. No per-name constructors should be added to obtain them.
 
 
 Actual elaborated Lean input is available through:
@@ -122,10 +128,27 @@ opaque theorem body. No names receive special compilation rules. This targeted
 
 
 Generic projection support is restricted to a validated positive-Sort family
-with one constructor and one independent field. Inference checks the projected
+with one constructor and one supported field. Inference checks the projected
 term has that family and returns the constructor domain. Reduction checks the
 actual constructor owner/ordinal and unary shape before selecting its field.
 Neutral projections compare the record terms, with proof/eta fallback; identical
 field identities alone do not establish equality. Projection syntax participates
 in de Bruijn shift/substitution. Other projection indices are UNSUPPORTED.
 This does not implement generic record eta or arbitrary structure inheritance.
+
+
+The [direct recursion checkpoint](../benchmarks/generic-recursive/README.md)
+uses actual arbitrary Tally/renamed/Nat declarations and generated recursor
+signatures. Tally and actual constructor-only Nat inputs encode identically.
+Recursive iota builds the IH application in weighted AST memory; ordinary beta
+and generic recursor reduction evaluate it. One- and two-level tests demand
+that IH is used. Missing IH signatures reject, negative function domains remain
+unsupported, and a deeper valid term exhausts the configured stack. Raw numeric
+literals and optimized Nat arithmetic are not implemented by this generic path.
+
+Identifiers in a JSON document designate its supplied theory. Provenance fields
+are annotations, not authentication of an installed Lean library. The external
+syntax extractor is the correspondence boundary for actual elaborated sources;
+weighted inference checks the encoded declarations/judgment. Extraction does not
+normalize or check proofs for the model, and all declarations' types/bodies and
+the restricted inductive/recursor data are validated by the weighted machine.

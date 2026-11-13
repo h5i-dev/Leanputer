@@ -78,9 +78,9 @@ class RuleCompiler:
                       self.lt(self.r['decl_count'], self.r['decl']), self.lt(self.cfg.constants, self.r['decl_count']))
         needs_x = (Op.INFER, Op.I_BIND, Op.WHNF, Op.W_APP, Op.SHIFT, Op.SUBST,
                    Op.TREE_LEFT, Op.TREE_RIGHT, Op.CONV, Op.C_RIGHT, Op.C_CHILD,
-                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_AFTER,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE)
+                   Op.FALLBACK, Op.ETA, Op.E_TYPE_WHNF, Op.E_COMPARE, Op.G_FAMILY,Op.G_PICK,Op.G_MAJOR,Op.G_CTOR_TYPE,Op.G_AFTER,Op.G_FIELD_DOMAIN,Op.G_FIELD_SORT,Op.G_FIELD_RESULT,Op.G_RCTYPE,Op.G_CHEAD,Op.G_CCHECK,Op.G_ELIM,Op.G_MTYPE,Op.P_FAMILY,Op.P_DOMAIN,Op.P_VALUE,Op.P_HEAD,Op.P_CHECK,Op.P_DONE,Op.P_REBUILD,Op.P_CONV_DONE,Op.G_RFIELD,Op.G_RECARG)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
-                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF,Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD)
+                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF,Op.G_R1,Op.G_R2,Op.G_R3,Op.G_R4,Op.G_R5,Op.G_R6,Op.G_RC1,Op.G_RC2,Op.G_RC3,Op.G_RNEXT,Op.G_RDONE,Op.G_REC,Op.G_R0,Op.G_CHOOSE,Op.G_RF0,Op.G_RF1,Op.G_RF2,Op.G_APPLY,Op.P_TYPE,Op.P_FAMILY,Op.P_VALUE,Op.P_REBUILD,Op.G_IH0,Op.G_IH1,Op.G_IH2,Op.G_IH3,Op.G_RECAPPLY,Op.G_IH_APP,Op.G_IH_FINISH)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA,Op.G_MAJOR,Op.G_AFTER)),(self.r['z'],(Op.G_AFTER,))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
@@ -211,9 +211,10 @@ class RuleCompiler:
         self.tail(self.AND(phase,fields,self.NOT(self.eq(r['gm'],0))),Op.G_FIELD_DOMAIN,hx['a'],hx['b'])
         self.stop(self.AND(phase,self.NOT(fields),self.NOT(good)),Outcome.REJECT,Reason.DECLARATION)
         self.emit(self.AND(phase,good),gi=self.add(r['gi'],1));self.tail(self.AND(phase,good),Op.G_CTOR)
-        phase=self.mode(Op.G_FIELD_DOMAIN);good=self.AND(self.tag(hx,Tag.CONST),self.lt(hx['v'],r['decl']))
+        phase=self.mode(Op.G_FIELD_DOMAIN);good=self.AND(self.tag(hx,Tag.CONST),self.NOT(self.lt(r['decl'],hx['v'])));recursive=self.eq(hx['v'],r['decl'])
         self.stop(self.AND(phase,self.NOT(good)),Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
-        self.tail(self.AND(phase,good),Op.G_FIELD_SORT,self.read['constant']['type'],y)
+        self.tail(self.AND(phase,good,recursive),Op.G_FIELD_RESULT,y)
+        self.tail(self.AND(phase,good,self.NOT(recursive)),Op.G_FIELD_SORT,self.read['constant']['type'],y)
         phase=self.mode(Op.G_FIELD_SORT);sort=self.tag(hx,Tag.SORT);level=self.NOT(self.lt(r['gm'],hx['v']))
         self.stop(self.AND(phase,self.NOT(sort)),Outcome.REJECT,Reason.UNSUPPORTED_DECLARATION)
         self.stop(self.AND(phase,sort,self.NOT(level)),Outcome.REJECT,Reason.DECLARATION)
@@ -239,17 +240,28 @@ class RuleCompiler:
         phase=self.mode(Op.G_RLOOP);done=self.eq(r['gi'],0);self.emit(phase,gt=result)
         self.allocate(self.AND(phase,done),Tag.PI,r['gm'],result,resume=(Op.G_RDONE,))
         self.tail(self.AND(phase,self.NOT(done)),Op.G_RCTYPE,nxt['type'])
-        phase=self.mode(Op.G_RCTYPE);self.emit(phase,ga=self.mux(self.tag(hx,Tag.PI),hx['a'],0))
+        phase=self.mode(Op.G_RCTYPE);fields=self.tag(hx,Tag.PI)
+        self.emit(phase,ga=self.mux(fields,hx['a'],0))
+        self.tail(self.AND(phase,fields),Op.G_RFIELD,hx['a'])
+        self.emit(self.AND(phase,self.NOT(fields)),gj=0)
+        self.allocate(self.AND(phase,self.NOT(fields)),Tag.CONST,v=self.add(row['owner'],r['gi']),resume=(Op.G_RC1,))
+        phase=self.mode(Op.G_RFIELD);self.emit(phase,gj=self.mux(self.AND(self.tag(hx,Tag.CONST),self.eq(hx['v'],row['owner'])),1,0))
         self.allocate(phase,Tag.CONST,v=self.add(row['owner'],r['gi']),resume=(Op.G_RC1,))
         fields=self.NOT(self.eq(r['ga'],0))
         phase=self.mode(Op.G_RC1);self.emit(phase,gc=result)
-        self.allocate(phase,Tag.VAR,v=self.mux(fields,r['gi'],self.sub(r['gi'],1)),resume=(Op.G_RC2,))
+        self.allocate(phase,Tag.VAR,v=self.mux(fields,self.add(r['gi'],r['gj']),self.sub(r['gi'],1)),resume=(Op.G_RC2,))
         phase=self.mode(Op.G_RC2);self.emit(self.AND(phase,fields),gb=result)
-        self.allocate(self.AND(phase,fields),Tag.VAR,v=0,resume=(Op.G_RF0,))
+        self.allocate(self.AND(phase,fields),Tag.VAR,v=r['gj'],resume=(Op.G_RF0,))
         self.allocate(self.AND(phase,self.NOT(fields)),Tag.APP,result,r['gc'],resume=(Op.G_RC3,))
         self.allocate(self.mode(Op.G_RF0),Tag.APP,r['gc'],result,resume=(Op.G_RF1,))
         self.allocate(self.mode(Op.G_RF1),Tag.APP,r['gb'],result,resume=(Op.G_RF2,))
-        self.allocate(self.mode(Op.G_RF2),Tag.PI,r['ga'],result,resume=(Op.G_RC3,))
+        phase=self.mode(Op.G_RF2);recursive=self.NOT(self.eq(r['gj'],0));self.emit(self.AND(phase,recursive),gc=result)
+        self.allocate(self.AND(phase,recursive),Tag.VAR,v=r['gi'],resume=(Op.G_IH0,))
+        self.allocate(self.AND(phase,self.NOT(recursive)),Tag.PI,r['ga'],result,resume=(Op.G_RC3,))
+        phase=self.mode(Op.G_IH0);self.emit(phase,gb=result);self.allocate(phase,Tag.VAR,v=0,resume=(Op.G_IH1,))
+        self.allocate(self.mode(Op.G_IH1),Tag.APP,r['gb'],result,resume=(Op.G_IH2,))
+        self.allocate(self.mode(Op.G_IH2),Tag.PI,result,r['gc'],resume=(Op.G_IH3,))
+        self.allocate(self.mode(Op.G_IH3),Tag.PI,r['ga'],result,resume=(Op.G_RC3,))
         self.allocate(self.mode(Op.G_RC3),Tag.PI,result,r['gt'],resume=(Op.G_RNEXT,))
         phase=self.mode(Op.G_RNEXT);self.emit(phase,gi=self.sub(r['gi'],1));self.tail(phase,Op.G_RLOOP)
         self.call(self.mode(Op.G_RDONE),Op.CONV,result,row['type'],continuation=(Op.ENV_EQ,))
@@ -363,7 +375,7 @@ class RuleCompiler:
         self.tail(self.AND(phase,k),Op.G_PICK,y,0)
         self.call(self.AND(phase,self.NOT(k)),Op.WHNF,z,continuation=(Op.G_CHOOSE,y,r['ga'],w))
         phase=self.mode(Op.G_CHOOSE);app=self.tag(hr,Tag.APP)
-        self.emit(phase,ga=self.mux(app,hr['b'],0))
+        self.emit(phase,ga=self.mux(app,hr['b'],0),gf=y)
         self.tail(phase,Op.G_CHEAD,self.mux(app,hr['a'],result),x,y,z)
         phase=self.mode(Op.G_CHEAD);row=self.read['constant']
         good=self.AND(self.tag(hx,Tag.CONST),self.lt(hx['v'],r['decl']),self.eq(row['kind'],4),self.eq(row['owner'],z),self.lt(row['info'],w))
@@ -371,7 +383,15 @@ class RuleCompiler:
         self.ret(self.AND(phase,self.NOT(good)),0)
         phase=self.mode(Op.G_CCHECK);arity=self.eq(self.mux(self.tag(hx,Tag.PI),1,0),self.mux(self.eq(w,0),0,1))
         self.ret(self.AND(phase,self.NOT(arity)),0)
-        self.call(self.AND(phase,arity),Op.G_PICK,y,z,continuation=(Op.G_APPLY,w))
+        fields=self.NOT(self.eq(w,0))
+        self.tail(self.AND(phase,arity,fields),Op.G_RECARG,hx['a'],y,z,w)
+        self.call(self.AND(phase,arity,self.NOT(fields)),Op.G_PICK,y,z,continuation=(Op.G_APPLY,w))
+        phase=self.mode(Op.G_RECARG);recursive=self.AND(self.tag(hx,Tag.CONST),self.eq(hx['v'],r['gf']))
+        self.call(self.AND(phase,recursive),Op.G_PICK,y,z,continuation=(Op.G_RECAPPLY,y,w))
+        self.call(self.AND(phase,self.NOT(recursive)),Op.G_PICK,y,z,continuation=(Op.G_APPLY,w))
+        self.allocate(self.mode(Op.G_RECAPPLY),Tag.APP,result,y,resume=(Op.G_IH_APP,x,y))
+        phase=self.mode(Op.G_IH_APP);self.emit(phase,gc=result);self.allocate(phase,Tag.APP,x,y,resume=(Op.G_IH_FINISH,))
+        self.allocate(self.mode(Op.G_IH_FINISH),Tag.APP,r['gc'],result)
         phase=self.mode(Op.G_APPLY);fields=self.NOT(self.eq(x,0))
         self.allocate(self.AND(phase,fields),Tag.APP,result,x)
         self.ret(self.AND(phase,self.NOT(fields)),result)
@@ -638,7 +658,7 @@ def compile_machine(config=MachineConfig(),optimized=True,memory_update='attenti
 # Backend program interface: bounds are compilation inputs; declarations are data.
 from .generic_spec import prepare
 from .generic_syntax import parse_document,assumptions,Unsupported,Exhausted
-program_name='generic.onefield-projections.v1'
+program_name='generic.direct-recursive-fields.v1'
 constant_fields=5
 second_banks=SECOND_BANKS
 primitive_basis=()

@@ -78,7 +78,7 @@ def unary_proof(name='Parcel',carrier='Carrier',constructors=('empty','wrap'),wr
 def unary_cases():
     base=unary_proof();renamed=unary_proof('OtherBox','Tint',('absent','present'))
     wrong=unary_proof(wrong=True)
-    recursive=deepcopy(base);recursive['environment'][5]['type']=['pi',const('Parcel'),const('Parcel')]
+    recursive=deepcopy(base);recursive['environment'][5]['type']=['pi',['pi',const('Parcel'),const('Parcel')],const('Parcel')]
     larger=deepcopy(base);larger['environment'][0]['type']=['sort',2]
     wrong_result=deepcopy(base);wrong_result['environment'][5]['type']=['pi',const('Carrier'),const('Carrier')]
     wrong_minor=deepcopy(base);wrong_minor['environment'][-1]['type']=enum_environment('Parcel',('empty','wrap'))[-1]['type']
