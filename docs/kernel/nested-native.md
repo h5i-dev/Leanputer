@@ -176,3 +176,15 @@ that call site's final `rec_<index>` component is source-equivalent without
 restricting the main name. Private auxiliary names may consistently alpha-rename
 and still require actual freshness/reserved-name checking. No full fresh-name
 or nested source publication claim is established by these data operations.
+
+`MAKE_RECURSOR_NAME` now constructs both source normal recursor names and indexed
+restoration names from an arbitrary parent path and bounded counter. Literal
+`rec`/`rec_` bytes are the actual kernel naming primitive, not library-name
+features. The operation composes path lookup, weighted decimal formatting,
+vector splicing and interning. The pinned C++ `operator+` used by `mk_rec_name`
+is structural concatenation; it does not invoke Lean's macro-propagating
+`Name.append`. Thus the final `rec` string used by appendIndexAfter has no macro
+scopes, even when the preserved parent path does. Numeric, macro-scoped and
+anonymous parent-data checks, indexed construction and the independent existing
+normal-rec-name relation PASS1test24.264s in exact-state IR. No source block or
+theorem is admitted by this syntax operation.
