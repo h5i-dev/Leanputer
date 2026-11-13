@@ -45,7 +45,10 @@ This is one targeted source smoke; the complete857source population has not been
 checked with this backend. The [eleven-case Prop evidence](benchmarks/generic-prop/README.md)
 reports6ACCEPT/4REJECT/1UNSUPPORTED using412.1M BF16 parameters and105.85s GPU
 forward time. Actual constructor-only Nat uses the same data/rules as an arbitrary recursive
-Tally type, with no Nat-specific compilation. Raw literals, general inductives,
+Tally type, with no Nat-specific compilation. The
+[recursive stock batch](benchmarks/generic-recursive/README.md) yielded
+9ACCEPT/3REJECT/2UNSUPPORTED/1RESOURCE using445.0M BF16 parameters
+(890.1MB weights) and143.97s GPU execution at1408fuel. Raw literals, general inductives,
 Eq and parameterized structures still require
 further generic rules.
 

@@ -17,7 +17,7 @@ two-level1355/102. Missing IH type rejects345/66. A wrong recursive result rejec
 negative function domains remain UNSUPPORTED. A one-constructor recursive
 projection agrees with the actual Lean kernel.
 
-A12deep well-typed example returns STACKresource1149steps/96nodes under the same
+A12deep well-typed example returns STACKresource1148steps/95nodes under the same
 bounds; independent Lean accepts it. An initial fixture accidentally changed only
 the claim annotation; independent replay caught it, both term/claim annotations
 were corrected, and focused tests reran. This was a fixture correction; no failed
