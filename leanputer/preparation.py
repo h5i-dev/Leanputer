@@ -48,10 +48,12 @@ def export(source, module, targets, output, workdir, lean='lean', helper='Export
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--generic', action='store_true', help='export declaration-as-data generic syntax')
+    formats = parser.add_mutually_exclusive_group()
+    formats.add_argument('--generic', action='store_true', help='export the preserved restricted generic syntax')
+    formats.add_argument('--kernel-schemes', action='store_true', help='export original schemes/full syntax for general kernel development; native admission driver unfinished')
     parser.add_argument('--source', type=Path, help='optional source module to compile externally')
     parser.add_argument('--module', help='module to import; defaults to source filename')
-    parser.add_argument('--targets', required=True, type=Path, help='array of name/ground-level target objects')
+    parser.add_argument('--targets', required=True, type=Path, help='target array; kernel-schemes uses name/name_parts without ground levels')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--workdir', type=Path, default=Path('/mnt/scratch/leanputer-runs/preparation') if Path('/mnt/scratch').is_dir() else Path(tempfile.gettempdir())/'leanputer-preparation')
     args = parser.parse_args(argv)
@@ -63,7 +65,8 @@ def main(argv=None):
         if not isinstance(targets, list):
             raise ValueError('targets must be a JSON array')
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        print(json.dumps(export(args.source, module, targets, args.output, args.workdir, helper='ExportGeneric.lean' if args.generic else 'Export.lean'), indent=2))
+        helper = 'ExportKernel.lean' if args.kernel_schemes else 'ExportGeneric.lean' if args.generic else 'Export.lean'
+        print(json.dumps(export(args.source, module, targets, args.output, args.workdir, helper=helper), indent=2))
         return 0
     except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         parser.error(str(error))

@@ -7,7 +7,7 @@ may treat this private analysis as a trusted input answer to native inference.
 """
 from dataclasses import dataclass
 from .arena import KernelError, LevelTag, Tag
-from .operations import check_scope, instantiate, spine
+from .operations import check_scope, instantiate, spine, substitute_levels
 from .positivity import BlockTraversal, Family
 from .recursor import RecursorBuilder
 from .services import Signature
@@ -51,7 +51,22 @@ class CoreAnalysis:
         return any(ctor.reflexive for family in self.families for ctor in family.constructors)
 
 
-def analyze_core(services, inductives, universe_parameters, parameter_count, fresh_elimination_symbol):
+def check_recursor_claim(services, expected, claim):
+    """Check a supplied scheme against generated data, modulo universe renaming."""
+    a = services.a
+    if (claim.symbol != expected.symbol or len(set(claim.universe_parameters)) != len(claim.universe_parameters)
+            or len(claim.universe_parameters) != len(expected.universe_parameters)):
+        raise KernelError('recursor name/universe scheme mismatch')
+    check_scope(a, claim.type, universe_parameters=claim.universe_parameters)
+    services.ensure_type(claim.type)
+    rename = {p: a.level(LevelTag.PARAM, q)
+              for p, q in zip(claim.universe_parameters, expected.universe_parameters)}
+    if not services.convert(expected.type, substitute_levels(a, claim.type, rename)):
+        raise KernelError('recursor scheme differs from generated type')
+
+
+def analyze_core(services, inductives, universe_parameters, parameter_count, fresh_elimination_symbol,
+                 recursor_claims=()):
     """Check all dependent telescopes; derive metadata and recursors privately.
 
     The outer driver must eliminate nested occurrences and later restore/recheck
@@ -166,5 +181,11 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
             with services.overlay(constructors):
                 recursors = RecursorBuilder(traversal, inductives, universe_parameters,
                     elimination_level, services.convert).generate()
+                if recursor_claims:
+                    claims = {claim.symbol: claim for claim in recursor_claims}
+                    if len(claims) != len(recursor_claims) or set(claims) != {rec.symbol for rec in recursors}:
+                        raise KernelError('recursor claim set mismatch')
+                    for rec in recursors:
+                        check_recursor_claim(services, rec, claims[rec.symbol])
             return CoreAnalysis(universe_parameters, parameter_count, result_level,
                 tuple(analyses), elimination_level, k, recursors)

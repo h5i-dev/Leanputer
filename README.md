@@ -17,6 +17,9 @@ declaration admission or mathlib coverage. General symbolic-universe, inference,
 positivity/admission-core and recursor-generation modules are executable specs;
 complete conversion, nested processing/transactions and weighted integration
 remain unfinished. The earlier uncommitted projection work is preserved.
+An [original-scheme syntax interface](docs/kernel/input.md) is available for
+general-kernel development via `leanputer.preparation --kernel-schemes`; syntax
+export is separate from checking or native proof acceptance.
 
 The preserved restricted checker is [declaration-as-data](docs/generic-kernel.md).
 Its compiler takes resource bounds only. Family names, constructor blocks and
