@@ -51,6 +51,9 @@ class CellTag(IntEnum):
     MINOR_INFO = 177             # Derived (checkedCtorPending,minorLocalRecord,nfields).
     RECURSOR_TYPE = 178          # Private (familySig,closedGeneratedType,recSymbol).
     FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
+    RECURSOR_COUNTS = 180        # Derived (numParams,numIndices,sharedCounts181).
+    RECURSOR_SHARED_COUNTS = 181 # Derived (numMotives,numMinors,block182).
+    RECURSOR_BLOCK = 182         # Derived (Kflag,rawFlags175,allFamilyVector).
 
 
 class VectorKind(IntEnum):

@@ -35,9 +35,11 @@ class RecursorRuleTransitionTest(unittest.TestCase):
                     else:
                         ref=machine.step();state={'regs':{k:int(v) for k,v in ref['regs'].items()},
                             **{bank:[[int(v) for v in row] for row in ref[bank]] for bank in spec.BANK_FIELDS}}
+                    rr=state['regs']
+                    if rr['mode']==spec.Mode.RETURN and rr['sp'] and state['stack'][rr['sp']-1][0]==spec.CALL_SOURCE_RULES:break
                     if state['regs']['status']:break
                 r=state['regs'];self.assertIsNotNone(prefix)
-                self.assertEqual((r['status'],r['reason']),(spec.Outcome.GAP,spec.Reason.GAP_RECURSOR_GENERATION))
+                self.assertEqual((r['status'],r['mode']),(spec.Outcome.RUNNING,spec.Mode.RETURN))
                 self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
                 self.assertEqual((r['ctx'],r['count'],r['arg_base']),(prefix['regs']['ctx'],prefix['regs']['count'],prefix['regs']['arg_base']))
                 self.assertEqual(state['context'][:r['ctx']],prefix['context'][:r['ctx']])
@@ -54,7 +56,6 @@ class RecursorRuleTransitionTest(unittest.TestCase):
                     tag,symbol,nfields,rhs=state['heap'][rule]
                     self.assertEqual((tag,symbol,nfields),(CellTag.CHECKED_RULE,want_rule.constructor,want_rule.fields))
                     self.assertTrue(representation_equal(a,decoded[rhs],want_rule.rhs),(doc['name'],symbol))
-                self.assertEqual(circuit.step(state),state)
 
 
 if __name__=='__main__':unittest.main()

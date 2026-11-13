@@ -345,3 +345,25 @@ private179 `(owningFamilySig,ruleRef,0)` association. All constructor rules stay
 in original order. Rule generation neither assumes a type claim nor publishes
 an environment entry. Grouping/claims, outer nested restoration and runtime
 constructor/K/structure/literal reduction remain subsequent required stages.
+
+Private recursor assembly follows `recursor_val`/`declare_recursors`. Collect all
+family identities in declaration order; filter the source-ordered global rule
+vector by each owning family; check that its count equals that family's raw
+constructor count. Emit163 `(ownerFamilySig,counts180,ruleVector)`,180
+`(numParams,numIndices,sharedCounts181)`,181 `(numMotives,numMinors,block182)`,
+and182 `(Kflag,rawFlags175,allFamilyVector)`. Counts/names are data. Create the
+scheme165 `(generatedUniverseVector,RECURSOR_KIND10,recursor163)` and signature160
+with the generated closed type. Only the PRIVATE typing overlay receives these
+entries; keep a separate ordered signature vector for later atomic publication.
+Original-source restoration must rebuild any changed nested metadata and verify
+all restored signatures/rules/claims before public publication. Earlier prototype
+header identities remain stable private keys, not new supplied type answers.
+
+The runtime consumer is pinned `inductive.h:inductive_reduce_rec`: select the
+major by the sum of stored params/motives/minors/indices; perform source K type
+compatibility when eligible; WHNF; expand genuine Nat/String literals or a
+nonrecursive non-Prop structure major; find the constructor rule; instantiate
+the recursor universe scheme; apply params/motives/minors, **trailing** constructor
+fields (nested constructor parameter count may differ), then surplus arguments.
+K/structure/literal conversion and full definitional equality are separate shared
+callbacks, never a name-specific theorem shortcut or a host reduction oracle.
