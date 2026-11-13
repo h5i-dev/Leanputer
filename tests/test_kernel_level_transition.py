@@ -1,5 +1,7 @@
 """Targeted symbolic-level scope IR/cell integration contracts."""
 import unittest
+import json
+from pathlib import Path
 from leanputer.kernel.arena import KernelError
 from leanputer.kernel.operations import check_scope
 from leanputer.kernel import level_transition as program
@@ -55,6 +57,32 @@ def substitution_cases():
         bindings=[dict(parameter=name(symbol), level=value) for symbol, value in bindings])
         for i, (level, bindings) in enumerate(probes)]
     docs[0]['argument_prefix'] = [77, 79]
+    return docs
+
+
+def expression_cases():
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    def source(expr, parameters=()):
+        return dict(format='leanputer.kernel-source.v1', status='EXPORTED', declarations=[],
+            target=dict(kind='definition', name=name('t'), level_params=list(parameters), type=expr, value=None))
+    # Instantiate the COMPLETE pre-existing expression operation, not a new
+    # theorem/datatype class. All12 Expr tags occur, including inert Local and
+    # literals: only Sort levels and Const universe arguments should change.
+    value = ['app', ['app', ['const', name('f'), [u, v]], ['nat', '1']], ['string', 'ok']]
+    body = ['lam', 3, ['sort', u], ['proj', name('R'), 0, ['mdata', ['app', ['var', 0], ['local', 31]]]]]
+    root = ['pi', 1, ['sort', v], ['let', ['sort', u], value, body]]
+    actual_id = json.loads((Path(__file__).parent/'fixtures/kernel-source-smoke.jsonl').read_text().splitlines()[0])
+    specs = [
+        (source(root, (name('u'), name('v'))), 'type',
+            [dict(parameter=name('u'), level=['succ', w]), dict(parameter=name('v'), level=['zero'])]),
+        (source(['const', name('f'), []]), 'type', [dict(parameter=name('u'), level=['zero'])]),
+        (actual_id, 'value', [dict(parameter=actual_id['target']['level_params'][0], level=['succ', ['zero']])]),
+        (source(['const', name('f'), [u, v]]), 'type', []),
+        (source(['const', name('f'), [u, v]]), 'type', [dict(parameter=name('w'), level=['zero'])])]
+    docs = [dict(format='leanputer.kernel-data-operation.v1', operation='expr_substitute_raw',
+        name=f'expr-level-substitute-{i}', source=s, root=root, bindings=bindings)
+        for i, (s, root, bindings) in enumerate(specs)]
+    docs[0]['argument_prefix'] = [77]
     return docs
 
 
@@ -125,6 +153,31 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_expression_schemes_call_the_same_level_subroutine(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=256, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in expression_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']:
+                    break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            bindings = {}
+            for symbol, level in arguments['bindings']:
+                bindings.setdefault(symbol, level)
+            root = source.target.type if arguments['root'] == 'type' else source.target.value
+            expected = substitute_levels(source.arena, root, bindings)
+            _, decoded = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), source.arena)
+            self.assertEqual(decoded[state['regs']['r']], expected)
+            self.assertEqual(state['regs']['sp'], 0)
+            if doc.get('argument_prefix'):
+                self.assertEqual(state['context'][0], [77])
 
 
 if __name__ == '__main__':

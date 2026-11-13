@@ -13,7 +13,7 @@ from leanputer.bitvec import unpack_words
 from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from leanputer.native_machine import compile_native_machine
-from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases
+from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases, expression_cases
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     torch.set_num_threads(1)
     cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
-    documents = cases()+telescope_cases()+substitution_cases()
+    documents = cases()+telescope_cases()+substitution_cases()+expression_cases()
     references = []
     for document in documents:
         machine = spec.SpecMachine(cfg, program.prepare(cfg, *program.parse_document(document)))
@@ -62,7 +62,7 @@ def main():
         config=asdict(cfg), device=args.device, compile_seconds=compilation,
         input_documents=documents, exact_register_match=True, exact_cache_match=True,
         verified_cache_banks=verified,
-        validation_scope=f'{len(documents)} typed-memory scope/raw-substitution/telescope probes; not full typing, declaration admission or mathlib coverage',
+        validation_scope=f'{len(documents)} typed-memory scope/level-and-expression-substitution/telescope probes; not full typing, declaration admission or mathlib coverage',
         full_kernel_native_support=False)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2)+'\n')

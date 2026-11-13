@@ -272,8 +272,12 @@ It does not supply or check full source admission; standalone operation reports
 must not be counted as theorem coverage.
 The [twelve-operation substitution smoke](../../benchmarks/kernel-level-substitution-stock/README.md)
 adds simultaneous raw symbolic substitution on all level tags with typed
-bindings, missing/empty mappings and preserved caller context. Normalization
-and expression-wide scheme instantiation remain separate operations.
+bindings, missing/empty mappings and preserved caller context. Canonical normalization remains separate. The
+[seventeen-operation expression substitution smoke](../../benchmarks/kernel-expression-levels-stock/README.md)
+adds raw universe instantiation throughout all twelve Expr tags, including the
+original exported `id` body. Sort/Const use the SAME level substitution routine;
+universe vector length is data. This is still operation evidence, not native
+typing or admission.
 `BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit

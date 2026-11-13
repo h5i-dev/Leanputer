@@ -14,7 +14,7 @@ from enum import IntEnum
 import torch
 from ..bitvec import pack_words, unpack_words
 from .arena import Arena, KernelError, LevelTag, Limits, ResourceError, Tag, children
-from .native_cells import CellTag
+from .native_cells import CellTag, VectorKind
 
 
 class Outcome(IntEnum):
@@ -53,6 +53,7 @@ class Task(IntEnum):
     FOLD_TELESCOPE = 10         # Internal: consumes derived Local records.
     LEVEL_SCOPE = 11            # Internal typed-cell level walk/membership.
     LEVEL_SUBSTITUTE = 12       # Simultaneous raw level substitution.
+    EXPR_LEVEL_SUBSTITUTE = 13  # All Expr tags; Sort/Const call the same level op.
 
 
 class Mode(IntEnum):
@@ -69,12 +70,21 @@ class Mode(IntEnum):
     FOLD_BUILD = 10
     LEVEL_SELECT = 11
     LEVEL_BINDING = 12
+    SORT_RESULT = 13
+    CONST_VECTOR = 14
+    CONST_CELL = 15
+    CONST_RESULT = 16
+    CONST_BUILD = 17
+    CONST_FINISH = 18
 
 
 CALL_BETA_ZETA = 16
 PENDING_ARGUMENT = 17
 CALL_TELESCOPE = 18
 CALL_FOLD = 19
+CALL_SORT_LEVEL = 20
+CALL_CONST_LEVEL = 21
+VECTOR_VALUE = 22
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -82,7 +92,8 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
     'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open',
     'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag',
-    'arg_base', 'parameter', 'lookup_level')
+    'arg_base', 'parameter', 'lookup_level', 'const_original', 'expr_depth',
+    'vec_length', 'vec_left', 'vec_build', 'vec_head', 'vec_changed', 'vector_result')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -181,7 +192,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -268,12 +279,13 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.LEVEL_BINDING or r['task'] > Task.LEVEL_SUBSTITUTE
+                or r['mode'] > Mode.CONST_FINISH or r['task'] > Task.EXPR_LEVEL_SUBSTITUTE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
+                or r['vec_changed'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
-        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)
+        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE)
         if uses_arguments and r['arg_base']+r['count'] > cfg.context:
             stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
@@ -294,6 +306,10 @@ class SpecMachine:
                     r.update(sp=r['sp']-1, mode=Mode.TELESCOPE, x=r['r'], depth=0, task=Task.OPEN_TELESCOPE)
                 elif phase == CALL_FOLD:
                     r.update(sp=r['sp']-1, mode=Mode.FOLD_BUILD, x=r['r'], task=Task.FOLD_TELESCOPE)
+                elif phase == CALL_SORT_LEVEL:
+                    r.update(sp=r['sp']-1, mode=Mode.SORT_RESULT, x=original, depth=depth, task=Task.EXPR_LEVEL_SUBSTITUTE)
+                elif phase == CALL_CONST_LEVEL:
+                    r.update(sp=r['sp']-1, mode=Mode.CONST_RESULT, x=original, depth=depth, task=Task.EXPR_LEVEL_SUBSTITUTE)
                 elif phase == PENDING_ARGUMENT:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
                 else:
@@ -307,11 +323,77 @@ class SpecMachine:
         level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)
         valid_tag = (tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
+            tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
+            tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_CELL, Mode.CONST_RESULT) else
             CellTag.LEVEL_ZERO <= tag <= CellTag.LEVEL_PARAM if level_task else Tag.BVAR <= tag <= Tag.MDATA)
         if not valid_tag:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if r['mode'] == Mode.SORT_RESULT:
+            if tag != Tag.SORT:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif a == r['r']:
+                ret(r['x'])
+            else:
+                alloc((Tag.SORT, r['r'], 0, 0))
+            return s
+        if r['mode'] == Mode.CONST_VECTOR:
+            if c != VectorKind.LEVELS or bool(a) != bool(b):
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif not a:
+                ret(r['const_original'])
+            else:
+                r.update(vec_length=a, vec_left=a, vec_build=a, vec_head=0, vec_changed=0,
+                    mode=Mode.CONST_CELL, x=b)
+            return s
+        if r['mode'] == Mode.CONST_CELL:
+            if not r['vec_left'] or bool(b) != (r['vec_left'] > 1):
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['sp'] >= cfg.stack:
+                stop(Outcome.RESOURCE, Reason.STACK)
+            else:
+                s['stack'][r['sp']] = [CALL_CONST_LEVEL, r['x'], r['expr_depth'], Task.EXPR_LEVEL_SUBSTITUTE, 0, 0]
+                r.update(sp=r['sp']+1, mode=Mode.WALK, x=a, depth=0, task=Task.LEVEL_SUBSTITUTE)
+            return s
+        if r['mode'] == Mode.CONST_RESULT:
+            changed = bool(r['vec_changed'] or a != r['r'])
+            more = r['vec_left'] > 1
+            if not r['vec_left']:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif more or changed:
+                if r['sp'] >= cfg.stack:
+                    stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [VECTOR_VALUE, r['r'], 0, Task.EXPR_LEVEL_SUBSTITUTE, 0, 0]
+                    r.update(sp=r['sp']+1, vec_left=r['vec_left']-1, vec_changed=int(changed),
+                        mode=Mode.CONST_CELL if more else Mode.CONST_BUILD,
+                        x=b if more else r['const_original'])
+            else:
+                r['sp'] -= r['vec_length']-1
+                ret(r['const_original'])
+            return s
+        if r['mode'] == Mode.CONST_BUILD:
+            if r['vec_build'] and (not r['sp'] or s['stack'][r['sp']-1][0] != VECTOR_VALUE):
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['free'] >= cfg.heap:
+                stop(Outcome.RESOURCE, Reason.HEAP)
+            else:
+                ref = r['free']
+                if r['vec_build']:
+                    value = s['stack'][r['sp']-1][1]
+                    s['heap'][ref] = [CellTag.VECTOR_CELL, value, r['vec_head'], 0]
+                    r.update(free=ref+1, vec_head=ref, vec_build=r['vec_build']-1, sp=r['sp']-1)
+                else:
+                    s['heap'][ref] = [CellTag.VECTOR, r['vec_length'], r['vec_head'], VectorKind.LEVELS]
+                    r.update(free=ref+1, vector_result=ref, mode=Mode.CONST_FINISH)
+            return s
+        if r['mode'] == Mode.CONST_FINISH:
+            if tag != Tag.CONST:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            else:
+                alloc((Tag.CONST, a, r['vector_result'], 0))
+            return s
         if r['mode'] == Mode.LEVEL_SELECT:
             r.update(mode=Mode.LEVEL_BINDING, x=s['context'][r['arg_base']+r['i']][0])
             return s
@@ -431,6 +513,20 @@ class SpecMachine:
                        (a,) if tag == CellTag.LEVEL_SUCC else ()) if level_task else
                       (a, b, c) if tag == Tag.LET else (a, b) if tag in (Tag.APP, Tag.PI, Tag.LAM)
                       else (c,) if tag == Tag.PROJ else (a,) if tag == Tag.MDATA else ())
+        if r['mode'] == Mode.WALK and task == Task.EXPR_LEVEL_SUBSTITUTE:
+            if not r['count']:
+                ret(r['x'])
+                return s
+            if tag == Tag.SORT:
+                if r['sp'] >= cfg.stack:
+                    stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [CALL_SORT_LEVEL, r['x'], depth, Task.EXPR_LEVEL_SUBSTITUTE, 0, 0]
+                    r.update(sp=r['sp']+1, mode=Mode.WALK, x=a, depth=0, task=Task.LEVEL_SUBSTITUTE)
+                return s
+            if tag == Tag.CONST:
+                r.update(const_original=r['x'], expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
+                return s
         if r['mode'] == Mode.RESUME:
             if not r['sp']:
                 stop(Outcome.INVALID, Reason.SYNTAX)

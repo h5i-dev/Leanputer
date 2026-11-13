@@ -53,6 +53,8 @@ performs simultaneous raw substitution in weights, and reuses the Pi/Lam
 open/fold callers on the same physical ABI. Argument-window offsets preserve
 earlier caller-owned context slots; those slots are opaque data, not assumptions.
 Standalone operation entry points produce DONE/INVALID, not theorem acceptance.
-They do not run full source environment admission. Symbolic normalization,
-expression-wide level substitution, conversion and checked-environment callers
-still need integrated lowering.
+They do not run full source environment admission. Expression-wide raw universe substitution traverses all twelve Expr tags,
+calling the same level operation for Sort and every Const universe argument.
+A length-driven vector loop uses private value/return frames; its empty and
+unchanged paths retain original syntax. Symbolic normalization, conversion and
+checked-environment callers still need integrated lowering.

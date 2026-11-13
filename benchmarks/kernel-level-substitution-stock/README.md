@@ -36,3 +36,6 @@ CUDApeak294,769,664bytes, hostRSS1,682,948,096bytes.
 Timings cover cold compilation and forward execution, excluding imports/offline
 validation, with no steady-state/full-source throughput claim. No weights saved,
 no broad campaign, no native full-source/mathlib coverage claim.
+
+Evidence is pinned to implementation `3dd05b0`. The tool now includes later
+operations; checkout that revision to reproduce this exact twelve-input run.

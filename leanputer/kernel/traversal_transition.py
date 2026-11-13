@@ -5,9 +5,9 @@ has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
 from .arena import Tag
-from .native_cells import CellTag
+from .native_cells import CellTag, VectorKind
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
-    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, LOCAL_DECL_TAG,
+    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, VECTOR_VALUE, LOCAL_DECL_TAG,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
     program_name, constant_fields, first_banks, second_banks, primitive_basis)
 
@@ -65,14 +65,15 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.LEVEL_BINDING, self.r['mode']), self.lt(Task.LEVEL_SUBSTITUTE, self.r['task']),
+            self.lt(Mode.CONST_FINISH, self.r['mode']), self.lt(Task.EXPR_LEVEL_SUBSTITUTE, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
+            self.lt(1, self.r['vec_changed']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
             self.NOT(self.OR(self.eq(self.r['fold_tag'], Tag.PI), self.eq(self.r['fold_tag'], Tag.LAM))))
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(invalid))
         uses_arguments = self.OR(*(self.eq(self.r['task'], value) for value in
-            (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)))
+            (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE)))
         window_end = self.g.add(self.g.fit(self.r['arg_base'], self.width+1), self.g.fit(self.r['count'], self.width+1))
         window_bad = self.AND(uses_arguments, self.g.lt(self.g.const(self.cfg.context, self.width+1), window_end))
         self.stop(self.AND(self.active, window_bad), Outcome.RESOURCE, Reason.CONTEXT)
@@ -80,12 +81,17 @@ class RuleCompiler:
         needs_node = self.NOT(self.eq(self.r['mode'], Mode.RETURN))
         internal_record = self.eq(self.r['mode'], Mode.FOLD_RECORD)
         binding_record = self.eq(self.r['mode'], Mode.LEVEL_BINDING)
+        vector_header = self.eq(self.r['mode'], Mode.CONST_VECTOR)
+        vector_cell = self.OR(self.eq(self.r['mode'], Mode.CONST_CELL), self.eq(self.r['mode'], Mode.CONST_RESULT))
         level_scope = self.OR(self.eq(self.r['task'], Task.LEVEL_SCOPE), self.eq(self.r['task'], Task.LEVEL_SUBSTITUTE))
         expression_tag_bad = self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
         level_tag_bad = self.OR(self.lt(self.read['node']['tag'], CellTag.LEVEL_ZERO), self.lt(CellTag.LEVEL_PARAM, self.read['node']['tag']))
         tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
             self.AND(binding_record, self.NOT(self.eq(self.read['node']['tag'], CellTag.LEVEL_BINDING))),
-            self.AND(self.NOT(internal_record), self.NOT(binding_record), self.OR(self.AND(level_scope, level_tag_bad), self.AND(self.NOT(level_scope), expression_tag_bad))))
+            self.AND(vector_header, self.NOT(self.eq(self.read['node']['tag'], CellTag.VECTOR))),
+            self.AND(vector_cell, self.NOT(self.eq(self.read['node']['tag'], CellTag.VECTOR_CELL))),
+            self.AND(self.NOT(internal_record), self.NOT(binding_record), self.NOT(vector_header), self.NOT(vector_cell),
+                self.OR(self.AND(level_scope, level_tag_bad), self.AND(self.NOT(level_scope), expression_tag_bad))))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -153,8 +159,65 @@ class RuleCompiler:
         self.emit(telescope_return, sp=top, mode=Mode.TELESCOPE, x=result, depth=0, task=Task.OPEN_TELESCOPE)
         fold_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_FOLD))
         self.emit(fold_return, sp=top, mode=Mode.FOLD_BUILD, x=result, task=Task.FOLD_TELESCOPE)
-        self.emit(self.AND(returning, nonempty, self.NOT(self.OR(self.eq(frame['phase'], CALL_BETA_ZETA), self.eq(frame['phase'], CALL_TELESCOPE), self.eq(frame['phase'], CALL_FOLD)))), mode=Mode.RESUME,
+        sort_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_SORT_LEVEL))
+        self.emit(sort_return, sp=top, mode=Mode.SORT_RESULT, x=frame['original'], depth=frame['depth'], task=Task.EXPR_LEVEL_SUBSTITUTE)
+        const_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_CONST_LEVEL))
+        self.emit(const_return, sp=top, mode=Mode.CONST_RESULT, x=frame['original'], depth=frame['depth'], task=Task.EXPR_LEVEL_SUBSTITUTE)
+        private_phase = self.OR(*(self.eq(frame['phase'], value) for value in
+            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL)))
+        self.emit(self.AND(returning, nonempty, self.NOT(private_phase)), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
+
+        sorting = self.mode(Mode.SORT_RESULT)
+        self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
+        self.ret(self.AND(sorting, self.tag(Tag.SORT), self.eq(a, result)), x)
+        self.alloc(self.AND(sorting, self.tag(Tag.SORT), self.NOT(self.eq(a, result))), (Tag.SORT, result, 0, 0))
+        vector = self.mode(Mode.CONST_VECTOR)
+        empty = self.eq(a, 0)
+        vector_ok = self.AND(self.eq(c, VectorKind.LEVELS), self.eq(self.mux(empty, 1, 0), self.mux(self.eq(b, 0), 1, 0)))
+        self.stop(self.AND(vector, self.NOT(vector_ok)), Outcome.INVALID, Reason.SYNTAX)
+        self.ret(self.AND(vector, vector_ok, empty), r['const_original'])
+        self.emit(self.AND(vector, vector_ok, self.NOT(empty)), vec_length=a, vec_left=a, vec_build=a,
+            vec_head=0, vec_changed=0, mode=Mode.CONST_CELL, x=b)
+        cell = self.mode(Mode.CONST_CELL)
+        more_values = self.lt(1, r['vec_left'])
+        cell_ok = self.AND(self.NOT(self.eq(r['vec_left'], 0)),
+            self.eq(self.mux(more_values, 1, 0), self.mux(self.NOT(self.eq(b, 0)), 1, 0)))
+        self.stop(self.AND(cell, self.NOT(cell_ok)), Outcome.INVALID, Reason.SYNTAX)
+        stack_room = self.lt(r['sp'], self.cfg.stack)
+        self.stop(self.AND(cell, cell_ok, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
+        call_level = self.AND(cell, cell_ok, stack_room)
+        self.write('stack', call_level, r['sp'], (CALL_CONST_LEVEL, x, r['expr_depth'], Task.EXPR_LEVEL_SUBSTITUTE, 0, 0))
+        self.emit(call_level, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=Task.LEVEL_SUBSTITUTE)
+        value = self.mode(Mode.CONST_RESULT)
+        value_ok = self.NOT(self.eq(r['vec_left'], 0))
+        self.stop(self.AND(value, self.NOT(value_ok)), Outcome.INVALID, Reason.SYNTAX)
+        changed = self.OR(self.NOT(self.eq(r['vec_changed'], 0)), self.NOT(self.eq(a, result)))
+        push_value = self.AND(value, value_ok, self.OR(more_values, changed))
+        self.stop(self.AND(push_value, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
+        push_value = self.AND(push_value, stack_room)
+        self.write('stack', push_value, r['sp'], (VECTOR_VALUE, result, 0, Task.EXPR_LEVEL_SUBSTITUTE, 0, 0))
+        self.emit(push_value, sp=self.add(r['sp'], 1), vec_left=self.sub(r['vec_left'], 1),
+            vec_changed=self.mux(changed, 1, 0), mode=self.mux(more_values, Mode.CONST_CELL, Mode.CONST_BUILD),
+            x=self.mux(more_values, b, r['const_original']))
+        unchanged_vector = self.AND(value, value_ok, self.NOT(more_values), self.NOT(changed))
+        self.emit(unchanged_vector, sp=self.sub(r['sp'], self.sub(r['vec_length'], 1)))
+        self.ret(unchanged_vector, r['const_original'])
+        building = self.mode(Mode.CONST_BUILD)
+        has_value = self.NOT(self.eq(r['vec_build'], 0))
+        build_ok = self.OR(self.NOT(has_value), self.AND(nonempty, self.eq(frame['phase'], VECTOR_VALUE)))
+        self.stop(self.AND(building, self.NOT(build_ok)), Outcome.INVALID, Reason.SYNTAX)
+        heap_room = self.lt(r['free'], self.cfg.heap)
+        self.stop(self.AND(building, build_ok, self.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
+        build_cell = self.AND(building, build_ok, heap_room, has_value)
+        self.write('heap', build_cell, r['free'], (CellTag.VECTOR_CELL, frame['original'], r['vec_head'], 0))
+        self.emit(build_cell, free=self.add(r['free'], 1), vec_head=r['free'], vec_build=self.sub(r['vec_build'], 1), sp=top)
+        build_header = self.AND(building, build_ok, heap_room, self.NOT(has_value))
+        self.write('heap', build_header, r['free'], (CellTag.VECTOR, r['vec_length'], r['vec_head'], VectorKind.LEVELS))
+        self.emit(build_header, free=self.add(r['free'], 1), vector_result=r['free'], mode=Mode.CONST_FINISH)
+        const_finish = self.mode(Mode.CONST_FINISH)
+        self.stop(self.AND(const_finish, self.NOT(self.tag(Tag.CONST))), Outcome.INVALID, Reason.SYNTAX)
+        self.alloc(self.AND(const_finish, self.tag(Tag.CONST)), (Tag.CONST, a, r['vector_result'], 0))
 
         self.emit(self.mode(Mode.LEVEL_SELECT), mode=Mode.LEVEL_BINDING, x=operand)
         binding = self.mode(Mode.LEVEL_BINDING)
@@ -272,6 +335,18 @@ class RuleCompiler:
             self.AND(level_task, self.tag(CellTag.LEVEL_SUCC)))
         branch = self.OR(binary, let, unary)
         walking = self.mode(Mode.WALK)
+        expression_level = self.AND(walking, self.task(Task.EXPR_LEVEL_SUBSTITUTE))
+        no_bindings = self.eq(r['count'], 0)
+        self.ret(self.AND(expression_level, no_bindings), x)
+        sort_call = self.AND(expression_level, self.NOT(no_bindings), self.tag(Tag.SORT))
+        self.stop(self.AND(sort_call, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
+        sort_call = self.AND(sort_call, stack_room)
+        self.write('stack', sort_call, r['sp'], (CALL_SORT_LEVEL, x, depth, Task.EXPR_LEVEL_SUBSTITUTE, 0, 0))
+        self.emit(sort_call, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=a, depth=0, task=Task.LEVEL_SUBSTITUTE)
+        self.emit(self.AND(expression_level, self.NOT(no_bindings), self.tag(Tag.CONST)),
+            const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
+        intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
+        walking = self.AND(walking, self.NOT(intercepted))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)

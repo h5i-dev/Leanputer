@@ -15,12 +15,19 @@ from .traversal_transition import RuleCompiler, compile_addresses, constant_fiel
 
 def parse_document(document):
     if document.get('format') == 'leanputer.kernel-data-operation.v1':
-        if document.get('operation') != 'telescope_roundtrip':
+        operation = document.get('operation')
+        if operation not in ('telescope_roundtrip', 'expr_substitute_raw'):
             raise KernelError('unknown typed-cell semantic operation')
-        source = SyntaxCodec().document(document['source'])
+        codec = SyntaxCodec()
+        source = codec.document(document['source'])
         root = document.get('root', 'type')
         if root not in ('type', 'value') or root == 'value' and source.target.value is None:
             raise KernelError('missing syntax root for telescope operation')
+        if operation == 'expr_substitute_raw':
+            bindings = tuple((codec.symbols.intern(binding['parameter']), codec.level(binding['level']))
+                             for binding in document['bindings'])
+            prefix = tuple(codec.arena.word(value) for value in document.get('argument_prefix', ()))
+            return source, dict(operation=operation, root=root, bindings=bindings, argument_prefix=prefix), source.declarations
         kinds = {'pi': int(Tag.PI), 'lam': int(Tag.LAM)}
         open_kind = document.get('open_binder', 'pi')
         fold_kind = document.get('fold_binder', open_kind)
@@ -54,7 +61,8 @@ def parse_document(document):
 
 
 def prepare(config, source, level, _declarations=()):
-    substitute = isinstance(level, dict) and level.get('operation') == 'substitute_raw'
+    expression = isinstance(level, dict) and level.get('operation') == 'expr_substitute_raw'
+    substitute = isinstance(level, dict) and level.get('operation') in ('substitute_raw', 'expr_substitute_raw')
     telescope = isinstance(level, dict) and not substitute
     bindings = level['bindings'] if substitute else ()
     packed = pack_source(source, CellCapacities(heap=config.heap, constants=config.constants, word_bits=config.word_bits), level_bindings=bindings)
@@ -70,12 +78,12 @@ def prepare(config, source, level, _declarations=()):
     state['heap'][:packed.initial_free] = [list(row) for row in packed.heap]
     state['constants'][:len(packed.constants)] = [list(row) for row in packed.constants]
     state['context'][:len(prefix)+len(parameters)] = [[p] for p in prefix+tuple(parameters)]
-    if telescope:
+    if telescope or expression:
         raw_root = source.target.type if level['root'] == 'type' else source.target.value
         root = packed.expression_map[raw_root]
     else:
         root = packed.level_map[level['root_level'] if substitute else level]
-    state['regs'].update(mode=int(Mode.WALK), task=int(Task.VARIABLE_SCOPE if telescope else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE),
+    state['regs'].update(mode=int(Mode.WALK), task=int(Task.VARIABLE_SCOPE if telescope else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
         fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
     if telescope:
@@ -96,5 +104,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.typed-symbolic-services.v2'
+program_name = 'kernel.typed-symbolic-services.v3'
 primitive_basis = ()
