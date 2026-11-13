@@ -49,3 +49,9 @@ slots/raw types as Local assumptions. Header/constructor callers choose the
 source-required normalization policy, not a supported shape class. Missing
 conversion propagates GAP. Both loops must call the existing weighted services,
 not copy a host telescope or precomputed uniformity result.
+
+The subsequent semantic-IR update matches `is_delta` failure behavior: a missing
+entry or wrong universe arity is neutral for WHNF; typed inference still rejects
+those constants. This matters for generic core predicates working under staged
+family data, and does not authorize using raw types as inferred answers. New
+core module tests cover it; the stock report above is pinned539b84f.

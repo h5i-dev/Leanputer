@@ -1,5 +1,7 @@
 # General checked-definition weak-head module
 
+Historical checkpoint 539b84f; subsequent shared-service changes have separate evidence.
+
 Authority/complete operation: [source map](../../docs/kernel/reduction-native.md),
 pinned `type_checker.cpp:whnf_core/is_delta/unfold_definition/whnf` and
 `declaration.h:constant_info::has_value`. The SAME private checked-environment

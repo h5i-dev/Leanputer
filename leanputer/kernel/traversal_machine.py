@@ -53,6 +53,8 @@ class Reason(IntEnum):
     GAP_INDUCTIVE = 24
     GAP_RECURSOR_CLAIM = 25
     NATIVE_EXECUTION = 26
+    NEGATIVE_OCCURRENCE = 27
+    INVALID_INDUCTIVE_APPLICATION = 28
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
 
@@ -98,6 +100,10 @@ class Task(IntEnum):
     PREPARE_REUSE = 38          # Public operation wrapper, not source admission.
     HAS_CONSTANTS = 39          # Composable symbol-set Expr occurrence callback.
     ANALYZE_HEADERS = 40        # General private header phase; not block admission.
+    HAS_FAMILIES = 41           # Borrow symbol scratch after live Locals; return Bool.
+    FAMILY_APPLICATION = 42    # Exact current-family/uniform parameter/index predicate.
+    FORMAL_LEVELS = 43         # Internal checked symbol window -> Param-level vector.
+    CHECK_POSITIVITY = 44      # General CORE operation after nested elimination.
 
 
 
@@ -205,6 +211,19 @@ class Mode(IntEnum):
     HEADER_STORE_SCHEME = 100
     HEADER_STORE_SIGNATURE = 101
     HEADER_LINK = 102
+    FAMILY_SET_CELL = 103
+    FAMILY_SET_SIGNATURE = 104
+    APP_SPINE = 105
+    APP_SIGNATURE = 106
+    APP_SCHEME = 107
+    APP_METADATA = 108
+    APP_ARGUMENT = 109
+    APP_PARAMETER_SELECT = 110
+    APP_PARAMETER_RECORD = 111
+    FORMAL_SELECT = 112
+    FORMAL_CELL = 113
+    FORMAL_FINISH = 114
+    POSITIVITY_NODE = 115
 
 
 CALL_BETA_ZETA = 16
@@ -295,6 +314,18 @@ CALL_HEADER_OPEN_PARAMETERS = 100
 CALL_HEADER_CONSUME = 101
 CALL_HEADER_INDICES = 102
 CALL_HEADER_LEVEL = 103
+CALL_FAMILY_OCCURRENCE = 104
+CALL_HEADER_FORMAL_LEVELS = 105
+CALL_APP_MEMBER = 106
+CALL_APP_LOOKUP = 107
+CALL_APP_LEVELS = 108
+CALL_APP_INDEX = 109
+CALL_APP_PARAMETER = 110
+CALL_POS_WHNF = 111
+CALL_POS_OCCURRENCE = 112
+CALL_POS_DOMAIN = 113
+CALL_POS_OPEN = 114
+CALL_POS_APPLICATION = 115
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -317,7 +348,10 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'header_parameters', 'header_parameter_count', 'header_vector', 'header_head', 'header_seen',
     'header_parameter_base', 'header_parameter_end', 'header_symbol', 'header_type', 'header_raw',
     'header_remaining', 'header_next', 'header_indices', 'header_current_level', 'header_result_level',
-    'header_meta', 'header_scheme', 'header_signature')
+    'header_meta', 'header_scheme', 'header_signature',
+    'family_set_cursor', 'family_set_remaining', 'family_set_next',
+    'formal_count', 'formal_remaining', 'formal_i', 'formal_head', 'formal_value', 'header_levels',
+    'app_args', 'app_arity', 'app_symbol', 'app_levels', 'app_signature', 'app_remaining', 'app_context_index', 'app_argument', 'app_next')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -416,7 +450,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -503,14 +537,14 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.HEADER_LINK or r['task'] > Task.ANALYZE_HEADERS
+                or r['mode'] > Mode.POSITIVITY_NODE or r['task'] > Task.CHECK_POSITIVITY
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
-        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.HAS_CONSTANTS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE)
+        uses_arguments = r['task'] in (Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.HAS_CONSTANTS, Task.FORMAL_LEVELS, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE)
         if uses_arguments and r['arg_base']+r['count'] > cfg.context:
             stop(Outcome.RESOURCE, Reason.CONTEXT)
             return s
@@ -526,6 +560,10 @@ class SpecMachine:
         from . import telescope_machine as telescope
         from . import occurrence_machine as occurrence
         from . import header_machine as header
+        from . import family_occurrence_machine as family_occurrence
+        from . import formal_levels_machine as formal_levels
+        from . import family_application_machine as family_application
+        from . import positivity_machine as positivity
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -546,7 +584,13 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in header.PRIVATE_PHASES:
+                if phase in positivity.PRIVATE_PHASES:
+                    positivity.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in family_application.PRIVATE_PHASES:
+                    family_application.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in family_occurrence.PRIVATE_PHASES:
+                    family_occurrence.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in header.PRIVATE_PHASES:
                     header.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in occurrence.PRIVATE_PHASES:
                     occurrence.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -637,6 +681,7 @@ class SpecMachine:
         if r['task'] == Task.ENV_LOOKUP and r['mode'] == Mode.WALK:
             environment.step(self, 0, 0, 0, 0, stop, ret, alloc)
             return s
+        if formal_levels.step(self, 0, 0, 0, 0, stop, ret, alloc): return s
         if r['task'] == Task.ANALYZE_HEADERS and r['mode'] in (Mode.HEADER_STORE_FAMILY, Mode.HEADER_STORE_SCHEME, Mode.HEADER_STORE_SIGNATURE, Mode.HEADER_LINK):
             header.step(self, 0, 0, 0, 0, stop, ret, alloc)
             return s
@@ -650,14 +695,15 @@ class SpecMachine:
             CellTag.VECTOR_CELL if r['mode'] == Mode.HEADER_CELL else CellTag.RAW_FAMILY if r['mode'] == Mode.HEADER_FAMILY else None)
         valid_tag = (tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] == Task.CHECK_NAME else
             tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
-            tag == CellTag.CHECKED_SCHEME if r['mode'] == Mode.CONST_SCHEME else
+            tag == CellTag.CHECKED_FAMILY if r['mode'] == Mode.APP_METADATA else
+            tag == CellTag.CHECKED_SCHEME if r['mode'] in (Mode.CONST_SCHEME, Mode.APP_SCHEME) else
             tag == CellTag.VECTOR if r['mode'] in (Mode.CONST_PARAMETER_HEADER, Mode.CONST_LEVEL_HEADER) else
             tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL) else
-            tag == CellTag.CHECKED_SIGNATURE if r['mode'] in (Mode.ENV_SIGNATURE, Mode.CONST_SIGNATURE) else
-            tag == CellTag.VECTOR_CELL if r['mode'] == Mode.ENV_CELL else
+            tag == CellTag.CHECKED_SIGNATURE if r['mode'] in (Mode.ENV_SIGNATURE, Mode.CONST_SIGNATURE, Mode.FAMILY_SET_SIGNATURE, Mode.APP_SIGNATURE) else
+            tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.ENV_CELL, Mode.FAMILY_SET_CELL, Mode.APP_ARGUMENT) else
             tag == (CellTag.VECTOR_CELL if r['mode'] in (Mode.VECTOR_CELL_LEFT, Mode.VECTOR_CELL_RIGHT) else CellTag.VECTOR) if r['task'] == Task.VECTOR_EQUAL else
             tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
-            tag == LOCAL_DECL_TAG if r['mode'] in (Mode.FOLD_RECORD, Mode.INFER_LOCAL_RECORD, Mode.REUSE_RECORD, Mode.REUSE_SUBST_RECORD) else
+            tag == LOCAL_DECL_TAG if r['mode'] in (Mode.FOLD_RECORD, Mode.INFER_LOCAL_RECORD, Mode.REUSE_RECORD, Mode.REUSE_SUBST_RECORD, Mode.APP_PARAMETER_RECORD) else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
             tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
             tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_CELL, Mode.CONST_RESULT) else
@@ -666,6 +712,12 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if positivity.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if family_application.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if family_occurrence.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if header.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if occurrence.step(self, tag, a, b, c, stop, ret, alloc):

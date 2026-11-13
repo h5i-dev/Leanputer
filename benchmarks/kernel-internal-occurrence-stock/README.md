@@ -1,5 +1,7 @@
 # Composable internal current-family occurrence
 
+Historical checkpoint 19214b6; subsequent shared-service changes have separate evidence.
+
 Source: pinned inductive.cpp:has_ind_occ (find over ALL Expr children). The SAME
 Expr walker searches a bounded raw symbol-set context window. Symbol identity
 matches regardless of universe arguments; Param/name/literal numbers are not

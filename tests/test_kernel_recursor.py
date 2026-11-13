@@ -25,7 +25,7 @@ class RecursorAlgorithmTest(unittest.TestCase):
         step_type = fold_telescope(a, c, (carrier, index, next_), a.app(f, (carrier, index)))
         prev = c.fresh(a.app(f, (carrier, index)))
         join_type = fold_telescope(a, c, (carrier, index, prev), a.app(g, (carrier, index)))
-        block = BlockTraversal(a, c, (Family(f, 1), Family(g, 1)), (carrier,), whnf, lambda x, y: x == y)
+        block = BlockTraversal(a, c, (Family(f, 1), Family(g, 1)), (carrier,), whnf)
         inductives = (Inductive(f, family_type, (Constructor(109, base_type), Constructor(113, step_type)), 127),
                       Inductive(g, family_type, (Constructor(307, join_type),), 311))
         mark = c.mark()

@@ -10,9 +10,9 @@ from .native_cells import CellTag,VectorKind
 from .traversal_machine import (Mode,Task,Outcome,Reason,CALL_HEADER_PARAMETERS,
     CALL_HEADER_NAME,CALL_HEADER_DUPLICATE_GLOBAL,CALL_HEADER_DUPLICATE_PRIVATE,
     CALL_HEADER_SCOPE,CALL_HEADER_INFER,CALL_HEADER_TYPE_WHNF,
-    CALL_HEADER_OPEN_PARAMETERS,CALL_HEADER_CONSUME,CALL_HEADER_INDICES,CALL_HEADER_LEVEL)
+    CALL_HEADER_OPEN_PARAMETERS,CALL_HEADER_CONSUME,CALL_HEADER_INDICES,CALL_HEADER_LEVEL,CALL_HEADER_FORMAL_LEVELS)
 
-PRIVATE_PHASES=tuple(range(CALL_HEADER_PARAMETERS,CALL_HEADER_LEVEL+1))
+PRIVATE_PHASES=tuple(range(CALL_HEADER_PARAMETERS,CALL_HEADER_LEVEL+1))+(CALL_HEADER_FORMAL_LEVELS,)
 
 
 def resume(machine,frame,stop,ret,alloc):
@@ -22,6 +22,9 @@ def resume(machine,frame,stop,ret,alloc):
         r.update(task=task,x=x,mode=mode,depth=0,**updates)
     phase=frame[0]
     if phase==CALL_HEADER_PARAMETERS:
+        call(CALL_HEADER_FORMAL_LEVELS,Task.FORMAL_LEVELS,0)
+    elif phase==CALL_HEADER_FORMAL_LEVELS:
+        r['header_levels']=r['r']
         end=r['ctx']+r['header_parameter_count']
         if end>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
         else:r.update(task=Task.ANALYZE_HEADERS,mode=Mode.HEADER_VECTOR,x=r['header_vector'],

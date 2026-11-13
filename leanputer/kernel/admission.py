@@ -116,7 +116,7 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                 elif not levels.equal(result_level, result.a):
                     raise KernelError('mutual result universe mismatch')
                 headers.append(Family(ind.constant, len(indices.locals)))
-        traversal = BlockTraversal(a, c, headers, params, services.whnf, levels.equal)
+        traversal = BlockTraversal(a, c, headers, params, services.whnf)
         analyses = []
         overlay = [(a.expr(ind.constant).a, Signature(universe_parameters, ind.type)) for ind in inductives]
         with services.overlay(overlay):

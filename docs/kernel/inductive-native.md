@@ -94,3 +94,47 @@ checks belong to the remaining source block staging; raw recursor names/claims
 are not yet treated as checked results. The header output retains raw-family
 references for those later checks. Neither a private header signature nor
 header-phase completion is full inductive admission.
+
+## New semantic-IR core modules (stock validation pending)
+
+`family_occurrence_machine/rules` copies only current checked-header symbols
+into a temporary window after live Locals, calls the existing composable
+occurrence service and restores the caller's universe/window state. Its real
+source continuation and live Local prefix survive early/no-match returns.
+
+`formal_levels_machine/rules` generates an ordered Param-level vector IN WEIGHTS
+from the validated universe-symbol window. Header analysis now retains that
+private vector. `family_application_machine/rules` walks an arbitrary application
+spine, validates current-family membership, derived total arity, exact Const
+universe-vector syntax with the SAME vector/level comparator, uniform parameter
+Locals with the SAME expression comparator and every index with shared family
+occurrence. Returns a private family signature reference or0. Raw declarations
+never supply those signatures or an application-validity answer.
+
+Pinned is_valid_ind_app uses exact Const equality, not definitional level
+equivalence. The earlier development spec's permissive level callback was
+removed to match that source predicate; raw `max(u,0)` syntax differs from raw
+`u` here. General conversion/normalization are distinct operations. The codec
+preserves raw level DAG syntax; no host canonicalization answer is inserted.
+
+`positivity_machine/rules` lowers the complete strict-positivity CORE loop:
+weighted WHNF, shared occurrence, rejection of family occurrences in Pi domains,
+shared single-binder opening and repetition, then the same family-application
+predicate. It restores the caller's Local scope on semantic completion/failure.
+Missing/wrong-arity delta targets are neutral in WHNF, as pinned is_delta; typed
+constant inference still rejects unknown/wrong-arity constants.
+
+These are general finite kernel operations. Unit contracts seed internal calls
+AFTER real weighted header/Local derivation and compare every Boolean-IR state
+with the development reference, plus independent source operations. They are
+IR evidence ONLY until composed stock validation. Unit control-state setup is
+not a production inference path. No supplied typing/admission/positivity answers
+are packed or used by the production source loader.
+
+The full-source pipeline must run nested specialization BEFORE core positivity,
+and check constructor typing under the staged header environment. Raw original
+blocks still stop GAP after headers. Do NOT connect original raw nested fields
+directly to this core and report their core rejection as a Lean declaration
+rejection; the missing prior transformation must remain an implementation gap.
+Functional recursive descriptor generation, full nested lowering, recursor
+generation/restoration and complete conversion/primitives remain unfinished.

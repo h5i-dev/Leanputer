@@ -1,5 +1,7 @@
 # General private inductive-header phase in stock weights
 
+Historical checkpoint 8758019; subsequent shared-service changes have separate evidence.
+
 Algorithm/data map: [inductive-native.md](../../docs/kernel/inductive-native.md),
 pinned inductive.cpp:check_inductive_types. The source driver now checks family
 headers in the PREVIOUS environment, derives shared dependent parameter Locals,

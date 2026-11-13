@@ -41,11 +41,13 @@ It retains every input row, explicit checked axiom assumptions, unavailable
 bodies, malformed syntax, unsupported profiles, implementation gaps and physical
 resource exhaustion. Default capacities are heap256/stack16/context8/rawbank4,
 9-bit words and512fuel; dependencies AND target must fit. These are experimental
-physical limits, not full-kernel support. The measured model is603.4M BF16
+physical limits, not full-kernel support. At checkpoint e0db573, the source model used603.4M BF16
 parameters/1.207GB weights. Matched15-case source checks took58.18s fixed GPU
 forward or41.86s with native completion stopping; cold compile14.27s is separate.
-No full-population native mathlib evaluation or formal compiler verification is
-claimed. [Trust/algorithm contract](docs/kernel/target.md) states the target;
+The later8758019header-phase model used795.3M parameters/1.591GB weights
+at its stated different configuration. Current size changes with services and
+capacities; these are historical measurements. No full-population native mathlib
+evaluation or formal compiler verification is claimed. [Trust/algorithm contract](docs/kernel/target.md) states the target;
 [typed input ABI](docs/kernel/native-cells.md) states the syntax boundary.
 
 The preserved restricted checker is [declaration-as-data](docs/generic-kernel.md).

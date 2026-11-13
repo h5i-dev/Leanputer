@@ -1,5 +1,7 @@
 # Shared dependent telescope parameter reuse in stock weights
 
+Historical checkpoint efcc5af; subsequent shared-service changes have separate evidence.
+
 Authority: pinned inductive.cpp:check_inductive_types/check_constructors and
 [general lowering contract](../../docs/kernel/inductive-native.md). Opening now
 calls shared weighted WHNF before EVERY binder. A bounded prefix returns its

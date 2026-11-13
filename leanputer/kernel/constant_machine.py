@@ -20,7 +20,9 @@ def resume(machine, frame, stop, ret, alloc):
     r = machine.state['regs']
     phase, original, depth, task, first, second = frame
     if phase == CALL_INFER_CONSTANT_LOOKUP:
-        if not r['r']: stop(Outcome.INVALID, Reason.UNKNOWN_CONSTANT)
+        if not r['r'] and task == Task.BETA_ZETA:
+            r.update(sp=r['sp']-1, task=task); ret(original)
+        elif not r['r']: stop(Outcome.INVALID, Reason.UNKNOWN_CONSTANT)
         else: r.update(mode=Mode.CONST_SIGNATURE, task=task, x=r['r'])
     else:
         r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA if task == Task.BETA_ZETA else Mode.RETURN,
@@ -60,7 +62,11 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         else: r.update(zip_count=a, parameter_head=b, mode=Mode.CONST_LEVEL_HEADER, x=r['level_vector'])
     elif r['mode'] == Mode.CONST_LEVEL_HEADER:
         if c != VectorKind.LEVELS or bool(a) != bool(b): stop(Outcome.INVALID, Reason.SYNTAX)
-        elif a != r['zip_count']: stop(Outcome.INVALID, Reason.UNIVERSE_ARITY)
+        elif a != r['zip_count']:
+            if r['task'] == Task.BETA_ZETA:
+                original = s['stack'][r['sp']-1][1]
+                r['sp'] -= 1; ret(original)
+            else: stop(Outcome.INVALID, Reason.UNIVERSE_ARITY)
         elif not a:
             r['sp'] -= 1
             if r['task'] == Task.BETA_ZETA: r.update(mode=Mode.BETA_ZETA, x=r['signature_type'], depth=0)

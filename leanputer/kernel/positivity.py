@@ -30,10 +30,10 @@ class RecursiveArgument:
 
 class BlockTraversal:
     """Lives inside a checked shared-parameter context and block overlay."""
-    def __init__(self, arena, context, families, parameters, whnf, levels_equal):
+    def __init__(self, arena, context, families, parameters, whnf):
         self.arena, self.context = arena, context
         self.families, self.parameters = tuple(families), tuple(parameters)
-        self.whnf, self.levels_equal = whnf, levels_equal
+        self.whnf = whnf
         self.symbols = set()
         for family in self.families:
             row = arena.expr(family.constant)
@@ -59,8 +59,10 @@ class BlockTraversal:
             if row.a != expected.a:
                 continue
             actual_levels, expected_levels = a.vector(row.b), a.vector(expected.b)
-            if len(actual_levels) != len(expected_levels) or not all(
-                    self.levels_equal(x, y) for x, y in zip(actual_levels, expected_levels)):
+            # Pinned is_valid_ind_app compares the entire Const syntax, not
+            # definitional level equivalence. Arena level nodes are interned
+            # structurally, so tuple identity here is exact syntax equality.
+            if actual_levels != expected_levels:
                 return None
             n = len(self.parameters)
             if len(args) != n+family.index_count or args[:n] != self.parameters:

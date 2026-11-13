@@ -86,7 +86,7 @@ class GeneralOperationsTest(unittest.TestCase):
         a, c = self.a, self.c
         p = c.fresh(self.sort)
         f, g = a.const(91), a.const(212)
-        block = BlockTraversal(a, c, (Family(f, 1), Family(g, 2)), (p,), lambda x: x, lambda x, y: x == y)
+        block = BlockTraversal(a, c, (Family(f, 1), Family(g, 2)), (p,), lambda x: x)
         # A functional recursive field into the OTHER family with dependent
         # index expressions, not a direct self-reference special case.
         x = c.fresh(self.sort)
