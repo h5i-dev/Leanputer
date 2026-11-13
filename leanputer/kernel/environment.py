@@ -75,8 +75,9 @@ class EnvironmentDriver:
             raise KernelError('unknown ordinary declaration kind')
         self._name(declaration.symbol)
         self._scheme(declaration.universe_parameters, declaration.type, declaration.value)
-        if publish:
-            self._new(((declaration.symbol, None),))
+        # The target is a new declaration checked under its dependency prefix,
+        # not a query allowed to assume an existing declaration of its own name.
+        self._new(((declaration.symbol, None),))
         type_level = s.ensure_type(declaration.type)
         if declaration.kind == 'axiom':
             if declaration.value is not None:

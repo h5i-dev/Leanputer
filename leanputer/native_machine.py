@@ -137,10 +137,13 @@ class NativeMachine:
         result[:,:,self.feature_slots] = features.to(result.device,result.dtype)
         return result
 
-    def check(self, documents, diagnostic_steps=None, diagnostic_cache=False):
+    def check(self, documents, diagnostic_steps=None, diagnostic_cache=False, *, early_stop=False, halt_interval=8):
+        if not documents: raise ValueError('nonempty document batch required')
+        if type(halt_interval)is not int or halt_interval<1: raise ValueError('positive halt interval required')
         parser=self.program.parse_document if self.program else parse_document
         encoder=self.program.prepare if self.program else prepare
         get_assumptions=self.program.assumptions if self.program else lambda ds:[d.name for d in ds if d.value is None]
+        assumptions_from_state=getattr(self.program, 'assumptions_from_state', None) if self.program else None
         outcome_class=self.program.Outcome if self.program else Outcome
         reason_class=self.program.Reason if self.program else Reason
         parsed = [parser(document) for document in documents]
@@ -174,11 +177,20 @@ class NativeMachine:
             loaded = self.model(inputs_embeds=self.embeddings(torch.stack(boot,dim=1)), use_cache=True)
             state = self.embeddings(initial)
             cache = loaded.past_key_values
+            applied_steps=0;flush_after=None
+            status_slice=self.register_layout.slices['status']
             for step in range(diagnostic_steps or self.config.fuel+2):
                 output = self.model(inputs_embeds=state, past_key_values=cache,
                                     use_cache=True,output_hidden_states=True)
                 cache = output.past_key_values
                 state = output.hidden_states[-2]  # identity wire; no interpretation/update
+                applied_steps=step+1
+                if flush_after is not None and applied_steps>=flush_after:break
+                if early_stop and not diagnostic_steps and flush_after is None and applied_steps%halt_interval==0:
+                    # Only observe the MODEL completion signal, not proof syntax
+                    # or a host checker. One more stock forward flushes pending writes.
+                    status_bits=output.logits[:,0,status_slice]
+                    if bool(torch.all(torch.any(status_bits!=0,dim=-1))):flush_after=applied_steps+1
                 if diagnostic_steps:
                     raw = state[:,0,self.feature_slots].float().cpu()
                     values = output.logits[:,0,:].float().cpu()[0]
@@ -197,7 +209,9 @@ class NativeMachine:
             registers.append({name:sum(int(row[s.start+i]) << i for i in range(s.stop-s.start))
                               for name,s in self.register_layout.slices.items()})
         results = [dict(name=document.get('name',str(index)),status=('UNSUPPORTED'if self.program and r['reason']==self.program.Reason.UNSUPPORTED_DECLARATION else outcome_class(r['status']).name),
-                        reason=reason_class(r['reason']).name,assumptions=get_assumptions(judgment[2]),
+                        reason=reason_class(r['reason']).name,
+                        assumptions=(assumptions_from_state(judgment[2],r) if assumptions_from_state else get_assumptions(judgment[2])),
+                        input_axiom_candidates=get_assumptions(judgment[2]),
                         environment_declarations=len(judgment[2]),admitted_declarations=r['decl'],input_heap_nodes=initial_state['regs']['free']-1,
                         allocated_heap_nodes=r['free']-1,
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==reason_class.FUEL))
@@ -214,7 +228,8 @@ class NativeMachine:
                     cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(device) if device.type=='cuda' else None,
                     host_process_peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
-                    boot_tokens=len(boot),applied_steps=diagnostic_steps or self.config.fuel+2)
+                    boot_tokens=len(boot),applied_steps=applied_steps,early_stop=early_stop and not bool(diagnostic_steps),
+                    halt_interval=halt_interval,completion_flush_forwards=1 if flush_after is not None and applied_steps>=flush_after else 0)
         if diagnostic_cache:
             # Development evidence only. Never consulted to decide the result
             # or provide a semantic answer to a subsequent inference token.

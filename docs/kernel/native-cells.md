@@ -3,7 +3,8 @@
 `kernel/native_cells.py` gives the general kernel a physical input representation
 usable by the stock compiler's addressed cache. It is syntax transport, not a
 checker. `pack_source` imports no inference, reduction or admission service and
-emits no admission results. The complete weighted source driver is unfinished.
+emits no admission results. Weighted ordinary source transactions are integrated; general inductive/primitive
+source processing remains unfinished.
 
 The heap has four unsigned words per row `(tag,a,b,c)`, with null row0. The raw
 declaration bank has six words per row `(kind,symbol,levelParams,type,value,extra)`.
@@ -57,15 +58,15 @@ They do not run full source environment admission. Expression-wide raw universe 
 calling the same level operation for Sort and every Const universe argument.
 A length-driven vector loop uses private value/return frames; its empty and
 unchanged paths retain original syntax. Canonical symbolic normalization/equivalence now reuse those same services.
-Conservative universe geq also uses those services. Conversion and checked-
-environment callers still need integrated lowering.
+Conservative universe geq also uses those services. Checked-environment inference/ordinary-source callers now reuse these services;
+complete conversion and inductive processing remain unfinished.
 
 Additional raw `level_roots` can be transported as operation operands without
 fabricating declaration types or binding answers. The shared consumers now
 include structural equality, symbolic nonzero, checked successor separation and
 complete smart Max/IMax constructors. These remain operation services; canonical
-normalization/equivalence are integrated; full inference and source admission
-are unfinished.
+normalization/equivalence are integrated; typed inference and ordinary source admission use those same services; full
+conversion/inductive source processing are unfinished.
 
 The complete [expression scope caller](../../benchmarks/kernel-expression-scope-stock/README.md)
 now checks BVar/Local closure and Sort/Const universe membership in one shared
@@ -76,7 +77,9 @@ DONE must never be reported as proof or declaration acceptance.
 
 The six-word raw declaration bank is now a stock read port, addressed by a
 separate `raw_index` register. [Four-bank exact-state evidence](../../benchmarks/kernel-environment-abi-stock/README.md)
-includes the raw constants bank. This is transport only: no raw type becomes an
-inferred answer, and cursor advancement/checking/publication is unfinished.
+includes the raw constants bank. That pinned report covers transport only. Subsequent
+[ordinary source evidence](../../benchmarks/kernel-source-transactions-stock/README.md)
+covers weighted cursor advancement/checking/publication. Raw type claims become
+checked signatures only after all required type/body checks.
 The [checked environment integration contract](environment-native.md) reserves
 output-only signature/scheme records and separates raw-item/admitted counts.

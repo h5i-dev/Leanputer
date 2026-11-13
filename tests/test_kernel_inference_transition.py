@@ -61,7 +61,7 @@ class InferenceTransitionTest(unittest.TestCase):
         for doc, want in zip(cases(), expected):
             source, arguments, declarations = program.parse_document(doc)
             state = program.prepare(cfg, source, arguments, declarations)
-            self.assertEqual(state['regs']['task'], spec.Task.EXPR_SCOPE)
+            self.assertEqual(state['regs']['task'], spec.Task.LOAD_PARAMETERS)
             machine = spec.SpecMachine(cfg, state)
             for step in range(cfg.fuel+2):
                 actual = circuit.step(state)
@@ -83,6 +83,46 @@ class InferenceTransitionTest(unittest.TestCase):
             # GAP cases deliberately do NOT take a raw signature's type as an
             # inferred result. Even supplied raw axiom syntax needs admission.
             self.assertEqual(circuit.step(state), state)
+
+    def test_scheme_parameters_are_traversed_and_checked_in_weights(self):
+        from copy import deepcopy
+        from leanputer.kernel.environment import EnvironmentDriver
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=160, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        original = cases()[2]  # Sort u under its original symbolic scheme.
+        variants = []
+        empty = deepcopy(original)
+        empty['source']['target'].update(level_params=[], type=['sort', ['zero']])
+        variants.append((empty, spec.Outcome.DONE, spec.Reason.NONE))
+        reordered = deepcopy(original)
+        reordered['source']['target']['level_params'] = [name('v'), name('w'), name('u')]
+        variants.append((reordered, spec.Outcome.DONE, spec.Reason.NONE))
+        duplicate = deepcopy(original)
+        duplicate['source']['target']['level_params'] = [name('u'), name('v'), name('u')]
+        variants.append((duplicate, spec.Outcome.INVALID, spec.Reason.DUPLICATE_PARAMETER))
+        exhausted = deepcopy(original)
+        exhausted['source']['target'].update(level_params=[name('u'+str(i)) for i in range(9)], type=['sort', ['zero']])
+        variants.append((exhausted, spec.Outcome.RESOURCE, spec.Reason.CONTEXT))
+        for doc, outcome, reason in variants:
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            self.assertEqual((state['regs']['ctx'], state['regs']['count']), (0, 0))
+            self.assertTrue(all(row == [0] for row in state['context']))
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['source']['target']['level_params'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual((state['regs']['status'], state['regs']['reason']), (outcome, reason))
+            if outcome == spec.Outcome.DONE:
+                self.assertEqual(state['regs']['ctx'], len(source.target.universe_parameters))
+            if reason == spec.Reason.DUPLICATE_PARAMETER:
+                # Independent source declaration spec rejects the same malformed
+                # scheme; its result is validation only, never native input.
+                result = EnvironmentDriver(source).check()
+                self.assertEqual(result.status, 'REJECT')
+                self.assertIn('duplicate universe parameter', result.reason)
 
     def test_physical_inference_exhaustion_is_absorbing_resource(self):
         doc = cases()[3]  # Generic nested dependent binders, no count dispatch.

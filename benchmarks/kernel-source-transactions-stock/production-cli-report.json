@@ -1,0 +1,96 @@
+{
+  "format": "leanputer.kernel-native-source-report.v1",
+  "denominator": 1,
+  "results": [
+    {
+      "index": 0,
+      "name": "id",
+      "native_attempted": true,
+      "target_checked": true,
+      "assumptions": [],
+      "input_axiom_candidates": [],
+      "raw_dependency_items": 0,
+      "target_kind": "definition",
+      "input_heap_nodes": 26,
+      "status": "ACCEPT",
+      "reason": "NONE",
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "allocated_heap_nodes": 49,
+      "semantic_steps": 200,
+      "stage": "stock_transformer",
+      "checked_input_prefix": 0,
+      "assumption_names": []
+    }
+  ],
+  "counts": {
+    "ACCEPT": 1
+  },
+  "config": {
+    "heap": 256,
+    "stack": 16,
+    "context": 8,
+    "constants": 4,
+    "fuel": 512,
+    "word_bits": 9
+  },
+  "device": "cuda",
+  "compile_seconds": 14.56621460399765,
+  "batches": [
+    {
+      "forward_seconds": 22.142329752998194,
+      "layout_policy": "compact",
+      "layout_statistics": {
+        "allocated_slots": 3564,
+        "persistent_channels": 1192,
+        "subtract_handovers": 9791,
+        "head_clears": 54,
+        "logic_units_per_layer": 256,
+        "reset_layers": 5,
+        "graph": {
+          "layers": 75,
+          "dims": 13410,
+          "heads": 5,
+          "ffn_units": 16802,
+          "max_units": 256,
+          "max_heads": 1
+        }
+      },
+      "bank_layout": "accumulate",
+      "max_ballast": 64,
+      "ballast_channels": 14,
+      "primitive_basis": [],
+      "semantic_program": "kernel.source-transactions.v1",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "parameters": 603445270,
+      "weight_bytes": 1206890540,
+      "cuda_peak_allocated_bytes": 1253806592,
+      "host_process_peak_rss_bytes": 1764524032,
+      "hidden_size": 3584,
+      "native_layers": 76,
+      "boot_tokens": 28,
+      "applied_steps": 201,
+      "early_stop": true,
+      "halt_interval": 8,
+      "completion_flush_forwards": 1,
+      "input_positions": [
+        0
+      ]
+    }
+  ],
+  "syntax_transport_ready": 1,
+  "native_attempted": 1,
+  "full_kernel_native_support": false,
+  "validation_scope": "Original-source declaration checking with explicit GAP callbacks; not full Lean or mathlib coverage",
+  "implementation_gaps": [
+    "general inductive/recursor admission and generation",
+    "Quot/literal/projection services",
+    "complete typed conversion/reduction"
+  ],
+  "timing_scope": "Cold compilation and forward batches with a fixed fuel cap and optional native completion stopping; syntax/imports excluded from model timings; no steady-state throughput claim",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 603445270,
+  "weight_bytes": 1206890540,
+  "hidden_size": 3584,
+  "native_layers": 76
+}

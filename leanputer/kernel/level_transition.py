@@ -83,7 +83,7 @@ def prepare(config, source, level, _declarations=()):
     bindings = level['bindings'] if substitute else ()
     packed = pack_source(source, CellCapacities(heap=config.heap, constants=config.constants, word_bits=config.word_bits),
                          level_bindings=bindings, level_roots=() if peer is None else (peer,))
-    parameters = source.target.universe_parameters if operation == 'infer' else packed.level_bindings if substitute else () if telescope or service else source.target.universe_parameters
+    parameters = () if operation == 'infer' else packed.level_bindings if substitute else () if telescope or service else source.target.universe_parameters
     prefix = level.get('argument_prefix', ()) if substitute else ()
     if any(value >= 1 << config.word_bits for value in prefix):
         raise ResourceError('caller data word width')
@@ -104,9 +104,9 @@ def prepare(config, source, level, _declarations=()):
             Task.VARIABLE_SCOPE if telescope else Task.EXPR_SCOPE if operation == 'expr_scope' else Task.EXPR_LEVEL_INSTANTIATE if operation in ('expr_instantiate', 'expr_instantiate_equal') else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_INSTANTIATE if operation == 'instantiate' else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
     state['regs'].update(mode=int(Mode.WALK), task=int(task),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
-        fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
+        symbols_root=packed.symbols, fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
     if operation == 'infer':
-        state['regs']['pending_infer'] = 1
+        state['regs'].update(task=int(Task.LOAD_PARAMETERS), x=packed.target[2], pending_scope=1, pending_infer=1)
     if operation in ('expr_equal', 'expr_instantiate_equal'):
         other = source.target.type if level['peer_root'] == 'type' else source.target.value
         state['regs'].update(peer=packed.expression_map[other], comparison_root=packed.expression_map[other],
@@ -126,10 +126,15 @@ def assumptions(declarations):
     return [d.symbol for d in declarations if isinstance(d, RawDeclaration) and d.kind == 'axiom']
 
 
+def assumptions_from_state(declarations, registers):
+    # Standalone operations do not admit their raw dependency signatures.
+    return []
+
+
 def boot_length(bank, state):
     return (state['regs']['decl_count'] if bank == 'constants' else state['regs']['ctx'] if bank == 'context'
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.general-typed-services.v2'
+program_name = 'kernel.general-typed-services.v3'
 primitive_basis = ()

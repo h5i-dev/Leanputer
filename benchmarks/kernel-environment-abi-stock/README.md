@@ -1,5 +1,8 @@
 # Read-only raw declaration port in the stock kernel ABI
 
+Historical checkpoint0e968c7. Subsequent source transactions are documented
+[here](../kernel-source-transactions-stock/README.md).
+
 The six-word raw declaration bank is now materialized/read through a STOCK cache
 head, addressed by raw_index separately from the admitted-signature counter.
 The generic circuit harness follows the declared port layout rather than

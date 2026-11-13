@@ -18,13 +18,34 @@ declaration admission or mathlib coverage. The same stock controller now runs
 source scheme instantiation, [conservative level comparison](benchmarks/kernel-level-geq-stock/README.md)
 and dependent telescope opening/folding. The
 [typed inference core](benchmarks/kernel-inference-core-stock/README.md) calls
-those same weighted services, with explicit GAP for unfinished environment,
-projection/literals and full conversion. General nested processing/transactions,
-positivity/admission and recursor generation remain development specs; complete conversion/primitives and
-integrated weighted checking remain unfinished. The earlier uncommitted projection work is preserved.
+those same weighted services. [Ordinary source transactions](benchmarks/kernel-source-transactions-stock/README.md)
+now check raw dependency types/bodies before generating a private environment,
+and constant inference instantiates only checked schemes. General inductive/
+nested admission and recursor generation remain development specs; complete
+conversion/reduction and primitive/projection/literal services still return GAP. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax
 export is separate from checking or native proof acceptance.
+
+The production general-source CLI uses the syntax-only original-scheme loader
+and stock model only. Install `.[native]` with Python3.11+, then run:
+
+```bash
+python -m leanputer.kernel_check \
+  --input benchmarks/kernel-source-transactions-stock/input-id.jsonl \
+  --device cuda --report /mnt/scratch/kernel-source-report.json
+```
+
+It retains every input row, explicit checked axiom assumptions, unavailable
+bodies, malformed syntax, unsupported profiles, implementation gaps and physical
+resource exhaustion. Default capacities are heap256/stack16/context8/rawbank4,
+9-bit words and512fuel; dependencies AND target must fit. These are experimental
+physical limits, not full-kernel support. The measured model is603.4M BF16
+parameters/1.207GB weights. Matched15-case source checks took58.18s fixed GPU
+forward or41.86s with native completion stopping; cold compile14.27s is separate.
+No full-population native mathlib evaluation or formal compiler verification is
+claimed. [Trust/algorithm contract](docs/kernel/target.md) states the target;
+[typed input ABI](docs/kernel/native-cells.md) states the syntax boundary.
 
 The preserved restricted checker is [declaration-as-data](docs/generic-kernel.md).
 Its compiler takes resource bounds only. Family names, constructor blocks and

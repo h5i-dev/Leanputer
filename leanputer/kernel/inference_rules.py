@@ -109,7 +109,7 @@ def emit_rules(c):
     sort = c.AND(sort, heap_room)
     c.write('heap', sort, r['free'], (CellTag.LEVEL_SUCC, a, 0, 0))
     c.emit(sort, free=c.add(r['free'], 1), r=r['free'], mode=Mode.INFER_SORT_EXPR)
-    c.stop(c.AND(walking, c.tag(Tag.CONST)), Outcome.GAP, Reason.GAP_ENVIRONMENT)
+    c.stop(c.AND(walking, c.tag(Tag.CONST), c.eq(r['env_ready'], 0)), Outcome.GAP, Reason.GAP_ENVIRONMENT)
     c.stop(c.AND(walking, c.tag(Tag.NAT, Tag.STRING)), Outcome.GAP, Reason.GAP_PRIMITIVE)
     c.stop(c.AND(walking, c.tag(Tag.PROJ)), Outcome.GAP, Reason.GAP_PROJECTION)
     c.emit(c.AND(walking, c.tag(Tag.MDATA)), x=a)

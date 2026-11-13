@@ -1,6 +1,7 @@
 # General native inference integration
 
-This is integration work, not completed native declaration admission. Authority
+The inference core and ordinary declaration driver are implemented; complete
+conversion/inductive/primitive services remain unfinished. Authority
 is pinned Lean4.31 `src/kernel/type_checker.cpp:infer_type_core, infer_lambda,
 infer_pi, infer_app, infer_let, infer_constant, infer_fvar, infer_proj` and the
 complete conversion/reduction contract in target.md. All Expr tags have fixed
@@ -46,12 +47,14 @@ The source Sort/FVar/Pi/Lam/App/Let/metadata call chain is lowered, with checked
 binder domains and scoped private records. The current conversion callback is
 only a positive shortcut (representation equality, beta/zeta then equality,
 Sort-universe equivalence). Unhandled conversion cases report GAP, not false.
-Checked-environment, projection/literal and remaining primitive services also
-report GAP; raw signatures never supply their inferred answers.
+Checked constants now use weighted private lookup/universe instantiation after
+source publication. A standalone operation entry still GAPs environment access;
+projection/literal and remaining primitive services GAP. Raw signatures never
+supply their inferred answers.
 
 [Focused stock evidence](../../benchmarks/kernel-inference-core-stock/README.md)
 checks the complete state/cache and independently inferred output types. This
-is not full Lean checking or source admission; the target above is unchanged.
-Next integration is checked-environment access/publication through weighted
-source declaration checking, alongside the remaining general conversion and
-inductive/primitive callbacks. No field-count/name classes define that work.
+is not full Lean checking. [Ordinary source transactions](environment-native.md)
+now integrate checked-environment access/publication through weighted type/body
+checking. Full inductive generation, complete typed conversion and primitive
+callbacks remain unfinished. No field-count/name classes define that work.

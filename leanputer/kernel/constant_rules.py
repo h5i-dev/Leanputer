@@ -1,0 +1,84 @@
+"""Lower checked-signature lookup, generic universe zip and scheme calls.
+
+No raw signature supplies a type. The source driver must establish env_ready
+and publish checked entries first; public inference keeps GAP_ENVIRONMENT.
+"""
+from .arena import Tag
+from .native_cells import CellTag, VectorKind
+from .traversal_machine import (Mode, Task, Outcome, Reason,
+    CALL_INFER_CONSTANT_LOOKUP, CALL_INFER_CONSTANT_SUBSTITUTE)
+
+PRIVATE_PHASES = (CALL_INFER_CONSTANT_LOOKUP, CALL_INFER_CONSTANT_SUBSTITUTE)
+
+
+def emit_rules(c):
+    r, n, f = c.r, c.read['node'], c.read['frame']
+    a, b, x, result = n['a'], n['b'], r['x'], r['r']
+    top, room = c.sub(r['sp'], 1), c.lt(r['sp'], c.cfg.stack)
+    nonempty = c.NOT(c.eq(r['sp'], 0))
+    returning = c.AND(c.mode(Mode.RETURN), nonempty)
+    found = c.AND(returning, c.eq(f['phase'], CALL_INFER_CONSTANT_LOOKUP))
+    c.stop(c.AND(found, c.eq(result, 0)), Outcome.INVALID, Reason.UNKNOWN_CONSTANT)
+    c.emit(c.AND(found, c.NOT(c.eq(result, 0))), mode=Mode.CONST_SIGNATURE, task=Task.INFER, x=result)
+    restored = c.AND(returning, c.eq(f['phase'], CALL_INFER_CONSTANT_SUBSTITUTE))
+    c.emit(restored, sp=top, mode=Mode.RETURN, task=Task.INFER, ctx=f['depth'], arg_base=f['first'], count=f['second'])
+    entering = c.AND(c.mode(Mode.WALK), c.task(Task.INFER), c.tag(Tag.CONST), c.NOT(c.eq(r['env_ready'], 0)))
+    c.stop(c.AND(entering, c.NOT(room)), Outcome.RESOURCE, Reason.STACK)
+    entering = c.AND(entering, room)
+    c.write('stack', entering, r['sp'], (CALL_INFER_CONSTANT_LOOKUP, x, r['ctx'], Task.INFER, r['arg_base'], r['count']))
+    c.emit(entering, sp=c.add(r['sp'], 1), mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a)
+    modes = (Mode.CONST_SIGNATURE, Mode.CONST_SCHEME, Mode.CONST_EXPRESSION, Mode.CONST_PARAMETER_HEADER,
+             Mode.CONST_LEVEL_HEADER, Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL)
+    active_mode = c.OR(*(c.mode(mode) for mode in modes))
+    c.stop(c.AND(active_mode, c.NOT(nonempty)), Outcome.INVALID, Reason.SYNTAX)
+    at = lambda mode: c.AND(c.mode(mode), nonempty)
+    c.emit(at(Mode.CONST_SIGNATURE), signature_type=b, mode=Mode.CONST_SCHEME, x=n['c'])
+    scheme = at(Mode.CONST_SCHEME)
+    valid_pointer = c.AND(c.NOT(c.eq(a, 0)), c.lt(a, r['free']))
+    c.stop(c.AND(scheme, c.NOT(valid_pointer)), Outcome.INVALID, Reason.SYNTAX)
+    c.emit(c.AND(scheme, valid_pointer), parameter_vector=a, mode=Mode.CONST_EXPRESSION, x=f['original'])
+    expression = at(Mode.CONST_EXPRESSION)
+    c.stop(c.AND(expression, c.NOT(c.tag(Tag.CONST))), Outcome.INVALID, Reason.SYNTAX)
+    c.emit(c.AND(expression, c.tag(Tag.CONST)), level_vector=b, mode=Mode.CONST_PARAMETER_HEADER, x=r['parameter_vector'])
+    word_bool = lambda word: c.mux(c.eq(word, 0), 0, 1)
+    shape = c.eq(word_bool(a), word_bool(b))
+    parameters = at(Mode.CONST_PARAMETER_HEADER)
+    params_ok = c.AND(c.eq(n['c'], VectorKind.SYMBOLS), shape)
+    c.stop(c.AND(parameters, c.NOT(params_ok)), Outcome.INVALID, Reason.SYNTAX)
+    c.emit(c.AND(parameters, params_ok), zip_count=a, parameter_head=b, mode=Mode.CONST_LEVEL_HEADER, x=r['level_vector'])
+    levels = at(Mode.CONST_LEVEL_HEADER)
+    levels_ok = c.AND(c.eq(n['c'], VectorKind.LEVELS), shape)
+    c.stop(c.AND(levels, c.NOT(levels_ok)), Outcome.INVALID, Reason.SYNTAX)
+    levels = c.AND(levels, levels_ok)
+    arity_ok = c.eq(a, r['zip_count'])
+    c.stop(c.AND(levels, c.NOT(arity_ok)), Outcome.INVALID, Reason.UNIVERSE_ARITY)
+    levels = c.AND(levels, arity_ok)
+    empty = c.eq(a, 0)
+    c.emit(c.AND(levels, empty), sp=top)
+    c.ret(c.AND(levels, empty), r['signature_type'])
+    wide = c.g.add(c.g.fit(r['ctx'], c.width+1), c.g.fit(a, c.width+1))
+    enough = c.NOT(c.g.lt(c.g.const(c.cfg.context, c.width+1), wide))
+    c.stop(c.AND(levels, c.NOT(empty), c.NOT(enough)), Outcome.RESOURCE, Reason.CONTEXT)
+    c.emit(c.AND(levels, c.NOT(empty), enough), arg_base=r['ctx'], count=a, level_head=b, zip_remaining=a,
+        mode=Mode.CONST_PARAMETER_CELL, x=r['parameter_head'])
+    more = c.lt(1, r['zip_remaining'])
+    tail_ok = c.eq(word_bool(b), c.mux(more, 1, 0))
+    parameters = at(Mode.CONST_PARAMETER_CELL)
+    cell_ok = c.AND(c.NOT(c.eq(a, 0)), c.NOT(c.eq(r['zip_remaining'], 0)), tail_ok)
+    c.stop(c.AND(parameters, c.NOT(cell_ok)), Outcome.INVALID, Reason.SYNTAX)
+    c.emit(c.AND(parameters, cell_ok), zip_symbol=a, zip_parameter_next=b, mode=Mode.CONST_LEVEL_CELL, x=r['level_head'])
+    levels = at(Mode.CONST_LEVEL_CELL)
+    cell_ok = c.AND(c.NOT(c.eq(r['zip_remaining'], 0)), tail_ok, valid_pointer)
+    c.stop(c.AND(levels, c.NOT(cell_ok)), Outcome.INVALID, Reason.SYNTAX)
+    levels = c.AND(levels, cell_ok)
+    heap_room = c.lt(r['free'], c.cfg.heap)
+    c.stop(c.AND(levels, c.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
+    levels = c.AND(levels, heap_room)
+    c.write('heap', levels, r['free'], (CellTag.LEVEL_BINDING, r['zip_symbol'], a, 0))
+    c.write('context', levels, r['ctx'], (r['free'],))
+    c.emit(levels, free=c.add(r['free'], 1), ctx=c.add(r['ctx'], 1), zip_remaining=c.sub(r['zip_remaining'], 1),
+        parameter_head=r['zip_parameter_next'], level_head=b)
+    c.emit(c.AND(levels, more), mode=Mode.CONST_PARAMETER_CELL, x=r['zip_parameter_next'])
+    last = c.AND(levels, c.NOT(more))
+    c.write('stack', last, top, (CALL_INFER_CONSTANT_SUBSTITUTE, f['original'], f['depth'], f['task'], f['first'], f['second']))
+    c.emit(last, mode=Mode.WALK, task=Task.EXPR_LEVEL_INSTANTIATE, x=r['signature_type'], depth=0)

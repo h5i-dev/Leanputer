@@ -23,6 +23,7 @@ class Outcome(IntEnum):
     INVALID = 2
     RESOURCE = 3
     GAP = 4                      # Unimplemented required service, NOT rejection.
+    UNSUPPORTED_PROFILE = 5      # Actual kernel interface outside inference target.
 
 
 class Reason(IntEnum):
@@ -43,6 +44,15 @@ class Reason(IntEnum):
     TYPE_MISMATCH = 14
     GAP_PRIMITIVE = 16
     GAP_PROJECTION = 17
+    UNKNOWN_CONSTANT = 18
+    UNIVERSE_ARITY = 19
+    DUPLICATE_PARAMETER = 20
+    UNAVAILABLE_BODY = 21
+    DUPLICATE_DECLARATION = 22
+    INVALID_DECLARATION = 23
+    GAP_INDUCTIVE = 24
+    GAP_RECURSOR_CLAIM = 25
+    NATIVE_EXECUTION = 26
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
 
@@ -80,6 +90,10 @@ class Task(IntEnum):
     VECTOR_EQUAL = 30           # Internal typed vector service (levels/limbs/bytes).
     INFER = 31                 # Generic checked inference; missing services -> GAP.
     CONVERT_POSITIVE = 32       # Positive shortcut; false only for unequal Sorts.
+    ENV_LOOKUP = 33             # Private checked list only; NEVER raw signatures.
+    LOAD_PARAMETERS = 34        # Raw symbolic scheme list -> checked unique scope slots.
+    CHECK_NAME = 35             # Generic structured-name/profile guard, no library catalog.
+    CHECK_SOURCE = 36           # Source transaction; required missing callbacks GAP.
 
 
 
@@ -146,6 +160,30 @@ class Mode(IntEnum):
     INFER_LET_INSTANTIATE = 59
     CONVERT_LEFT = 60
     CONVERT_RIGHT = 61
+    ENV_CELL = 62
+    ENV_SIGNATURE = 63
+    CONST_SIGNATURE = 64
+    CONST_SCHEME = 65
+    CONST_EXPRESSION = 66
+    CONST_PARAMETER_HEADER = 67
+    CONST_LEVEL_HEADER = 68
+    CONST_PARAMETER_CELL = 69
+    CONST_LEVEL_CELL = 70
+    PARAMETER_CELL = 71
+    PARAMETER_DUPLICATE = 72
+    NAME_TABLE_CELL = 73
+    NAME_ENTRY = 74
+    NAME_PATH = 75
+    NAME_PATH_CELL = 76
+    NAME_COMPONENT = 77
+    NAME_BYTES = 78
+    NAME_BYTE_CELL = 79
+    SOURCE_READ = 80
+    SOURCE_TYPE_SORT = 81
+    SOURCE_REQUIRE_VALUE = 82
+    SOURCE_COMMIT = 83
+    SOURCE_SIGNATURE = 84
+    SOURCE_LINK = 85
 
 
 CALL_BETA_ZETA = 16
@@ -203,6 +241,18 @@ CALL_CONVERT_FAST = 67
 CALL_CONVERT_LEFT_WHNF = 68
 CALL_CONVERT_RIGHT_WHNF = 69
 CALL_CONVERT_NORMAL = 70
+CALL_INFER_CONSTANT_LOOKUP = 71
+CALL_INFER_CONSTANT_SUBSTITUTE = 72
+CALL_SOURCE_NAME = 73
+CALL_SOURCE_DUPLICATE = 74
+CALL_SOURCE_PARAMETERS = 75
+CALL_SOURCE_TYPE_SCOPE = 76
+CALL_SOURCE_TYPE_INFER = 77
+CALL_SOURCE_TYPE_WHNF = 78
+CALL_SOURCE_PROPOSITION = 79
+CALL_SOURCE_VALUE_SCOPE = 80
+CALL_SOURCE_VALUE_INFER = 81
+CALL_SOURCE_VALUE_CONVERT = 82
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -216,7 +266,10 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
     'order_same_base', 'merge_l', 'merge_r', 'merge_hl', 'merge_tl', 'merge_hr', 'merge_tr',
     'merge_rev', 'merge_acc', 'merge_anchor', 'merge_chosen', 'merge_explicit', 'merge_exp_offset', 'merge_max_offset', 'geq_left', 'geq_right', 'left_c', 'vector_expected_role', 'vector_remaining', 'comparison_root', 'pending_infer', 'local_base', 'lookup_uid', 'lookup_index',
-    'lookup_type', 'convert_left_level', 'raw_index')
+    'lookup_type', 'convert_left_level', 'raw_index', 'env_head', 'env_next', 'query_symbol', 'env_ready', 'signature_type', 'parameter_vector', 'level_vector',
+    'parameter_head', 'level_head', 'zip_count', 'zip_remaining', 'zip_symbol', 'zip_parameter_next', 'pending_scope', 'symbols_root', 'name_table_left', 'name_table_next',
+    'name_second', 'name_part', 'name_length', 'name_index', 'target_index', 'kernel_zero', 'active_kind',
+    'active_symbol', 'active_parameters', 'active_type', 'active_value', 'active_extra', 'commit_scheme', 'commit_signature')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -315,7 +368,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -402,9 +455,9 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.CONVERT_RIGHT or r['task'] > Task.CONVERT_POSITIVE
+                or r['mode'] > Mode.SOURCE_LINK or r['task'] > Task.CHECK_SOURCE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
-                or r['pending_infer'] > 1 or r['local_base'] > cfg.context
+                or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
@@ -417,6 +470,11 @@ class SpecMachine:
         from . import level_geq_machine as geq
         from . import expression_equal_machine as expression_equal
         from . import inference_machine as inference
+        from . import environment_machine as environment
+        from . import constant_machine as constant
+        from . import parameter_machine as parameters
+        from . import name_machine as names
+        from . import source_machine as source
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_open']:
@@ -424,6 +482,8 @@ class SpecMachine:
                 elif r['pending_fold']:
                     r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
                         task=Task.FOLD_TELESCOPE, pending_fold=0)
+                elif r['pending_scope']:
+                    r.update(mode=Mode.WALK, task=Task.EXPR_SCOPE, x=r['root'], depth=0, pending_scope=0)
                 elif r['pending_infer']:
                     r.update(mode=Mode.WALK, task=Task.INFER, x=r['root'], local_base=r['ctx'], pending_infer=0)
                 elif r['pending_compare']:
@@ -433,7 +493,11 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if phase in inference.PRIVATE_PHASES:
+                if phase in source.PRIVATE_PHASES:
+                    source.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in constant.PRIVATE_PHASES:
+                    constant.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif phase in inference.PRIVATE_PHASES:
                     inference.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in expression_equal.PRIVATE_PHASES:
                     expression_equal.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -508,13 +572,26 @@ class SpecMachine:
                 else:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
             return s
+        if r['task'] == Task.CHECK_SOURCE and r['mode'] != Mode.SOURCE_TYPE_SORT:
+            source.step(self, 0, 0, 0, 0, stop, ret, alloc)
+            return s
+        if r['task'] == Task.ENV_LOOKUP and r['mode'] == Mode.WALK:
+            environment.step(self, 0, 0, 0, 0, stop, ret, alloc)
+            return s
         if not 0 < r['x'] < r['free']:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
         level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE)
-        valid_tag = (tag == (CellTag.VECTOR_CELL if r['mode'] in (Mode.VECTOR_CELL_LEFT, Mode.VECTOR_CELL_RIGHT) else CellTag.VECTOR) if r['task'] == Task.VECTOR_EQUAL else
+        valid_tag = (names.valid_tag(r['mode'], tag) if r['task'] == Task.CHECK_NAME else
+            tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
+            tag == CellTag.CHECKED_SCHEME if r['mode'] == Mode.CONST_SCHEME else
+            tag == CellTag.VECTOR if r['mode'] in (Mode.CONST_PARAMETER_HEADER, Mode.CONST_LEVEL_HEADER) else
+            tag == CellTag.VECTOR_CELL if r['mode'] in (Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL) else
+            tag == CellTag.CHECKED_SIGNATURE if r['mode'] in (Mode.ENV_SIGNATURE, Mode.CONST_SIGNATURE) else
+            tag == CellTag.VECTOR_CELL if r['mode'] == Mode.ENV_CELL else
+            tag == (CellTag.VECTOR_CELL if r['mode'] in (Mode.VECTOR_CELL_LEFT, Mode.VECTOR_CELL_RIGHT) else CellTag.VECTOR) if r['task'] == Task.VECTOR_EQUAL else
             tag == CellTag.VECTOR_CELL if r['mode'] == Mode.MERGE_FOLD else
             tag == LOCAL_DECL_TAG if r['mode'] in (Mode.FOLD_RECORD, Mode.INFER_LOCAL_RECORD) else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
@@ -525,6 +602,16 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if source.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if names.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if parameters.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if constant.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if environment.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
         if inference.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if expression_equal.step(self, tag, a, b, c, stop, ret, alloc):

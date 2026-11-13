@@ -15,6 +15,7 @@ leanputer = "leanputer.__main__:main"
 leanputer-research = "leanputer.research:main"
 leanputer-generic = "leanputer.generic:main"
 leanputer-export = "leanputer.preparation:main"
+leanputer-kernel-check = "leanputer.kernel_check:main"
 
 [tool.setuptools.packages.find]
 include = ["leanputer*"]

@@ -45,6 +45,11 @@ def main():
         documents = [predicates[i] for i in (4, 6, 7, 9)]+[constructors[i] for i in (3, 4, 6, 8, 11, 12, 14, 17)]
     else:
         documents = cases()+telescope_cases()+substitution_cases()+expression_cases()
+    run_smoke(cfg, documents, program, args.device, args.report, args.group,
+        f'{len(documents)} typed-memory {args.group} operation probes; not full kernel admission or mathlib coverage')
+
+
+def run_smoke(cfg, documents, program, device, report_path, group, validation_scope, *, early_stop=False):
     references = []
     for document in documents:
         machine = spec.SpecMachine(cfg, program.prepare(cfg, *program.parse_document(document)))
@@ -53,13 +58,13 @@ def main():
             if machine.state['regs']['status']:
                 break
         references.append(machine.state)
-    print(json.dumps({'phase': 'reference', 'registers': [s['regs'] for s in references]}), flush=True)
+    print(json.dumps({'phase':'reference','inputs':len(references),'statuses':[spec.Outcome(s['regs']['status']).name for s in references]}),flush=True)
     started = time.perf_counter()
-    machine = compile_native_machine(cfg, intermediate=512, device=args.device, program=program)
+    machine = compile_native_machine(cfg, intermediate=512, device=device, program=program)
     compilation = time.perf_counter()-started
     print(json.dumps({'phase': 'compiled', 'seconds': compilation,
         'parameters': sum(p.numel() for p in machine.model.parameters())}), flush=True)
-    report = machine.check(documents, diagnostic_cache=True)
+    report = machine.check(documents, diagnostic_cache=True,early_stop=early_stop)
     cache = report.pop('diagnostic_cache')
     if report['registers'] != [s['regs'] for s in references]:
         raise AssertionError(('register mismatch', report['registers'], [s['regs'] for s in references]))
@@ -78,16 +83,18 @@ def main():
                 raise AssertionError(('cache mismatch', bank, part, i))
         verified.append(dict(bank=bank, row_bank=part, rows=count, fields=fields))
     report.update(format='leanputer.typed-symbolic-services-stock-smoke.v1',
-        config=asdict(cfg), device=args.device, compile_seconds=compilation,
+        config=asdict(cfg), device=device, compile_seconds=compilation,
         input_documents=documents, exact_register_match=True, exact_cache_match=True,
         verified_cache_banks=verified,
-        validation_scope=f'{len(documents)} typed-memory {args.group} operation probes; not full typing, declaration admission or mathlib coverage',
-        operation_group=args.group,
+        validation_scope=validation_scope,
+        operation_group=group,
         full_kernel_native_support=False)
-    args.report.parent.mkdir(parents=True, exist_ok=True)
-    args.report.write_text(json.dumps(report, indent=2)+'\n')
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps({'phase': 'passed', 'statuses': [r['status'] for r in report['results']],
-        'forward_seconds': report['forward_seconds'], 'report': str(args.report)}), flush=True)
+        'forward_seconds': report['forward_seconds'], 'report': str(report_path)}), flush=True)
+
+    return report
 
 
 if __name__ == '__main__':
