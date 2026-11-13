@@ -14,11 +14,11 @@
   "public_population": 857,
   "ground_instances_per_source": 1,
   "counts": {
-    "UNSUPPORTED": 495,
-    "EXPORTED": 362
+    "UNSUPPORTED": 491,
+    "EXPORTED": 366
   },
-  "export_seconds": 8.877813733000949,
-  "enumeration_seconds": 6.080519139999524,
+  "export_seconds": 7.871664919999603,
+  "enumeration_seconds": 4.274233611002273,
   "unsupported_reasons": {
     "unsupported inductive/constructor/recursor/quotient dependency Mul": 29,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommMagma": 11,
@@ -34,7 +34,7 @@
     "unsupported inductive/constructor/recursor/quotient dependency Subsingleton": 20,
     "unsupported inductive/constructor/recursor/quotient dependency Zero": 10,
     "unsupported inductive/constructor/recursor/quotient dependency DivInvMonoid": 18,
-    "unsupported inductive/constructor/recursor/quotient dependency Option": 12,
+    "unsupported inductive/constructor/recursor/quotient dependency Nat": 18,
     "unsupported inductive/constructor/recursor/quotient dependency Group": 13,
     "unsupported inductive/constructor/recursor/quotient dependency AddLeftCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency Semigroup": 13,
@@ -47,8 +47,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency CommSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency AddZero": 6,
     "unsupported inductive/constructor/recursor/quotient dependency IsStrictWeakOrder": 2,
+    "unsupported inductive/constructor/recursor/quotient dependency PUnit": 4,
     "unsupported inductive/constructor/recursor/quotient dependency Prod": 8,
-    "unsupported inductive/constructor/recursor/quotient dependency Membership": 9,
+    "unsupported inductive/constructor/recursor/quotient dependency Membership": 10,
     "unsupported inductive/constructor/recursor/quotient dependency AddLeftCancelMonoid": 1,
     "unsupported inductive/constructor/recursor/quotient dependency AddZeroClass": 6,
     "unsupported inductive/constructor/recursor/quotient dependency One": 10,
@@ -65,7 +66,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency RightCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency LeftCancelSemigroup": 3,
     "unsupported inductive/constructor/recursor/quotient dependency Std.Total": 2,
-    "unsupported inductive/constructor/recursor/quotient dependency Nat": 14,
     "unsupported inductive/constructor/recursor/quotient dependency SMul": 2,
     "unsupported inductive/constructor/recursor/quotient dependency AddCommGroup": 7,
     "unsupported inductive/constructor/recursor/quotient dependency InvolutiveNeg": 2,
@@ -85,7 +85,6 @@
     "unsupported inductive/constructor/recursor/quotient dependency IsStrictOrder": 2,
     "unsupported inductive/constructor/recursor/quotient dependency MulOneClass": 6,
     "unsupported inductive/constructor/recursor/quotient dependency IsEquiv": 2,
-    "unsupported inductive/constructor/recursor/quotient dependency PUnit": 1,
     "unsupported inductive/constructor/recursor/quotient dependency CancelCommMonoid": 2,
     "unsupported inductive/constructor/recursor/quotient dependency Pow": 2,
     "unsupported inductive/constructor/recursor/quotient dependency CommMonoid": 2,
@@ -102,9 +101,9 @@
     "unsupported inductive/constructor/recursor/quotient dependency Equivalence.mk": 1,
     "unsupported inductive/constructor/recursor/quotient dependency DivisionCommMonoid": 1
   },
-  "exporter_sha256": "fd781b06a80a7607ac45d20d834f678420d642c7e96e5b51f526fda43a021fd1",
-  "corpus_sha256": "468e9590ca2078e8c278fc9603d3df9ca8bfc2f97548f58a036b29237b60f1b6",
-  "all_outcomes_sha256": "980002c007cdaac32ad492c0b42ae45adf48a19bca7a5c324800e163563cfbb1",
-  "leanputer_feature_boundary": "Bool99phasefixedfragment; native full-population checking NOT_RUN",
+  "exporter_sha256": "1ea73020330304163bc1b9816b41f6a6a7e9d51396e1def1a9c82a5d39883c19",
+  "corpus_sha256": "a02771f8fed6ba0e91294ffa8cdb146fc0d4d231c4463763b7e56c46b5bfb435",
+  "all_outcomes_sha256": "37e0960bf1bca26db41a358a6ab4b7aad19ffa2fe8e8adb709697b1c517c6913",
+  "leanputer_feature_boundary": "Option100phasefixedfragment",
   "scope": "Syntax-only export refresh. EXPORTED is not proof acceptance. No full-population native/differential run in this refresh."
 }

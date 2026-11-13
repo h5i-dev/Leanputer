@@ -101,14 +101,14 @@ class RuleCompiler:
                    Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                    Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                    Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK)
+                   Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE)
         needs_r = (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                    Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ,
                    Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END, Op.REC_SPINE, Op.I_SUBTYPE_PROPERTY, Op.S_RIGHT_TYPE)
         for value, modes in ((self.r['x'], needs_x), (self.r['r'], needs_r),
                              (self.r['y'], (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT,
                                            Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE)),
+                                           Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE)),
                              (self.r['z'],(Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE))):
             required = self.OR(*(self.eq(self.r['mode'], op) for op in modes))
             invalid = self.OR(self.eq(value, 0), self.NOT(self.lt(value, self.r['free'])))
@@ -222,7 +222,8 @@ class RuleCompiler:
         first_level=self.g.fit(w[:universe_bits],self.width)
         second_level=self.g.fit(w[universe_bits:2*universe_bits],self.width)
         ceiling=self.mux(self.eq(first_level,0),1,first_level)
-        resolve=lambda value:first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else value
+        first_successor=self.add(first_level,1);second_successor=self.add(second_level,1)
+        resolve=lambda value:first_level if value==-1 else second_level if value==-2 else ceiling if value==-3 else first_successor if value==-4 else second_successor if value==-5 else value
         for code,schema in PRIMITIVE_SCHEMAS.items():
             for position,(tag,a,b,v) in enumerate(schema):
                 binary=tag in (Tag.PI,Tag.APP)
@@ -425,7 +426,14 @@ class RuleCompiler:
         self.tail(self.AND(phase,boolean,false_ctor),Op.B_PICK,hx['a'])
         self.ret(self.AND(phase,boolean,self.NOT(self.OR(false_ctor,true_ctor))),0)
         self.ret(self.AND(phase,self.NOT(boolean),self.NOT(app)),0)
+        self.tail(self.AND(phase,app,self.eq(y,45)),Op.O_SPINE,hr['a'],x,hr['b'])
         self.ret(self.mode(Op.B_PICK),hx['b'])
+        phase_option=self.mode(Op.O_SPINE)
+        none=self.AND(self.tag(hx,Tag.BUILTIN),self.eq(hx['v'],43))
+        some=self.tag(hx,Tag.APP)
+        self.tail(self.AND(phase_option,none),Op.B_PICK,self.hy['a'])
+        self.call(self.AND(phase_option,some),Op.REC_SCAN,hx['a'],0,continuation=(Op.REC_SELECT,y,45,z))
+        self.ret(self.AND(phase_option,self.NOT(self.OR(none,some))),0)
         for head,count in REC_MAJOR_ARITIES.items():
             self.call(self.AND(phase,app,self.eq(y,head)),Op.REC_SCAN,hr['a'],count-1,
                       continuation=(Op.REC_SELECT,x,y,hr['b'],hr['a']))
@@ -433,7 +441,10 @@ class RuleCompiler:
         self.ret(self.AND(phase,done),x)
         self.ret(self.AND(phase,self.NOT(done),self.NOT(app)),0)
         self.tail(self.AND(phase,self.NOT(done),app),Op.REC_SCAN,hx['a'],self.sub(y,1))
-        phase=self.mode(Op.REC_SELECT);matches=[]
+        phase=self.mode(Op.REC_SELECT)
+        option_match=self.AND(phase,self.eq(y,45),self.tag(hr,Tag.BUILTIN),self.eq(hr['v'],44))
+        self.tail(option_match,Op.REC_APPLY,hx['b'],z)
+        matches=[option_match]
         for head,constructors in REC_CONSTRUCTORS.items():
             match=self.AND(phase,self.eq(y,head),self.tag(hr,Tag.BUILTIN),self.OR(*(self.eq(hr['v'],ctor)for ctor in constructors)))
             matches.append(match)

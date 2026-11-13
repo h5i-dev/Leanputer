@@ -339,3 +339,21 @@ rows, export8.878s. Removing Bool unlocks126of142previous first blockers, but
 these are not native proof acceptances. The smallest newly exported inspected
 classical closure has72dependencies, exceeding the small eight-constant smoke
 budget. No new real-mathlib native acceptance is claimed for this slice.
+
+## Option checkpoint
+
+Option/none/some/rec extends the IR to100phases. Its Type-u carrier uses numeric
+successor universes inside schema construction; recursor universes are ordered
+{result,carrier}. Closed aliases at{0,1}/{1,0}, distinct data branches and three
+negative restrictions pass the11case native smoke8A3R, agreeing with weighted
+CPU(50.934s) and actualLean(2.175s). A neutral major cannot select either minor;
+a wrong some-field or Prop carrier rejects.
+
+At heap256/stack32/context16/constants8/fuel1152:40boot+1154stockforwards97.654s,
+compile12.692s,722,798,826BF16parameters/1,445,597,652weightbytes/H3584/54layers,
+CUDApeak1,545,679,872bytes/host1,702,318,080bytes. Development timing includes
+concurrent initial CPU validation and is not a repeated latency measurement.
+Evidence is under benchmarks/native/option-{smoke,input,config}*.
+Four of12currentOption-first blockers now syntax-export; newly inspected
+Function.IsPartialInv.eq plans at4930transitions/700nodes with three checked
+dependencies and noaxioms. Its native check is separate from this small smoke.

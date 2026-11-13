@@ -64,11 +64,12 @@ partial def encodeExpr (env : Environment) (expr : Expr) : ExportM Json := do
         name == ``Nonempty || name == ``Nonempty.intro || name == ``Nonempty.rec ||
         name == ``Exists || name == ``Exists.intro || name == ``Exists.rec ||
         name == ``Quot || name == ``Quot.mk || name == ``Quot.ind || name == ``Decidable.rec ||
-        name == ``Subtype || name == ``Subtype.mk || name == ``Bool.rec) && values.length == 1 then
+        name == ``Subtype || name == ``Subtype.mk || name == ``Bool.rec ||
+        name == ``Option || name == ``Option.none || name == ``Option.some) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
     if (name == ``Eq || name == ``Eq.refl || name == ``HEq || name == ``HEq.refl) && values.length == 1 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!]
-    if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec) && values.length == 2 then
+    if (name == ``Eq.rec || name == ``Quot.lift || name == ``Subtype.rec || name == ``HEq.rec || name == ``Option.rec) && values.length == 2 then
       return jsonArray [text "builtin",text name.toString,toJson values[0]!,toJson values[1]!]
     let specialized ← ensureDeclaration env name values
     return jsonArray [text "const", text specialized]

@@ -135,6 +135,7 @@ class Op(IntEnum):
     H_ALPHA = 96
     H_VALUE = 97
     B_PICK = 98
+    O_SPINE = 99
 
 
 @dataclass(frozen=True)
@@ -295,7 +296,7 @@ class SpecMachine:
                   Op.LET_VALUE, Op.LET_CHECK, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END,
                   Op.REC_SPINE, Op.REC_SCAN, Op.REC_SELECT, Op.REC_FIELDS, Op.REC_PICK, Op.REC_APPLY, Op.REC_MAJOR,
                   Op.I_SUBTYPE_PROPERTY, Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK):
+                  Op.H_REC, Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.B_PICK, Op.O_SPINE):
             pointers.append(x)
         if op in (Op.VALUE, Op.ROOT_TERM, Op.I_BIND, Op.I_SORT, Op.I_FUN, Op.W_APP,
                   Op.C_RIGHT, Op.F_TYPE_WHNF, Op.F_SORT_WHNF, Op.E_TYPE_WHNF, Op.I_PROJ_TYPE, Op.W_PROJ, Op.TREE_PROJ, Op.LET_VALUE, Op.LET_INFER, Op.SHIFT_LET_A, Op.SUBST_LET_A, Op.SHIFT_LET_B, Op.SUBST_LET_B, Op.LET_END):
@@ -303,7 +304,7 @@ class SpecMachine:
         if op in (Op.REC_SPINE,Op.I_SUBTYPE_PROPERTY,Op.S_RIGHT_TYPE):pointers.append(result)
         if op in (Op.CONV, Op.FALLBACK, Op.ETA, Op.I_PROJ_FAMILY, Op.I_PROJ_HEAD, Op.PROJ_FIELDS, Op.PROJ_SELECT, Op.EQ_MINOR, Op.EQ_ANCHOR, Op.EQ_INDEX, Op.EQ_RESULT, Op.REC_MAJOR, Op.REC_APPLY, Op.REC_FIELDS, Op.REC_PICK,
                   Op.S_REC_LEFT, Op.S_REC_RIGHT, Op.S_REC_APPLY, Op.S_TYPE, Op.S_FN, Op.S_HEAD, Op.S_RIGHT_TYPE, Op.S_SAME_TYPE, Op.S_RIGHT_VAL,
-                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE):
+                  Op.H_CARRIER, Op.H_MINOR, Op.H_MOTIVE, Op.H_ANCHOR, Op.H_ALPHA, Op.H_VALUE, Op.O_SPINE):
             pointers.append(y)
         if op in (Op.S_REC_RIGHT,Op.S_REC_APPLY,Op.S_TYPE,Op.S_FN,Op.S_HEAD,Op.S_RIGHT_TYPE) or (op==Op.ETA and z):pointers.append(z)
         if any(not 0 < pointer < r['free'] for pointer in pointers):
@@ -343,7 +344,7 @@ class SpecMachine:
                 binary=tag in (Tag.PI,Tag.APP)
                 resume=(Op.BUILTIN_TYPE,x,y+1,z,w) if y+1<len(schema) else None
                 u=w&((1<<cfg.universe_bits)-1); second=w>>cfg.universe_bits
-                resolve=lambda value:u if value==-1 else second if value==-2 else max(1,u) if value==-3 else value
+                resolve=lambda value:u if value==-1 else second if value==-2 else max(1,u) if value==-3 else u+1 if value==-4 else second+1 if value==-5 else value
                 self.allocate(tag,z+a if binary else resolve(a),z+b if binary else resolve(b),resolve(v),resume)
         elif op == Op.ENV:
             if r['decl'] == r['decl_count']:
@@ -575,16 +576,25 @@ class SpecMachine:
                 elif ctor==39:self.tail(Op.B_PICK,self.node(x)[1])
                 else:self.ret(0)
             elif tag!=Tag.APP:self.ret(0)
+            elif y==45:self.tail(Op.O_SPINE,a,x,b)
             else:self.call(Op.REC_SCAN,a,REC_MAJOR_ARITIES[y]-1,continuation=(Op.REC_SELECT,x,y,b,a))
         elif op==Op.B_PICK:
             self.ret(self.node(x)[2])
+        elif op==Op.O_SPINE:
+            tag,a,_,v=self.node(x)
+            if tag==Tag.BUILTIN and v==43:self.tail(Op.B_PICK,self.node(y)[1])
+            elif tag==Tag.APP:self.call(Op.REC_SCAN,a,0,continuation=(Op.REC_SELECT,y,45,z))
+            else:self.ret(0)
         elif op==Op.REC_SCAN:
             if y==0:self.ret(x)
             elif self.node(x)[0]!=Tag.APP:self.ret(0)
             else:self.tail(Op.REC_SCAN,self.node(x)[1],y-1)
         elif op==Op.REC_SELECT:
             ctor=self.node(result)[3] if result and self.node(result)[0]==Tag.BUILTIN else -1
-            if ctor not in REC_CONSTRUCTORS[y]:self.ret(0)
+            if y==45:
+                if ctor==44:self.tail(Op.REC_APPLY,self.node(x)[2],z)
+                else:self.ret(0)
+            elif ctor not in REC_CONSTRUCTORS[y]:self.ret(0)
             elif y in (16,26):self.tail(Op.REC_APPLY,self.node(x)[2],z)
             elif y in (12,13,19):self.tail(Op.REC_FIELDS,w,self.node(x)[2],z)
             elif y==27:self.tail(Op.REC_PICK,self.node(x)[1],z)

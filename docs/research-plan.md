@@ -292,3 +292,12 @@ Inhabited18 and Option/Prod are smaller coherent next data slices. New Bool
 classical closures have at least72dependencies, so native resource costs are
 material. Keep broad differential/profiling deferred; choose the next slice
 from actual closure structure rather than counting syntax export as proof.
+
+Option100phase milestone adds Type-universe successors and zero/one-field
+constructor-dependent elimination. Targeted weighted/native11case8A3R and
+actualLean agree. Of12Option-first blockers4now syntax-export; one new actual
+Function.IsPartialInv.eq proof is undergoing native checking at1024heap/f4992
+against4930planned steps/three checked dependencies, not an acceptance yet.
+Next assess a reusable fixed one-field record slice (Inhabited, Subsingleton,
+Mul/Add), preserving typed data eta versus Prop constructor-only elimination.
+No arbitrary user inductive admission or unchecked dependency assumptions.

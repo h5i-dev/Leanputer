@@ -165,6 +165,13 @@ class Oracle:
                     major=self.whnf(arguments[3],context)
                     if major in (('builtin','Bool.false'),('builtin','Bool.true')):
                         return self.whnf(arguments[1 if major[1]=='Bool.false' else 2],context)
+                if name=='Option.rec' and len(arguments)==5:
+                    ctor=self.whnf(arguments[4],context);fields=[]
+                    while ctor[0]=='app':fields.insert(0,ctor[2]);ctor=ctor[1]
+                    if ctor[0]=='builtin' and ctor[1]=='Option.none' and len(fields)==1:
+                        return self.whnf(arguments[2],context)
+                    if ctor[0]=='builtin' and ctor[1]=='Option.some' and len(fields)==2:
+                        return self.whnf(apps(arguments[3],fields[-1]),context)
                 if name=='Subtype.rec' and len(arguments)==5:
                     return self.whnf(apps(arguments[3],('proj','Subtype',0,arguments[4]),('proj','Subtype',1,arguments[4])),context)
                 count={'And.rec':5,'Iff.rec':5,'Nonempty.rec':4,'Exists.rec':5,'Or.rec':6,'Quot.ind':5,'Quot.lift':6,'Decidable.rec':5}.get(name)

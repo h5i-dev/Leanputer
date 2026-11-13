@@ -179,3 +179,10 @@ The earlier whole-population4/857 proof result above belongs to the old custom
 reference backend. Current native feature checkpoints validate selected sources
 and small relative fixtures with different budgets; they do not constitute a
 new matched full-population result. Broad native replay remains deferred.
+
+The subsequent Option100-phase syntax refresh retains the same857names:
+366EXPORTED/491UNSUPPORTED, export7.871665s. It supersedes the Bool snapshot in
+the current-fragment files; historical hashes/outcomes remain in Git history.
+Use --syntax-report Option100phasefixedfragment for that feature boundary.
+This is still a syntax-only update with every checking_status NOT_RUN, not a
+new native proof-coverage fraction.

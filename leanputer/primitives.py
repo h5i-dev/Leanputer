@@ -13,13 +13,15 @@ PRIMITIVE_CODES = {'False':0,'False.rec':1,'Iff':2,'Iff.intro':3,'And':4,'And.in
                    'Quot':24,'Quot.mk':25,'Quot.ind':26,'Quot.lift':27,
                    'Decidable':28,'Decidable.isFalse':29,'Decidable.isTrue':30,'Decidable.rec':31,
                    'Subtype':32,'Subtype.mk':33,'Subtype.rec':34,'HEq':35,'HEq.refl':36,'HEq.rec':37,
-                   'Bool':38,'Bool.false':39,'Bool.true':40,'Bool.rec':41}
+                   'Bool':38,'Bool.false':39,'Bool.true':40,'Bool.rec':41,
+                   'Option':42,'Option.none':43,'Option.some':44,'Option.rec':45}
 PRIMITIVE_UNIVERSES = {'False.rec':1,'Eq':1,'Eq.refl':1,'Eq.rec':2,'True.rec':1,'And.rec':1,'Iff.rec':1,
                        'Nonempty':1,'Nonempty.intro':1,'Nonempty.rec':1,'Exists':1,'Exists.intro':1,'Exists.rec':1,
                        'Quot':1,'Quot.mk':1,'Quot.ind':1,'Quot.lift':2,'Decidable.rec':1,
-                       'Subtype':1,'Subtype.mk':1,'Subtype.rec':2,'HEq':1,'HEq.refl':1,'HEq.rec':2,'Bool.rec':1}
+                       'Subtype':1,'Subtype.mk':1,'Subtype.rec':2,'HEq':1,'HEq.refl':1,'HEq.rec':2,'Bool.rec':1,
+                       'Option':1,'Option.none':1,'Option.some':1,'Option.rec':2}
 PROJECTION_FAMILIES = {'Iff':0,'And':2,'Subtype':4}
-REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5,37:7,41:4}
+REC_ARITIES = {8:6,11:3,12:5,13:5,16:4,19:5,23:6,26:5,27:6,31:5,34:5,37:7,41:4,45:5}
 REC_CONSTRUCTORS = {12:(5,),13:(3,),16:(15,),19:(18,),23:(21,22),26:(25,),27:(25,),31:(29,30)}
 REC_MAJOR_ARITIES = {12:4,13:4,16:2,19:4,23:3,26:3,27:3,31:2}
 
@@ -41,6 +43,7 @@ def primitive_type(expression):
     var = lambda i:('var',i)
     app = lambda f,a:('app',f,a)
     pi = lambda a,b:('pi',a,b)
+    if name.startswith('Option'):return _option_type(expression)
     if name.startswith('Bool'):return _bool_type(expression)
     if name.startswith('HEq'):return _heq_type(expression)
     if name.startswith('Subtype'):return _subtype_type(expression)
@@ -213,6 +216,29 @@ def _bool_type(expression):
     return _close_schema(bind('motive',bind('motive_arg',boolean,('sort',expression[2])),
         bind('minor_false',app(motive,('builtin','Bool.false')),bind('minor_true',app(motive,('builtin','Bool.true')),
         bind('major',boolean,app(motive,v('major')))))))
+
+
+def _option_type(expression):
+    name=expression[1]
+    carrier=expression[3] if name=='Option.rec' else expression[2]
+    # Private compiled-schema markers for successor of either ground level.
+    carrier_sort=carrier+1 if carrier>=0 else -4 if carrier==-1 else -5
+    v=lambda n:('named',n)
+    bind=lambda n,t,b:('bind',n,t,b)
+    apps=lambda f,*xs:reduce(lambda a,b:('app',a,b),xs,f)
+    alpha,motive,major=map(v,('alpha','motive','major'))
+    option=apps(('builtin','Option',carrier),alpha)
+    none=apps(('builtin','Option.none',carrier),alpha)
+    some=lambda value:apps(('builtin','Option.some',carrier),alpha,value)
+    if name=='Option':tail=('sort',carrier_sort)
+    elif name=='Option.none':tail=option
+    elif name=='Option.some':tail=bind('value',alpha,option)
+    else:
+        minor_some=bind('value',alpha,apps(motive,some(v('value'))))
+        tail=bind('motive',bind('motive_arg',option,('sort',expression[2])),
+             bind('minor_none',apps(motive,none),bind('minor_some',minor_some,
+             bind('major',option,apps(motive,major)))))
+    return _close_schema(bind('alpha',('sort',carrier_sort),tail))
 
 
 def type_schema(expression):

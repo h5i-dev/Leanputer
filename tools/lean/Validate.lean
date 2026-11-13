@@ -51,6 +51,9 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "Subtype" then return .const ``Subtype [level]
       if name == "Subtype.mk" then return .const ``Subtype.mk [level]
       if name == "Bool.rec" then return .const ``Bool.rec [level]
+      if name == "Option" then return .const ``Option [level]
+      if name == "Option.none" then return .const ``Option.none [level]
+      if name == "Option.some" then return .const ``Option.some [level]
     if fields.size == 3 then
       if name == "Eq" then return .const ``Eq [numericLevel (← fields[2]!.getNat?)]
       if name == "Eq.refl" then return .const ``Eq.refl [numericLevel (← fields[2]!.getNat?)]
@@ -58,6 +61,8 @@ partial def expression (json : Json) : Except String Expr := do
       if name == "HEq.refl" then return .const ``HEq.refl [numericLevel (← fields[2]!.getNat?)]
     if name == "HEq.rec" && fields.size == 4 then
       return .const ``HEq.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
+    if name == "Option.rec" && fields.size == 4 then
+      return .const ``Option.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Subtype.rec" && fields.size == 4 then
       return .const ``Subtype.rec [numericLevel (← fields[2]!.getNat?),numericLevel (← fields[3]!.getNat?)]
     if name == "Quot.lift" && fields.size == 4 then
@@ -127,7 +132,7 @@ def main (args : List String) : IO UInt32 := do
   initSearchPath (← findSysroot)
   let standard ← importModules #[{module := `Init}] {}
   let mut basis := environment.toKernelEnv
-  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool] do
+  for name in [``False, ``Iff, ``And, ``Eq, ``True, ``Nonempty, ``Exists, ``Or, ``Decidable, ``Subtype, ``HEq, ``Bool, ``Option] do
     if name == ``Decidable then
       let some (.defnInfo negation) := standard.find? ``Not | throw (IO.userError "missing standard negation definition")
       basis ← IO.ofExcept ((Lean.Kernel.Environment.addDecl basis {} (.defnDecl negation)).mapError (fun _ => "Lean rejected negation definition"))
