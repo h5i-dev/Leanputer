@@ -1,4 +1,5 @@
 import Lean
+import Lean.OriginalConstKind
 
 open Lean
 
@@ -22,8 +23,21 @@ partial def groundLevel : Level → Except String Nat
 
 def numericLevel (n : Nat) : Level := Nat.rec .zero (fun _ level => .succ level) n
 
+def nameParts : Name → List Json
+  | .anonymous => []
+  | .str parentName part => nameParts parentName ++ [Json.mkObj [("str", toJson part)]]
+  | .num parentName part => nameParts parentName ++ [Json.mkObj [("num", toJson part)]]
+
+def decodeName (parts : Array Json) : Except String Name :=
+  parts.foldlM (fun parentName part => do
+    match (part.getObjValAs? String "str").toOption with
+    | some text => return .str parentName text
+    | none => return .num parentName (← part.getObjValAs? Nat "num")) .anonymous
+
 def key (name : Name) (levels : List Nat) : String :=
-  name.toString ++ "@[" ++ String.intercalate "," (levels.map toString) ++ "]"
+  let base := if name.toString.toName == name then name.toString
+              else "encoded:" ++ (Json.arr (nameParts name).toArray).compress
+  base ++ "@[" ++ String.intercalate "," (levels.map toString) ++ "]"
 
 structure ExportState where
   declarations : Array Json := #[]
@@ -57,11 +71,13 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
   let specialized := key name levels
   if (← get).complete.contains specialized then return specialized
   if (← get).visiting.contains specialized then throw s!"unsupported cyclic dependency {specialized}"
-  let some info := env.find? name | throw s!"unknown constant {name}"
+  let some info := (env.setExporting false).find? name | throw s!"unknown constant {name}"
   if info.isUnsafe || info.isPartial then throw s!"unsupported unsafe/partial declaration {name}"
   if info.levelParams.length != levels.length then throw s!"universe arity mismatch for {name}"
   let (value?, isOpaque) ← match info with
-    | .axiomInfo _ => pure (none, false)
+    | .axiomInfo _ =>
+      if (getOriginalConstKind? env name).any (· == .axiom) then pure (none, false)
+      else throw s!"unsupported unavailable body for non-axiom dependency {name}"
     | .defnInfo value => pure (some value.value, false)
     | .thmInfo value => pure (some value.value, true)
     | .opaqueInfo value => pure (some value.value, true)
@@ -81,7 +97,7 @@ partial def ensureDeclaration (env : Environment) (name : Name) (levels : List N
 end
 
 def exportTarget (env : Environment) (name : Name) (levels : List Nat) : Except String Json := do
-  let some info := env.find? name | throw s!"unknown target {name}"
+  let some info := (env.setExporting false).find? name | throw s!"unknown target {name}"
   if info.isUnsafe || info.isPartial then throw "unsupported unsafe/partial target"
   let some value := info.value? (allowOpaque := true) | throw "target has no available proof/value"
   if info.levelParams.length != levels.length then throw "target universe arity mismatch"
@@ -98,6 +114,7 @@ def exportTarget (env : Environment) (name : Name) (levels : List Nat) : Except 
     ("environment", Json.arr state.declarations),
     ("provenance", Json.mkObj [("lean_version", text Lean.versionString),
       ("source_constant", text name.toString), ("ground_levels", toJson levels),
+      ("source_name_parts", Json.arr (nameParts name).toArray),
       ("preparation", text "syntax-only Expr traversal and universe instantiation")])]
 
 end LeanputerExport
@@ -115,11 +132,16 @@ def main (args : List String) : IO UInt32 := do
   let mut results : Array String := #[]
   for target in targets do
     let name ← IO.ofExcept (target.getObjValAs? String "name")
+    let nativeName ← match (target.getObjValAs? (Array Json) "name_parts").toOption with
+      | some parts => IO.ofExcept (decodeName parts)
+      | none => pure name.toName
     let levels := (target.getObjValAs? (List Nat) "levels").toOption.getD []
-    let record := match exportTarget env name.toName levels with
+    let record := match exportTarget env nativeName levels with
       | .ok document => document
       | .error reason => Json.mkObj [("format", text "leanputer.dependent.v1"),
-          ("name", text name), ("status", text "UNSUPPORTED"), ("reason", text reason)]
+          ("name", text (key nativeName levels)), ("status", text "UNSUPPORTED"), ("reason", text reason),
+          ("provenance", Json.mkObj [("source_constant", text name), ("source_name_parts", Json.arr (nameParts nativeName).toArray),
+              ("ground_levels", toJson levels), ("lean_version", text Lean.versionString)])]
     results := results.push record.compress
   IO.FS.writeFile output (String.intercalate "\n" results.toList ++ "\n")
   return 0

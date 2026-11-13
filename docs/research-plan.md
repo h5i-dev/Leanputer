@@ -5,25 +5,39 @@ The baseline STLC circuit remains a comparison implementation.
 
 | Slice | Measurable acceptance criterion | State |
 | --- | --- | --- |
-| Shared execution substrate | Fixed FFNs and actual attention reads; exhaustive bounded-address reads; exact CPU/CUDA; state updates in weights; shared module identities across steps | Implementing |
-| Dependent operational specification | Explicit heap/context/continuations; Sort/Var/Pi/Lam/App; beta conversion; shift/substitution; ground Lean universe rules; absorbing failures and explicit bounds; independent recursive differential oracle | Implementing |
-| Compiled semantic transitions | Every specification transition matched by fixed weights; no host semantic operations; resource boundaries and adversarial traces | Pending |
-| Real Lean input | Export elaborated Expr and complete supported dependencies; no pre-normalization or checker answers; unsupported features explicit; judgments compared against Lean | Pending |
-| Corpus and evaluation | Real/generated/mutated/dependent/conversion/resource cases; reproducible JSON reports; CPU/CUDA, exhaustive/fuzz tests and trace minimization | Pending |
-| Scaling and trust | A10G and CPU measurements vs baseline/reference; weights/memory/depth/steps/time; trusted-component table; machine-checkable core lemmas | Pending |
-| Research release | Documented schemas, versioned artifacts, batch CLI, CI, exact reproducibility and gap table; reviewed checkpoint commits | Pending |
+| Shared execution substrate | Fixed FFNs, actual attention reads/writes, exhaustive bounded-address checks, exact CPU/CUDA, shared weights | Implemented/tested; backend numerical assumptions remain |
+| Dependent operational specification | Explicit heap/context/continuations, dependent lambda-Pi, capture avoidance, beta/delta/eta/proof irrelevance, ground Prop/universe rules and bounds | Implemented; 49 phases |
+| Compiled semantic transitions | Every phase matched by fixed weights, no host semantic work, adversarial/resource traces | Implemented/tested, no complete formal proof |
+| Real Lean input | Elaborated Expr, complete supported dependency closure, explicit unsupported, independent actual kernel replay | Implemented, quoted-name and unavailable-body boundary tests |
+| Corpus and evaluation | Real/generated/mutated/fuzz cases, reproducible reports, CPU/CUDA, trace mismatch minimization | Harness implemented; larger controlled runs in progress |
+| Mathlib coverage and speed | Pinned prefilter population, all rows retained, source/instance distinction, closure and cold/steady costs | 857-name population measured: 4 accepted/853 unsupported at large budget; repeated timings pending |
+| Scaling and trust | A10G/CPU measurements vs baseline/reference, memory/depth/steps/time, trust table/core lemmas | Core lemmas and tests implemented; controlled scaling in progress |
+| Research release | Schemas, artifact compatibility, batch CLI/CI, exact reproducibility and explicit gaps | Usable checkpoint; research requirements still incomplete |
 
 Each validated coherent slice is committed and pushed, followed immediately by
 implementation of the next slice. Tests alone do not establish soundness.
 
-Architecture under investigation: immutable AST and mutable continuation/context
-memory tables, binary-address queries, fixed positional keys, saturated float32
-softmax attention, and compiled Boolean FFNs for control and masked writes. The
-same modules are reused on every step. This trades the baseline's many distinct
-layers for sequential execution; total steps and memory must be measured.
-Saturated softmax exactness is a platform-tested floating-point property, not an
-identity over real arithmetic. Invalid addresses must never access unchecked
-memory or produce acceptance.
+Current architecture: syntax heap and mutable continuation/context banks,
+binary-address attention queries with fixed positional keys, saturated float32
+softmax, compiled Boolean register-control FFNs, and optional gated rank-one
+attention writes. The same modules are reused each step. This trades the
+baseline's many distinct layers for sequential execution. Report all logical
+stages and applied/semantic steps; no claim of fewer than eleven layers.
+
+Current measured gaps and next acceptance criteria:
+
+| Gap | Evidence / next checkpoint |
+| --- | --- |
+| Inductives/constructors/recursors/quotients | 853/857 selected mathlib theorems unsupported; first failures dominated by these dependencies. Add a reviewed declaration/eliminator specification and invalid-declaration cases before advertising support. Never replace them by unchecked axioms. |
+| Symbolic universes | Only one ground instance/name tested; no universal theorem coverage claim. Symbolic level equivalence/constraints need separate semantics. |
+| Fresh allocation / fixed fuel overhead | Largest accepted instance takes 12,332 steps and 1,620 allocations; the batch runs 16,385 steps for every item. Investigate syntax interning/reusable conversion work without host semantic assistance. |
+| Controlled evidence | Run real-population repeat timings and mixed corpus, preserve complete denominator and negative results. Add capacity/batch/device ablation with raw samples and peak memory. |
+| Formal assurance | Limited gate/mask/absorption lemmas exist; compiler, attention floating behavior and dependent typing soundness remain unproved. Tests are differential evidence. |
+| Qwen integration | Not implemented; standalone checker correctness/coverage/performance take priority. No base weights needed. |
+
+See [mathlib evaluation](mathlib-evaluation.md) for pins, exact reproduction,
+source population, supported theorem names, budget tradeoff and trust boundary.
+Historical checkpoint notes below record development, not current pending states.
 
 Primary provenance (accessed 2026-11-12):
 
@@ -80,3 +94,24 @@ cells, constant folding, parallel borrow/carry, liveness and bank-write factorin
 reduce shared stages 92 -> 41 and buffer bytes 8,882,256 -> 2,101,556. These
 static reductions are measured; end-to-end performance still needs controlled
 corpus evaluation and CPU/GPU/reference comparisons.
+
+User priority update: pinned real-mathlib theorem coverage and checking speed
+are now primary evaluation axes. Enumerate an explicit selected population before
+feature filtering; retain all export/encoding/unsupported/resource/reject counts.
+Report source theorem counts separately from repeated ground instantiations.
+Dependency-closed checking is the primary mode; any trusted-library experiment
+must name its entire unchecked basis and remain a separate result. Report cold
+export/encoding/compilation/initialization/check costs, steady reused-weight
+model costs and amortized environment costs. A zero-accept mathlib sample must
+be published honestly and used to prioritize missing features, not filtered out.
+Discovery of actual pinned mathlib/toolchain/cache availability is underway.
+
+Mathlib sampling protocol is now concrete: pin mathlib v4.31.0 commit
+fabf563a7c95a166b8d7b6efca11c8b4dc9d911f / Lean 4.31.0. Owner modules are
+Mathlib.Logic.Basic, Mathlib.Logic.Function.Basic, Mathlib.Algebra.Group.Defs,
+and Mathlib.Data.Nat.Basic. Enumerated 1,033 original theorem declarations,
+857 public noninternal/nonprivate declarations, all with bodies available.
+Choose 200 by lowest SHA256("814732/module/name"), before inspecting/filtering
+expressions, with one all-ones universe specialization per source theorem.
+Publish population/selection manifests and all 200 outcomes. These figures
+concern this four-module population/sample only, not all of mathlib.

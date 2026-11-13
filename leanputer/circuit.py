@@ -11,6 +11,7 @@ from torch import nn
 class Circuit:
     def __init__(self):
         self.inputs = []
+        self._input_names = set()
         self.gates = []
         self.depth = []
         self.cache = {}
@@ -18,8 +19,12 @@ class Circuit:
     def input(self, name):
         if self.gates:
             raise ValueError('declare all inputs before gates')
-        if name in self.inputs:
-            raise ValueError('duplicate input name')
+        try:
+            if name in self._input_names:
+                raise ValueError('duplicate input name')
+            self._input_names.add(name)
+        except TypeError as error:
+            raise ValueError('input names must be hashable') from error
         i = len(self.depth)
         self.inputs.append(name)
         self.depth.append(0)

@@ -9,7 +9,7 @@ from .machine_spec import MachineConfig
 from .transition import compile_machine
 
 ARTIFACT_FORMAT = 'leanputer.shared-ground-pi.v1'
-COMPILER_FILES = ('transition.py', 'bitvec.py', 'logic.py', 'memory.py', 'machine_spec.py',
+COMPILER_FILES = ('transition.py', 'circuit.py', 'bitvec.py', 'logic.py', 'memory.py', 'machine_spec.py',
                   'state_layout.py', 'dependent.py')
 
 
@@ -24,7 +24,7 @@ def compiler_fingerprint():
 def save_machine(model, path):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(dict(format=ARTIFACT_FORMAT, compiler=compiler_fingerprint(), config=asdict(model.config), optimized=model.optimized,
+    torch.save(dict(format=ARTIFACT_FORMAT, compiler=compiler_fingerprint(), config=asdict(model.config), optimized=model.optimized, memory_update=model.memory_update,
                     state_dict={name: tensor.cpu() for name, tensor in model.state_dict().items()}), path)
 
 
@@ -37,7 +37,7 @@ def load_machine(path):
     optimized = artifact.get('optimized', True)
     if type(optimized) is not bool:
         raise ValueError('artifact lowering flag must be Boolean')
-    model = compile_machine(MachineConfig(**artifact['config']), optimized=optimized)
+    model = compile_machine(MachineConfig(**artifact['config']), optimized=optimized, memory_update=artifact.get('memory_update', 'logic'))
     expected, actual = model.state_dict(), artifact.get('state_dict')
     if not isinstance(actual, dict) or actual.keys() != expected.keys():
         raise ValueError('shared-machine artifact tensor keys mismatch')

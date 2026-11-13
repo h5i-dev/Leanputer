@@ -19,4 +19,4 @@ leanputer-export = "leanputer.preparation:main"
 include = ["leanputer*"]
 
 [tool.setuptools.data-files]
-"share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean"]
+"share/leanputer/lean" = ["tools/lean/Export.lean", "tools/lean/Validate.lean", "tools/lean/Enumerate.lean"]

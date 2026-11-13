@@ -66,3 +66,13 @@ class ResearchRunnerTests(unittest.TestCase):
             torch.save(artifact, path)
             with self.assertRaisesRegex(ValueError, 'fingerprint'):
                 load_machine(path)
+
+    def test_attention_write_artifact_preserves_backend(self):
+        model = compile_machine(self.config, memory_update='attention_delta')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'attention.pt'
+            save_machine(model, path)
+            restored = load_machine(path)
+            self.assertEqual(restored.memory_update, 'attention_delta')
+            self.assertEqual(check_batch(restored, [IDENTITY])['results'],
+                             check_batch(self.model, [IDENTITY])['results'])

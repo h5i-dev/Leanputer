@@ -3,7 +3,8 @@
 Leanputer is an experimental bounded dependent-type checker whose semantic
 transitions are compiled directly into fixed Transformer weights. There is no
 training, CPU emulator, or external checker in its runtime checking path. It
-uses actual attention to read syntax/context/continuation memory, and sparse
+uses actual attention to read syntax/context/continuation memory, optional
+attention-addressed rank-one memory writes, and sparse
 ReLU FFNs to perform typing, capture-avoiding substitution, beta reduction,
 conversion, and state updates. The same weights are reused at every step.
 
@@ -51,6 +52,7 @@ Then prepare expressions externally and check the resulting syntax:
   --output /mnt/scratch/leanputer-runs/corpus.jsonl
 .venv/bin/python -m leanputer.research \
   --input /mnt/scratch/leanputer-runs/corpus.jsonl --device cuda \
+  --memory-update attention_delta --execution cuda_graph \
   --report /mnt/scratch/leanputer-runs/report.json
 ```
 
@@ -109,17 +111,28 @@ Architecture, trust and evidence
 [Architecture documentation](docs/shared-engine.md) describes state layout,
 addressed memory, semantic phases, recurrence and numerical assumptions.
 [Input and trust documentation](docs/input-and-trust.md) defines the format and
-correspondence to exported Lean expressions. [The research plan](docs/research-plan.md)
+correspondence to exported Lean expressions. [The evaluation guide](docs/evaluation.md) documents generation, replay,
+minimization and timing. [The research plan](docs/research-plan.md)
 tracks acceptance criteria and remaining work. The original 126-layer STLC
 unrolling remains available for comparison through `python -m leanputer` and is
 documented in [the baseline notes](docs/stlc-baseline.md).
 
-In the tested 128-cell configuration, the shared machine has 92 sequential
-stages per semantic step and roughly 6.4 MB of buffers. A dependent-family
-identity took 297 semantic steps. These are intermediate measurements, not a
-claim of efficiency or fewer than eleven layers. Systematic corpus/scaling
-measurements are still in progress. Singleton identity attention has been
-replaced in the shared engine; computation remains sequential and bounded.
+The optimized shared engine uses 43 logical stages per semantic step with
+`--memory-update attention_delta`: two dependent attention read rounds, compiled
+register-control FFNs, and attention-addressed gated rank-one writes. The default
+`logic` backend retains Boolean masked writes for comparison. CUDA graph replay
+(`--execution cuda_graph --device cuda`) reuses the same forward operations and
+fixed schedule; it does not move semantic work into the host loop.
+
+[The initial mathlib evaluation](docs/mathlib-evaluation.md) retains all **857
+public theorem declarations from four pinned modules**. Four ground instances
+are exportable and accepted at heap2048/fuel16384; 853 are unsupported. This is
+4/857 (0.467%) for that population, with a 59.16-second fixed CUDA batch in an
+initial single run. At heap256/fuel2048, one accepts and three exhaust heap in
+6.27 seconds. These are low coverage and low throughput results, with explicit
+limits, not a fraction of all mathlib or a GPU speedup claim. All four exported
+judgments have empty dependency environments and agree with Lean and nanoda.
+The sequential fixed-fuel design remains a major performance limitation.
 
 Exact reads rely on saturated float32 softmax underflow on the supported binary
 address domain, verified at every address for tested CPU/CUDA capacities. ReLU

@@ -1,0 +1,65 @@
+{
+  "format": "leanputer.pipeline.v1",
+  "trials": [
+    {
+      "preparation_seconds": 7.922252145006496,
+      "enumeration_seconds": 4.1747075879975455,
+      "export_seconds": 3.664940454000316,
+      "checker_fresh_process_to_check_seconds": 61.701502651005285,
+      "process_startup_and_input_seconds": 1.3214683120022528,
+      "full_cold_to_check_seconds": 69.62375479601178,
+      "all_evaluation_process_seconds": 242.19447163199948,
+      "counts": {
+        "UNSUPPORTED": 853,
+        "ACCEPT": 4
+      },
+      "mismatches": [],
+      "steady": [
+        {
+          "forward_seconds": 59.15364413100178,
+          "total_batch_seconds": 59.40705755300587,
+          "graph_setup_seconds": 0.0
+        },
+        {
+          "forward_seconds": 59.15351809399726,
+          "total_batch_seconds": 59.40604575999896,
+          "graph_setup_seconds": 0.0
+        },
+        {
+          "forward_seconds": 59.153687771002296,
+          "total_batch_seconds": 59.405071729001065,
+          "graph_setup_seconds": 0.0
+        }
+      ],
+      "evaluation": "/mnt/scratch/leanputer-runs/mathlib-pipeline-largest/cold-00/evaluation/evaluation.json",
+      "command": [
+        "/root/Leanputer/.venv/bin/python",
+        "-m",
+        "leanputer.evaluation",
+        "--input",
+        "/mnt/scratch/leanputer-runs/mathlib-pipeline-largest/cold-00/preparation/corpus.jsonl",
+        "--config",
+        "/mnt/scratch/leanputer-runs/mathlib-largest-config.json",
+        "--output",
+        "/mnt/scratch/leanputer-runs/mathlib-pipeline-largest/cold-00/evaluation",
+        "--device",
+        "cuda",
+        "--memory-update",
+        "attention_delta",
+        "--execution",
+        "cuda_graph",
+        "--lean",
+        "--repeats",
+        "3",
+        "--progress-events",
+        "--nanoda",
+        "/mnt/scratch/leanputer-references/nanoda-target/release/nanoda_bin"
+      ]
+    }
+  ],
+  "cold_median_seconds": 69.62375479601178,
+  "setup_boundary": "Existing pinned Lean/mathlib checkout and module cache; no checkout/download cost. Each trial reruns enumeration/export and starts a fresh Python checking process. Parent harness startup excluded.",
+  "cold_boundary": "Enumeration + syntax export + child process startup/input + weight compilation/device placement + encoding + graph setup + initialization + fixed-budget checking. Stops before steady repeats and independent references.",
+  "steady_boundary": "Same weights/graphs, inputs re-encoded; forward-only and total-batch samples retained. No dependency cache or proof-answer cache.",
+  "percentile_boundary": "Use evaluation raw samples and nearest-rank p95; small-repeat p95 is descriptive, not a tail estimate."
+}

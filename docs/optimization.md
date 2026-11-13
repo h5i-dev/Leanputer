@@ -46,3 +46,21 @@ and 12,622,848. Outcomes were identical: eta exhausted 512 fuel, while proof
 irrelevance and an opaque proof dependency accepted. These samples were taken
 during development with other validation work and are not controlled benchmark
 results. The evaluation harness must reproduce timing under controlled runs.
+
+## Attention writes and CUDA replay
+
+An independently selectable `attention_delta` backend removes complete memory
+banks from the transition FFN's work wires. The FFN emits next registers plus
+write address/enable/payload. Fixed address attention reads the old payload;
+ReLU gates the selected address by enable, and a rank-one delta update writes
+new minus old payload. This is actual memory addressing and fixed tensor
+arithmetic, with no host mutation of semantic memory. Both backends use the same
+state ABI and operational semantics. Artifacts record the memory backend.
+
+CUDA graphs capture the same module forward and identity state copy. Replaying
+captures only changes launch scheduling. Graph setup and steady replay are
+measured separately; all fuel steps still execute. Address/read/write tests,
+CPU/CUDA full-state traces and cross-proof graph reuse tests cover this path.
+See the mathlib report for the preserved large negative CUDA result and the
+new backend's initial measured costs. Claims based solely on static buffer or
+stage reductions are insufficient to establish an end-to-end speedup.

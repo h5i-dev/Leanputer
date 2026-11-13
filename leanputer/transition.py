@@ -9,8 +9,8 @@ from torch import nn
 
 from .bitvec import Builder
 from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, MachineConfig, Op, Outcome, Reason
-from .memory import AddressedRead
-from .state_layout import StateLayout
+from .memory import AddressedRead, AddressedWrite
+from .state_layout import StateLayout, RegisterLayout
 from .dependent import Tag
 
 
@@ -387,8 +387,21 @@ class RuleCompiler:
         self.emit(good, ctx=self.add(r['ctx'], 1))
         self.stop(self.AND(self.active, self.NOT(self.OR(*(self.eq(r['mode'], op) for op in Op)))), Outcome.REJECT, Reason.INTERNAL)
 
-    def finish(self):
+    def finish(self, memory_update='logic'):
         self.rules()
+        if memory_update == 'attention_delta':
+            outputs = self.state_outputs()
+            for bank, fields, address_name in [('heap', HEAP_FIELDS, 'free'), ('stack', FRAME_FIELDS, 'sp'), ('context', ('type',), 'ctx')]:
+                choices = self.writes[bank]
+                address = self.r[address_name]
+                if any(candidate != address for _, candidate, _ in choices):
+                    raise ValueError('attention write requires one address per bank')
+                enable = self.OR(*(condition for condition, _, _ in choices))
+                outputs.extend(address[:getattr(self.cfg, bank).bit_length()-1]); outputs.append(enable)
+                for field in range(len(fields)):
+                    outputs.extend(self.OR(*(self.AND(condition, payload[field][bit]) for condition, _, payload in choices))
+                                   for bit in range(self.width))
+            return self.g.compile(outputs)
         # Masked memory writes are control FFNs, with one write per bank/step.
         for bank, choices in self.writes.items():
             if not choices:
@@ -408,6 +421,9 @@ class RuleCompiler:
                 for field_index, field in enumerate(fields):
                     name = f'{bank}/{row}/{field}'
                     self.choices[name].extend((condition, values[field_index]) for condition, (_, _, values) in zip(conditions, choices))
+        return self.g.compile(self.state_outputs())
+
+    def state_outputs(self):
         outputs = []
         for name, _ in self.layout.fields:
             choices = self.choices[name]
@@ -420,22 +436,30 @@ class RuleCompiler:
             for i, old in enumerate(self.old[name]):
                 outputs.append(self.OR(self.AND(keep, old),
                     *(self.AND(condition, value[i]) for condition, value in choices)))
-        return self.g.compile(outputs)
+        return outputs
 
 
 class SharedChecker(nn.Module):
-    def __init__(self, config=MachineConfig(), optimized=True):
+    def __init__(self, config=MachineConfig(), optimized=True, memory_update='logic'):
         super().__init__()
         self.config = config
         self.optimized = optimized
+        if memory_update not in ('logic', 'attention_delta'):
+            raise ValueError('unknown memory update implementation')
+        self.memory_update = memory_update
         self.layout = StateLayout(config)
+        self.control_layout = RegisterLayout(self.layout) if memory_update == 'attention_delta' else self.layout
         self.initializer = compile_initializer(self.layout, optimized)
-        self.address1, self.address2 = compile_addresses(self.layout, optimized)
+        self.address1, self.address2 = compile_addresses(self.control_layout, optimized)
         self.heap_read = AddressedRead(config.heap)
         self.stack_read = AddressedRead(config.stack)
         self.context_read = AddressedRead(config.context)
         self.constant_read = AddressedRead(config.constants)
-        self.transition = RuleCompiler(self.layout, optimized).finish()
+        self.transition = RuleCompiler(self.control_layout, optimized).finish(memory_update)
+        if memory_update == 'attention_delta':
+            self.heap_write = AddressedWrite(config.heap, 4*config.word_bits)
+            self.stack_write = AddressedWrite(config.stack, 6*config.word_bits)
+            self.context_write = AddressedWrite(config.context, config.word_bits)
         self.requires_grad_(False)
 
     def bank(self, state, name):
@@ -444,7 +468,8 @@ class SharedChecker(nn.Module):
 
     def forward(self, state):
         with torch.autocast(device_type=state.device.type, enabled=False):
-            query = self.address1(state)
+            control = state[:, :self.control_layout.width]
+            query = self.address1(control)
             offset = 0
             reads = []
             for bank, ports, module in [('heap', 4, self.heap_read), ('stack', 1, self.stack_read),
@@ -453,13 +478,26 @@ class SharedChecker(nn.Module):
                 address = query[:, offset:offset+size].reshape(state.shape[0], ports, module.bits)
                 reads.append(module(address, self.bank(state, bank)).flatten(1))
                 offset += size
-            first = torch.cat([state] + reads, dim=1)
+            first = torch.cat([control] + reads, dim=1)
             query = self.address2(first)
             offset = self.context_read.bits
             reads.append(self.context_read(query[:, :offset].unsqueeze(1), self.bank(state, 'context')).flatten(1))
             reads.append(self.constant_read(query[:, offset:].unsqueeze(1), self.bank(state, 'constants')).flatten(1))
-            return self.transition(torch.cat([state] + reads, dim=1))
+            result = self.transition(torch.cat([control] + reads, dim=1))
+            if self.memory_update == 'logic':
+                return result
+            offset = self.control_layout.width
+            updated = [result[:, :offset]]
+            for bank, module in [('heap', self.heap_write), ('stack', self.stack_write), ('context', self.context_write)]:
+                query_width = module.reader.bits+1
+                write_control = result[:, offset:offset+query_width]
+                offset += query_width
+                payload = result[:, offset:offset+module.width]
+                offset += module.width
+                updated.append(module(write_control, payload, self.bank(state, bank)).flatten(1))
+            updated.append(self.bank(state, 'constants').flatten(1))
+            return torch.cat(updated, dim=1)
 
 
-def compile_machine(config=MachineConfig(), optimized=True):
-    return SharedChecker(config, optimized).eval()
+def compile_machine(config=MachineConfig(), optimized=True, memory_update='logic'):
+    return SharedChecker(config, optimized, memory_update).eval()

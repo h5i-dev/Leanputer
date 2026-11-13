@@ -17,14 +17,14 @@ partial def expression (json : Json) : Except String Expr := do
   match tag with
   | "var" => return .bvar (← fields[1]!.getNat?)
   | "sort" => return .sort (numericLevel (← fields[1]!.getNat?))
-  | "const" => return .const (← fields[1]!.getStr?).toName []
+  | "const" => return .const (.str .anonymous (← fields[1]!.getStr?)) []
   | "pi" => return .forallE `x (← expression fields[1]!) (← expression fields[2]!) .default
   | "lam" => return .lam `x (← expression fields[1]!) (← expression fields[2]!) .default
   | "app" => return .app (← expression fields[1]!) (← expression fields[2]!)
   | _ => throw s!"unsupported replay expression {tag}"
 
 def declaration (json : Json) : Except String Lean.Declaration := do
-  let name := (← json.getObjValAs? String "name").toName
+  let name := Name.str .anonymous (← json.getObjValAs? String "name")
   let type ← expression (← json.getObjVal? "type")
   let value ← json.getObjVal? "value"
   if value == Json.null then
@@ -49,8 +49,11 @@ def replay (base : Lean.Kernel.Environment) (json : Json) : Except String Unit :
     env ← (Lean.Kernel.Environment.addDecl env {} decl).mapError (fun _ => "Lean kernel rejected environment declaration")
   let type ← expression (← json.getObjVal? "claim")
   let value ← expression (← json.getObjVal? "term")
+  let mut target := "leanputer_replay_target"
+  while entries.any (fun entry => (entry.getObjValAs? String "name").toOption == some target) do
+    target := target ++ "_"
   let decl : Lean.Declaration := .defnDecl {
-    name := `leanputer_replay_target, levelParams := [], type, value,
+    name := .str .anonymous target, levelParams := [], type, value,
     hints := .abbrev, safety := .safe}
   let _ ← (Lean.Kernel.Environment.addDecl env {} decl).mapError (fun _ => "Lean kernel rejected target judgment")
   return ()

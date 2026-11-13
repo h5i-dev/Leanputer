@@ -8,7 +8,7 @@ import torch
 
 from .machine_spec import MachineConfig
 from .research_artifacts import load_machine, save_machine
-from .runner import check_batch, model_statistics
+from .runner import check_corpus, model_statistics
 from .transition import compile_machine
 
 
@@ -23,6 +23,8 @@ def main(argv=None):
     parser.add_argument('--device', choices=['cpu', 'cuda'], default='cpu')
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--reference-lowering', action='store_true', help='unoptimized lowering for semantic/architecture ablation')
+    parser.add_argument('--execution', choices=['eager', 'cuda_graph'], default='eager')
+    parser.add_argument('--memory-update', choices=['logic', 'attention_delta'])
     args = parser.parse_args(argv)
     torch.set_num_threads(1)
     try:
@@ -30,14 +32,16 @@ def main(argv=None):
             raise ValueError('positive batch size required')
         if args.device == 'cuda' and not torch.cuda.is_available():
             raise ValueError('CUDA unavailable')
+        if args.execution == 'cuda_graph' and args.device != 'cuda':
+            raise ValueError('CUDA graph execution requires --device cuda')
         start = time.perf_counter()
         if args.load:
-            if args.reference_lowering:
-                raise ValueError('artifact specifies lowering; omit --reference-lowering with --load')
+            if args.reference_lowering or args.memory_update is not None:
+                raise ValueError('artifact specifies lowering/memory; omit those flags with --load')
             model = load_machine(args.load)
         else:
             config = MachineConfig(**json.loads(args.config.read_text())) if args.config else MachineConfig()
-            model = compile_machine(config, optimized=not args.reference_lowering)
+            model = compile_machine(config, optimized=not args.reference_lowering, memory_update=args.memory_update or 'logic')
         model = model.to(args.device).eval()
         if args.device == 'cuda':
             torch.cuda.synchronize()
@@ -53,22 +57,7 @@ def main(argv=None):
                 documents = parsed if isinstance(parsed, list) else [parsed]
             except json.JSONDecodeError:
                 documents = [json.loads(line) for line in content.splitlines() if line.strip()]
-            results, batches = [], []
-            for start in range(0, len(documents), args.batch_size):
-                batch = documents[start:start+args.batch_size]
-                supported, indices, records = [], [], []
-                for index, document in enumerate(batch):
-                    if isinstance(document, dict) and document.get('status') == 'UNSUPPORTED':
-                        records.append(dict(name=document.get('name', str(index)), status='UNSUPPORTED',
-                                            reason=document.get('reason', 'exporter rejected unsupported syntax')))
-                    else:
-                        indices.append(index); supported.append(document); records.append(None)
-                checked = check_batch(model, supported)
-                for index, record in zip(indices, checked['results']):
-                    records[index] = record
-                results.extend(records); batches.append(checked['runtime'])
-            report = dict(format='leanputer.report.v1', results=results, batches=batches,
-                          model=model_statistics(model))
+            report = check_corpus(model, documents, args.batch_size, args.execution)
         report['compile_or_load_seconds'] = compilation
         report['device'] = args.device
         output = json.dumps(report, indent=2)

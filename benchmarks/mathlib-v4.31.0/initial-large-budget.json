@@ -1,0 +1,95 @@
+{
+  "format": "leanputer.evaluation.v1",
+  "provenance": {
+    "python": "3.9.25",
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA A10G",
+    "float32_matmul_precision": "highest",
+    "cuda_matmul_tf32": false,
+    "lean_version": "Lean (version 4.31.0, x86_64-unknown-linux-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)",
+    "git_commit": "053ee7c85ddd50ae6eec5743e5bcb3aabfb5687d",
+    "git_status": "M docs/research-plan.md\n M examples/dependent-targets.json\n M leanputer/circuit.py\n M leanputer/memory.py\n M leanputer/research.py\n M leanputer/research_artifacts.py\n M leanputer/runner.py\n M leanputer/state_layout.py\n M leanputer/transition.py\n M pyproject.toml\n M tools/lean/Export.lean\n M tools/lean/Validate.lean\n?? lean-toolchain\n?? leanputer/corpus.py\n?? leanputer/evaluation.py\n?? leanputer/execution.py\n?? leanputer/mathlib_benchmark.py\n?? leanputer/scaling.py\n?? leanputer/validation.py\n?? tests/test_attention_memory.py\n?? tests/test_evaluation.py\n?? tests/test_execution.py\n?? tests/test_mathlib_protocol.py\n?? tests/test_name_encoding.py\n?? tools/lean/Enumerate.lean",
+    "compiler": "dfd2da591c3b727d2313ac38438dfb63282e1f4058c932a7c96b709b8bcb8550",
+    "platform": "Linux-6.12.113-138.209.amzn2023.x86_64-x86_64-with-glibc2.34"
+  },
+  "config": {
+    "heap": 2048,
+    "stack": 64,
+    "context": 64,
+    "constants": 16,
+    "universe": 4,
+    "fuel": 16384
+  },
+  "device": "cuda",
+  "execution": "cuda_graph",
+  "corpus_sha256": "bb4fc010551debc0da94777b44d82bd9dfe731c3a52721bc3362479b2eb73b69",
+  "documents": 857,
+  "real_source_constants": 4,
+  "counts": {
+    "UNSUPPORTED": 853,
+    "ACCEPT": 4
+  },
+  "model": {
+    "config": {
+      "heap": 2048,
+      "stack": 64,
+      "context": 64,
+      "constants": 16,
+      "universe": 4,
+      "fuel": 16384
+    },
+    "lowering": "optimized",
+    "state_bits": 104463,
+    "memory_update": "attention_delta",
+    "state_bytes_per_item": 417852,
+    "ffn_work_widths": {
+      "initializer": 104465,
+      "address1": 236,
+      "address2": 582,
+      "transition": 7385
+    },
+    "max_ffn_hidden_width": 1403,
+    "shared_ffn_depths": {
+      "initializer": 1,
+      "address1": 5,
+      "address2": 9,
+      "transition": 24
+    },
+    "attention_stages_per_step": 3,
+    "memory_write_gate_stages": 1,
+    "rank_one_update_stages": 1,
+    "shared_stages_per_step": 43,
+    "weight_bytes": 1805104,
+    "sparse_nonzeros": 34272,
+    "trainable_parameters": 0
+  },
+  "batches": [
+    {
+      "input_positions": [
+        55,
+        498,
+        554,
+        582
+      ],
+      "forward_seconds": 59.16130988900113,
+      "applied_steps": 16385,
+      "execution": "cuda_graph",
+      "boundary_and_input_transfer_seconds": 0.002174016997742001,
+      "graph_setup_seconds": 0.32011778600281104,
+      "initializer_seconds": 0.010865663528442383,
+      "cuda_peak_allocated_bytes": 31039488,
+      "syntax_encoding_seconds": 0.13621213199803606,
+      "total_batch_seconds": 59.7382282710023
+    }
+  ],
+  "compile_seconds": 0.4967174389967113,
+  "cold_compile_and_check_seconds": 60.239098931000626,
+  "forward_seconds": 59.16130988900113,
+  "model_checked_items": 4,
+  "accepted_proofs_per_forward_second": 0.06761175517419794,
+  "python_reference_seconds": 0.2428772339990246,
+  "lean_process_seconds": 1.143653193001228,
+  "mismatches": [],
+  "run_status": "Initial single-run result. Controlled fresh-process/repeated trial in progress."
+}

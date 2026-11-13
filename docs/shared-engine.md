@@ -1,4 +1,4 @@
-# Shared dependent transition engine (checkpoint 1)
+# Shared dependent transition engine
 
 The baseline circuit is preserved in `checker.py`. `transition.py` is a separate
 implementation of the explicit machine in `machine_spec.py`, with a separately
@@ -16,9 +16,8 @@ checks have dedicated semantic phases; there is no general CPU instruction set.
 
 Ground universe typing uses Sort u : Sort (u+1) and Lean's numeric imax rule:
 Pi has level zero when its codomain is in Prop, otherwise the maximum domain and
-codomain levels. Universe overflow is a resource outcome. This checkpoint has
-no symbolic universe equations, eta conversion, proof-irrelevance shortcut,
-inductives or recursors. Tests of these rules do not establish correspondence
+codomain levels. Universe overflow is a resource outcome. The current machine has contextual eta and proof irrelevance, but no symbolic
+universe equations, inductives or recursors. Tests of these rules do not establish correspondence
 with all Lean terms, and a restricted-calculus rejection need not be a Lean
 rejection.
 
@@ -42,8 +41,12 @@ reject invalid pointer domains before interpreting read results. Unused read
 ports can read a harmless cell; all branches are masked in compiled logic.
 
 Attention therefore performs actual addressing; it is not the baseline's
-singleton identity attention. Memory writes and semantic updates are Boolean
-FFNs. Fixed Python loops/slices in `forward` wire modules together; they do not
+singleton identity attention. The `logic` backend writes memory using Boolean FFNs. The
+`attention_delta` backend uses a register-only FFN controller plus addressed
+attention writes: read old payload, gate the address distribution by write-enable,
+and apply the rank-one delta of new minus old payload. Intermediate deltas can
+be negative; completed machine state remains Boolean. All update arithmetic
+executes inside the fixed module. Fixed Python loops/slices in `forward` wire modules together; they do not
 infer types, perform substitution, choose semantic operations, or update state
 outside module outputs. Shape/Boolean validation and syntax preparation remain
 outside the weights. A proof-checking runner must initialize control and mutable
@@ -59,7 +62,7 @@ execution can cost substantially more than the baseline's single unrolling.
 
 Tests compare every state bit at every step for eight positive dependent,
 conversion-required, environment and capture cases, plus malformed/negative
-and resource cases. All 32 operational phases are covered. CPU/CUDA traces
+and resource cases. All 49 current operational phases are covered by the expanded tests. CPU/CUDA traces
 match the independent operational specification; terminal states absorb further
 steps; buffer storage identities remain fixed across execution. The recursive
 oracle separately checks expected judgments and seeded generated terms.
@@ -82,3 +85,22 @@ constitute a formal proof of conversion soundness.
 Two additional Lean lemmas prove OR and bounded AND arithmetic for arbitrary
 integer counts. Their standard Lean axioms are propext and Quot.sound; there is
 no sorryAx. Float32 realization and the full checker remain unverified.
+
+## Register-only control and execution capture
+
+The attention-write backend keeps wide memory out of register-control FFNs.
+At heap256/stack32/context32/constants16/fuel2048, state width is 11,820 bits,
+controller work width 5,627, buffers 694,332 bytes and sparse nonzeros 25,938.
+Two address FFNs have depths 5 and 9, the transition FFN depth is 24, and
+accounting includes two read rounds plus write-address attention, a write gate
+and a rank-one update: 43 logical stages per semantic step. The one-time
+initializer is another stage. This count describes sequential operations, not
+an asserted equivalence to a conventional language-model block.
+
+CUDA graph replay captures the same forward pass and an identity copy to the
+next input. Graphs are cached per model/batch/device, invalidated by changed
+buffer identities/addresses, and absent from saved artifacts. Canonical weighted
+initialization resets each new batch. The host applies exactly fuel+1 graph
+replays with no semantic dispatch or early termination. Graph capture costs and
+steady reused execution are reported separately. Compilation remains proof
+independent. Graph execution is tested against eager full-state traces.

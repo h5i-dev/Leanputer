@@ -1,0 +1,114 @@
+{
+  "format": "leanputer.evaluation.v1",
+  "provenance": {
+    "python": "3.9.25",
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA A10G",
+    "float32_matmul_precision": "highest",
+    "cuda_matmul_tf32": false,
+    "lean_version": "Lean (version 4.31.0, x86_64-unknown-linux-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)",
+    "git_commit": "053ee7c85ddd50ae6eec5743e5bcb3aabfb5687d",
+    "git_status": "M README.md\n M docs/input-and-trust.md\n M docs/optimization.md\n M docs/research-plan.md\n M docs/shared-engine.md\n M examples/dependent-targets.json\n M leanputer/circuit.py\n M leanputer/memory.py\n M leanputer/preparation.py\n M leanputer/research.py\n M leanputer/research_artifacts.py\n M leanputer/runner.py\n M leanputer/state_layout.py\n M leanputer/transition.py\n M pyproject.toml\n M tests/test_research_runner.py\n M tools/lean/Export.lean\n M tools/lean/Validate.lean\n?? benchmarks/\n?? docs/evaluation.md\n?? docs/mathlib-evaluation.md\n?? lean-toolchain\n?? leanputer/corpus.py\n?? leanputer/evaluation.py\n?? leanputer/execution.py\n?? leanputer/mathlib_benchmark.py\n?? leanputer/pipeline.py\n?? leanputer/scaling.py\n?? leanputer/validation.py\n?? tests/test_attention_memory.py\n?? tests/test_evaluation.py\n?? tests/test_execution.py\n?? tests/test_mathlib_protocol.py\n?? tests/test_name_encoding.py\n?? tools/lean/Enumerate.lean",
+    "compiler": "dfd2da591c3b727d2313ac38438dfb63282e1f4058c932a7c96b709b8bcb8550",
+    "platform": "Linux-6.12.113-138.209.amzn2023.x86_64-x86_64-with-glibc2.34"
+  },
+  "config": {
+    "heap": 2048,
+    "stack": 64,
+    "context": 64,
+    "constants": 16,
+    "universe": 4,
+    "fuel": 16384
+  },
+  "device": "cuda",
+  "execution": "cuda_graph",
+  "corpus_sha256": "905501c69d9e0def4b91ce41e87b8b84fcea407a452f2ee738492ebc454228c7",
+  "documents": 857,
+  "real_source_constants": 857,
+  "counts": {
+    "UNSUPPORTED": 853,
+    "ACCEPT": 4
+  },
+  "model": {
+    "config": {
+      "heap": 2048,
+      "stack": 64,
+      "context": 64,
+      "constants": 16,
+      "universe": 4,
+      "fuel": 16384
+    },
+    "lowering": "optimized",
+    "state_bits": 104463,
+    "memory_update": "attention_delta",
+    "state_bytes_per_item": 417852,
+    "ffn_work_widths": {
+      "initializer": 104465,
+      "address1": 236,
+      "address2": 582,
+      "transition": 7385
+    },
+    "max_ffn_hidden_width": 1403,
+    "shared_ffn_depths": {
+      "initializer": 1,
+      "address1": 5,
+      "address2": 9,
+      "transition": 24
+    },
+    "attention_stages_per_step": 3,
+    "memory_write_gate_stages": 1,
+    "rank_one_update_stages": 1,
+    "shared_stages_per_step": 43,
+    "weight_bytes": 1805104,
+    "sparse_nonzeros": 34272,
+    "trainable_parameters": 0
+  },
+  "batches": [
+    {
+      "input_positions": [
+        55,
+        498,
+        554,
+        582
+      ],
+      "forward_seconds": 59.16074700200261,
+      "applied_steps": 16385,
+      "execution": "cuda_graph",
+      "boundary_and_input_transfer_seconds": 0.002953531002276577,
+      "graph_setup_seconds": 0.3538785140044638,
+      "initializer_seconds": 0.010978303909301757,
+      "cuda_peak_allocated_bytes": 31039488,
+      "syntax_encoding_seconds": 0.2208684249999351,
+      "total_batch_seconds": 59.85813001999486
+    }
+  ],
+  "compile_seconds": 0.5170104970020475,
+  "cold_compile_and_check_seconds": 60.38003433900303,
+  "forward_seconds": 59.16074700200261,
+  "model_checked_items": 4,
+  "accepted_proofs_per_forward_second": 0.06761239846860959,
+  "python_reference_seconds": 0.23571224799525226,
+  "lean_process_seconds": 1.1519934030002332,
+  "mismatches": [],
+  "steady": [
+    {
+      "forward_seconds": 59.15364413100178,
+      "total_batch_seconds": 59.40705755300587,
+      "graph_setup_seconds": 0.0
+    },
+    {
+      "forward_seconds": 59.15351809399726,
+      "total_batch_seconds": 59.40604575999896,
+      "graph_setup_seconds": 0.0
+    },
+    {
+      "forward_seconds": 59.153687771002296,
+      "total_batch_seconds": 59.405071729001065,
+      "graph_setup_seconds": 0.0
+    }
+  ],
+  "steady_forward_median_seconds": 59.15364413100178,
+  "steady_forward_p95_seconds": 59.153687771002296,
+  "percentile_method": "Nearest-rank p95 over the reported repeats; raw samples retained."
+}

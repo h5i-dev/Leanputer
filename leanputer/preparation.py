@@ -25,9 +25,16 @@ def export(source, module, targets, output, workdir, lean='lean'):
     environment['LEAN_PATH'] = str(working)+(os.pathsep+environment['LEAN_PATH'] if environment.get('LEAN_PATH') else '')
     commands = []
     if source:
+        source = Path(source).resolve()
+        # Lean computes the source module relative to --root. Explicitly set
+        # that root so preparation also works for sources outside our cwd.
+        parts = module.split('.')
+        if source.stem != parts[-1] or any(not part for part in parts):
+            raise ValueError('source filename must match the final module component')
+        package_root = source.parents[len(parts)-1]
         olean = working/(module.replace('.', '/')+'.olean')
         olean.parent.mkdir(parents=True, exist_ok=True)
-        commands.append([str(lean), '-o', str(olean), str(Path(source).resolve())])
+        commands.append([str(lean), '--root='+str(package_root), '-o', str(olean), str(source)])
     config = working/'export-config.json'
     config.write_text(json.dumps(dict(modules=[module], targets=targets, output=str(Path(output).resolve()))))
     commands.append([str(lean), '--run', str(lean_tool('Export.lean')), str(config)])

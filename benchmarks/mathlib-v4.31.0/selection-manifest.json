@@ -1,0 +1,26 @@
+{
+  "format": "leanputer.mathlib-selection.v1",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "lean_toolchain": "leanprover/lean4:v4.31.0",
+  "lake_manifest_sha256": "6f226b135055dccff3e733abfc465a026f8ded1e6e235408365b54193186665d",
+  "modules": [
+    "Mathlib.Logic.Basic",
+    "Mathlib.Logic.Function.Basic",
+    "Mathlib.Algebra.Group.Defs",
+    "Mathlib.Data.Nat.Basic"
+  ],
+  "original_theorem_declarations": 1033,
+  "public_theorem_population": 857,
+  "public_by_module": {
+    "Mathlib.Algebra.Group.Defs": 354,
+    "Mathlib.Logic.Function.Basic": 245,
+    "Mathlib.Logic.Basic": 243,
+    "Mathlib.Data.Nat.Basic": 15
+  },
+  "selected": 857,
+  "seed": 814732,
+  "protocol": "Public original-theorem declarations in four fixed owner modules; lowest SHA256(seed/module/name), before any body/feature filtering; one all-ones ground universe instantiation per theorem.",
+  "trust_mode": "dependency-closed; genuine axioms explicit; opaque bodies required and checked",
+  "enumeration_seconds": 4.311592147998454,
+  "scope": "Budgeted module population/sample, not a full-mathlib denominator."
+}

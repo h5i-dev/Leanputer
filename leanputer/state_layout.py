@@ -1,8 +1,14 @@
 """Version-one operational state serialization; no checking or normalization."""
 import torch
+import hashlib
+import json
 
 from .bitvec import pack_words, unpack_words
 from .machine_spec import FRAME_FIELDS, HEAP_FIELDS, REGISTERS
+
+
+def state_digest(state):
+    return hashlib.sha256(json.dumps(state, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 class StateLayout:
@@ -36,6 +42,8 @@ class StateLayout:
         return torch.tensor([pack_words(words, self.widths)], dtype=torch.float32, device='cpu')
 
     def decode(self, bits):
+        if len(bits) != self.width or any(bit not in (0, 1) for bit in bits):
+            raise ValueError('operational state must contain exactly Boolean bits; no rounding')
         words = unpack_words(bits, self.widths)
         state = dict(regs=dict(zip(REGISTERS, words[:len(REGISTERS)])))
         offset = len(REGISTERS)
@@ -44,3 +52,13 @@ class StateLayout:
             state[bank] = [words[offset+i*fields:offset+(i+1)*fields] for i in range(capacity)]
             offset += capacity*fields
         return state
+
+
+class RegisterLayout:
+    """Fixed projection of the public state onto control registers only."""
+    def __init__(self, state_layout):
+        self.config = state_layout.config
+        self.fields = [(name, width) for name, width in state_layout.fields if '/' not in name]
+        self.width = sum(width for _, width in self.fields)
+        self.names = state_layout.names[:self.width]
+        self.slices = {name: state_layout.slices[name] for name, _ in self.fields}
