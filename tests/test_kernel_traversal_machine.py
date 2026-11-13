@@ -7,9 +7,10 @@ from copy import deepcopy
 import unittest
 from dataclasses import replace
 from leanputer.bitvec import pack_words, unpack_words
-from leanputer.kernel.arena import Arena, LocalContext, Tag
+from leanputer.kernel.arena import Arena, KernelError, LocalContext, Tag
 from leanputer.kernel.operations import abstract, has_constant, instantiate, lift
 from leanputer.kernel.reduction import BetaZeta
+from leanputer.kernel.telescope import fold_telescope, open_telescope
 from leanputer.kernel import traversal_machine as spec
 from leanputer.kernel import traversal_transition as weighted
 
@@ -53,6 +54,18 @@ def cases():
     docs.append(spec.document(z, let, spec.Task.BETA_ZETA))
     stuck = z.app(z.mk(Tag.LAM, ty, const), (z.const(41), z.const(43)))
     docs.append(spec.document(z, stuck, spec.Task.BETA_ZETA))
+    z = Arena()
+    ctx = LocalContext(z)
+    ty = z.mk(Tag.SORT, z.level(2, z.zero))
+    carrier = ctx.fresh(ty, binder_info=1)
+    first = ctx.fresh(carrier)
+    second = ctx.fresh(carrier, binder_info=3)
+    telescope = fold_telescope(z, ctx, (carrier, first, second), carrier)
+    docs.append(spec.document(z, telescope, spec.Task.OPEN_TELESCOPE))
+    docs.append(spec.document(z, telescope, spec.Task.OPEN_TELESCOPE, limit=2))
+    docs.append(spec.document(z, telescope, spec.Task.OPEN_TELESCOPE, limit=4))
+    docs.append(spec.document(z, z.mk(Tag.BVAR, 0), spec.Task.VARIABLE_SCOPE))
+    docs.append(spec.document(z, z.mk(Tag.LOCAL, 37), spec.Task.OPEN_TELESCOPE))
     for i, doc in enumerate(docs):
         doc['name'] = f'kernel-operation-{i}'
     return docs
@@ -97,11 +110,18 @@ class CircuitHarness:
         return state
 
 
-def canonical_result(state, original):
+def canonical_heap(state, original, local_replacements=None):
     """Posthoc structural decoding, never used by prepare or a transition."""
     mapping = {0: 0}
+    local_replacements = local_replacements or {}
     for i in range(1, state['regs']['free']):
         tag, a, b, c = state['heap'][i]
+        if tag == spec.LOCAL_DECL_TAG:
+            mapping[i] = None
+            continue
+        if tag == Tag.LOCAL and a in local_replacements:
+            mapping[i] = local_replacements[a]
+            continue
         if tag in (Tag.APP, Tag.PI, Tag.LAM):
             a, b = mapping[a], mapping[b]
         elif tag == Tag.LET:
@@ -111,7 +131,11 @@ def canonical_result(state, original):
         elif tag == Tag.MDATA:
             a = mapping[a]
         mapping[i] = original.mk(tag, a, b, c)
-    return mapping[state['regs']['r']]
+    return mapping
+
+
+def canonical_result(state, original):
+    return canonical_heap(state, original)[state['regs']['r']]
 
 
 class TraversalTransitionTest(unittest.TestCase):
@@ -135,13 +159,34 @@ class TraversalTransitionTest(unittest.TestCase):
             # allocate outputs only in this posthoc verification arena.
             a.limits = replace(a.limits, expressions=cfg.heap*2, vector_cells=4096)
             status = state['regs']['status']
-            if doc['name'] == 'kernel-operation-6':
-                self.assertEqual((status, state['regs']['reason']), (spec.Outcome.RESOURCE, spec.Reason.INDEX))
+            failures = {6: (spec.Outcome.RESOURCE, spec.Reason.INDEX),
+                13: (spec.Outcome.INVALID, spec.Reason.EXPECT_PI),
+                14: (spec.Outcome.INVALID, spec.Reason.SCOPE),
+                15: (spec.Outcome.INVALID, spec.Reason.SCOPE)}
+            index = int(doc['name'].rsplit('-', 1)[-1])
+            if index in failures:
+                self.assertEqual((status, state['regs']['reason']), failures[index])
                 continue
             self.assertEqual(status, spec.Outcome.DONE)
             task = spec.Task[doc['task']]
             if task == spec.Task.OCCURS:
                 self.assertEqual(bool(state['regs']['found']), has_constant(a, root, doc['operands']))
+            elif task == spec.Task.OPEN_TELESCOPE:
+                context = LocalContext(a)
+                opened = open_telescope(a, context, root, lambda ref: ref, count=doc.get('limit'))
+                self.assertEqual(state['regs']['ctx'], len(opened.locals))
+                replacements = {}
+                records = [state['heap'][state['context'][i][0]] for i in range(state['regs']['ctx'])]
+                for record, local in zip(records, opened.locals):
+                    self.assertEqual(record[0], spec.LOCAL_DECL_TAG)
+                    native_local = state['heap'][record[1]]
+                    self.assertEqual(native_local[0], Tag.LOCAL)
+                    replacements[native_local[1]] = local
+                mapping = canonical_heap(state, a, replacements)
+                self.assertEqual(mapping[state['regs']['r']], opened.body)
+                for record, local in zip(records, opened.locals):
+                    self.assertEqual(mapping[record[2]], context.lookup(local).type)
+                    self.assertEqual(record[3], context.lookup(local).binder_info)
             else:
                 if task == spec.Task.LIFT:
                     expected = lift(a, root, doc.get('amount', 0), doc.get('cutoff', 0))
@@ -155,6 +200,31 @@ class TraversalTransitionTest(unittest.TestCase):
                 self.assertEqual(canonical_result(state, a), expected)
             self.assertEqual(state['regs']['sp'], 0)
         self.assertTrue(circuit.assert_length)
+
+    def test_telescope_physical_context_and_fuel_bounds(self):
+        cfg = spec.MachineConfig(heap=64, stack=16, context=8, constants=2, fuel=512, word_bits=8)
+        a = Arena()
+        ty = a.mk(Tag.SORT, a.zero)
+        root = ty
+        for _ in range(9):
+            root = a.mk(Tag.PI, ty, root)
+        doc = spec.document(a, root, spec.Task.OPEN_TELESCOPE)
+        for capacity, expected in ((cfg, spec.Reason.CONTEXT), (replace(cfg, fuel=1), spec.Reason.FUEL)):
+            state = spec.prepare(capacity, *spec.parse_document(doc))
+            machine = spec.SpecMachine(capacity, state)
+            circuit = CircuitHarness(capacity)
+            for step in range(capacity.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (expected, step))
+                state = actual
+                if state['regs']['status']:
+                    break
+            self.assertEqual((state['regs']['status'], state['regs']['reason']), (spec.Outcome.RESOURCE, expected))
+            self.assertEqual(circuit.step(state), state)
+        # Internal substitution calls are inaccessible to raw operation input.
+        internal = spec.document(a, root, spec.Task.INSTANTIATE_ONE)
+        with self.assertRaises(KernelError):
+            spec.parse_document(internal)
 
 
 if __name__ == '__main__':

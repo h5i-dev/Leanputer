@@ -229,7 +229,7 @@ semantics to invent from examples.
 |---|---|---|
 | Arena/syntax/scopes | `kernel/arena.py`: immutable all-tag Expr/Level/vector arenas and scoped Local identities; `environment.py`: private overlay/rechecking and atomic publication (spec) | integrated native ABI/lowering |
 | Original-scheme input | `ExportKernel.lean` and `kernel/syntax.py`: syntax-only complete-tag/scheme/mutual-block transport, explicit recursor claims and unavailable rows | integrate the complete checked-environment/native driver; see [input.md](input.md) |
-| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversal controller plus beta/zeta-to-substitution internal calls | lower symbolic levels, scopes and dependent telescope services; connect full kernel callers |
+| Substitution/traversal | `kernel/operations.py`, `telescope.py`: iterative all-tag lift/instantiate/abstract, symbolic-level substitution, scope/occurrence checks, dependent telescope open/fold (spec); `traversal_transition.py`: stock traversals, beta/zeta and declared-telescope opening through shared substitution/private calls | lower symbolic levels, full scopes and telescope fold/callers; connect full kernel |
 | Expression/universe checking | `kernel/levels.py`: symbolic normalization/equality/order/nonzero; `services.py`: dependent Pi/Lam/App/Let inference, delta and constructor-headed recursor WHNF, positive congruence with explicit conversion gaps (spec) | complete typed conversion, projection/K/eta/literal/Quot services and stock integration |
 | Declaration admission | `kernel/positivity.py`, `admission.py`: general core checks; `nested.py`: queue/mutual specialization/closure/template and restoration operations; `environment.py`: checking/rechecking/private staging and atomic publication (spec) | complete internal conversion/projection/K/primitive services and stock integration |
 | Recursor generation/reduction | `kernel/recursor.py`: general motives/minors/rules for private checked descriptors; constructor-headed rule application (spec) | admission integration, checked K/structure/literal major handling; stock lowering |
@@ -254,6 +254,12 @@ The [extended eleven-operation smoke](../../benchmarks/kernel-expression-service
 also verifies beta/literal-Let/metadata reduction through the same substitution
 walk and private continuation stack. Checked-environment/local-let lookup,
 recursor/projection/K/eta/literal/Quot rules are not part of that subservice.
+The [sixteen-operation stock smoke](../../benchmarks/kernel-telescope-stock/README.md)
+also verifies closed-variable scope and declared dependent telescope opening/
+prefix consumption. Local/type/binder-info records are produced inside weights.
+This scope subservice checks BVars/Locals; universe membership and type checking
+remain separate unfinished weighted services. No field-count semantic dispatch
+or supplied inferred types enter the operation.
 `BetaZeta` implements
 only its named WHNF subservice. Positivity and generation call internal services
 whose complete checking implementations are still missing; their focused unit

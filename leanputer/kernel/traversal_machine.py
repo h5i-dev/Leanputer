@@ -30,6 +30,9 @@ class Reason(IntEnum):
     STACK = 3
     INDEX = 4
     FUEL = 5
+    SCOPE = 6
+    CONTEXT = 7
+    EXPECT_PI = 8
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
 
@@ -40,6 +43,8 @@ class Task(IntEnum):
     OCCURS = 3
     BETA_ZETA = 4
     INSTANTIATE_ONE = 5          # Internal service call, no proof-data entry.
+    OPEN_TELESCOPE = 6          # Declared Pi prefix, closed raw syntax input.
+    VARIABLE_SCOPE = 7          # BVar/Local scope only, not universe checking.
 
 
 class Mode(IntEnum):
@@ -48,15 +53,19 @@ class Mode(IntEnum):
     RESUME = 2
     FIND = 3
     BETA_ZETA = 4
+    TELESCOPE = 5
+    BINDER_RECORD = 6
 
 
 CALL_BETA_ZETA = 16
 PENDING_ARGUMENT = 17
+CALL_TELESCOPE = 18
+LOCAL_DECL_TAG = 32             # Internal record, never an input Expr tag.
 
 
 REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
-    'count', 'i', 'found', 'root', 'substitution')
+    'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -78,7 +87,7 @@ class MachineConfig:
                 raise ValueError('memory capacities must be powers of two >=2')
         if type(self.fuel) is not int or self.fuel < 1:
             raise ValueError('positive fuel required')
-        if not 4 <= self.word_bits <= 21 or max(self.heap, self.stack, self.context, self.constants) >= 1 << self.word_bits:
+        if not 6 <= self.word_bits <= 21 or max(self.heap, self.stack, self.context, self.constants) >= 1 << self.word_bits:
             raise ValueError('memory pointers do not fit word width')
 
 
@@ -163,9 +172,14 @@ def parse_document(doc):
             a.expr(value)
     elif task == Task.ABSTRACT and any(not v for v in operands):
         raise KernelError('zero local identity')
+    if task in (Task.OPEN_TELESCOPE, Task.VARIABLE_SCOPE) and operands:
+        raise KernelError('closed variable-scope/telescope entry has no outer locals')
+    limit = doc.get('limit')
+    if limit is not None:
+        a.word(limit)
     request = dict(arena=a, root=doc['root'], task=task, operands=operands,
         delta=a.word(doc.get('amount', 0)), cutoff=a.word(doc.get('cutoff', 0)),
-        start=a.word(doc.get('start', 0)))
+        start=a.word(doc.get('start', 0)), limit=limit)
     return request, None, ()
 
 
@@ -175,6 +189,8 @@ def prepare(config, request, _unused=None, _declarations=()):
         raise ResourceError('input arena/vector capacity')
     words = [v for row in a.rows[1:] for v in (int(row.tag), row.a, row.b, row.c)]
     words += list(operands)+[request[n] for n in ('delta', 'cutoff', 'start')]
+    if request['limit'] is not None:
+        words.append(request['limit'])
     if any(v >= 1 << config.word_bits for v in words):
         raise ResourceError('input word width')
     state = {'regs': dict.fromkeys(REGISTERS, 0)}
@@ -187,6 +203,9 @@ def prepare(config, request, _unused=None, _declarations=()):
         **{n: request[n] for n in ('delta', 'cutoff', 'start')})
     if request['task'] == Task.BETA_ZETA:
         state['regs']['mode'] = int(Mode.BETA_ZETA)
+    if request['task'] == Task.OPEN_TELESCOPE:
+        state['regs'].update(task=int(Task.VARIABLE_SCOPE), pending_open=1,
+            bounded=int(request['limit'] is not None), limit=request['limit'] or 0)
     return state
 
 
@@ -224,17 +243,23 @@ class SpecMachine:
                 stop(Outcome.RESOURCE, Reason.INDEX)
                 return False
             return True
-        if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context
-                or r['mode'] > Mode.BETA_ZETA or r['task'] > Task.INSTANTIATE_ONE):
+        if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
+                or r['mode'] > Mode.BINDER_RECORD or r['task'] > Task.VARIABLE_SCOPE
+                or r['bounded'] > 1 or r['pending_open'] > 1):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
-                stop(Outcome.DONE)
+                if r['pending_open']:
+                    r.update(mode=Mode.TELESCOPE, x=r['root'], task=Task.OPEN_TELESCOPE, depth=0, pending_open=0)
+                else:
+                    stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
                 if phase == CALL_BETA_ZETA:
                     r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA, x=r['r'], depth=0, task=Task.BETA_ZETA)
+                elif phase == CALL_TELESCOPE:
+                    r.update(sp=r['sp']-1, mode=Mode.TELESCOPE, x=r['r'], depth=0, task=Task.OPEN_TELESCOPE)
                 elif phase == PENDING_ARGUMENT:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
                 else:
@@ -248,6 +273,33 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if r['mode'] == Mode.TELESCOPE:
+            if r['bounded'] and r['ctx'] == r['limit']:
+                ret(r['x'])
+            elif tag != Tag.PI:
+                if r['bounded']: stop(Outcome.INVALID, Reason.EXPECT_PI)
+                else: ret(r['x'])
+            elif r['ctx'] >= cfg.context:
+                stop(Outcome.RESOURCE, Reason.CONTEXT)
+            elif r['sp'] >= cfg.stack:
+                stop(Outcome.RESOURCE, Reason.STACK)
+            elif r['free']+1 >= cfg.heap:
+                stop(Outcome.RESOURCE, Reason.HEAP)
+            else:
+                local = r['free']
+                s['heap'][local] = [Tag.LOCAL, local, 0, 0]
+                r.update(free=local+1, r=local, mode=Mode.BINDER_RECORD)
+            return s
+        if r['mode'] == Mode.BINDER_RECORD:
+            # The Local is already allocated. Its UID is its immutable arena
+            # address, hence fresh relative to every earlier generated Local.
+            record = r['free']
+            s['heap'][record] = [LOCAL_DECL_TAG, r['r'], a, c]
+            s['context'][r['ctx']] = [record]
+            s['stack'][r['sp']] = [CALL_TELESCOPE, 0, 0, Task.OPEN_TELESCOPE, 0, 0]
+            r.update(free=record+1, ctx=r['ctx']+1, sp=r['sp']+1,
+                mode=Mode.WALK, x=b, depth=0, task=Task.INSTANTIATE_ONE, substitution=r['r'])
+            return s
         if r['mode'] == Mode.BETA_ZETA:
             if tag == Tag.MDATA:
                 r['x'] = a
@@ -332,6 +384,8 @@ class SpecMachine:
             else:
                 s['stack'][r['sp']] = [1, r['x'], depth, task, 0, 0]
                 r.update(sp=r['sp']+1, mode=Mode.WALK, x=child_list[0])
+        elif task == Task.VARIABLE_SCOPE and (tag == Tag.LOCAL or tag == Tag.BVAR and a >= depth):
+            stop(Outcome.INVALID, Reason.SCOPE)
         elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE, Task.INSTANTIATE_ONE):
             start = 0 if task == Task.INSTANTIATE_ONE else r['cutoff'] if task == Task.LIFT else r['start']
             count = 1 if task == Task.INSTANTIATE_ONE else r['count']
@@ -368,7 +422,7 @@ def assumptions(_):
     return []
 
 
-program_name = 'kernel.general-expression-services.v2'
+program_name = 'kernel.general-telescope-services.v3'
 constant_fields = 6
 first_banks = (('heap', 1), ('stack', 1))
 second_banks = ('context',)
