@@ -58,3 +58,9 @@ calling the same level operation for Sort and every Const universe argument.
 A length-driven vector loop uses private value/return frames; its empty and
 unchanged paths retain original syntax. Symbolic normalization, conversion and
 checked-environment callers still need integrated lowering.
+
+Additional raw `level_roots` can be transported as operation operands without
+fabricating declaration types or binding answers. The shared consumers now
+include structural equality, symbolic nonzero, checked successor separation and
+complete smart Max/IMax constructors. These remain operation services; canonical
+normalization, full inference and source admission are unfinished.

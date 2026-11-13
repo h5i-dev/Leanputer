@@ -54,6 +54,12 @@ class Task(IntEnum):
     LEVEL_SCOPE = 11            # Internal typed-cell level walk/membership.
     LEVEL_SUBSTITUTE = 12       # Simultaneous raw level substitution.
     EXPR_LEVEL_SUBSTITUTE = 13  # All Expr tags; Sort/Const call the same level op.
+    LEVEL_EQUAL = 14            # Structural equality, NOT definitional equality.
+    LEVEL_NOT_ZERO = 15         # Source necessarily-nonzero predicate.
+    LEVEL_OFFSET = 16           # Strip Succ and return (r, level_offset).
+    LEVEL_MAX = 17              # Pinned smart constructor, two raw operands.
+    LEVEL_IMAX = 18             # Same source constructor, calls MAX/nonzero.
+
 
 
 class Mode(IntEnum):
@@ -76,6 +82,15 @@ class Mode(IntEnum):
     CONST_RESULT = 16
     CONST_BUILD = 17
     CONST_FINISH = 18
+    LEVEL_EQUAL_RIGHT = 19
+    MAX_LEFT = 20
+    MAX_RIGHT = 21
+    MAX_RIGHT_CHILDREN = 22
+    MAX_LEFT_CHILDREN = 23
+    MAX_EQUAL_RESULT = 24
+    IMAX_LEFT = 25
+    IMAX_ONE = 26
+    IMAX_RIGHT = 27
 
 
 CALL_BETA_ZETA = 16
@@ -85,6 +100,13 @@ CALL_FOLD = 19
 CALL_SORT_LEVEL = 20
 CALL_CONST_LEVEL = 21
 VECTOR_VALUE = 22
+LEVEL_EQUAL_SECOND = 23
+LEVEL_OR_SECOND = 24
+CALL_MAX_COMPARE = 25
+CALL_MAX_LEFT_OFFSET = 26
+CALL_MAX_RIGHT_OFFSET = 27
+CALL_IMAX_NONZERO = 28
+CALL_IMAX_COMPARE = 29
 LOCAL_DECL_TAG = int(CellTag.LOCAL_DECL)  # Internal record, never an input Expr.
 
 
@@ -93,7 +115,9 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open',
     'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag',
     'arg_base', 'parameter', 'lookup_level', 'const_original', 'expr_depth',
-    'vec_length', 'vec_left', 'vec_build', 'vec_head', 'vec_changed', 'vector_result')
+    'vec_length', 'vec_left', 'vec_build', 'vec_head', 'vec_changed', 'vector_result',
+    'peer', 'left_tag', 'left_a', 'left_b', 'level_offset', 'pending_compare',
+    'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -192,7 +216,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -279,9 +303,9 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.CONST_FINISH or r['task'] > Task.EXPR_LEVEL_SUBSTITUTE
+                or r['mode'] > Mode.IMAX_RIGHT or r['task'] > Task.LEVEL_IMAX
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
-                or r['vec_changed'] > 1
+                or r['vec_changed'] > 1 or r['pending_compare'] > 1
                 or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
@@ -296,6 +320,8 @@ class SpecMachine:
                 elif r['pending_fold']:
                     r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
                         task=Task.FOLD_TELESCOPE, pending_fold=0)
+                elif r['pending_compare']:
+                    r.update(mode=Mode.WALK, x=r['r'], task=Task.LEVEL_EQUAL, pending_compare=0)
                 else:
                     stop(Outcome.DONE)
             else:
@@ -310,6 +336,35 @@ class SpecMachine:
                     r.update(sp=r['sp']-1, mode=Mode.SORT_RESULT, x=original, depth=depth, task=Task.EXPR_LEVEL_SUBSTITUTE)
                 elif phase == CALL_CONST_LEVEL:
                     r.update(sp=r['sp']-1, mode=Mode.CONST_RESULT, x=original, depth=depth, task=Task.EXPR_LEVEL_SUBSTITUTE)
+                elif phase == CALL_MAX_COMPARE:
+                    r.update(sp=r['sp']-1, mode=Mode.MAX_EQUAL_RESULT, x=r['constructor_left'] if first == 3 else r['constructor_right'],
+                             task=Task.LEVEL_MAX, constructor_stage=first)
+                elif phase == CALL_MAX_LEFT_OFFSET:
+                    s['stack'][r['sp']-1] = [CALL_MAX_RIGHT_OFFSET, 0, 0, Task.LEVEL_MAX, 0, 0]
+                    r.update(left_base=r['r'], left_offset=r['level_offset'], level_offset=0,
+                             task=Task.LEVEL_OFFSET, mode=Mode.WALK, x=r['constructor_right'])
+                elif phase == CALL_MAX_RIGHT_OFFSET:
+                    s['stack'][r['sp']-1] = [CALL_MAX_COMPARE, 0, 0, Task.LEVEL_MAX, 5, 0]
+                    r.update(right_offset=r['level_offset'], peer=r['r'], x=r['left_base'],
+                             task=Task.LEVEL_EQUAL, mode=Mode.WALK)
+                elif phase == CALL_IMAX_NONZERO:
+                    r['sp'] -= 1
+                    if r['r']:
+                        r.update(mode=Mode.WALK, x=r['constructor_left'], peer=r['constructor_right'], task=Task.LEVEL_MAX)
+                    else:
+                        r.update(mode=Mode.IMAX_RIGHT, x=r['constructor_right'], task=Task.LEVEL_IMAX)
+                elif phase == CALL_IMAX_COMPARE:
+                    r['sp'] -= 1
+                    if r['r']: ret(r['constructor_left'])
+                    else: alloc((CellTag.LEVEL_IMAX, r['constructor_left'], r['constructor_right'], 0))
+                elif phase == LEVEL_EQUAL_SECOND:
+                    r['sp'] -= 1
+                    if not r['r']: ret(0)
+                    else: r.update(mode=Mode.WALK, x=original, peer=depth, task=Task.LEVEL_EQUAL)
+                elif phase == LEVEL_OR_SECOND:
+                    r['sp'] -= 1
+                    if r['r']: ret(1)
+                    else: r.update(mode=Mode.WALK, x=original, task=Task.LEVEL_NOT_ZERO)
                 elif phase == PENDING_ARGUMENT:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
                 else:
@@ -320,7 +375,7 @@ class SpecMachine:
             return s
         tag, a, b, c = s['heap'][r['x']]
         level_scope = r['task'] == Task.LEVEL_SCOPE
-        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE)
+        level_task = r['task'] in (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX)
         valid_tag = (tag == LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else
             tag == CellTag.LEVEL_BINDING if r['mode'] == Mode.LEVEL_BINDING else
             tag == CellTag.VECTOR if r['mode'] == Mode.CONST_VECTOR else
@@ -330,6 +385,105 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        def call_level(phase, task, left, right=0, stage=0):
+            if r['sp'] >= cfg.stack:
+                stop(Outcome.RESOURCE, Reason.STACK)
+            else:
+                s['stack'][r['sp']] = [phase, 0, 0, Task.LEVEL_MAX, stage, 0]
+                r.update(sp=r['sp']+1, mode=Mode.WALK, task=task, x=left, peer=right)
+        def max_offset():
+            call_level(CALL_MAX_LEFT_OFFSET, Task.LEVEL_OFFSET, r['constructor_left'])
+            # The counter belongs to this service invocation, not caller data.
+            if not r['status']: r['level_offset'] = 0
+        if r['task'] in (Task.LEVEL_MAX, Task.LEVEL_IMAX):
+            left, right = r['constructor_left'], r['constructor_right']
+            if r['mode'] == Mode.WALK:
+                if not 0 < r['peer'] < r['free']: stop(Outcome.INVALID, Reason.SYNTAX)
+                else:
+                    r.update(constructor_left=r['x'], constructor_right=r['peer'])
+                    if r['task'] == Task.LEVEL_MAX: r['mode'] = Mode.MAX_LEFT
+                    else: call_level(CALL_IMAX_NONZERO, Task.LEVEL_NOT_ZERO, r['peer'])
+            elif r['mode'] == Mode.MAX_LEFT:
+                if tag == CellTag.LEVEL_ZERO: ret(right)
+                else: r.update(mode=Mode.MAX_RIGHT, x=right)
+            elif r['mode'] == Mode.MAX_RIGHT:
+                if tag == CellTag.LEVEL_ZERO: ret(left)
+                else: call_level(CALL_MAX_COMPARE, Task.LEVEL_EQUAL, left, right)
+            elif r['mode'] == Mode.MAX_RIGHT_CHILDREN:
+                if tag == CellTag.LEVEL_MAX: call_level(CALL_MAX_COMPARE, Task.LEVEL_EQUAL, left, a, stage=1)
+                else: r.update(mode=Mode.MAX_LEFT_CHILDREN, x=left)
+            elif r['mode'] == Mode.MAX_LEFT_CHILDREN:
+                if tag == CellTag.LEVEL_MAX: call_level(CALL_MAX_COMPARE, Task.LEVEL_EQUAL, right, a, stage=3)
+                else: max_offset()
+            elif r['mode'] == Mode.MAX_EQUAL_RESULT:
+                stage, equal = r['constructor_stage'], bool(r['r'])
+                if stage == 0:
+                    if equal: ret(left)
+                    else: r.update(mode=Mode.MAX_RIGHT_CHILDREN, x=right)
+                elif stage in (1, 2):
+                    if equal: ret(right)
+                    elif stage == 1: call_level(CALL_MAX_COMPARE, Task.LEVEL_EQUAL, left, b, stage=2)
+                    else: r.update(mode=Mode.MAX_LEFT_CHILDREN, x=left)
+                elif stage in (3, 4):
+                    if equal: ret(left)
+                    elif stage == 3:
+                        # MAX comparison return selects the corresponding raw
+                        # node, so the current b is the LEFT Max RHS here.
+                        call_level(CALL_MAX_COMPARE, Task.LEVEL_EQUAL, right, b, stage=4)
+                    else: max_offset()
+                elif stage == 5:
+                    if equal: ret(left if r['left_offset'] >= r['right_offset'] else right)
+                    else: alloc((CellTag.LEVEL_MAX, left, right, 0))
+                else: stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['mode'] == Mode.IMAX_RIGHT:
+                if tag == CellTag.LEVEL_ZERO: ret(right)
+                else: r.update(mode=Mode.IMAX_LEFT, x=left)
+            elif r['mode'] == Mode.IMAX_LEFT:
+                if tag == CellTag.LEVEL_ZERO: ret(right)
+                elif tag == CellTag.LEVEL_SUCC: r.update(mode=Mode.IMAX_ONE, x=a)
+                else: call_level(CALL_IMAX_COMPARE, Task.LEVEL_EQUAL, left, right)
+            elif r['mode'] == Mode.IMAX_ONE:
+                if tag == CellTag.LEVEL_ZERO: ret(right)
+                else: call_level(CALL_IMAX_COMPARE, Task.LEVEL_EQUAL, left, right)
+            else: stop(Outcome.INVALID, Reason.SYNTAX)
+            return s
+        # Reusable source-level predicates consume data DAGs, not names/shapes.
+        if r['task'] == Task.LEVEL_EQUAL:
+            if r['mode'] == Mode.WALK:
+                if not 0 < r['peer'] < r['free']:
+                    stop(Outcome.INVALID, Reason.SYNTAX)
+                elif r['x'] == r['peer']:
+                    ret(1)
+                else:
+                    r.update(mode=Mode.LEVEL_EQUAL_RIGHT, left_tag=tag, left_a=a, left_b=b, x=r['peer'])
+            elif r['mode'] == Mode.LEVEL_EQUAL_RIGHT:
+                if tag != r['left_tag']: ret(0)
+                elif tag == CellTag.LEVEL_ZERO: ret(1)
+                elif tag == CellTag.LEVEL_PARAM: ret(int(a == r['left_a']))
+                elif tag == CellTag.LEVEL_SUCC:
+                    r.update(mode=Mode.WALK, x=r['left_a'], peer=a)
+                elif r['sp'] >= cfg.stack:
+                    stop(Outcome.RESOURCE, Reason.STACK)
+                else:
+                    s['stack'][r['sp']] = [LEVEL_EQUAL_SECOND, r['left_b'], b, Task.LEVEL_EQUAL, 0, 0]
+                    r.update(sp=r['sp']+1, mode=Mode.WALK, x=r['left_a'], peer=a)
+            else:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            return s
+        if r['task'] == Task.LEVEL_NOT_ZERO:
+            if tag in (CellTag.LEVEL_ZERO, CellTag.LEVEL_PARAM): ret(0)
+            elif tag == CellTag.LEVEL_SUCC: ret(1)
+            elif tag == CellTag.LEVEL_IMAX: r.update(mode=Mode.WALK, x=b)
+            elif r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)
+            else:
+                s['stack'][r['sp']] = [LEVEL_OR_SECOND, b, 0, Task.LEVEL_NOT_ZERO, 0, 0]
+                r.update(sp=r['sp']+1, mode=Mode.WALK, x=a)
+            return s
+        if r['task'] == Task.LEVEL_OFFSET:
+            if tag != CellTag.LEVEL_SUCC: ret(r['x'])
+            elif bounded(r['level_offset']+1):
+                r.update(mode=Mode.WALK, x=a, level_offset=r['level_offset']+1)
+            return s
         if r['mode'] == Mode.SORT_RESULT:
             if tag != Tag.SORT:
                 stop(Outcome.INVALID, Reason.SYNTAX)

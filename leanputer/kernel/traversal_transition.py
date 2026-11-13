@@ -4,10 +4,11 @@ Stock Qwen3.5/GatedDeltaNet emission is provided by native_machine. This module
 has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
+from . import level_constructor_rules
 from .arena import Tag
 from .native_cells import CellTag, VectorKind
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
-    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, VECTOR_VALUE, LOCAL_DECL_TAG,
+    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, VECTOR_VALUE, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND, LOCAL_DECL_TAG,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
     program_name, constant_fields, first_banks, second_banks, primitive_basis)
 
@@ -65,9 +66,9 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.CONST_FINISH, self.r['mode']), self.lt(Task.EXPR_LEVEL_SUBSTITUTE, self.r['task']),
+            self.lt(Mode.IMAX_RIGHT, self.r['mode']), self.lt(Task.LEVEL_IMAX, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
-            self.lt(1, self.r['vec_changed']),
+            self.lt(1, self.r['vec_changed']), self.lt(1, self.r['pending_compare']),
             self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
             self.NOT(self.OR(self.eq(self.r['fold_tag'], Tag.PI), self.eq(self.r['fold_tag'], Tag.LAM))))
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
@@ -83,7 +84,8 @@ class RuleCompiler:
         binding_record = self.eq(self.r['mode'], Mode.LEVEL_BINDING)
         vector_header = self.eq(self.r['mode'], Mode.CONST_VECTOR)
         vector_cell = self.OR(self.eq(self.r['mode'], Mode.CONST_CELL), self.eq(self.r['mode'], Mode.CONST_RESULT))
-        level_scope = self.OR(self.eq(self.r['task'], Task.LEVEL_SCOPE), self.eq(self.r['task'], Task.LEVEL_SUBSTITUTE))
+        level_scope = self.OR(*(self.eq(self.r['task'], task) for task in
+            (Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX)))
         expression_tag_bad = self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
         level_tag_bad = self.OR(self.lt(self.read['node']['tag'], CellTag.LEVEL_ZERO), self.lt(CellTag.LEVEL_PARAM, self.read['node']['tag']))
         tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
@@ -152,7 +154,10 @@ class RuleCompiler:
         after_open = self.AND(top_return, self.eq(r['pending_open'], 0))
         start_fold = self.AND(after_open, self.NOT(self.eq(r['pending_fold'], 0)))
         self.emit(start_fold, mode=Mode.FOLD_SELECT, x=result, fold_body=result, task=Task.FOLD_TELESCOPE, pending_fold=0)
-        self.stop(self.AND(after_open, self.eq(r['pending_fold'], 0)), Outcome.DONE)
+        after_fold = self.AND(after_open, self.eq(r['pending_fold'], 0))
+        self.emit(self.AND(after_fold, self.NOT(self.eq(r['pending_compare'], 0))),
+            mode=Mode.WALK, x=result, task=Task.LEVEL_EQUAL, pending_compare=0)
+        self.stop(self.AND(after_fold, self.eq(r['pending_compare'], 0)), Outcome.DONE)
         internal_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_BETA_ZETA))
         self.emit(internal_return, sp=top, mode=Mode.BETA_ZETA, x=result, depth=0, task=Task.BETA_ZETA)
         telescope_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_TELESCOPE))
@@ -163,10 +168,58 @@ class RuleCompiler:
         self.emit(sort_return, sp=top, mode=Mode.SORT_RESULT, x=frame['original'], depth=frame['depth'], task=Task.EXPR_LEVEL_SUBSTITUTE)
         const_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_CONST_LEVEL))
         self.emit(const_return, sp=top, mode=Mode.CONST_RESULT, x=frame['original'], depth=frame['depth'], task=Task.EXPR_LEVEL_SUBSTITUTE)
+        compare_return = self.AND(returning, nonempty, self.eq(frame['phase'], LEVEL_EQUAL_SECOND))
+        self.emit(compare_return, sp=top)
+        self.ret(self.AND(compare_return, self.eq(result, 0)), 0)
+        self.emit(self.AND(compare_return, self.NOT(self.eq(result, 0))),
+            mode=Mode.WALK, x=frame['original'], peer=frame['depth'], task=Task.LEVEL_EQUAL)
+        or_return = self.AND(returning, nonempty, self.eq(frame['phase'], LEVEL_OR_SECOND))
+        self.emit(or_return, sp=top)
+        self.ret(self.AND(or_return, self.NOT(self.eq(result, 0))), 1)
+        self.emit(self.AND(or_return, self.eq(result, 0)), mode=Mode.WALK, x=frame['original'], task=Task.LEVEL_NOT_ZERO)
         private_phase = self.OR(*(self.eq(frame['phase'], value) for value in
-            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL)))
+            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES))
         self.emit(self.AND(returning, nonempty, self.NOT(private_phase)), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
+
+        # Structural == walks pairs. A native allocation can duplicate a DAG;
+        # address identity is only a fast path, never the complete predicate.
+        comparing = self.AND(self.mode(Mode.WALK), self.task(Task.LEVEL_EQUAL))
+        peer_ok = self.AND(self.NOT(self.eq(r['peer'], 0)), self.lt(r['peer'], r['free']))
+        self.stop(self.AND(comparing, self.NOT(peer_ok)), Outcome.INVALID, Reason.SYNTAX)
+        comparing = self.AND(comparing, peer_ok)
+        identical = self.eq(x, r['peer'])
+        self.ret(self.AND(comparing, identical), 1)
+        self.emit(self.AND(comparing, self.NOT(identical)), mode=Mode.LEVEL_EQUAL_RIGHT,
+            left_tag=node['tag'], left_a=a, left_b=b, x=r['peer'])
+        right = self.mode(Mode.LEVEL_EQUAL_RIGHT)
+        same_tag = self.eq(node['tag'], r['left_tag'])
+        self.ret(self.AND(right, self.NOT(same_tag)), 0)
+        right = self.AND(right, same_tag)
+        self.ret(self.AND(right, self.tag(CellTag.LEVEL_ZERO)), 1)
+        self.ret(self.AND(right, self.tag(CellTag.LEVEL_PARAM)), self.mux(self.eq(a, r['left_a']), 1, 0))
+        self.emit(self.AND(right, self.tag(CellTag.LEVEL_SUCC)), mode=Mode.WALK, x=r['left_a'], peer=a)
+        pair = self.AND(right, self.tag(CellTag.LEVEL_MAX, CellTag.LEVEL_IMAX))
+        pair_room = self.lt(r['sp'], self.cfg.stack)
+        self.stop(self.AND(pair, self.NOT(pair_room)), Outcome.RESOURCE, Reason.STACK)
+        pair = self.AND(pair, pair_room)
+        self.write('stack', pair, r['sp'], (LEVEL_EQUAL_SECOND, r['left_b'], b, Task.LEVEL_EQUAL, 0, 0))
+        self.emit(pair, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=r['left_a'], peer=a)
+        not_zero = self.AND(self.mode(Mode.WALK), self.task(Task.LEVEL_NOT_ZERO))
+        self.ret(self.AND(not_zero, self.tag(CellTag.LEVEL_ZERO, CellTag.LEVEL_PARAM)), 0)
+        self.ret(self.AND(not_zero, self.tag(CellTag.LEVEL_SUCC)), 1)
+        self.emit(self.AND(not_zero, self.tag(CellTag.LEVEL_IMAX)), x=b)
+        or_branch = self.AND(not_zero, self.tag(CellTag.LEVEL_MAX))
+        self.stop(self.AND(or_branch, self.NOT(pair_room)), Outcome.RESOURCE, Reason.STACK)
+        or_branch = self.AND(or_branch, pair_room)
+        self.write('stack', or_branch, r['sp'], (LEVEL_OR_SECOND, b, 0, Task.LEVEL_NOT_ZERO, 0, 0))
+        self.emit(or_branch, sp=self.add(r['sp'], 1), x=a)
+        offset = self.AND(self.mode(Mode.WALK), self.task(Task.LEVEL_OFFSET))
+        self.ret(self.AND(offset, self.NOT(self.tag(CellTag.LEVEL_SUCC))), x)
+        increment, next_offset = self.checked_add(self.AND(offset, self.tag(CellTag.LEVEL_SUCC)), r['level_offset'], 1)
+        self.emit(increment, x=a, level_offset=next_offset)
+
+        level_constructor_rules.emit_rules(self)
 
         sorting = self.mode(Mode.SORT_RESULT)
         self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
@@ -346,7 +399,8 @@ class RuleCompiler:
         self.emit(self.AND(expression_level, self.NOT(no_bindings), self.tag(Tag.CONST)),
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
-        walking = self.AND(walking, self.NOT(intercepted))
+        walking = self.AND(walking, self.NOT(intercepted),
+            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX))))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)

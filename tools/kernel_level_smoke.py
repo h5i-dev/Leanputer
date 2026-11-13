@@ -13,17 +13,22 @@ from leanputer.bitvec import unpack_words
 from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from leanputer.native_machine import compile_native_machine
-from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases, expression_cases
+from tests.test_kernel_level_transition import cases, telescope_cases, substitution_cases, expression_cases, predicate_cases, constructor_cases
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--device', default='cuda', choices=('cpu', 'cuda'))
+    parser.add_argument('--group', choices=('syntax', 'constructors'), default='syntax')
     args = parser.parse_args()
     torch.set_num_threads(1)
     cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
-    documents = cases()+telescope_cases()+substitution_cases()+expression_cases()
+    if args.group == 'constructors':
+        predicates, constructors = predicate_cases(), constructor_cases()
+        documents = [predicates[i] for i in (4, 6, 7, 9)]+[constructors[i] for i in (3, 4, 6, 8, 11, 12, 14, 17)]
+    else:
+        documents = cases()+telescope_cases()+substitution_cases()+expression_cases()
     references = []
     for document in documents:
         machine = spec.SpecMachine(cfg, program.prepare(cfg, *program.parse_document(document)))
@@ -62,7 +67,8 @@ def main():
         config=asdict(cfg), device=args.device, compile_seconds=compilation,
         input_documents=documents, exact_register_match=True, exact_cache_match=True,
         verified_cache_banks=verified,
-        validation_scope=f'{len(documents)} typed-memory scope/level-and-expression-substitution/telescope probes; not full typing, declaration admission or mathlib coverage',
+        validation_scope=f'{len(documents)} typed-memory {args.group} operation probes; not full typing, declaration admission or mathlib coverage',
+        operation_group=args.group,
         full_kernel_native_support=False)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2)+'\n')

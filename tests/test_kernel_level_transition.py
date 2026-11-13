@@ -3,6 +3,7 @@ import unittest
 import json
 from pathlib import Path
 from leanputer.kernel.arena import KernelError
+from leanputer.kernel.levels import LevelOps
 from leanputer.kernel.operations import check_scope
 from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
@@ -86,6 +87,45 @@ def expression_cases():
     return docs
 
 
+def predicate_cases():
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    # Complete source operator cases are defined by tags, not datatype fixtures.
+    probes = [
+        dict(operation='equal', level=['max', ['succ', u], v], right=['max', ['succ', u], w]),
+        dict(operation='equal', level=['succ', u], right=['succ', v]),
+        dict(operation='equal', level=['max', u, ['zero']], right=u),
+        dict(operation='equal', level=['imax', u, v], right=['imax', u, v]),
+        dict(operation='substitute_raw_equal', level=['imax', ['max', u, v], ['succ', u]],
+            bindings=[dict(parameter=name('u'), level=w)],
+            right=['imax', ['max', w, v], ['succ', w]]),
+        dict(operation='not_zero', level=['max', u, v]),
+        dict(operation='not_zero', level=['imax', ['succ', u], v]),
+        dict(operation='not_zero', level=['max', ['imax', u, v], ['succ', v]]),
+        dict(operation='not_zero', level=['max', ['succ', u], v]),
+        dict(operation='offset', level=['succ', ['succ', ['imax', u, v]]])]
+    return [dict(format='leanputer.kernel-level-operation.v1', name=f'level-predicate-{i}', **probe)
+            for i, probe in enumerate(probes)]
+
+
+def constructor_cases():
+    z = ['zero']
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    one = ['succ', z]
+    probes = [
+        ('max', z, u), ('max', u, z), ('max', u, u),
+        ('max', u, ['max', v, u]), ('max', ['max', v, u], u),
+        ('max', ['max', u, v], u),
+        ('max', ['succ', ['succ', u]], ['succ', u]),
+        ('max', one, ['succ', one]), ('max', u, v),
+        ('max', ['max', u, v], w), ('max', w, ['max', u, v]),
+        ('imax', u, ['succ', v]), ('imax', u, z), ('imax', z, u),
+        ('imax', one, u), ('imax', ['succ', one], u),
+        ('imax', u, u), ('imax', u, v)]
+    return [dict(format='leanputer.kernel-level-operation.v1', operation=op,
+        name=f'level-constructor-{i}', level=left, right=right)
+        for i, (op, left, right) in enumerate(probes)]
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -153,6 +193,70 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_complete_pinned_smart_level_constructors(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in constructor_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            operation = getattr(LevelOps(source.arena), arguments['operation'])
+            expected = operation(arguments['root_level'], arguments['peer'])
+            levels, _ = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), source.arena)
+            self.assertEqual(levels[state['regs']['r']], expected, doc['name'])
+            self.assertEqual(state['regs']['sp'], 0)
+            self.assertEqual(circuit.step(state), state)
+
+    def test_structural_comparison_nonzero_and_offset_services(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in predicate_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            duplicate_compared = False
+            for step in range(cfg.fuel+2):
+                r = state['regs']
+                if r['pending_compare'] and r['mode'] == spec.Mode.RETURN and r['sp'] == 0:
+                    duplicate_compared = r['r'] != r['peer']
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            self.assertEqual(state['regs']['sp'], 0)
+            arena, operation, root = source.arena, arguments['operation'], arguments['root_level']
+            if operation in ('equal', 'substitute_raw_equal'):
+                if operation == 'substitute_raw_equal':
+                    bindings = dict(arguments['bindings'])
+                    root = source.arena.expr(substitute_levels(arena, source.target.type, bindings)).a
+                    self.assertTrue(duplicate_compared, 'runtime allocation must exercise structural equality without pointer identity')
+                # The reference Arena interns syntax; this comparison is only
+                # post-inference validation, never a packed equality answer.
+                expected = int(root == arguments['peer'])
+                self.assertEqual(state['regs']['r'], expected)
+            elif operation == 'not_zero':
+                self.assertEqual(state['regs']['r'], int(LevelOps(arena).not_zero(root)))
+            else:
+                base, offset = LevelOps(arena).offset(root)
+                levels, _ = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), arena)
+                self.assertEqual((levels[state['regs']['r']], state['regs']['level_offset']), (base, offset))
+            self.assertEqual(circuit.step(state), state)
+        # Physical offset overflow is detected rather than wrapping.
+        doc = dict(format='leanputer.kernel-level-operation.v1', operation='offset', level=['succ', ['zero']])
+        state = program.prepare(cfg, *program.parse_document(doc))
+        state['regs']['level_offset'] = 255
+        machine = spec.SpecMachine(cfg, state)
+        actual = circuit.step(state)
+        self.assertEqual(actual, machine.step())
+        self.assertEqual((actual['regs']['status'], actual['regs']['reason']), (spec.Outcome.RESOURCE, spec.Reason.INDEX))
 
     def test_expression_schemes_call_the_same_level_subroutine(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=256, word_bits=8)

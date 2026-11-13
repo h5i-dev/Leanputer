@@ -38,35 +38,40 @@ def parse_document(document):
             source.arena.word(limit)
         return source, dict(root=root, open_tag=kinds[open_kind], fold_tag=kinds[fold_kind], limit=limit), source.declarations
     operation = document.get('operation')
-    if document.get('format') != 'leanputer.kernel-level-operation.v1' or operation not in ('scope', 'substitute_raw'):
+    if document.get('format') != 'leanputer.kernel-level-operation.v1' or operation not in ('scope', 'substitute_raw', 'substitute_raw_equal', 'equal', 'not_zero', 'offset', 'max', 'imax'):
         raise KernelError('expected symbolic level-scope operation')
     codec = SyntaxCodec()
     # This is a raw operation argument capsule, not a dummy admitted proof.
     # No value/body or inferred type/admission answer is supplied.
     bindings = ()
-    if operation == 'substitute_raw':
+    if operation in ('substitute_raw', 'substitute_raw_equal'):
         bindings = tuple((codec.symbols.intern(binding['parameter']), codec.level(binding['level']))
                          for binding in document['bindings'])
         parameters = tuple(symbol for symbol, _ in bindings)
     else:
-        parameters = tuple(codec.symbols.intern(name) for name in document['parameters'])
+        parameters = tuple(codec.symbols.intern(name) for name in document.get('parameters', ()))
     level = codec.level(document['level'])
+    peer = codec.level(document['right']) if operation in ('equal', 'substitute_raw_equal', 'max', 'imax') else None
     sort = codec.arena.mk(Tag.SORT, level)
     symbol = codec.symbols.intern([{'str': '_level_operation'}])
     target = RawDeclaration('definition', symbol, parameters, sort, None)
     source = SourceInput(codec.arena, codec.symbols, (), target)
     prefix = tuple(codec.arena.word(value) for value in document.get('argument_prefix', ()))
-    arguments = dict(operation='substitute_raw', root_level=level, bindings=bindings, argument_prefix=prefix) if operation == 'substitute_raw' else level
+    arguments = dict(operation=operation, root_level=level, bindings=bindings, argument_prefix=prefix, peer=peer) if operation != 'scope' else level
     return source, arguments, ()
 
 
 def prepare(config, source, level, _declarations=()):
-    expression = isinstance(level, dict) and level.get('operation') == 'expr_substitute_raw'
-    substitute = isinstance(level, dict) and level.get('operation') in ('substitute_raw', 'expr_substitute_raw')
-    telescope = isinstance(level, dict) and not substitute
+    operation = level.get('operation') if isinstance(level, dict) else 'scope'
+    expression = operation == 'expr_substitute_raw'
+    substitute = operation in ('substitute_raw', 'substitute_raw_equal', 'expr_substitute_raw')
+    service = operation in ('equal', 'not_zero', 'offset', 'max', 'imax')
+    telescope = isinstance(level, dict) and not (substitute or service)
+    peer = level.get('peer') if isinstance(level, dict) else None
     bindings = level['bindings'] if substitute else ()
-    packed = pack_source(source, CellCapacities(heap=config.heap, constants=config.constants, word_bits=config.word_bits), level_bindings=bindings)
-    parameters = packed.level_bindings if substitute else () if telescope else source.target.universe_parameters
+    packed = pack_source(source, CellCapacities(heap=config.heap, constants=config.constants, word_bits=config.word_bits),
+                         level_bindings=bindings, level_roots=() if peer is None else (peer,))
+    parameters = packed.level_bindings if substitute else () if telescope or service else source.target.universe_parameters
     prefix = level.get('argument_prefix', ()) if substitute else ()
     if any(value >= 1 << config.word_bits for value in prefix):
         raise ResourceError('caller data word width')
@@ -82,10 +87,14 @@ def prepare(config, source, level, _declarations=()):
         raw_root = source.target.type if level['root'] == 'type' else source.target.value
         root = packed.expression_map[raw_root]
     else:
-        root = packed.level_map[level['root_level'] if substitute else level]
-    state['regs'].update(mode=int(Mode.WALK), task=int(Task.VARIABLE_SCOPE if telescope else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE),
+        root = packed.level_map[level['root_level'] if substitute or service else level]
+    task = ({'equal': Task.LEVEL_EQUAL, 'not_zero': Task.LEVEL_NOT_ZERO, 'offset': Task.LEVEL_OFFSET, 'max': Task.LEVEL_MAX, 'imax': Task.LEVEL_IMAX}[operation] if service else
+            Task.VARIABLE_SCOPE if telescope else Task.EXPR_LEVEL_SUBSTITUTE if expression else Task.LEVEL_SUBSTITUTE if substitute else Task.LEVEL_SCOPE)
+    state['regs'].update(mode=int(Mode.WALK), task=int(task),
         root=root, x=root, free=packed.initial_free, count=len(parameters), ctx=len(prefix)+len(parameters), arg_base=len(prefix),
         fuel=config.fuel, decl_count=len(packed.constants), open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
+    if peer is not None:
+        state['regs'].update(peer=packed.level_map[peer], pending_compare=int(operation == 'substitute_raw_equal'))
     if telescope:
         limit = level['limit']
         if limit is not None and limit >= 1 << config.word_bits:
@@ -104,5 +113,5 @@ def boot_length(bank, state):
             else _boot_length(bank, state))
 
 
-program_name = 'kernel.typed-symbolic-services.v3'
+program_name = 'kernel.typed-symbolic-services.v5'
 primitive_basis = ()

@@ -38,3 +38,6 @@ This is RAW universe instantiation. It does not implement canonical level
 constructors/normalization, full conversion, inference or declaration admission.
 DONE is operation completion, not theorem acceptance or mathlib coverage.
 The full weighted checking driver remains unfinished.
+
+Evidence is pinned to implementation `dbda05a`; later shared programs include
+additional operations and need not have the same size/timing.

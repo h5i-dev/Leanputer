@@ -143,7 +143,7 @@ def _roots(source):
     return expressions, symbols
 
 
-def pack_source(source, capacities=CellCapacities(), *, level_bindings=()):
+def pack_source(source, capacities=CellCapacities(), *, level_bindings=(), level_roots=()):
     """Relocate raw schemes into one typed heap plus a raw declaration bank.
 
     Vector roles are essential: the Arena can intern the SAME integer tuple as
@@ -158,7 +158,7 @@ def pack_source(source, capacities=CellCapacities(), *, level_bindings=()):
     level_bindings = tuple(level_bindings)
     symbols.update(symbol for symbol, _ in level_bindings)
     exprs, levels = set(), set()
-    level_pending = [ref for _, ref in level_bindings]
+    level_pending = list(level_roots)+[ref for _, ref in level_bindings]
     while pending:
         if len(pending) > capacities.heap:
             raise ResourceError('syntax transport work stack')

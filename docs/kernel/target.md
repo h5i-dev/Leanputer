@@ -311,3 +311,9 @@ projection service. A source nested/mutual/term-parameter
 [transaction smoke](../../benchmarks/kernel-nested-spec/README.md) admits12derived
 declarations/noaxioms and checks its complete source body. These are not native
 proofs or generic mathlib coverage. The weighted driver is still unfinished.
+
+The [shared symbolic constructor smoke](../../benchmarks/kernel-level-constructors-stock/README.md)
+checks structural comparison (including duplicate runtime allocations), nonzero,
+offset and complete smart Max/IMax operations inside the stock controller.
+The [level algorithm map](level-services.md) distinguishes these reusable rules
+from full canonical normalization/equivalence and typed admission still pending.
