@@ -3,7 +3,7 @@
 The public typed-service entry has env_ready=0 and still GAPs raw signatures.
 Only the weighted source driver may set up/publish a checked environment.
 This operation searches that PRIVATE list, checks arity and zips raw universe
-arguments into a temporary caller window, invoking the SAME source-instantiation
+arguments into a private immutable map, invoking the SAME source-instantiation
 walker. No host inferred type, specialization or admission answer is loaded.
 The same lookup/zip/source-instantiation serves weighted inference AND delta.
 Source definitions/theorems unfold; axioms/opaque declarations remain neutral.
@@ -26,13 +26,19 @@ def resume(machine, frame, stop, ret, alloc):
         else: r.update(mode=Mode.CONST_SIGNATURE, task=task, x=r['r'])
     else:
         r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA if task == Task.BETA_ZETA else Mode.RETURN,
-            task=task, ctx=depth, arg_base=first, count=second)
+            task=task, ctx=depth, arg_base=first, count=second, level_map_head=0)
         if task == Task.BETA_ZETA: r.update(x=r['r'], depth=0)
 
 
 def step(machine, tag, a, b, c, stop, ret, alloc):
     s, r, cfg = machine.state, machine.state['regs'], machine.cfg
-    if r['task'] not in (Task.INFER, Task.BETA_ZETA): return False
+    if r['task'] not in (Task.INFER, Task.BETA_ZETA, Task.INSTANTIATE_SCHEME): return False
+    if r['task']==Task.INSTANTIATE_SCHEME and r['mode']==Mode.WALK:
+        if r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
+        else:
+            s['stack'][r['sp']]=[CALL_INFER_CONSTANT_SUBSTITUTE,r['x'],r['ctx'],r['task'],r['arg_base'],r['count']]
+            r.update(sp=r['sp']+1,signature_type=r['x'],mode=Mode.CONST_PARAMETER_HEADER,x=r['parameter_vector'])
+        return True
     if r['mode'] == (Mode.BETA_ZETA if r['task'] == Task.BETA_ZETA else Mode.WALK):
         if tag != Tag.CONST or not r['env_ready']: return False
         if r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)
@@ -71,8 +77,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             r['sp'] -= 1
             if r['task'] == Task.BETA_ZETA: r.update(mode=Mode.BETA_ZETA, x=r['signature_type'], depth=0)
             else: ret(r['signature_type'])
-        elif r['ctx']+a > cfg.context: stop(Outcome.RESOURCE, Reason.CONTEXT)
-        else: r.update(arg_base=r['ctx'], count=a, level_head=b, zip_remaining=a,
+        elif a>cfg.context:stop(Outcome.RESOURCE,Reason.CONTEXT)
+        else: r.update(arg_base=0, count=a, level_map_head=0, level_head=b, zip_remaining=a,
                        mode=Mode.CONST_PARAMETER_CELL, x=r['parameter_head'])
     elif r['mode'] == Mode.CONST_PARAMETER_CELL:
         if not a or not r['zip_remaining'] or bool(b) != (r['zip_remaining'] > 1):
@@ -84,10 +90,9 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         elif r['free'] >= cfg.heap: stop(Outcome.RESOURCE, Reason.HEAP)
         else:
             ref = r['free']
-            s['heap'][ref] = [CellTag.LEVEL_BINDING, r['zip_symbol'], a, 0]
-            s['context'][r['ctx']] = [ref]
+            s['heap'][ref] = [CellTag.LEVEL_BINDING, r['zip_symbol'], a, r['level_map_head']]
             more = r['zip_remaining'] > 1
-            r.update(free=ref+1, ctx=r['ctx']+1, zip_remaining=r['zip_remaining']-1,
+            r.update(free=ref+1, level_map_head=ref, zip_remaining=r['zip_remaining']-1,
                 parameter_head=r['zip_parameter_next'], level_head=b)
             if more: r.update(mode=Mode.CONST_PARAMETER_CELL, x=r['zip_parameter_next'])
             else:

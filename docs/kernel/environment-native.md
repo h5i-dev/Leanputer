@@ -36,6 +36,13 @@ scheme-instantiation service. Delta reduction now uses the SAME lookup/zip/insta
 checked definition/theorem's allowed payload; opaque/axiom heads remain neutral. No raw type is accepted as an inferred result. Signature-name
 and parameter vectors are data; no selected-library-name/field-count paths.
 
+The shared zip now stores private binding88 `(symbol,level,next)` records on the
+heap and restores the caller count/window without borrowing live Local-context
+slots. This allows a checked polymorphic constant to instantiate at full context
+capacity. `INSTANTIATE_SCHEME` exposes the SAME pure substitution service to
+claim/rule callers; it performs no typing/admission. Its reversed immutable map
+is scanned to preserve the source's first-parameter simultaneous substitution.
+
 Inductive input goes through the complete header/telescope/positivity/nested/
 index/recursive-argument analysis and shared motives/minors/rule generation
 contract. Private provisional headers and generated declarations follow source

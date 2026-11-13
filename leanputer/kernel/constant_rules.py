@@ -26,7 +26,7 @@ def emit_rules(c):
     c.emit(c.AND(found, c.NOT(c.eq(result, 0))), mode=Mode.CONST_SIGNATURE, task=f['task'], x=result)
     restored = c.AND(returning, c.eq(f['phase'], CALL_INFER_CONSTANT_SUBSTITUTE))
     is_delta = c.eq(f['task'], Task.BETA_ZETA)
-    c.emit(restored, sp=top, mode=c.mux(is_delta, Mode.BETA_ZETA, Mode.RETURN), task=f['task'], ctx=f['depth'], arg_base=f['first'], count=f['second'])
+    c.emit(restored, sp=top, mode=c.mux(is_delta, Mode.BETA_ZETA, Mode.RETURN), task=f['task'], ctx=f['depth'], arg_base=f['first'], count=f['second'],level_map_head=0)
     c.emit(c.AND(restored, is_delta), x=result, depth=0)
     entering = c.AND(c.OR(c.AND(c.mode(Mode.WALK), c.task(Task.INFER)),
         c.AND(c.mode(Mode.BETA_ZETA), c.task(Task.BETA_ZETA))), c.tag(Tag.CONST), c.NOT(c.eq(r['env_ready'], 0)))
@@ -34,6 +34,10 @@ def emit_rules(c):
     entering = c.AND(entering, room)
     c.write('stack', entering, r['sp'], (CALL_INFER_CONSTANT_LOOKUP, x, r['ctx'], r['task'], r['arg_base'], r['count']))
     c.emit(entering, sp=c.add(r['sp'], 1), mode=Mode.WALK, task=Task.ENV_LOOKUP, query_symbol=a, lookup_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']))
+    direct=c.AND(c.mode(Mode.WALK),c.task(Task.INSTANTIATE_SCHEME))
+    c.stop(c.AND(direct,c.NOT(room)),Outcome.RESOURCE,Reason.STACK);direct=c.AND(direct,room)
+    c.write('stack',direct,r['sp'],(CALL_INFER_CONSTANT_SUBSTITUTE,x,r['ctx'],r['task'],r['arg_base'],r['count']))
+    c.emit(direct,sp=c.add(r['sp'],1),signature_type=x,mode=Mode.CONST_PARAMETER_HEADER,x=r['parameter_vector'])
     modes = (Mode.CONST_SIGNATURE, Mode.CONST_SCHEME, Mode.CONST_EXPRESSION, Mode.CONST_PARAMETER_HEADER,
              Mode.CONST_LEVEL_HEADER, Mode.CONST_PARAMETER_CELL, Mode.CONST_LEVEL_CELL)
     active_mode = c.OR(*(c.mode(mode) for mode in modes))
@@ -76,10 +80,9 @@ def emit_rules(c):
     c.emit(c.AND(levels, empty), sp=top)
     c.ret(c.AND(levels, empty, c.NOT(delta)), r['signature_type'])
     c.emit(c.AND(levels, empty, delta), mode=Mode.BETA_ZETA, x=r['signature_type'], depth=0)
-    wide = c.g.add(c.g.fit(r['ctx'], c.width+1), c.g.fit(a, c.width+1))
-    enough = c.NOT(c.g.lt(c.g.const(c.cfg.context, c.width+1), wide))
-    c.stop(c.AND(levels, c.NOT(empty), c.NOT(enough)), Outcome.RESOURCE, Reason.CONTEXT)
-    c.emit(c.AND(levels, c.NOT(empty), enough), arg_base=r['ctx'], count=a, level_head=b, zip_remaining=a,
+    enough=c.NOT(c.lt(c.cfg.context,a))
+    c.stop(c.AND(levels,c.NOT(empty),c.NOT(enough)),Outcome.RESOURCE,Reason.CONTEXT)
+    c.emit(c.AND(levels, c.NOT(empty),enough), arg_base=0, count=a, level_map_head=0,level_head=b, zip_remaining=a,
         mode=Mode.CONST_PARAMETER_CELL, x=r['parameter_head'])
     more = c.lt(1, r['zip_remaining'])
     tail_ok = c.eq(word_bool(b), c.mux(more, 1, 0))
@@ -94,9 +97,8 @@ def emit_rules(c):
     heap_room = c.lt(r['free'], c.cfg.heap)
     c.stop(c.AND(levels, c.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
     levels = c.AND(levels, heap_room)
-    c.write('heap', levels, r['free'], (CellTag.LEVEL_BINDING, r['zip_symbol'], a, 0))
-    c.write('context', levels, r['ctx'], (r['free'],))
-    c.emit(levels, free=c.add(r['free'], 1), ctx=c.add(r['ctx'], 1), zip_remaining=c.sub(r['zip_remaining'], 1),
+    c.write('heap', levels, r['free'], (CellTag.LEVEL_BINDING, r['zip_symbol'], a, r['level_map_head']))
+    c.emit(levels, free=c.add(r['free'], 1),level_map_head=r['free'], zip_remaining=c.sub(r['zip_remaining'], 1),
         parameter_head=r['zip_parameter_next'], level_head=b)
     c.emit(c.AND(levels, more), mode=Mode.CONST_PARAMETER_CELL, x=r['zip_parameter_next'])
     last = c.AND(levels, c.NOT(more))

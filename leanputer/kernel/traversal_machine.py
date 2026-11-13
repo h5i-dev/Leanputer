@@ -129,6 +129,7 @@ class Task(IntEnum):
     RESTORE_SCOPE = 65         # Shared derived Local/field-vector context traversal.
     BUILD_RECURSOR_RULES = 66  # Generic constructor computation RHS generation.
     ASSEMBLE_RECURSORS = 67    # Generic grouped counts/rules/private signatures.
+    INSTANTIATE_SCHEME = 68    # Shared pure scheme zip/source-level substitution.
 
 
 
@@ -653,7 +654,7 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
     'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open',
     'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag',
-    'arg_base', 'parameter', 'lookup_level', 'const_original', 'expr_depth',
+    'arg_base', 'parameter', 'lookup_level', 'const_original', 'expr_depth', 'level_map_head', 'level_map_result',
     'vec_length', 'vec_left', 'vec_build', 'vec_head', 'vec_changed', 'vector_result',
     'peer', 'left_tag', 'left_a', 'left_b', 'level_offset', 'pending_compare',
     'constructor_left', 'constructor_right', 'constructor_stage', 'left_base', 'left_offset', 'right_offset',
@@ -808,7 +809,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -895,7 +896,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.ASSEMBLE_RECURSORS
+                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.INSTANTIATE_SCHEME
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -1422,14 +1423,26 @@ class SpecMachine:
                 alloc((Tag.CONST, a, r['vector_result'], 0))
             return s
         if r['mode'] == Mode.LEVEL_SELECT:
-            r.update(mode=Mode.LEVEL_BINDING, x=s['context'][r['arg_base']+r['i']][0])
+            if r['task']==Task.LEVEL_INSTANTIATE and r['level_map_head']:
+                r.update(mode=Mode.LEVEL_BINDING,x=r['level_map_head'],level_map_result=r['lookup_level'])
+            else:r.update(mode=Mode.LEVEL_BINDING, x=s['context'][r['arg_base']+r['i']][0])
             return s
         if r['mode'] == Mode.LEVEL_BINDING:
-            if not 0 < b < r['free']:
+            heap_map=r['task']==Task.LEVEL_INSTANTIATE and bool(r['level_map_head'])
+            more=r['i']+1<r['count']
+            if not 0 < b < r['free'] or (heap_map and bool(c)!=more):
                 stop(Outcome.INVALID, Reason.SYNTAX)
+            elif heap_map:
+                # Nodes were prepended by the zip. The LAST matching node is
+                # the FIRST original parameter, preserving instantiate_lparams
+                # even for pure-operation arguments with repeated symbols.
+                selected=b if a==r['parameter'] else r['level_map_result']
+                r['level_map_result']=selected
+                if more:r.update(x=c,i=r['i']+1)
+                else:ret(selected)
             elif a == r['parameter']:
                 ret(b)  # Simultaneous substitution: do NOT traverse replacement.
-            elif r['i']+1 < r['count']:
+            elif more:
                 r.update(mode=Mode.LEVEL_SELECT, x=r['lookup_level'], i=r['i']+1)
             else:
                 ret(r['lookup_level'])

@@ -367,3 +367,22 @@ the recursor universe scheme; apply params/motives/minors, **trailing** construc
 fields (nested constructor parameter count may differ), then surplus arguments.
 K/structure/literal conversion and full definitional equality are separate shared
 callbacks, never a name-specific theorem shortcut or a host reduction oracle.
+
+The shared `INSTANTIATE_SCHEME` entry performs only universe-scheme substitution,
+not typing/admission. It uses the SAME checked-constant/delta zip and all-Expr
+source-instantiation walker. Binding88 stores `(parameter,level,next)` in a
+private immutable heap list, leaving live Local-context slots untouched. Since
+the zip prepends nodes, lookup scans to the last matching node, preserving the
+first original parameter's simultaneous-substitution semantics even for pure
+operation arguments with duplicates. Declaration/claim uniqueness remains a
+separate checked caller obligation. Caller ctx/count/window are restored.
+
+Source-instantiation rebuilding follows pinned `level.cpp:update_max`/`update_succ`:
+**object identity**, not structural equality, determines the unchanged fast path.
+A distinct replacement Param with the same symbol can therefore trigger smart
+Max/IMax reconstruction on a raw noncanonical level DAG. The executable arena
+oracle interns structural levels and cannot express every such sharing pattern;
+its identity-substitution expectation must not override the pinned kernel.
+Input syntax uses a canonical shared DAG; replay of original Lean object sharing
+or byte-for-byte export/import is not claimed. Canonical exported level values
+and raw object-sensitive operation probes have separately stated expectations.
