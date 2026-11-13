@@ -483,3 +483,14 @@ Bool.involutive_not plans at43989transitions/3407nodes in the independent spec,
 not native verification. No new native mathlib acceptance is claimed here.
 Remaining first blockers are PProd19/HAdd6. The full syntax snapshot is408of857
 exported, not408proved; large declaration closures remain a concrete limitation.
+
+The later bank-layout checkpoint freezes all74 fixed primitives and112 phases.
+Shared bank outputs use stock residual projections, and the width search now
+allows64 ballast channels while retaining the required power-of-four ratio.
+At identical heap512/fuel1536 the same real Eq source/K/negative cases retain
+all reported results, reducing hidden5120→4608 and parameters1.356B→1.221B.
+Forward159.093→158.515s is effectively unchanged, not an established speedup.
+`--bank-layout separate --max-ballast 16` reproduces the previous layout;
+accumulate/64 is now default. No precision, semantic, stock-forward or cache
+change. See [matched evidence](native-downsizing.md) for setup, memory peaks,
+negative ablation and separate unexecuted large-capacity plans.

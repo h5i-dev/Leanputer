@@ -21,9 +21,16 @@ from .native_vendor.qwenputer.expr import Expr
 from .native_vendor.qwenputer.ir import Graph, Target
 
 
-def pick_layout(slots):
+def pick_layout(slots, max_ballast=16):
+    """Minimize H while keeping H/m a power of four and H divisible by64.
+
+    The configurable search changes only the number of normalization ballast
+    channels, not their magnitude, the Boolean domain or the stock RMSNorm.
+    """
+    if type(max_ballast)is not int or not 3<=max_ballast<=256:
+        raise ValueError('ballast search bound must be between 3 and 256')
     candidates = []
-    for ballast in range(3, 17):
+    for ballast in range(3, max_ballast+1):
         hidden = ballast
         while hidden < slots+ballast+1 or hidden % 64:
             hidden *= 4
@@ -62,12 +69,12 @@ class ScratchResetCapacity(ValueError):
         super().__init__(f'native scratch reset needs {required} reserved layers')
 
 
-def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0):
+def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0, max_ballast=16):
     """Allocate residual slots and report stock shapes before allocating tensors."""
     results = result_dims
     keep = set(result_dims) | set(keep_dims or ())
     allocation = allocate(graph, None, keep, intermediate)
-    layout = pick_layout(allocation.n_slots)
+    layout = pick_layout(allocation.n_slots,max_ballast)
     layout.slots = allocation.slots
     persistent = {layout.dim(d) for d in keep}
     clear = [d for d in range(layout.m, layout.hidden) if d not in persistent]
@@ -84,10 +91,10 @@ def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0)
     return layout,allocation,tc,clear
 
 
-def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0):
+def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0, max_ballast=16):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
-    layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers)
+    layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers,max_ballast)
     layers=graph.n_layers()
     native_config = Qwen3_5TextConfig(**tc)
     native_config._attn_implementation = 'eager'

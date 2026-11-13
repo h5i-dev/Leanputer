@@ -1,0 +1,38 @@
+[
+  {
+    "heap": 512,
+    "bank_layout": "separate",
+    "slots": 4624,
+    "hidden": 5120,
+    "layers": 71,
+    "parameters": 1356184972,
+    "plan_seconds": 12.894718838004337
+  },
+  {
+    "heap": 512,
+    "bank_layout": "accumulate",
+    "slots": 4485,
+    "hidden": 5120,
+    "layers": 71,
+    "parameters": 1356184972,
+    "plan_seconds": 12.441749991005054
+  },
+  {
+    "heap": 4096,
+    "bank_layout": "separate",
+    "slots": 7713,
+    "hidden": 8192,
+    "layers": 298,
+    "parameters": 9081335506,
+    "plan_seconds": 74.11581034800474
+  },
+  {
+    "heap": 4096,
+    "bank_layout": "accumulate",
+    "slots": 5122,
+    "hidden": 6144,
+    "layers": 296,
+    "parameters": 6765459918,
+    "plan_seconds": 51.749778062003315
+  }
+]

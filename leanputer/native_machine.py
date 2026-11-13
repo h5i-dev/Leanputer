@@ -62,6 +62,42 @@ class NativeBuilder:
                                            for i,bit in enumerate(bits)], f'{name}/{row}') for row in range(cells)]
 
 
+def banked_native_read(builder, cells, query, address, enable, values, name,
+                       bank, head_metadata, bank_layout='separate'):
+    """Compile mutually exclusive RAM banks using stock residual projections.
+
+    Accumulated outputs are shared IR dimensions, so allocation retains them
+    across all contributing heads. Prefix reset clears them on every token;
+    this helper does not introduce a runtime reduction or alter the cache.
+    """
+    graph=builder.graph;width=len(values)
+    select=lambda expression:K*(2*expression-graph.one)
+    low=min(7,cells.bit_length()-1)
+    parts=[];accumulated=None
+    for part in range(max(1,cells//128)):
+        named=f'{name}/bank{part}'
+        def matches(bits):
+            return [bit if part>>i&1 else graph.one-bit for i,bit in enumerate(bits)]
+        writing=builder.gate('and',[enable]+matches(address[low:]),named+'/write')
+        querying=builder.gate('and',matches(query[low:]),named+'/query-bank')
+        keys=builder.onehot(address[:low],writing,min(cells,128),named+'/key')
+        queries=builder.onehot(query[:low],querying,min(cells,128),named+'/query')
+        data={i+2:A_BIT*value for i,value in enumerate(values)}
+        data.update({0:A_REF*writing,1:A_REF*writing})
+        outputs=graph.head(named,{i:select(value)for i,value in enumerate(queries)},
+            {i:select(value)for i,value in enumerate(keys)},data,0,
+            {i+2:K*graph.one for i in range(width)},[(i+2,2.**7)for i in range(width)],
+            min_level=builder.barrier,into=accumulated if bank_layout=='accumulate' else None)
+        head_metadata.append(dict(name=named,bank=bank,row_bank=part,layer=(graph.nodes[-1].level-1)//2))
+        parts.append(outputs);accumulated=outputs
+        builder.barrier=graph.nodes[-1].level
+    # Exactly one bank query is active. Prefix reset clears these scratch slots
+    # before each transition, so residual accumulation computes the same sum.
+    if bank_layout=='accumulate':
+        return accumulated
+    return [sum((part[i]for part in parts),Expr())for i in range(width)]
+
+
 def validate_native_schedule(graph):
     """Check read/write dependencies after compiler-only channel scheduling."""
     writers={}
@@ -90,6 +126,8 @@ class NativeMachine:
     native_heads: list
     layout_policy: str='legacy'
     layout_statistics: object=None
+    bank_layout: str='accumulate'
+    max_ballast: int=64
 
     def embeddings(self, features):
         parameter = next(self.model.parameters())
@@ -157,6 +195,8 @@ class NativeMachine:
                    for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]
         return dict(registers=registers,results=results,forward_seconds=time.perf_counter()-started,
                     layout_policy=self.layout_policy,layout_statistics=self.layout_statistics,
+                    bank_layout=self.bank_layout,
+                    max_ballast=self.max_ballast,ballast_channels=self.layout.m,
                     primitive_basis=list(PRIMITIVE_CODES),
                     stock_class=type(self.model).__module__+'.'+type(self.model).__name__,
                     parameters=sum(p.numel() for p in self.model.parameters()),
@@ -169,8 +209,9 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
+    if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
     if type(reset_layers)is not int or reset_layers<1:raise ValueError('recurrent native execution requires scratch reset layers')
     state_layout = StateLayout(config); registers = RegisterLayout(state_layout)
@@ -212,27 +253,9 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         values = [builder.gate('or',[builder.gate('and',[boot,a],name+'/bv'),
                                     builder.gate('and',[penable,b],name+'/pv')],name+'/wv')
                   for a,b in zip(boot_payload[:width],payload)]
-        select = lambda expression: K*(2*expression-graph.one)
-        low = min(7,cells.bit_length()-1)
-        parts = []
-        for part in range(max(1,cells//128)):
-            named = f'{name}/bank{part}'
-            matches = lambda bits:[bit if part >> i & 1 else graph.one-bit for i,bit in enumerate(bits)]
-            writing = builder.gate('and',[enable]+matches(addr[low:]),named+'/write')
-            querying = builder.gate('and',matches(query[low:]),named+'/query-bank')
-            keys = builder.onehot(addr[:low],writing,min(cells,128),named+'/key')
-            queries = builder.onehot(query[:low],querying,min(cells,128),named+'/query')
-            data = {i+2:A_BIT*value for i,value in enumerate(values)}
-            data.update({0:A_REF*writing,1:A_REF*writing})
-            outputs = graph.head(named,{i:select(value) for i,value in enumerate(queries)},
-                                 {i:select(value) for i,value in enumerate(keys)},data,0,
-                                 {i+2:K*graph.one for i in range(width)},[(i+2,2.**7)for i in range(width)],
-                                 min_level=builder.barrier)
-            head_metadata.append(dict(name=named,bank=bank,row_bank=part,layer=(graph.nodes[-1].level-1)//2))
-            parts.append(outputs)
-            builder.barrier = graph.nodes[-1].level
+        outputs=banked_native_read(builder,cells,query,addr,enable,values,name,bank,head_metadata,bank_layout)
         builder.barrier = saved_barrier
-        return [sum((part[i] for part in parts),Expr())for i in range(width)]
+        return outputs
 
     collect = lambda circuit,outputs:(circuit,outputs)
     address1,address2 = compile_addresses(registers,target=collect)
@@ -264,19 +287,19 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     required_reset = None
     try:
         if plan_only:
-            layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers)
+            layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers,max_ballast)
             return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
-                        persistent_channels=len(keep),clear_channels=len(clear),layout_policy=layout_policy)
-        model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers)
+                        persistent_channels=len(keep),clear_channels=len(clear),layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
+        model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
                logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats())
-    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats)
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast)
 
 
 def check_documents(machine, documents, batch_size=4):
@@ -324,6 +347,8 @@ def main(argv=None):
     parser.add_argument('--batch-size',type=int,default=4)
     parser.add_argument('--intermediate',type=int,default=1024)
     parser.add_argument('--layout',choices=('compact','legacy'),default='compact')
+    parser.add_argument('--bank-layout',choices=('separate','accumulate'),default='accumulate')
+    parser.add_argument('--max-ballast',type=int,default=64,help='layout search bound; normalizations retain a power-of-four ratio')
     args=parser.parse_args(argv)
     torch.set_num_threads(1)
     try:
@@ -335,7 +360,7 @@ def main(argv=None):
             parsed=json.loads(content);documents=parsed if isinstance(parsed,list) else [parsed]
         except json.JSONDecodeError: documents=[json.loads(line)for line in content.splitlines()if line.strip()]
         started=time.perf_counter()
-        machine=compile_native_machine(config,intermediate=args.intermediate,device=args.device,layout_policy=args.layout)
+        machine=compile_native_machine(config,intermediate=args.intermediate,device=args.device,layout_policy=args.layout,bank_layout=args.bank_layout,max_ballast=args.max_ballast)
         compilation=time.perf_counter()-started
         report=check_documents(machine,documents,args.batch_size)
         report.update(compile_seconds=compilation,device=args.device,hidden_size=machine.layout.hidden,

@@ -138,3 +138,91 @@ CPU/GPU and layouts. Fresh-process totals, where separately observed by the
 harness, include imports/startup: CPU 114.031 → 26.648s, GPU 39.925 → 11.777s.
 Per-run JSON reports and exact core-input/core-config files are in benchmarks/native.
 These are single observations, with no repeated-latency confidence claim.
+
+## Bank accumulation and finer width selection
+
+A second experiment freezes the complete `6c3563c` feature set: 74 fixed
+primitives, 112 operational phases, including Eq, let, all added records,
+Nat/OfNat and PUnit. The identical three judgments are the real
+Function.const_def@[1,1] source closure, relative Eq K and an unequal-endpoint
+reflexivity rejection. Both configurations use heap512, stack32, context16,
+constants8, ground universe bound4, fuel1536, BF16 weights and FFN1024.
+
+Separate bank outputs keep one residual vector per 128-row RAM bank until
+summation. The new compiler mode instead emits each bank's output projection
+into the same residual dimensions. Exactly one query bank is active; all other
+contributions are zero. The existing prefix reset clears these scratch channels
+before each transition. This uses upstream Qwenputer's existing `Graph.head`
+`into` mechanism and stock residual addition. There is no runtime reduction,
+custom layer, cache change, semantic host dispatch or reduced capacity.
+
+Bank accumulation alone changes slots4624→4485 and head-clear operations293→130,
+but the original width search still chooses hidden5120. Parameters and peak
+CUDA allocation are unchanged. Its single forward observation is161.574s versus
+159.093s for separate banks; this ablation gives no measured speed benefit.
+Dense size is quantized by the compiler's normalization layout, so fewer live
+slots do not guarantee fewer parameters.
+
+The expanded search allows up to64 ballast channels instead of16. Every
+candidate still requires hidden divisible by64 and hidden/ballast a power of
+four, retaining the upstream power-of-two normalization scale. Ballast magnitude
+remains2^40, arithmetic remains BF16 with FP32 reductions, and stock RMSNorm
+is unchanged. This is a compiler configuration choice, not quantization.
+
+At heap4096/stack64/context32/constants16, a metadata-only comparison already
+reduces the separate16 plan from7713slots/hidden8192/298layers/9,081,335,506params
+to5122slots/hidden6144/296layers/6,765,459,918params with accumulation16.
+These are unexecuted projected shapes, not proof results, memory peaks or timing.
+The larger proof closures remain slow; no full mathlib campaign is part of this
+checkpoint. The finite numerical tests do not prove floating-point soundness.
+
+The combined matched A10G result uses18 ballast channels and hidden4608:
+
+| Measurement | Separate / max16 | Accumulate / max64 |
+| --- | ---: | ---: |
+| Allocated residual slots | 4624 | 4485 |
+| Hidden width / native layers | 5120 / 71 | 4608 / 71 |
+| BF16 parameters | 1,356,184,972 | 1,220,578,188 |
+| Actual weight bytes | 2,712,369,944 | 2,441,156,376 |
+| Compile seconds | 26.408 | 25.198 |
+| Fixed forward seconds | 159.093 | 158.515 |
+| Peak CUDA allocated bytes | 2,748,868,096 | 2,584,449,536 |
+| Peak process RSS bytes | 1,727,647,744 | 1,750,122,496 |
+
+Both runs retain20 active RAM heads, one128-dimensional key/value head per
+linear layer, final full-attention head256, 48 boot tokens and1538 stock
+forwards. Outcomes/reasons/steps/allocated heap/dependencies/assumptions match:
+real source1213A/noaxioms, relativeK1241A/fiveexplicitassumptions, unequal
+endpoints383R/CONVERSION. Complete final memory/cache correspondence was not
+measured. Parameters fall10%; latency differs only0.36%, with single observations
+and no established speedup. The metadata-only sizing process overlapped part
+of the combined run's cold setup; this is development evidence, not a controlled
+latency benchmark. Compile is cold weight generation; forward includes syntax
+boot and fixed execution, excluding imports/compilation, and is not a measured
+steady-state throughput distribution. CPU proof latency was not rerun for this
+second experiment. CPU and GPU pass focused RAM boundary checks, including an
+explicitly selected greater-than16-ballast layout, changing query banks and
+disabled writes.
+
+Accumulation/max64 is now the shared-native default. Reproduce the prior layout
+with `--bank-layout separate --max-ballast 16`; the STLC compiler keeps its
+original search default. Exact documents, configuration and all three reports
+are `benchmarks/native/banks-*`. Reproduce, using the native Python environment:
+
+```bash
+python -m leanputer.native_machine --input benchmarks/native/banks-input.jsonl \
+  --config benchmarks/native/banks-config.json --device cuda --batch-size 3 \
+  --bank-layout accumulate --max-ballast 64 --report /mnt/scratch/banks.json
+python -m unittest discover -s tests -p test_native_banks.py -v
+```
+
+The CLI's exit1 is expected because the matched batch includes a rejection.
+Features resume after this checkpoint; dispatch overhead, sequential bank
+layers and repeated semantic allocation remain open limits. No claim that this
+parameter count is necessary or that the larger-source throughput is adequate.
+
+The expanded4096-capacity plan selects21 ballast channels, hidden5376 and
+295layers, with5,899,860,044 projected parameters (35.03% below separate16).
+This remains metadata only: no GPU weights, execution or theorem acceptances
+were generated for that configuration. `banks-expanded-plan.json` retains the
+full stock config, capacities and explicit NOT_RUN_PLAN_ONLY label.

@@ -10,7 +10,7 @@ Research quality and formal soundness remain goals, not established labels.
 | --- | --- |
 | Dependent calculus | Ground sorts/Prop, Pi/Lam/App/let, capture avoidance, beta/delta/zeta, typed eta and proof irrelevance; all environment types/values checked |
 | Native compilation | Stock RMSNorm/SwiGLU/GDN/forward/cache; generated BF16 weights, tested bounded binary domain; broad numerical correspondence still pending |
-| Layout | Matched downsizing completed:4.021B→668.6Mparameters, same capacities/fuel/outcomes; GPUforward372.825→315.196s, far from efficient |
+| Layout | Earlier matched downsizing4.021B→668.6M; newer full74-primitive Eq batch1.356B→1.221B, same capacities/fuel/results, GPUforward159.093→158.515s (no demonstrated speedup) |
 | Fixed kernel constructs | False, True, And/Iff, Eq/HEq, Nonempty/Exists/Or, Quot primitives, Decidable, Subtype, Bool, Option, Zero/One, bounded Nat, OfNat and PUnit; selected targeted native checks |
 | One-field record slice | Inhabited/Mul/Add/Subsingleton:103phases/58intrinsics; weighted20cases16A4R; native12cases9A3R including a new source proof; targeted Lean agrees |
 | Bounded Nat | Raw literal/constructor/recursor paths:109phases/68intrinsics, native13cases9A3R1numeric-resource; ordinary OfNat still separate |
@@ -29,9 +29,12 @@ input/config/model measurements; full native checking of857rows is unrun.
 OfNat now passes native12cases9A3R, including ordinary numerals with their two
 checked instance definitions and an independent label3/value5 instance. PUnit now passes native13cases11A2R, preserving its Prop0/data distinction.
 Bool.involutive_not only plans at43989steps/3407nodes; a larger native run is
-impractical without further resource work. Pause feature expansion at this
-safe checkpoint for a minimum bank-layout reduction with a matched small Eq
-comparison and unchanged feature set/capacities/stock forward/cache. Nat.succ_injective only plans at~25ksteps/~2.8knodes and has
+impractical at the observed runtime. The minimum bank-layout checkpoint now
+shares mutually exclusive read outputs and expands normalization layout search:
+10% fewer parameters on the same three Eq cases, all results identical, stock
+forward/cache retained. At heap4096 the bank-only metadata plan drops9.08B→6.77B;
+this is not a native proof result. Resume feature expansion after this checkpoint,
+retaining the unresolved latency/resource limits. Nat.succ_injective only plans at~25ksteps/~2.8knodes and has
 not been checked natively. Other remaining first blockers:
 Monoid/AddMonoid require multiple-field/inherited records; several Mul/Add
 closures now expose cancellation-property classes. General recursive/indexed

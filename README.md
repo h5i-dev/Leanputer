@@ -6,11 +6,15 @@ training. The [native backend](docs/native-backend.md) runs through stock
 feedback. The compiler generates all weights for a standalone configuration.
 The custom sparse circuit/attention-RAM implementation remains a reference.
 
-[Layout improvements](docs/native-downsizing.md) reduce the matched 512-cell
+[Layout improvements](docs/native-downsizing.md) reduced an earlier matched 512-cell
 model from 4.021 billion to 668.6 million BF16 parameters, with identical
 outcomes on targeted checks. GPU forward remains slow: 372.83s → 315.20s for
 the fixed development batch. These results establish a size reduction, not
 high proof throughput or broad correctness.
+
+With the newer 74-primitive fragment frozen, a second matched layout change
+reduces 1.356B to 1.221B parameters at the same capacities and fuel; latency
+remains about 159s for three Eq judgments. All execution still uses stock layers.
 
 The supported ground-universe fragment includes Sort, de Bruijn variables,
 dependent Pi, annotated Lam, App, checked acyclic dependencies and let
