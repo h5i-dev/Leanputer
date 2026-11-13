@@ -46,6 +46,7 @@ class CellTag(IntEnum):
     ELIMINATION_INFO = 172       # Derived (elimLevel,recursorUparams,Kflag).
     MOTIVE_INFO = 173            # Derived (familySig,motiveLocalRecord,telescope).
     MOTIVE_TELESCOPE = 174       # Derived (indexLocalVector,majorLocalRecord,recSymbol).
+    BLOCK_FLAGS = 175            # Derived raw-domain (recursive,reflexive,0).
 
 
 class VectorKind(IntEnum):

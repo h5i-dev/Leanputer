@@ -266,3 +266,15 @@ identities remain stable when the transient index/major scope is folded away.
 Motives do not enter committed declaration Γ. The suffix-fold boundary is a
 context index, so prior universe symbols, shared parameters and earlier motives
 remain live; the same fold operation serves the later minor/rule passes.
+
+Block recursion/reflexivity flags follow `inductive.cpp:265–314`, scanning raw
+constructor domains for any current-family constant, and additionally requiring
+a raw Pi domain for reflexivity. They cannot be inferred from normalized
+recursive-argument descriptors: beta/zeta may erase a family occurrence. The
+checked field snapshots retain the raw opened domains; opening replaces BVars
+only by fresh Locals and preserves both constant occurrence and the raw Pi tag.
+Parameter domains were checked in previous Γ and cannot contain a current
+family, so scanning the nonparameter snapshots has the same result as the
+source's full raw constructor telescope. One generic loop traverses all pending
+constructors and all fields and calls the shared all-Expr occurrence operation.
+Output175 stores `(recursive,reflexive,0)`; no input metadata supplies these bits.

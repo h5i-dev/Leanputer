@@ -4,7 +4,8 @@ Stock Qwen3.5/GatedDeltaNet emission is provided by native_machine. This module
 has no runtime dependency on the Python kernel operations/reference machine.
 """
 from ..bitvec import Builder
-from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules, header_rules, family_occurrence_rules, formal_levels_rules, family_application_rules, positivity_rules, abstract_scope_rules, reverse_list_rules, recursive_argument_rules, constructor_rules, recursor_name_rules, core_names_rules, declare_constructors_rules, elimination_rules, binder_ops_rules, motive_rules
+from . import level_constructor_rules, level_order_rules, level_normalize_rules, level_geq_rules, expression_equal_rules, inference_rules, environment_rules, constant_rules, parameter_rules, name_rules, source_rules, telescope_rules, occurrence_rules, header_rules, family_occurrence_rules, formal_levels_rules, family_application_rules, positivity_rules, abstract_scope_rules, reverse_list_rules, recursive_argument_rules, constructor_rules, recursor_name_rules, core_names_rules, declare_constructors_rules, elimination_rules, binder_ops_rules, motive_rules, block_flags_rules
+from .block_flags_rules import NO_NODE as FLAGS_NO_NODE, TAGS as FLAGS_TAGS
 from .motive_rules import NO_NODE as MOTIVE_NO_NODE, TAGS as MOTIVE_TAGS
 from .elimination_rules import NO_NODE as ELIMINATION_NO_NODE, TAGS as ELIMINATION_TAGS, LEVEL_MODES as ELIMINATION_LEVEL_MODES
 from .arena import Tag
@@ -80,7 +81,7 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.MOTIVE_LINK, self.r['mode']), self.lt(Task.BUILD_MOTIVES, self.r['task']),
+            self.lt(Mode.FLAGS_STORE, self.r['mode']), self.lt(Task.BLOCK_FLAGS, self.r['task']),
             self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
             self.lt(1, self.r['typing_active']), self.lt(1, self.r['core_operation']), self.lt(1, self.r['occurrence_internal']), self.lt(1, self.r['occurrence_found']), self.lt(1, self.r['pending_reuse']), self.lt(1, self.r['reuse_whnf']), self.lt(1, self.r['pending_scope']), self.lt(1, self.r['env_ready']), self.lt(1, self.r['pending_infer']), self.lt(self.cfg.context, self.r['local_base']),
             self.lt(1, self.r['vec_changed']), self.lt(2, self.r['pending_compare']), self.lt(1, self.r['order_same_base']),
@@ -104,7 +105,8 @@ class RuleCompiler:
         binder_no_node = self.OR(self.AND(self.eq(self.r['task'],Task.FRESH_LOCAL),self.eq(self.r['mode'],Mode.FRESH_LOCAL_RECORD)),
             self.AND(self.eq(self.r['task'],Task.APPLY_SCOPE),self.eq(self.r['mode'],Mode.APPLY_SCOPE_SELECT)))
         motive_no_node = self.AND(self.eq(self.r['task'],Task.BUILD_MOTIVES),self.OR(*(self.eq(self.r['mode'],m) for m in MOTIVE_NO_NODE)))
-        needs_node = self.AND(self.NOT(motive_no_node),self.NOT(binder_no_node),self.NOT(elimination_no_node),self.NOT(decl_ctor_no_node),self.NOT(core_name_no_node),self.NOT(recname_init),self.NOT(ctor_no_node),self.NOT(self.eq(self.r['mode'], Mode.RETURN)), self.NOT(self.eq(self.r['task'], Task.FORMAL_LEVELS)),
+        flags_no_node = self.AND(self.eq(self.r['task'],Task.BLOCK_FLAGS),self.OR(*(self.eq(self.r['mode'],m) for m in FLAGS_NO_NODE)))
+        needs_node = self.AND(self.NOT(flags_no_node),self.NOT(motive_no_node),self.NOT(binder_no_node),self.NOT(elimination_no_node),self.NOT(decl_ctor_no_node),self.NOT(core_name_no_node),self.NOT(recname_init),self.NOT(ctor_no_node),self.NOT(self.eq(self.r['mode'], Mode.RETURN)), self.NOT(self.eq(self.r['task'], Task.FORMAL_LEVELS)),
             self.NOT(self.AND(self.eq(self.r['task'], Task.REVERSE_LIST), self.NOT(self.eq(self.r['mode'], Mode.REVERSE_LIST)))),
             self.NOT(self.AND(self.eq(self.r['task'], Task.ENV_LOOKUP), self.eq(self.r['mode'], Mode.WALK))),
             self.NOT(self.AND(self.eq(self.r['task'], Task.CHECK_SOURCE), self.NOT(self.eq(self.r['mode'], Mode.SOURCE_TYPE_SORT)))),
@@ -189,6 +191,10 @@ class RuleCompiler:
         motive_ok = self.OR(*(self.AND(self.eq(self.r['mode'],m),self.eq(self.read['node']['tag'],t)) for m,t in MOTIVE_TAGS.items()),
             self.AND(self.eq(self.r['mode'],Mode.MOTIVE_SORT),self.NOT(expression_tag_bad)))
         tag_bad = self.OR(self.AND(motive_task,self.NOT(motive_ok)),self.AND(self.NOT(motive_task),tag_bad))
+        flags_task = self.eq(self.r['task'],Task.BLOCK_FLAGS)
+        flags_ok = self.OR(*(self.AND(self.eq(self.r['mode'],m),self.eq(self.read['node']['tag'],t)) for m,t in FLAGS_TAGS.items()),
+            self.AND(self.eq(self.r['mode'],Mode.FLAGS_DOMAIN),self.NOT(expression_tag_bad)))
+        tag_bad = self.OR(self.AND(flags_task,self.NOT(flags_ok)),self.AND(self.NOT(flags_task),tag_bad))
         node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
@@ -283,7 +289,7 @@ class RuleCompiler:
         self.ret(self.AND(or_return, self.NOT(self.eq(result, 0))), 1)
         self.emit(self.AND(or_return, self.eq(result, 0)), mode=Mode.WALK, x=frame['original'], task=Task.LEVEL_NOT_ZERO)
         private_phase = self.OR(*(self.eq(frame['phase'], value) for value in
-            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES+level_normalize_rules.PRIVATE_PHASES+level_geq_rules.PRIVATE_PHASES+expression_equal_rules.PRIVATE_PHASES+inference_rules.PRIVATE_PHASES+constant_rules.PRIVATE_PHASES+source_rules.PRIVATE_PHASES+telescope_rules.PRIVATE_PHASES+occurrence_rules.PRIVATE_PHASES+header_rules.PRIVATE_PHASES+family_occurrence_rules.PRIVATE_PHASES+family_application_rules.PRIVATE_PHASES+positivity_rules.PRIVATE_PHASES+abstract_scope_rules.PRIVATE_PHASES+recursive_argument_rules.PRIVATE_PHASES+constructor_rules.PRIVATE_PHASES+recursor_name_rules.PRIVATE_PHASES+core_names_rules.PRIVATE_PHASES+declare_constructors_rules.PRIVATE_PHASES+elimination_rules.PRIVATE_PHASES+motive_rules.PRIVATE_PHASES))
+            (CALL_BETA_ZETA, CALL_TELESCOPE, CALL_FOLD, CALL_SORT_LEVEL, CALL_CONST_LEVEL, LEVEL_EQUAL_SECOND, LEVEL_OR_SECOND)+level_constructor_rules.PRIVATE_PHASES+level_order_rules.PRIVATE_PHASES+level_normalize_rules.PRIVATE_PHASES+level_geq_rules.PRIVATE_PHASES+expression_equal_rules.PRIVATE_PHASES+inference_rules.PRIVATE_PHASES+constant_rules.PRIVATE_PHASES+source_rules.PRIVATE_PHASES+telescope_rules.PRIVATE_PHASES+occurrence_rules.PRIVATE_PHASES+header_rules.PRIVATE_PHASES+family_occurrence_rules.PRIVATE_PHASES+family_application_rules.PRIVATE_PHASES+positivity_rules.PRIVATE_PHASES+abstract_scope_rules.PRIVATE_PHASES+recursive_argument_rules.PRIVATE_PHASES+constructor_rules.PRIVATE_PHASES+recursor_name_rules.PRIVATE_PHASES+core_names_rules.PRIVATE_PHASES+declare_constructors_rules.PRIVATE_PHASES+elimination_rules.PRIVATE_PHASES+motive_rules.PRIVATE_PHASES+block_flags_rules.PRIVATE_PHASES))
         self.emit(self.AND(returning, nonempty, self.NOT(private_phase)), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
 
@@ -352,6 +358,7 @@ class RuleCompiler:
         elimination_rules.emit_rules(self)
         binder_ops_rules.emit_rules(self)
         motive_rules.emit_rules(self)
+        block_flags_rules.emit_rules(self)
 
         sorting = self.mode(Mode.SORT_RESULT)
         self.stop(self.AND(sorting, self.NOT(self.tag(Tag.SORT))), Outcome.INVALID, Reason.SYNTAX)
@@ -536,7 +543,7 @@ class RuleCompiler:
             const_original=x, expr_depth=depth, mode=Mode.CONST_VECTOR, x=b)
         intercepted = self.AND(expression_level, self.OR(no_bindings, self.tag(Tag.SORT, Tag.CONST)))
         walking = self.AND(walking, self.NOT(intercepted),
-            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS), self.task(Task.ANALYZE_HEADERS), self.task(Task.HAS_FAMILIES), self.task(Task.FAMILY_APPLICATION), self.task(Task.FORMAL_LEVELS), self.task(Task.CHECK_POSITIVITY), self.task(Task.ABSTRACT_SCOPE), self.task(Task.RECURSIVE_ARGUMENT), self.task(Task.REVERSE_LIST), self.task(Task.CHECK_CONSTRUCTORS), self.task(Task.GET_NAME_PATH), self.task(Task.CHECK_RECURSOR_NAME), self.task(Task.CHECK_CORE_NAMES), self.task(Task.DECLARE_CONSTRUCTORS), self.task(Task.INIT_ELIMINATION), self.task(Task.FRESH_LOCAL), self.task(Task.APPLY_SCOPE), self.task(Task.BUILD_MOTIVES))))
+            self.NOT(self.OR(self.task(Task.LEVEL_EQUAL), self.task(Task.LEVEL_NOT_ZERO), self.task(Task.LEVEL_OFFSET), self.task(Task.LEVEL_MAX), self.task(Task.LEVEL_IMAX), self.task(Task.LEVEL_ORDER), self.task(Task.LEVEL_MERGE), self.task(Task.LEVEL_EQUIVALENT), self.task(Task.LEVEL_GEQ), self.task(Task.LEVEL_GEQ_CORE), self.task(Task.EXPR_EQUAL), self.task(Task.VECTOR_EQUAL), self.task(Task.INFER), self.task(Task.CONVERT_POSITIVE), self.task(Task.ENV_LOOKUP), self.task(Task.LOAD_PARAMETERS), self.task(Task.CHECK_NAME), self.task(Task.CHECK_SOURCE), self.task(Task.CONSUME_PARAMETERS), self.task(Task.PREPARE_REUSE), self.task(Task.HAS_CONSTANTS), self.task(Task.ANALYZE_HEADERS), self.task(Task.HAS_FAMILIES), self.task(Task.FAMILY_APPLICATION), self.task(Task.FORMAL_LEVELS), self.task(Task.CHECK_POSITIVITY), self.task(Task.ABSTRACT_SCOPE), self.task(Task.RECURSIVE_ARGUMENT), self.task(Task.REVERSE_LIST), self.task(Task.CHECK_CONSTRUCTORS), self.task(Task.GET_NAME_PATH), self.task(Task.CHECK_RECURSOR_NAME), self.task(Task.CHECK_CORE_NAMES), self.task(Task.DECLARE_CONSTRUCTORS), self.task(Task.INIT_ELIMINATION), self.task(Task.FRESH_LOCAL), self.task(Task.APPLY_SCOPE), self.task(Task.BUILD_MOTIVES), self.task(Task.BLOCK_FLAGS))))
         descending = self.AND(walking, branch)
         room = self.lt(r['sp'], self.cfg.stack)
         self.stop(self.AND(descending, self.NOT(room)), Outcome.RESOURCE, Reason.STACK)
