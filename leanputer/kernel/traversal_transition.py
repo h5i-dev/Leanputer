@@ -6,7 +6,7 @@ has no runtime dependency on the Python kernel operations/reference machine.
 from ..bitvec import Builder
 from .arena import Tag
 from .traversal_machine import (MachineConfig, Mode, Outcome, Reason, Task,
-    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, LOCAL_DECL_TAG,
+    CALL_BETA_ZETA, PENDING_ARGUMENT, CALL_TELESCOPE, CALL_FOLD, LOCAL_DECL_TAG,
     StateLayout, RegisterLayout, assumptions, boot_length, parse_document, prepare,
     program_name, constant_fields, first_banks, second_banks, primitive_basis)
 
@@ -36,6 +36,8 @@ def compile_addresses(layout, optimized=True, target=None):
     base = g.add(r['depth'], r['start'])
     relative = g.sub(a, base)[0]
     index = g.mux(g.eq(r['mode'], g.const(Mode.FIND, width)), r['i'], relative)
+    index = g.mux(g.eq(r['mode'], g.const(Mode.FOLD_SELECT, width)),
+        g.sub(r['ctx'], g.const(1, width))[0], index)
     second = g.compile(list(index[:cfg.context.bit_length()-1]), target)
     return first, second
 
@@ -61,13 +63,17 @@ class RuleCompiler:
         self.emit(self.active, fuel=self.g.sub(self.r['fuel'], self.g.const(1, len(self.r['fuel'])))[0])
         invalid = self.OR(self.eq(self.r['free'], 0), self.lt(self.cfg.heap, self.r['free']),
             self.lt(self.cfg.stack, self.r['sp']), self.lt(self.cfg.context, self.r['count']), self.lt(self.cfg.context, self.r['ctx']),
-            self.lt(Mode.BINDER_RECORD, self.r['mode']), self.lt(Task.VARIABLE_SCOPE, self.r['task']),
-            self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']))
+            self.lt(Mode.FOLD_BUILD, self.r['mode']), self.lt(Task.FOLD_TELESCOPE, self.r['task']),
+            self.lt(1, self.r['bounded']), self.lt(1, self.r['pending_open']), self.lt(1, self.r['pending_fold']),
+            self.NOT(self.OR(self.eq(self.r['open_tag'], Tag.PI), self.eq(self.r['open_tag'], Tag.LAM))),
+            self.NOT(self.OR(self.eq(self.r['fold_tag'], Tag.PI), self.eq(self.r['fold_tag'], Tag.LAM))))
         self.stop(self.AND(self.active, invalid), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(invalid))
         needs_node = self.NOT(self.eq(self.r['mode'], Mode.RETURN))
-        node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])),
-            self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))
+        internal_record = self.eq(self.r['mode'], Mode.FOLD_RECORD)
+        tag_bad = self.OR(self.AND(internal_record, self.NOT(self.eq(self.read['node']['tag'], LOCAL_DECL_TAG))),
+            self.AND(self.NOT(internal_record), self.OR(self.lt(self.read['node']['tag'], Tag.BVAR), self.lt(Tag.MDATA, self.read['node']['tag']))))
+        node_bad = self.OR(self.eq(self.r['x'], 0), self.NOT(self.lt(self.r['x'], self.r['free'])), tag_bad)
         bad = self.AND(needs_node, node_bad)
         self.stop(self.AND(self.active, bad), Outcome.INVALID, Reason.SYNTAX)
         self.active = self.AND(self.active, self.NOT(bad))
@@ -124,13 +130,44 @@ class RuleCompiler:
         top_return = self.AND(returning, self.NOT(nonempty))
         start_open = self.AND(top_return, self.NOT(self.eq(r['pending_open'], 0)))
         self.emit(start_open, mode=Mode.TELESCOPE, x=r['root'], task=Task.OPEN_TELESCOPE, depth=0, pending_open=0)
-        self.stop(self.AND(top_return, self.eq(r['pending_open'], 0)), Outcome.DONE)
+        after_open = self.AND(top_return, self.eq(r['pending_open'], 0))
+        start_fold = self.AND(after_open, self.NOT(self.eq(r['pending_fold'], 0)))
+        self.emit(start_fold, mode=Mode.FOLD_SELECT, x=result, fold_body=result, task=Task.FOLD_TELESCOPE, pending_fold=0)
+        self.stop(self.AND(after_open, self.eq(r['pending_fold'], 0)), Outcome.DONE)
         internal_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_BETA_ZETA))
         self.emit(internal_return, sp=top, mode=Mode.BETA_ZETA, x=result, depth=0, task=Task.BETA_ZETA)
         telescope_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_TELESCOPE))
         self.emit(telescope_return, sp=top, mode=Mode.TELESCOPE, x=result, depth=0, task=Task.OPEN_TELESCOPE)
-        self.emit(self.AND(returning, nonempty, self.NOT(self.OR(self.eq(frame['phase'], CALL_BETA_ZETA), self.eq(frame['phase'], CALL_TELESCOPE)))), mode=Mode.RESUME,
+        fold_return = self.AND(returning, nonempty, self.eq(frame['phase'], CALL_FOLD))
+        self.emit(fold_return, sp=top, mode=Mode.FOLD_BUILD, x=result, task=Task.FOLD_TELESCOPE)
+        self.emit(self.AND(returning, nonempty, self.NOT(self.OR(self.eq(frame['phase'], CALL_BETA_ZETA), self.eq(frame['phase'], CALL_TELESCOPE), self.eq(frame['phase'], CALL_FOLD)))), mode=Mode.RESUME,
                   x=frame['original'], depth=frame['depth'], task=frame['task'])
+
+        folding = self.mode(Mode.FOLD_SELECT)
+        active_local = self.NOT(self.eq(r['ctx'], 0))
+        self.ret(self.AND(folding, self.NOT(active_local)), r['fold_body'])
+        self.emit(self.AND(folding, active_local), mode=Mode.FOLD_RECORD, x=operand)
+        record = self.mode(Mode.FOLD_RECORD)
+        valid_record = self.AND(self.NOT(self.eq(a, 0)), self.lt(a, r['free']), self.NOT(self.eq(b, 0)), self.lt(b, r['free']))
+        self.stop(self.AND(record, self.NOT(valid_record)), Outcome.INVALID, Reason.SYNTAX)
+        self.emit(self.AND(record, valid_record), mode=Mode.FOLD_LOCAL, x=a, domain=b, binder_info=c)
+        local = self.mode(Mode.FOLD_LOCAL)
+        valid_local = self.tag(Tag.LOCAL)
+        self.stop(self.AND(local, self.NOT(valid_local)), Outcome.INVALID, Reason.SYNTAX)
+        stack_room = self.lt(r['sp'], self.cfg.stack)
+        self.stop(self.AND(local, valid_local, self.NOT(stack_room)), Outcome.RESOURCE, Reason.STACK)
+        local = self.AND(local, valid_local, stack_room)
+        self.write('stack', local, r['sp'], (CALL_FOLD, 0, 0, Task.FOLD_TELESCOPE, 0, 0))
+        self.emit(local, sp=self.add(r['sp'], 1), mode=Mode.WALK, x=r['fold_body'], depth=0,
+            task=Task.ABSTRACT_ONE, abstract_uid=a)
+        build = self.mode(Mode.FOLD_BUILD)
+        self.stop(self.AND(build, self.NOT(active_local)), Outcome.INVALID, Reason.SYNTAX)
+        heap_room = self.lt(r['free'], self.cfg.heap)
+        self.stop(self.AND(build, active_local, self.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
+        build = self.AND(build, active_local, heap_room)
+        self.write('heap', build, r['free'], (r['fold_tag'], r['domain'], result, r['binder_info']))
+        self.emit(build, free=self.add(r['free'], 1), fold_body=r['free'], ctx=self.sub(r['ctx'], 1),
+            mode=Mode.FOLD_SELECT, x=r['free'])
 
         # Consume declared Pi binders by a count-driven loop. Each allocated
         # Local has an arena-address UID and a separate (Local,type,binderInfo)
@@ -140,8 +177,9 @@ class RuleCompiler:
         at_limit = self.AND(bounded, self.eq(r['ctx'], r['limit']))
         self.ret(self.AND(telescope, at_limit), x)
         continue_open = self.AND(telescope, self.NOT(at_limit))
-        pi = self.tag(Tag.PI)
-        self.stop(self.AND(continue_open, self.NOT(pi), bounded), Outcome.INVALID, Reason.EXPECT_PI)
+        pi = self.eq(node['tag'], r['open_tag'])
+        expected = self.mux(self.eq(r['open_tag'], Tag.PI), Reason.EXPECT_PI, Reason.EXPECT_LAM)
+        self.stop(self.AND(continue_open, self.NOT(pi), bounded), Outcome.INVALID, expected)
         self.ret(self.AND(continue_open, self.NOT(pi), self.NOT(bounded)), x)
         opening = self.AND(continue_open, pi)
         context_room = self.lt(r['ctx'], self.cfg.context)
@@ -248,6 +286,8 @@ class RuleCompiler:
         scope_bad = self.AND(leaf, self.task(Task.VARIABLE_SCOPE),
             self.OR(self.tag(Tag.LOCAL), self.AND(self.tag(Tag.BVAR), self.NOT(self.lt(a, depth)))))
         self.stop(scope_bad, Outcome.INVALID, Reason.SCOPE)
+        abstract_one = self.AND(leaf, self.task(Task.ABSTRACT_ONE), self.tag(Tag.LOCAL), self.eq(a, r['abstract_uid']))
+        self.alloc(abstract_one, (Tag.BVAR, depth, 0, 0))
         inst = self.OR(self.task(Task.INSTANTIATE), self.task(Task.INSTANTIATE_ONE))
         var_transform = self.AND(leaf, self.tag(Tag.BVAR), self.OR(self.task(Task.LIFT), inst))
         start = self.mux(self.task(Task.INSTANTIATE_ONE), 0, self.mux(self.task(Task.LIFT), r['cutoff'], r['start']))
@@ -279,7 +319,7 @@ class RuleCompiler:
         searching = self.AND(leaf, self.OR(self.AND(self.tag(Tag.LOCAL), self.task(Task.ABSTRACT)),
             self.AND(self.tag(Tag.CONST), self.task(Task.OCCURS))), self.NOT(self.eq(r['count'], 0)))
         self.emit(searching, mode=Mode.FIND, i=self.sub(r['count'], 1))
-        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad)), x)
+        self.ret(self.AND(leaf, self.NOT(var_transform), self.NOT(searching), self.NOT(scope_bad), self.NOT(abstract_one)), x)
 
     def finish(self, memory_update='attention_delta', target=None):
         if memory_update != 'attention_delta':

@@ -33,6 +33,7 @@ class Reason(IntEnum):
     SCOPE = 6
     CONTEXT = 7
     EXPECT_PI = 8
+    EXPECT_LAM = 9
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
 
@@ -43,8 +44,11 @@ class Task(IntEnum):
     OCCURS = 3
     BETA_ZETA = 4
     INSTANTIATE_ONE = 5          # Internal service call, no proof-data entry.
-    OPEN_TELESCOPE = 6          # Declared Pi prefix, closed raw syntax input.
+    OPEN_TELESCOPE = 6          # Declared Pi/Lam prefix, closed raw syntax input.
     VARIABLE_SCOPE = 7          # BVar/Local scope only, not universe checking.
+    ROUNDTRIP_TELESCOPE = 8     # Wrapper tests OPEN then the internal FOLD.
+    ABSTRACT_ONE = 9            # Internal semantic subroutine only.
+    FOLD_TELESCOPE = 10         # Internal: consumes derived Local records.
 
 
 class Mode(IntEnum):
@@ -55,17 +59,23 @@ class Mode(IntEnum):
     BETA_ZETA = 4
     TELESCOPE = 5
     BINDER_RECORD = 6
+    FOLD_SELECT = 7
+    FOLD_RECORD = 8
+    FOLD_LOCAL = 9
+    FOLD_BUILD = 10
 
 
 CALL_BETA_ZETA = 16
 PENDING_ARGUMENT = 17
 CALL_TELESCOPE = 18
+CALL_FOLD = 19
 LOCAL_DECL_TAG = 32             # Internal record, never an input Expr tag.
 
 
 REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'decl_count', 'ctx', 'x', 'depth', 'task', 'r', 'delta', 'cutoff', 'start',
-    'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open')
+    'count', 'i', 'found', 'root', 'substitution', 'limit', 'bounded', 'pending_open',
+    'pending_fold', 'fold_body', 'domain', 'binder_info', 'abstract_uid', 'open_tag', 'fold_tag')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -164,7 +174,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task == Task.INSTANTIATE_ONE:
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -172,14 +182,20 @@ def parse_document(doc):
             a.expr(value)
     elif task == Task.ABSTRACT and any(not v for v in operands):
         raise KernelError('zero local identity')
-    if task in (Task.OPEN_TELESCOPE, Task.VARIABLE_SCOPE) and operands:
+    if task in (Task.OPEN_TELESCOPE, Task.ROUNDTRIP_TELESCOPE, Task.VARIABLE_SCOPE) and operands:
         raise KernelError('closed variable-scope/telescope entry has no outer locals')
     limit = doc.get('limit')
     if limit is not None:
         a.word(limit)
+    binder_tags = {'pi': Tag.PI, 'lam': Tag.LAM}
+    open_kind = doc.get('open_binder', 'pi')
+    fold_kind = doc.get('fold_binder', open_kind)
+    if open_kind not in binder_tags or fold_kind not in binder_tags:
+        raise KernelError('telescope binder kind must be pi or lam')
     request = dict(arena=a, root=doc['root'], task=task, operands=operands,
         delta=a.word(doc.get('amount', 0)), cutoff=a.word(doc.get('cutoff', 0)),
-        start=a.word(doc.get('start', 0)), limit=limit)
+        start=a.word(doc.get('start', 0)), limit=limit,
+        open_tag=int(binder_tags[open_kind]), fold_tag=int(binder_tags[fold_kind]))
     return request, None, ()
 
 
@@ -200,12 +216,13 @@ def prepare(config, request, _unused=None, _declarations=()):
     state['context'][:len(operands)] = [[v] for v in operands]
     state['regs'].update(fuel=config.fuel, free=len(a.rows), x=request['root'],
         root=request['root'], task=int(request['task']), count=len(operands), ctx=len(operands),
-        **{n: request[n] for n in ('delta', 'cutoff', 'start')})
+        **{n: request[n] for n in ('delta', 'cutoff', 'start', 'open_tag', 'fold_tag')})
     if request['task'] == Task.BETA_ZETA:
         state['regs']['mode'] = int(Mode.BETA_ZETA)
-    if request['task'] == Task.OPEN_TELESCOPE:
+    if request['task'] in (Task.OPEN_TELESCOPE, Task.ROUNDTRIP_TELESCOPE):
         state['regs'].update(task=int(Task.VARIABLE_SCOPE), pending_open=1,
-            bounded=int(request['limit'] is not None), limit=request['limit'] or 0)
+            bounded=int(request['limit'] is not None), limit=request['limit'] or 0,
+            pending_fold=int(request['task'] == Task.ROUNDTRIP_TELESCOPE))
     return state
 
 
@@ -244,14 +261,18 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.BINDER_RECORD or r['task'] > Task.VARIABLE_SCOPE
-                or r['bounded'] > 1 or r['pending_open'] > 1):
+                or r['mode'] > Mode.FOLD_BUILD or r['task'] > Task.FOLD_TELESCOPE
+                or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
+                or r['open_tag'] not in (Tag.PI, Tag.LAM) or r['fold_tag'] not in (Tag.PI, Tag.LAM)):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_open']:
                     r.update(mode=Mode.TELESCOPE, x=r['root'], task=Task.OPEN_TELESCOPE, depth=0, pending_open=0)
+                elif r['pending_fold']:
+                    r.update(mode=Mode.FOLD_SELECT, x=r['r'], fold_body=r['r'],
+                        task=Task.FOLD_TELESCOPE, pending_fold=0)
                 else:
                     stop(Outcome.DONE)
             else:
@@ -260,6 +281,8 @@ class SpecMachine:
                     r.update(sp=r['sp']-1, mode=Mode.BETA_ZETA, x=r['r'], depth=0, task=Task.BETA_ZETA)
                 elif phase == CALL_TELESCOPE:
                     r.update(sp=r['sp']-1, mode=Mode.TELESCOPE, x=r['r'], depth=0, task=Task.OPEN_TELESCOPE)
+                elif phase == CALL_FOLD:
+                    r.update(sp=r['sp']-1, mode=Mode.FOLD_BUILD, x=r['r'], task=Task.FOLD_TELESCOPE)
                 elif phase == PENDING_ARGUMENT:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
                 else:
@@ -269,15 +292,48 @@ class SpecMachine:
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         tag, a, b, c = s['heap'][r['x']]
-        if not Tag.BVAR <= tag <= Tag.MDATA:
+        if (tag != LOCAL_DECL_TAG if r['mode'] == Mode.FOLD_RECORD else not Tag.BVAR <= tag <= Tag.MDATA):
             stop(Outcome.INVALID, Reason.SYNTAX)
             return s
         task, depth = r['task'], r['depth']
+        if r['mode'] == Mode.FOLD_SELECT:
+            if not r['ctx']:
+                ret(r['fold_body'])
+            else:
+                r.update(mode=Mode.FOLD_RECORD, x=s['context'][r['ctx']-1][0])
+            return s
+        if r['mode'] == Mode.FOLD_RECORD:
+            if not 0 < a < r['free'] or not 0 < b < r['free']:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            else:
+                r.update(mode=Mode.FOLD_LOCAL, x=a, domain=b, binder_info=c)
+            return s
+        if r['mode'] == Mode.FOLD_LOCAL:
+            if tag != Tag.LOCAL:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['sp'] >= cfg.stack:
+                stop(Outcome.RESOURCE, Reason.STACK)
+            else:
+                s['stack'][r['sp']] = [CALL_FOLD, 0, 0, Task.FOLD_TELESCOPE, 0, 0]
+                r.update(sp=r['sp']+1, mode=Mode.WALK, x=r['fold_body'], depth=0,
+                    task=Task.ABSTRACT_ONE, abstract_uid=a)
+            return s
+        if r['mode'] == Mode.FOLD_BUILD:
+            if not r['ctx']:
+                stop(Outcome.INVALID, Reason.SYNTAX)
+            elif r['free'] >= cfg.heap:
+                stop(Outcome.RESOURCE, Reason.HEAP)
+            else:
+                binder = r['free']
+                s['heap'][binder] = [r['fold_tag'], r['domain'], r['r'], r['binder_info']]
+                r.update(free=binder+1, fold_body=binder, ctx=r['ctx']-1,
+                    mode=Mode.FOLD_SELECT, x=binder)
+            return s
         if r['mode'] == Mode.TELESCOPE:
             if r['bounded'] and r['ctx'] == r['limit']:
                 ret(r['x'])
-            elif tag != Tag.PI:
-                if r['bounded']: stop(Outcome.INVALID, Reason.EXPECT_PI)
+            elif tag != r['open_tag']:
+                if r['bounded']: stop(Outcome.INVALID, Reason.EXPECT_PI if r['open_tag'] == Tag.PI else Reason.EXPECT_LAM)
                 else: ret(r['x'])
             elif r['ctx'] >= cfg.context:
                 stop(Outcome.RESOURCE, Reason.CONTEXT)
@@ -384,6 +440,8 @@ class SpecMachine:
             else:
                 s['stack'][r['sp']] = [1, r['x'], depth, task, 0, 0]
                 r.update(sp=r['sp']+1, mode=Mode.WALK, x=child_list[0])
+        elif task == Task.ABSTRACT_ONE and tag == Tag.LOCAL and a == r['abstract_uid']:
+            alloc((Tag.BVAR, depth, 0, 0))
         elif task == Task.VARIABLE_SCOPE and (tag == Tag.LOCAL or tag == Tag.BVAR and a >= depth):
             stop(Outcome.INVALID, Reason.SCOPE)
         elif tag == Tag.BVAR and task in (Task.LIFT, Task.INSTANTIATE, Task.INSTANTIATE_ONE):
@@ -422,7 +480,7 @@ def assumptions(_):
     return []
 
 
-program_name = 'kernel.general-telescope-services.v3'
+program_name = 'kernel.general-telescope-services.v4'
 constant_fields = 6
 first_banks = (('heap', 1), ('stack', 1))
 second_banks = ('context',)

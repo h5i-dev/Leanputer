@@ -2,7 +2,7 @@
 
 The Python algorithms are development specifications, never proof-loader
 answers. traversal_transition separately lowers shared syntax operations to
-stock forward/cache, including declared telescope opening; this is not full
+stock forward/cache, including generic telescope opening/folding; this is not full
 kernel checking. See docs/kernel/target.md
 for exact operation evidence and remaining lowering/admission gaps.
 """

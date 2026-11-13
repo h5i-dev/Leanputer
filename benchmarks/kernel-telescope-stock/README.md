@@ -1,5 +1,8 @@
 # Declared telescope stock operation
 
+Recorded controller/evidence: commit `d944582`. The current source also folds
+Pi/Lam telescopes; see [the extended operation evidence](../kernel-telescope-fold-stock/README.md).
+
 The shared controller now opens an arbitrary bounded declared Pi telescope or
 a requested prefix. The count is input data. Each iteration creates a fresh
 Local and private `(Local,type,binderInfo)` record, then calls the SAME

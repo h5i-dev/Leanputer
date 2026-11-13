@@ -66,6 +66,11 @@ def cases():
     docs.append(spec.document(z, telescope, spec.Task.OPEN_TELESCOPE, limit=4))
     docs.append(spec.document(z, z.mk(Tag.BVAR, 0), spec.Task.VARIABLE_SCOPE))
     docs.append(spec.document(z, z.mk(Tag.LOCAL, 37), spec.Task.OPEN_TELESCOPE))
+    docs.append(spec.document(z, telescope, spec.Task.ROUNDTRIP_TELESCOPE))
+    docs.append(spec.document(z, telescope, spec.Task.ROUNDTRIP_TELESCOPE, limit=2))
+    docs.append(spec.document(z, telescope, spec.Task.ROUNDTRIP_TELESCOPE, fold_binder='lam'))
+    lambda_ = fold_telescope(z, ctx, (carrier, first), first, Tag.LAM)
+    docs.append(spec.document(z, lambda_, spec.Task.ROUNDTRIP_TELESCOPE, open_binder='lam'))
     for i, doc in enumerate(docs):
         doc['name'] = f'kernel-operation-{i}'
     return docs
@@ -173,7 +178,8 @@ class TraversalTransitionTest(unittest.TestCase):
                 self.assertEqual(bool(state['regs']['found']), has_constant(a, root, doc['operands']))
             elif task == spec.Task.OPEN_TELESCOPE:
                 context = LocalContext(a)
-                opened = open_telescope(a, context, root, lambda ref: ref, count=doc.get('limit'))
+                open_tag = Tag.PI if doc.get('open_binder', 'pi') == 'pi' else Tag.LAM
+                opened = open_telescope(a, context, root, lambda ref: ref, tag=open_tag, count=doc.get('limit'))
                 self.assertEqual(state['regs']['ctx'], len(opened.locals))
                 replacements = {}
                 records = [state['heap'][state['context'][i][0]] for i in range(state['regs']['ctx'])]
@@ -187,6 +193,14 @@ class TraversalTransitionTest(unittest.TestCase):
                 for record, local in zip(records, opened.locals):
                     self.assertEqual(mapping[record[2]], context.lookup(local).type)
                     self.assertEqual(record[3], context.lookup(local).binder_info)
+            elif task == spec.Task.ROUNDTRIP_TELESCOPE:
+                context = LocalContext(a)
+                open_tag = Tag.PI if doc.get('open_binder', 'pi') == 'pi' else Tag.LAM
+                fold_tag = Tag.PI if doc.get('fold_binder', doc.get('open_binder', 'pi')) == 'pi' else Tag.LAM
+                opened = open_telescope(a, context, root, lambda ref: ref, tag=open_tag, count=doc.get('limit'))
+                expected = fold_telescope(a, context, opened.locals, opened.body, fold_tag)
+                self.assertEqual(canonical_result(state, a), expected)
+                self.assertEqual(state['regs']['ctx'], 0)
             else:
                 if task == spec.Task.LIFT:
                     expected = lift(a, root, doc.get('amount', 0), doc.get('cutoff', 0))
@@ -222,9 +236,10 @@ class TraversalTransitionTest(unittest.TestCase):
             self.assertEqual((state['regs']['status'], state['regs']['reason']), (spec.Outcome.RESOURCE, expected))
             self.assertEqual(circuit.step(state), state)
         # Internal substitution calls are inaccessible to raw operation input.
-        internal = spec.document(a, root, spec.Task.INSTANTIATE_ONE)
-        with self.assertRaises(KernelError):
-            spec.parse_document(internal)
+        for task in (spec.Task.INSTANTIATE_ONE, spec.Task.ABSTRACT_ONE, spec.Task.FOLD_TELESCOPE):
+            internal = spec.document(a, root, task)
+            with self.assertRaises(KernelError):
+                spec.parse_document(internal)
 
 
 if __name__ == '__main__':

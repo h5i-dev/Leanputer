@@ -1,0 +1,3048 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 75,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 17,
+      "depth": 0,
+      "task": 0,
+      "r": 28,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 73,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 17,
+      "depth": 0,
+      "task": 1,
+      "r": 28,
+      "delta": 3,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 73,
+      "free": 29,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 17,
+      "depth": 0,
+      "task": 2,
+      "r": 28,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 1,
+      "found": 0,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 3,
+      "status": 1,
+      "reason": 0,
+      "fuel": 125,
+      "free": 18,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 5,
+      "depth": 0,
+      "task": 3,
+      "r": 17,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 1,
+      "found": 1,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 73,
+      "free": 18,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 17,
+      "depth": 0,
+      "task": 3,
+      "r": 17,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 2,
+      "i": 0,
+      "found": 0,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 75,
+      "free": 18,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 17,
+      "depth": 0,
+      "task": 1,
+      "r": 17,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 2,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 17,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 0,
+      "status": 3,
+      "reason": 4,
+      "fuel": 127,
+      "free": 2,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 0,
+      "r": 0,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 125,
+      "free": 19,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 5,
+      "x": 2,
+      "depth": 0,
+      "task": 2,
+      "r": 18,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 5,
+      "i": 4,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 115,
+      "free": 10,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 9,
+      "depth": 0,
+      "task": 4,
+      "r": 9,
+      "delta": 1,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 2,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 106,
+      "free": 13,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 4,
+      "r": 4,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 11,
+      "substitution": 8,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 119,
+      "free": 18,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 16,
+      "depth": 0,
+      "task": 4,
+      "r": 17,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 16,
+      "substitution": 13,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 74,
+      "free": 21,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 3,
+      "x": 13,
+      "depth": 0,
+      "task": 6,
+      "r": 13,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 19,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 78,
+      "free": 19,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 15,
+      "depth": 0,
+      "task": 6,
+      "r": 15,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 17,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 5,
+      "status": 2,
+      "reason": 8,
+      "fuel": 75,
+      "free": 21,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 3,
+      "x": 13,
+      "depth": 0,
+      "task": 6,
+      "r": 13,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 19,
+      "limit": 4,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 127,
+      "free": 13,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 7,
+      "depth": 0,
+      "task": 7,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 7,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 0,
+      "status": 2,
+      "reason": 6,
+      "fuel": 127,
+      "free": 14,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 13,
+      "depth": 0,
+      "task": 7,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 13,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 1,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 36,
+      "free": 30,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 29,
+      "depth": 0,
+      "task": 10,
+      "r": 29,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 20,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 29,
+      "domain": 1,
+      "binder_info": 1,
+      "abstract_uid": 14,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 46,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 26,
+      "depth": 0,
+      "task": 10,
+      "r": 26,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 18,
+      "limit": 2,
+      "bounded": 1,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 26,
+      "domain": 1,
+      "binder_info": 1,
+      "abstract_uid": 14,
+      "open_tag": 6,
+      "fold_tag": 6
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 36,
+      "free": 30,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 29,
+      "depth": 0,
+      "task": 10,
+      "r": 29,
+      "delta": 2,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 12,
+      "substitution": 20,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 29,
+      "domain": 1,
+      "binder_info": 1,
+      "abstract_uid": 14,
+      "open_tag": 6,
+      "fold_tag": 7
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 78,
+      "free": 27,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 26,
+      "depth": 0,
+      "task": 10,
+      "r": 26,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 16,
+      "substitution": 20,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 26,
+      "domain": 1,
+      "binder_info": 1,
+      "abstract_uid": 17,
+      "open_tag": 7,
+      "fold_tag": 7
+    }
+  ],
+  "results": [
+    {
+      "name": "kernel-operation-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 53
+    },
+    {
+      "name": "kernel-operation-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 55
+    },
+    {
+      "name": "kernel-operation-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 28,
+      "semantic_steps": 55
+    },
+    {
+      "name": "kernel-operation-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 17,
+      "semantic_steps": 3
+    },
+    {
+      "name": "kernel-operation-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 17,
+      "semantic_steps": 55
+    },
+    {
+      "name": "kernel-operation-5",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 17,
+      "semantic_steps": 53
+    },
+    {
+      "name": "kernel-operation-6",
+      "status": "RESOURCE",
+      "reason": "INDEX",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 1,
+      "allocated_heap_nodes": 1,
+      "semantic_steps": 1
+    },
+    {
+      "name": "kernel-operation-7",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 17,
+      "allocated_heap_nodes": 18,
+      "semantic_steps": 3
+    },
+    {
+      "name": "kernel-operation-8",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 7,
+      "allocated_heap_nodes": 9,
+      "semantic_steps": 13
+    },
+    {
+      "name": "kernel-operation-9",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 11,
+      "allocated_heap_nodes": 12,
+      "semantic_steps": 22
+    },
+    {
+      "name": "kernel-operation-10",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 16,
+      "allocated_heap_nodes": 17,
+      "semantic_steps": 9
+    },
+    {
+      "name": "kernel-operation-11",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 12,
+      "allocated_heap_nodes": 20,
+      "semantic_steps": 54
+    },
+    {
+      "name": "kernel-operation-12",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 12,
+      "allocated_heap_nodes": 18,
+      "semantic_steps": 50
+    },
+    {
+      "name": "kernel-operation-13",
+      "status": "INVALID",
+      "reason": "EXPECT_PI",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 12,
+      "allocated_heap_nodes": 20,
+      "semantic_steps": 53
+    },
+    {
+      "name": "kernel-operation-14",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 12,
+      "allocated_heap_nodes": 12,
+      "semantic_steps": 1
+    },
+    {
+      "name": "kernel-operation-15",
+      "status": "INVALID",
+      "reason": "SCOPE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 13,
+      "allocated_heap_nodes": 13,
+      "semantic_steps": 1
+    },
+    {
+      "name": "kernel-operation-16",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 13,
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 92
+    },
+    {
+      "name": "kernel-operation-17",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 13,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 82
+    },
+    {
+      "name": "kernel-operation-18",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 13,
+      "allocated_heap_nodes": 29,
+      "semantic_steps": 92
+    },
+    {
+      "name": "kernel-operation-19",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 16,
+      "allocated_heap_nodes": 26,
+      "semantic_steps": 50
+    }
+  ],
+  "forward_seconds": 8.482352018996608,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 995,
+    "persistent_channels": 410,
+    "subtract_handovers": 3046,
+    "head_clears": 0,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 41,
+      "dims": 4042,
+      "heads": 3,
+      "ffn_units": 5034,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 4,
+  "primitive_basis": [],
+  "semantic_program": "kernel.general-telescope-services.v4",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 94988498,
+  "weight_bytes": 189976996,
+  "cuda_peak_allocated_bytes": 271050240,
+  "host_process_peak_rss_bytes": 1679024128,
+  "hidden_size": 1024,
+  "native_layers": 42,
+  "boot_tokens": 23,
+  "applied_steps": 130,
+  "format": "leanputer.kernel-operation-stock-smoke.v1",
+  "config": {
+    "heap": 64,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 128,
+    "word_bits": 8
+  },
+  "compile_seconds": 3.696549258005689,
+  "device": "cuda",
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "LIFT",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [],
+      "amount": 2,
+      "name": "kernel-operation-0"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "INSTANTIATE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [
+        4,
+        6
+      ],
+      "name": "kernel-operation-1"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ABSTRACT",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [
+        2,
+        1
+      ],
+      "name": "kernel-operation-2"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OCCURS",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [
+        29,
+        73
+      ],
+      "name": "kernel-operation-3"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OCCURS",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [
+        19,
+        23
+      ],
+      "name": "kernel-operation-4"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "INSTANTIATE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 17,
+      "operands": [],
+      "start": 2,
+      "name": "kernel-operation-5"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "LIFT",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          1,
+          255,
+          0,
+          0
+        ]
+      ],
+      "root": 1,
+      "operands": [],
+      "amount": 1,
+      "name": "kernel-operation-6"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ABSTRACT",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        [],
+        [
+          17
+        ],
+        [
+          67
+        ]
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          73,
+          1,
+          0
+        ],
+        [
+          10,
+          2,
+          0,
+          0
+        ],
+        [
+          11,
+          3,
+          0,
+          0
+        ],
+        [
+          1,
+          3,
+          0,
+          0
+        ],
+        [
+          5,
+          8,
+          2,
+          0
+        ],
+        [
+          12,
+          9,
+          31,
+          0
+        ],
+        [
+          9,
+          29,
+          5,
+          10
+        ],
+        [
+          7,
+          1,
+          11,
+          2
+        ],
+        [
+          5,
+          2,
+          4,
+          0
+        ],
+        [
+          5,
+          13,
+          6,
+          0
+        ],
+        [
+          5,
+          14,
+          7,
+          0
+        ],
+        [
+          8,
+          1,
+          15,
+          12
+        ],
+        [
+          6,
+          5,
+          16,
+          1
+        ]
+      ],
+      "root": 2,
+      "operands": [
+        2,
+        3,
+        4,
+        5,
+        1
+      ],
+      "name": "kernel-operation-7"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "BETA_ZETA",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        []
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          37,
+          1,
+          0
+        ],
+        [
+          7,
+          1,
+          3,
+          0
+        ],
+        [
+          7,
+          1,
+          5,
+          0
+        ],
+        [
+          5,
+          6,
+          2,
+          0
+        ]
+      ],
+      "root": 7,
+      "operands": [],
+      "name": "kernel-operation-8"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "BETA_ZETA",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        []
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          37,
+          1,
+          0
+        ],
+        [
+          7,
+          1,
+          3,
+          0
+        ],
+        [
+          7,
+          1,
+          5,
+          0
+        ],
+        [
+          5,
+          6,
+          2,
+          0
+        ],
+        [
+          12,
+          4,
+          19,
+          0
+        ],
+        [
+          7,
+          1,
+          2,
+          0
+        ],
+        [
+          5,
+          9,
+          2,
+          0
+        ],
+        [
+          8,
+          1,
+          8,
+          10
+        ]
+      ],
+      "root": 11,
+      "operands": [],
+      "name": "kernel-operation-9"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "BETA_ZETA",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "vectors": [
+        []
+      ],
+      "rows": [
+        [
+          3,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          4,
+          37,
+          1,
+          0
+        ],
+        [
+          7,
+          1,
+          3,
+          0
+        ],
+        [
+          7,
+          1,
+          5,
+          0
+        ],
+        [
+          5,
+          6,
+          2,
+          0
+        ],
+        [
+          12,
+          4,
+          19,
+          0
+        ],
+        [
+          7,
+          1,
+          2,
+          0
+        ],
+        [
+          5,
+          9,
+          2,
+          0
+        ],
+        [
+          8,
+          1,
+          8,
+          10
+        ],
+        [
+          7,
+          1,
+          4,
+          0
+        ],
+        [
+          4,
+          41,
+          1,
+          0
+        ],
+        [
+          4,
+          43,
+          1,
+          0
+        ],
+        [
+          5,
+          12,
+          13,
+          0
+        ],
+        [
+          5,
+          15,
+          14,
+          0
+        ]
+      ],
+      "root": 16,
+      "operands": [],
+      "name": "kernel-operation-10"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OPEN_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "name": "kernel-operation-11"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OPEN_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "limit": 2,
+      "name": "kernel-operation-12"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OPEN_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "limit": 4,
+      "name": "kernel-operation-13"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "VARIABLE_SCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ]
+      ],
+      "root": 7,
+      "operands": [],
+      "name": "kernel-operation-14"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "OPEN_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          0
+        ]
+      ],
+      "root": 13,
+      "operands": [],
+      "name": "kernel-operation-15"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ROUNDTRIP_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          0
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "name": "kernel-operation-16"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ROUNDTRIP_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          0
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "limit": 2,
+      "name": "kernel-operation-17"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ROUNDTRIP_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          0
+        ]
+      ],
+      "root": 12,
+      "operands": [],
+      "fold_binder": "lam",
+      "name": "kernel-operation-18"
+    },
+    {
+      "format": "leanputer.kernel-operation.v1",
+      "task": "ROUNDTRIP_TELESCOPE",
+      "levels": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0
+        ]
+      ],
+      "vectors": [],
+      "rows": [
+        [
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          6,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          8,
+          9,
+          3
+        ],
+        [
+          6,
+          7,
+          10,
+          0
+        ],
+        [
+          6,
+          1,
+          11,
+          1
+        ],
+        [
+          2,
+          37,
+          0,
+          0
+        ],
+        [
+          7,
+          2,
+          7,
+          0
+        ],
+        [
+          7,
+          7,
+          7,
+          0
+        ],
+        [
+          7,
+          1,
+          15,
+          1
+        ]
+      ],
+      "root": 16,
+      "operands": [],
+      "open_binder": "lam",
+      "name": "kernel-operation-19"
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 64,
+      "word_fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "word_fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "word_fields": 1
+    }
+  ],
+  "validation_scope": "20 general expression-service probes, not declaration admission or proof coverage",
+  "full_kernel_native_support": false
+}
