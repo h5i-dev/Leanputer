@@ -357,3 +357,15 @@ Evidence is under benchmarks/native/option-{smoke,input,config}*.
 Four of12currentOption-first blockers now syntax-export; newly inspected
 Function.IsPartialInv.eq plans at4930transitions/700nodes with three checked
 dependencies and noaxioms. Its native check is separate from this small smoke.
+
+The actual mathlib Option judgment Function.IsPartialInv.eq@[1,1] now passes
+native checking:4930semantic transitions, three checked dependencies, noaxioms.
+At heap1024/stack32/context16/constants8/fuel4992:98boot+4994stockforwards,
+740.529s forward,33.727s compile,1,965,272,524BF16parameters/3,930,545,048
+weightbytes/H5120/103layers/inter1024; peakCUDA3,957,142,016bytes and
+host1,759,862,784bytes. Only62fuelsteps exceeded the planned semantic work.
+This12.3minute development run is poor performance, not a throughput claim;
+focused CPU record validation overlapped part of it. It is one new verified
+source ground instance, not4proved from the syntax subset or a full-population
+coverage update. Exact frozen Option checkpoint inputs/config/report are under
+benchmarks/native/option-real-*; weighted semantics match commit271263d.
