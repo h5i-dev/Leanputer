@@ -50,3 +50,13 @@ proof/declaration admission. Canonical normalization/equivalence, dependent
 inference and checked environment callers are subsequent integration work.
 There is no additional native source theorem/mathlib coverage from these
 operator contracts, and no full-kernel or formal-verification claim.
+
+Source instantiation is now lowered separately from RAW substitution. Changed
+Max/IMax children call the smart constructors; untouched source/replacement
+syntax is not globally normalized. Both standalone levels and all-Expr scheme
+callers share these routines. The total structural base/offset-last comparator
+is also weighted and handles arbitrary nested Max/IMax bases with private pair
+continuations. Its stable symbol-ID ordering can differ from Lean host name
+ordering; canonicalization/equality must use the SAME order consistently within
+an artifact. [Focused stock evidence](../../benchmarks/kernel-source-instantiation-stock/README.md).
+Canonical normalization and equivalence are still subsequent integrations.

@@ -1,0 +1,1403 @@
+{
+  "registers": [
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 114,
+      "free": 46,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 17,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 2,
+      "lookup_level": 3,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 3,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 3,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 112,
+      "free": 46,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 18,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 1,
+      "lookup_level": 3,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 2,
+      "constructor_right": 1,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 95,
+      "free": 48,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 2,
+      "depth": 0,
+      "task": 17,
+      "r": 47,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 5,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 1,
+      "lookup_level": 4,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 68,
+      "left_a": 2,
+      "left_b": 0,
+      "level_offset": 1,
+      "pending_compare": 0,
+      "constructor_left": 3,
+      "constructor_right": 2,
+      "constructor_stage": 5,
+      "left_base": 3,
+      "left_offset": 0,
+      "right_offset": 1,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 120,
+      "free": 36,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 3,
+      "depth": 0,
+      "task": 19,
+      "r": 3,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 0,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 99,
+      "free": 49,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 1,
+      "x": 1,
+      "depth": 0,
+      "task": 17,
+      "r": 48,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 6,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 1,
+      "lookup_level": 3,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 48,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 48,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 60,
+      "free": 54,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 2,
+      "x": 13,
+      "depth": 0,
+      "task": 20,
+      "r": 53,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 1,
+      "i": 0,
+      "found": 0,
+      "root": 13,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 1,
+      "parameter": 3,
+      "lookup_level": 3,
+      "const_original": 10,
+      "expr_depth": 1,
+      "vec_length": 2,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 49,
+      "vec_changed": 1,
+      "vector_result": 50,
+      "peer": 3,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 1,
+      "constructor_right": 3,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 117,
+      "free": 36,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 1,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 1
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 105,
+      "free": 45,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 2,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 4,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 66,
+      "left_a": 2,
+      "left_b": 3,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 94,
+      "free": 52,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 21,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 4,
+      "left_tag": 68,
+      "left_a": 2,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 116,
+      "free": 36,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 3,
+      "depth": 0,
+      "task": 21,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 2,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 3,
+      "left_tag": 64,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 120,
+      "free": 34,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 1,
+      "depth": 0,
+      "task": 14,
+      "r": 0,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 1,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 1,
+      "left_tag": 0,
+      "left_a": 0,
+      "left_b": 0,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 1
+    },
+    {
+      "mode": 1,
+      "status": 1,
+      "reason": 0,
+      "fuel": 117,
+      "free": 44,
+      "sp": 0,
+      "decl": 0,
+      "decl_count": 0,
+      "ctx": 0,
+      "x": 4,
+      "depth": 0,
+      "task": 21,
+      "r": 1,
+      "delta": 0,
+      "cutoff": 0,
+      "start": 0,
+      "count": 0,
+      "i": 0,
+      "found": 0,
+      "root": 3,
+      "substitution": 0,
+      "limit": 0,
+      "bounded": 0,
+      "pending_open": 0,
+      "pending_fold": 0,
+      "fold_body": 0,
+      "domain": 0,
+      "binder_info": 0,
+      "abstract_uid": 0,
+      "open_tag": 6,
+      "fold_tag": 6,
+      "arg_base": 0,
+      "parameter": 0,
+      "lookup_level": 0,
+      "const_original": 0,
+      "expr_depth": 0,
+      "vec_length": 0,
+      "vec_left": 0,
+      "vec_build": 0,
+      "vec_head": 0,
+      "vec_changed": 0,
+      "vector_result": 0,
+      "peer": 4,
+      "left_tag": 66,
+      "left_a": 1,
+      "left_b": 2,
+      "level_offset": 0,
+      "pending_compare": 0,
+      "constructor_left": 0,
+      "constructor_right": 0,
+      "constructor_stage": 0,
+      "left_base": 0,
+      "left_offset": 0,
+      "right_offset": 0,
+      "order_same_base": 0
+    }
+  ],
+  "results": [
+    {
+      "name": "level-source-instantiate-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 45,
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 14
+    },
+    {
+      "name": "level-source-instantiate-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 45,
+      "allocated_heap_nodes": 45,
+      "semantic_steps": 16
+    },
+    {
+      "name": "level-source-instantiate-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 46,
+      "allocated_heap_nodes": 47,
+      "semantic_steps": 33
+    },
+    {
+      "name": "level-source-instantiate-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 8
+    },
+    {
+      "name": "level-source-instantiate-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 47,
+      "allocated_heap_nodes": 48,
+      "semantic_steps": 29
+    },
+    {
+      "name": "expr-source-instantiate",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 46,
+      "allocated_heap_nodes": 53,
+      "semantic_steps": 68
+    },
+    {
+      "name": "level-order-0",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 11
+    },
+    {
+      "name": "level-order-1",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 44,
+      "allocated_heap_nodes": 44,
+      "semantic_steps": 23
+    },
+    {
+      "name": "level-order-2",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 51,
+      "allocated_heap_nodes": 51,
+      "semantic_steps": 34
+    },
+    {
+      "name": "level-order-3",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 35,
+      "allocated_heap_nodes": 35,
+      "semantic_steps": 12
+    },
+    {
+      "name": "level-order-4",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 33,
+      "allocated_heap_nodes": 33,
+      "semantic_steps": 8
+    },
+    {
+      "name": "level-order-5",
+      "status": "DONE",
+      "reason": "NONE",
+      "assumptions": [],
+      "environment_declarations": 0,
+      "admitted_declarations": 0,
+      "input_heap_nodes": 43,
+      "allocated_heap_nodes": 43,
+      "semantic_steps": 11
+    }
+  ],
+  "forward_seconds": 10.55385937599931,
+  "layout_policy": "compact",
+  "layout_statistics": {
+    "allocated_slots": 1773,
+    "persistent_channels": 604,
+    "subtract_handovers": 4675,
+    "head_clears": 18,
+    "logic_units_per_layer": 256,
+    "reset_layers": 4,
+    "graph": {
+      "layers": 51,
+      "dims": 6467,
+      "heads": 3,
+      "ffn_units": 8108,
+      "max_units": 256,
+      "max_heads": 1
+    }
+  },
+  "bank_layout": "accumulate",
+  "max_ballast": 64,
+  "ballast_channels": 7,
+  "primitive_basis": [],
+  "semantic_program": "kernel.typed-symbolic-services.v7",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameters": 205948646,
+  "weight_bytes": 411897292,
+  "cuda_peak_allocated_bytes": 486464000,
+  "host_process_peak_rss_bytes": 1688301568,
+  "hidden_size": 1792,
+  "native_layers": 52,
+  "boot_tokens": 54,
+  "applied_steps": 130,
+  "format": "leanputer.typed-symbolic-services-stock-smoke.v1",
+  "config": {
+    "heap": 128,
+    "stack": 16,
+    "context": 8,
+    "constants": 2,
+    "fuel": 128,
+    "word_bits": 8
+  },
+  "device": "cuda",
+  "compile_seconds": 5.319255909998901,
+  "input_documents": [
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "instantiate",
+      "name": "level-source-instantiate-0",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "instantiate",
+      "name": "level-source-instantiate-1",
+      "level": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "instantiate",
+      "name": "level-source-instantiate-2",
+      "level": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "succ",
+            [
+              "zero"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "instantiate",
+      "name": "level-source-instantiate-3",
+      "level": [
+        "max",
+        [
+          "zero"
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "bindings": []
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "instantiate",
+      "name": "level-source-instantiate-4",
+      "level": [
+        "max",
+        [
+          "imax",
+          [
+            "param",
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ],
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ],
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ]
+      ],
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ]
+    },
+    {
+      "format": "leanputer.kernel-data-operation.v1",
+      "operation": "expr_instantiate",
+      "name": "expr-source-instantiate",
+      "source": {
+        "format": "leanputer.kernel-source.v1",
+        "status": "EXPORTED",
+        "declarations": [],
+        "target": {
+          "kind": "definition",
+          "name": [
+            {
+              "str": "t"
+            }
+          ],
+          "level_params": [
+            [
+              {
+                "str": "u"
+              }
+            ],
+            [
+              {
+                "str": "v"
+              }
+            ]
+          ],
+          "type": [
+            "pi",
+            0,
+            [
+              "sort",
+              [
+                "max",
+                [
+                  "param",
+                  [
+                    {
+                      "str": "u"
+                    }
+                  ]
+                ],
+                [
+                  "param",
+                  [
+                    {
+                      "str": "v"
+                    }
+                  ]
+                ]
+              ]
+            ],
+            [
+              "app",
+              [
+                "const",
+                [
+                  {
+                    "str": "f"
+                  }
+                ],
+                [
+                  [
+                    "imax",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "v"
+                        }
+                      ]
+                    ],
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ]
+                  ],
+                  [
+                    "max",
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "u"
+                        }
+                      ]
+                    ],
+                    [
+                      "param",
+                      [
+                        {
+                          "str": "v"
+                        }
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "var",
+                0
+              ]
+            ]
+          ],
+          "value": null
+        }
+      },
+      "root": "type",
+      "bindings": [
+        {
+          "parameter": [
+            {
+              "str": "u"
+            }
+          ],
+          "level": [
+            "zero"
+          ]
+        }
+      ],
+      "argument_prefix": [
+        77
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-0",
+      "level": [
+        "succ",
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ]
+      ],
+      "right": [
+        "succ",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-1",
+      "level": [
+        "max",
+        [
+          "succ",
+          [
+            "param",
+            [
+              {
+                "str": "u"
+              }
+            ]
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-2",
+      "level": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "w"
+            }
+          ]
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-3",
+      "level": [
+        "succ",
+        [
+          "zero"
+        ]
+      ],
+      "right": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-4",
+      "level": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ],
+      "right": [
+        "param",
+        [
+          {
+            "str": "u"
+          }
+        ]
+      ]
+    },
+    {
+      "format": "leanputer.kernel-level-operation.v1",
+      "operation": "compare",
+      "name": "level-order-5",
+      "level": [
+        "max",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ],
+      "right": [
+        "imax",
+        [
+          "param",
+          [
+            {
+              "str": "u"
+            }
+          ]
+        ],
+        [
+          "param",
+          [
+            {
+              "str": "v"
+            }
+          ]
+        ]
+      ]
+    }
+  ],
+  "exact_register_match": true,
+  "exact_cache_match": true,
+  "verified_cache_banks": [
+    {
+      "bank": "heap",
+      "row_bank": 0,
+      "rows": 128,
+      "fields": 4
+    },
+    {
+      "bank": "stack",
+      "row_bank": 0,
+      "rows": 16,
+      "fields": 6
+    },
+    {
+      "bank": "context",
+      "row_bank": 0,
+      "rows": 8,
+      "fields": 1
+    }
+  ],
+  "validation_scope": "12 typed-memory instantiation operation probes; not full typing, declaration admission or mathlib coverage",
+  "operation_group": "instantiation",
+  "full_kernel_native_support": false
+}

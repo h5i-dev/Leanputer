@@ -9,7 +9,7 @@ from leanputer.kernel import level_transition as program
 from leanputer.kernel import traversal_machine as spec
 from tests.test_kernel_traversal_machine import CircuitHarness
 from tests.test_kernel_native_cells import decode_syntax
-from leanputer.kernel.operations import substitute_levels
+from leanputer.kernel.operations import substitute_levels, instantiate_levels
 from types import SimpleNamespace
 
 
@@ -126,6 +126,41 @@ def constructor_cases():
         for i, (op, left, right) in enumerate(probes)]
 
 
+def source_instantiation_cases():
+    u, v = (['param', name(s)] for s in ('u', 'v'))
+    bindings = [dict(parameter=name('u'), level=['zero'])]
+    probes = [
+        (['max', u, v], bindings), (['imax', v, u], bindings),
+        (['imax', v, u], [dict(parameter=name('u'), level=['succ', ['zero']])]),
+        (['max', ['zero'], v], []),
+        (['max', ['imax', v, u], ['succ', u]], bindings)]
+    docs = [dict(format='leanputer.kernel-level-operation.v1', operation='instantiate',
+        name=f'level-source-instantiate-{i}', level=level, bindings=pairs)
+        for i, (level, pairs) in enumerate(probes)]
+    # A generic scheme with multiple Sort/Const sites calls the same source op.
+    original = expression_cases()[0]
+    from copy import deepcopy
+    expr = deepcopy(original)
+    expr.update(operation='expr_instantiate', name='expr-source-instantiate')
+    expr['source']['target']['type'] = ['pi', 0, ['sort', ['max', u, v]],
+        ['app', ['const', name('f'), [['imax', v, u], ['max', u, v]]], ['var', 0]]]
+    expr['bindings'] = bindings
+    docs.append(expr)
+    return docs
+
+
+def ordering_cases():
+    u, v, w = (['param', name(s)] for s in ('u', 'v', 'w'))
+    probes = [
+        (['succ', ['succ', u]], ['succ', u]),
+        (['max', ['succ', u], v], ['max', u, v]),
+        (['imax', u, v], ['imax', u, w]),
+        (['succ', ['zero']], u), (u, u),
+        (['max', u, v], ['imax', u, v])]
+    return [dict(format='leanputer.kernel-level-operation.v1', operation='compare',
+        name=f'level-order-{i}', level=left, right=right) for i, (left, right) in enumerate(probes)]
+
+
 class SymbolicLevelTransitionTest(unittest.TestCase):
     def test_same_controller_typed_cells_and_scope_membership(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
@@ -193,6 +228,47 @@ class SymbolicLevelTransitionTest(unittest.TestCase):
             self.assertEqual(state['regs']['sp'], 0)
             if i == 0:
                 self.assertEqual(state['context'][:2], [[77], [79]])
+
+    def test_total_structural_base_order_and_offsets(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in ordering_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            levels = LevelOps(source.arena)
+            left, right = arguments['root_level'], arguments['peer']
+            order = levels._compare(left, right)
+            self.assertEqual(state['regs']['r'], 0 if order == 0 else 1 if order < 0 else 2)
+            self.assertEqual(state['regs']['order_same_base'], int(levels.offset(left)[0] == levels.offset(right)[0]))
+            self.assertEqual(state['regs']['sp'], 0)
+
+    def test_source_level_and_expression_instantiation_reuse_constructors(self):
+        cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)
+        circuit = CircuitHarness(cfg)
+        for doc in source_instantiation_cases():
+            source, arguments, declarations = program.parse_document(doc)
+            state = program.prepare(cfg, source, arguments, declarations)
+            machine = spec.SpecMachine(cfg, state)
+            for step in range(cfg.fuel+2):
+                actual = circuit.step(state)
+                self.assertEqual(actual, machine.step(), (doc['name'], step))
+                state = actual
+                if state['regs']['status']: break
+            self.assertEqual(spec.Outcome(state['regs']['status']), spec.Outcome.DONE, (doc['name'], state['regs']))
+            expected = instantiate_levels(source.arena, source.target.type, dict(arguments['bindings']))
+            levels, expressions = decode_syntax(SimpleNamespace(heap=state['heap'][:state['regs']['free']]), source.arena)
+            if arguments['operation'] == 'instantiate':
+                self.assertEqual(levels[state['regs']['r']], source.arena.expr(expected).a, doc['name'])
+            else:
+                self.assertEqual(expressions[state['regs']['r']], expected, doc['name'])
+            self.assertEqual(state['regs']['sp'], 0)
 
     def test_complete_pinned_smart_level_constructors(self):
         cfg = spec.MachineConfig(heap=128, stack=16, context=8, constants=2, fuel=128, word_bits=8)

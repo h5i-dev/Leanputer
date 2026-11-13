@@ -34,3 +34,5 @@ DONE is OPERATION completion, not proof acceptance. Canonical normalization,
 conversion, native inference and full declaration admission are still unfinished.
 Structural comparison is not definitional universe equivalence. No added native
 theorem/mathlib coverage or formal-verification claim follows from these probes.
+
+This report is pinned to `f8201bb`; later shared programs add operations.

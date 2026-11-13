@@ -317,3 +317,8 @@ checks structural comparison (including duplicate runtime allocations), nonzero,
 offset and complete smart Max/IMax operations inside the stock controller.
 The [level algorithm map](level-services.md) distinguishes these reusable rules
 from full canonical normalization/equivalence and typed admission still pending.
+
+The [source instantiation/order smoke](../../benchmarks/kernel-source-instantiation-stock/README.md)
+connects changed Max/IMax updates to the SAME constructor services in standalone
+levels and all-Expr schemes. The generic base/offset-last order is lowered for
+canonical merging; complete normalization/equivalence and admission remain pending.

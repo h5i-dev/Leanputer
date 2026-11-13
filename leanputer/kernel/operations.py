@@ -170,8 +170,15 @@ def check_scope(arena, root, locals_=None, universe_parameters=None):
     transform(arena, root, visit)
 
 
-def substitute_levels(arena, root, parameters):
-    """Capture-free symbolic level substitution in all Sort/Const positions."""
+def substitute_levels(arena, root, parameters, *, source_constructors=False):
+    """Capture-free raw symbolic substitution (or pinned constructor updates).
+
+    Source updates simplify CHANGED Max/IMax nodes only. Input/replacement raw
+    levels are not silently normalized; empty/unchanged subtrees are retained.
+    """
+    if source_constructors:
+        from .levels import LevelOps
+        constructors = LevelOps(arena)
     for symbol, ref in parameters.items():
         arena.word(symbol); arena.level_row(ref)
     memo = {}
@@ -192,7 +199,12 @@ def substitute_levels(arena, root, parameters):
                 pending.append((ref, True))
                 pending.extend((r, False) for r in reversed(refs))
             else:
-                memo[ref] = arena.level(row.tag, *(memo[r] for r in refs))
+                new_refs = tuple(memo[r] for r in refs)
+                if source_constructors and new_refs != refs and row.tag in (LevelTag.MAX, LevelTag.IMAX):
+                    construct = constructors.max if row.tag == LevelTag.MAX else constructors.imax
+                    memo[ref] = construct(*new_refs)
+                else:
+                    memo[ref] = arena.level(row.tag, *new_refs)
         return memo[root]
     def visit(ref, depth):
         row = arena.expr(ref)
@@ -202,6 +214,11 @@ def substitute_levels(arena, root, parameters):
             return arena.const(row.a, [subst(u) for u in arena.vector(row.b)])
         return None
     return transform(arena, root, visit)
+
+
+def instantiate_levels(arena, root, parameters):
+    """Pinned symbolic instantiation; replacement arguments are simultaneous."""
+    return substitute_levels(arena, root, parameters, source_constructors=True)
 
 
 def spine(arena, root):
