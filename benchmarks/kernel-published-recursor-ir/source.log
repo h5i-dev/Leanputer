@@ -1,0 +1,14 @@
+standalone source recursor claim accepted DONE NONE 206297 steps
+standalone source recursor claim unknown INVALID UNKNOWN_CONSTANT 44925 steps
+standalone source recursor claim not-recursor INVALID INVALID_DECLARATION 44927 steps
+standalone source recursor claim type INVALID TYPE_MISMATCH 50302 steps
+standalone source recursor claim arity INVALID UNIVERSE_ARITY 44938 steps
+standalone source recursor claim duplicate INVALID DUPLICATE_PARAMETER 44938 steps
+standalone source recursor claim scope INVALID SCOPE 44942 steps
+standalone source recursor claim heap RESOURCE HEAP 44928 steps
+standalone claim selected Boolean ALL-state transitions 27
+.
+----------------------------------------------------------------------
+Ran 1 test in 74.694s
+
+OK

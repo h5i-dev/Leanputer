@@ -494,3 +494,23 @@ group remains an explicit metadata GAP, corresponding to the pinned copier's
 all-members-inductive assertion. See quotient-native.md for source/selected IR
 evidence. The safe kernel is not yet claimed complete, and the small stock-model
 target remains unresolved.
+
+## Standalone source recursor claims
+
+Standalone recursor_claim rows now use current Γ lookup and require a generated
+recursor signature. Shared parameter loading, scope, inference, WHNF, formal
+universe specialization and general conversion check the raw claim. Success
+advances only the raw cursor; signatures/origins are unchanged. Earlier and later
+block recursors and repeated alpha-renamed metadata claims are handled by the
+same operation, with no per-name rules.
+
+Targeted source check passes1test74.694s/27SELECTED Boolean all-state transitions:
+the complete nested source plus four claims DONE206297steps,12public signatures;
+unknown/nonrecursor/type/arity/duplicate/scope negatives and injected allocator
+failure preserve the committed prefix. Independent schemes/RHS match and no
+assumptions are used. This is SPEC/selected IR, not STOCK. Evidence is in
+benchmarks/kernel-published-recursor-ir/source.log.
+
+Delivery now prioritizes full current program stock layout/emission and runnable
+source checking within available hardware. The measured10.35B/OOM outcomes are
+blocking that delivery. No new semantic expansion or broad campaign is planned.

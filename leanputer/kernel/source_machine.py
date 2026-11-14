@@ -25,7 +25,7 @@ def resume(machine, frame, stop, ret, alloc):
         r.update(mode=mode, task=task, x=x, depth=0, **updates)
     if phase == 0 and frame[3] == Task.CHECK_SOURCE:
         call(CALL_SOURCE_BLOCK_HEADERS,Task.ANALYZE_HEADERS,r['r'],header_parameters=r['stage_uparams'])
-    elif phase in (14,15) and frame[3] == Task.CHECK_SOURCE:
+    elif phase in (13,14,15) and frame[3] == Task.CHECK_SOURCE:
         r.update(sp=r['sp']-1,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
     elif phase == CALL_SOURCE_BLOCK_HEADERS:
         call(CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
@@ -103,7 +103,12 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
                     core = r['core_operation'] and r['raw_index']==r['core_index']
                     s['stack'][r['sp']] = [CALL_SOURCE_BLOCK_HEADERS if core else 0,0,0,Task.CHECK_SOURCE,0,0]
                     r.update(sp=r['sp']+1,task=Task.ANALYZE_HEADERS if core else Task.NESTED_STAGE,mode=Mode.WALK,x=extra,header_parameters=parameters,stage_pc=0,stage_uparams=parameters)
-            elif kind == DeclarationKind.RECURSOR_CLAIM: stop(Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
+            elif kind == DeclarationKind.RECURSOR_CLAIM:
+                if r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
+                else:
+                    s['stack'][r['sp']]=[13,0,0,Task.CHECK_SOURCE,0,0]
+                    r.update(sp=r['sp']+1,task=Task.CHECK_PUBLISHED_RECURSOR,mode=Mode.WALK,x=0,published_claim_pc=0,
+                        active_symbol=symbol,active_parameters=parameters,active_type=type_ref)
             elif kind == DeclarationKind.QUOT_PRIMITIVE:
                 if r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
                 else:
