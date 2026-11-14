@@ -14,8 +14,8 @@ The [full current source checker](benchmarks/kernel-full-source-stock/README.md)
 now runs on the A10G with stock sparse parameter tensors and reusable compiled
 weights. An original inductive, standalone recursor claim and identity proof
 accept; a wrong proof rejects, with every register/cache row exact. The complete
-fixed program with [byte controls](benchmarks/kernel-byte-controls-stock/README.md)
-now has15.80B logical parameters despite219MB stored weights: the
+fixed program with [banked controls and native word operations](benchmarks/kernel-banked-controls-stock/README.md)
+now has12.01B logical parameters despite165MB stored weights: the
 small-model target remains unmet. [Whole-program accounting and runnable commands](docs/kernel/stock-delivery.md)
 separate this current evidence from the historical checkpoints below.
 The [shared traversal stock smoke](benchmarks/kernel-traversal-stock/README.md)

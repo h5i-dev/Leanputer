@@ -1,0 +1,8 @@
+{
+  "phase": "passed",
+  "scope": "Fresh load of full banked/native-word stock model, first TWO source transitions ALL951registers exact including private pending/cache serialization. Not a second admission run.",
+  "seconds": 7.978312863997417,
+  "logical_parameters": 12010486994,
+  "stored_weight_bytes": 164772060,
+  "small_model_target_met": false
+}

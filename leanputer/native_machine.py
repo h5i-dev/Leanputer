@@ -28,13 +28,15 @@ from .transition import compile_addresses, RuleCompiler
 
 
 class NativeBuilder:
-    def __init__(self, intermediate=1024, reset_layers=4, layout_policy='compact'):
+    def __init__(self, intermediate=1024, reset_layers=4, layout_policy='compact',native_word_ops=False):
         # A reused residual slot needs an extra SwiGLU subtraction unit. Filling
         # every row with logic prevents handovers and needlessly grows global H.
         gate_units=intermediate if layout_policy=='legacy' else intermediate//2
         self.graph = Graph(Target(key_heads=1, value_heads=1, intermediate=gate_units))
         self.barrier = 2*reset_layers
         self.layout_policy=layout_policy
+        self.native_word_ops=native_word_ops
+        self.word_operation_count=0
 
     def feature(self, name): return self.graph.token_feature(name, lambda token:0)
 
@@ -63,11 +65,36 @@ class NativeBuilder:
                 return value
         self_builder=self
         values = Values(enumerate(inputs))
+        word_ops={}
+        if self.native_word_ops:
+            for wire,left,right in getattr(circuit,'native_word_comparisons',[]):word_ops.setdefault(wire,('lt',None,left,right,False))
+            for wire,left,right in getattr(circuit,'native_word_equalities',[]):word_ops.setdefault(wire,('eq',None,left,right,False))
+            for op,op_outputs,left,right,borrow_in in getattr(circuit,'native_word_operations',[]):
+                entry=(op,op_outputs,left,right,borrow_in)
+                for bit,wire in enumerate(op_outputs):
+                    if wire>max(left+right+((borrow_in,)if op=='mux'else())):word_ops.setdefault(wire,entry)
         needed = set(outputs); live = []
         for gate in reversed(circuit.gates):
-            if gate[0] in needed: needed.update(gate[2]); live.append(gate)
+            if gate[0] in needed:
+                if gate[0]in word_ops:
+                    op,op_outputs,left,right,borrow_in=word_ops[gate[0]];needed.update(left);needed.update(right)
+                    if op=='mux':needed.add(borrow_in)
+                else:needed.update(gate[2])
+                live.append(gate)
+        lowered={}
         for wire, operation, operands in reversed(live):
-            values[wire] = self.gate(operation, [values[i] for i in operands], f'{name}/{wire}')
+            if wire in word_ops:
+                from .native_words import unsigned_lt,add_sub,equal,select
+                entry=word_ops[wire];op,op_outputs,left,right,borrow_in=entry
+                if entry not in lowered:
+                    a=[dict.__getitem__(values,i)for i in left];b=[dict.__getitem__(values,i)for i in right]
+                    if op=='lt':lowered[entry]=unsigned_lt(self,a,b,memo)
+                    elif op=='eq':lowered[entry]=equal(self,a,b,memo)
+                    elif op=='mux':lowered[entry]=select(self,a,b,values[borrow_in],memo)
+                    else:lowered[entry]=add_sub(self,op,a,b,borrow_in,memo)
+                    self.word_operation_count+=1
+                values[wire]=lowered[entry]if op in ('lt','eq')else lowered[entry][op_outputs.index(wire)]
+            else:values[wire] = self.gate(operation, [values[i] for i in operands], f'{name}/{wire}')
         return [values[i] for i in outputs]
 
     def onehot(self, bits, enabled, cells, name):
@@ -171,6 +198,7 @@ class NativeMachine:
     max_ballast: int=64
     program: object=None
     control_packing: object=None
+    control_bank: object=None
 
     def embeddings(self, features):
         parameter = next(self.model.parameters())
@@ -196,6 +224,7 @@ class NativeMachine:
         control_width=packing.width if packing else logical_width
         def encoded_control(state):
             bits=self.state_layout.encode(state)[0,:logical_width]
+            if self.control_bank:bits=self.control_bank.common_bits(self.register_layout,bits)
             return packing.encode(bits)if packing else bits
         # Static syntax load. Equal capacities give every item the same boot length.
         boot = []
@@ -213,6 +242,18 @@ class NativeMachine:
                     fields = state[bank][row]
                     values = pack_words(fields,[self.config.word_bits]*len(fields))
                     packet[index,self.offsets['boot/payload']:self.offsets['boot/payload']+len(values)] = torch.tensor(values)
+                boot.append(packet)
+        if self.control_bank:
+            for owner in self.control_bank.groups:
+                rows=[self.control_bank.initial_row(owner,s['regs'])for s in states]
+                if not any(any(row)for row in rows):continue
+                packet=torch.zeros(len(states),len(self.feature_slots))
+                for index,state in enumerate(states):
+                    packet[index,:control_width]=encoded_control(state)
+                    packet[index,self.offsets['boot/control']]=1
+                    for bit in range(7):packet[index,self.offsets['boot/address']+bit]=float(bool(owner&(1<<bit)))
+                    start=self.offsets['boot/control/payload']
+                    packet[index,start:start+self.control_bank.columns]=torch.tensor(rows[index])
                 boot.append(packet)
         initial = torch.zeros(len(states),1,len(self.feature_slots))
         for index,state in enumerate(states): initial[index,0,:control_width] = encoded_control(state)
@@ -245,7 +286,8 @@ class NativeMachine:
                     values = output.logits[:,0,:].float().cpu()
                     values=(packing.decode(values)if packing else values)[0]
                     decoded = {name:sum(int(values[s.start+i]) << i for i in range(s.stop-s.start))
-                               for name,s in self.register_layout.slices.items()}
+                               for name,s in (self.control_bank.common if self.control_bank else self.register_layout).slices.items()}
+                    if self.control_bank:decoded=self.control_bank.registers(cache,self.native_heads,[decoded],raw[:1],self.offsets)[0]
                     memory = cache.layers[self.native_heads[0]['layer']].recurrent_states[0]
                     print(json.dumps(dict(step=step+1, regs=decoded,
                                           pending=raw[0,control_width:control_width+30].tolist(),
@@ -258,7 +300,10 @@ class NativeMachine:
         registers = []
         for row in bits.tolist():
             registers.append({name:sum(int(row[s.start+i]) << i for i in range(s.stop-s.start))
-                              for name,s in self.register_layout.slices.items()})
+                              for name,s in (self.control_bank.common if self.control_bank else self.register_layout).slices.items()})
+        if self.control_bank:
+            raw=state[:,0,self.feature_slots].float().cpu()
+            registers=self.control_bank.registers(cache,self.native_heads,registers,raw,self.offsets)
         results = [dict(name=document.get('name',str(index)),status=('UNSUPPORTED'if self.program and r['reason']==self.program.Reason.UNSUPPORTED_DECLARATION else outcome_class(r['status']).name),
                         reason=reason_class(r['reason']).name,
                         assumptions=(assumptions_from_state(judgment[2],r) if assumptions_from_state else get_assumptions(judgment[2])),
@@ -282,7 +327,8 @@ class NativeMachine:
                     boot_tokens=len(boot),applied_steps=applied_steps,early_stop=early_stop and not bool(diagnostic_steps),
                     halt_interval=halt_interval,completion_flush_forwards=1 if flush_after is not None and applied_steps>=flush_after else 0)
         report.update(parameter_storage(self.model),packed_control=bool(self.control_packing),
-                      control_digit_bits=self.control_packing.digit_bits if self.control_packing else None)
+                      control_digit_bits=self.control_packing.digit_bits if self.control_packing else None,
+                      banked_control=bool(self.control_bank),private_control_registers=len(self.control_bank.private)if self.control_bank else 0)
         if diagnostic_cache:
             # Development evidence only. Never consulted to decide the result
             # or provide a semantic answer to a subsequent inference token.
@@ -292,7 +338,7 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense',control_digit_bits=2):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense',control_digit_bits=2,bank_control=False,native_word_ops=False):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
@@ -303,12 +349,26 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     registers = (program.RegisterLayout if program else RegisterLayout)(state_layout)
     address_compiler=program.compile_addresses if program else compile_addresses
     rule_compiler=program.RuleCompiler if program else RuleCompiler
+    collect=lambda circuit,outputs:(circuit,outputs)
+    address1,address2=address_compiler(registers,target=collect)
+    control_bank=None;compiler=None;plan=None
+    if bank_control:
+        if not pack_control or control_digit_bits!=8 or not program or program.program_name!='kernel.source-transactions.v1':
+            raise ValueError('banked source controls require byte packing and the general source program')
+        from .control_banking import ControlBank,ownership
+        compiler=rule_compiler(registers,packed_outputs=True)
+        circuit,outputs,groups=ownership(compiler,(address1,address2))
+        private={n for names in groups.values()for n in names}
+        control_bank=ControlBank([(n,w)for n,w in registers.fields if n not in private],groups,config.word_bits)
+        plan=control_bank.aggregate(compiler,circuit,outputs)
     constants_width=program.constant_fields if program else 3
-    builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
+    builder = NativeBuilder(intermediate,reset_layers,layout_policy,native_word_ops); graph = builder.graph
     from .control_packing import ControlPacking
-    packing=ControlPacking(registers,control_digit_bits)if pack_control else None
+    packing=ControlPacking(control_bank.common if control_bank else registers,control_digit_bits)if pack_control else None
     if packing:features,control=packing.features(builder)
     else:features=[builder.feature(name)for name in registers.names];control=list(features)
+    common_control=list(control)
+    if control_bank:control=control_bank.logical_inputs(registers,common_control,[Expr()]*control_bank.columns)
     pending = {}
     for bank,fields,reg in [('heap',4,'free'),('stack',6,'sp'),('context',1,'ctx')]:
         address_width = getattr(config,bank).bit_length()-1
@@ -317,16 +377,32 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         payload = [builder.feature(f'pending/{bank}/payload/{i}') for i in range(fields*config.word_bits)]
         pending[bank] = (address,enable,payload)
         features.extend(address+[enable]+payload)
+    control_pending=None
+    if control_bank:
+        offsets_control={}
+        address=[builder.feature(f'pending/control/address/{i}')for i in range(7)]
+        enable=builder.feature('pending/control/enable')
+        payload=[builder.feature(f'pending/control/payload/{i}')for i in range(control_bank.columns)]
+        offsets_control['pending/control/address']=len(features);features.extend(address)
+        offsets_control['pending/control/enable']=len(features);features.append(enable)
+        offsets_control['pending/control/payload']=len(features);features.extend(payload)
+        control_pending=(address,enable,payload)
     offsets = {}
     boot_banks = {}
     for bank in ('heap','stack','context','constants'):
         offsets['boot/'+bank] = len(features)
         boot_banks[bank] = builder.feature('boot/'+bank); features.append(boot_banks[bank])
-    address_width = max(config.heap,config.stack,config.context,config.constants).bit_length()-1
+    address_width = max(7 if control_bank else 0,max(config.heap,config.stack,config.context,config.constants).bit_length()-1)
     offsets.update(address_width=address_width, **{'boot/address':len(features)})
     boot_address = [builder.feature(f'boot/address/{i}') for i in range(address_width)]; features.extend(boot_address)
     offsets['boot/payload'] = len(features)
     boot_payload = [builder.feature(f'boot/payload/{i}') for i in range(6*config.word_bits)]; features.extend(boot_payload)
+    if control_bank:
+        offsets.update(offsets_control)
+        offsets['boot/control']=len(features);control_boot=builder.feature('boot/control');features.append(control_boot)
+        offsets['boot/control/payload']=len(features)
+        control_boot_payload=[builder.feature(f'boot/control/payload/{i}')for i in range(control_bank.columns)]
+        features.extend(control_boot_payload)
     head_metadata = []
 
     def read(bank,query,name):
@@ -348,8 +424,6 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         builder.barrier = saved_barrier
         return outputs
 
-    collect = lambda circuit,outputs:(circuit,outputs)
-    address1,address2 = address_compiler(registers,target=collect)
     addresses = builder.circuit(address1,control,'address1')
     first = []; offset = 0
     first_banks = program.first_banks if program and hasattr(program, 'first_banks') else [('heap',4),('stack',1),('constants',1)]
@@ -359,6 +433,41 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
             first.extend(read(bank,addresses[offset:offset+bits],f'read/{bank}/{port}')); offset += bits
     if offset != len(addresses):
         raise ValueError('program first read address ABI differs')
+    aliases=[];owner_values=[]
+    if control_bank:
+        from .bitvec import Builder
+        from .kernel.traversal_transition import port_names,PORTS
+        from .kernel.traversal_machine import Mode
+        dispatch=Builder(registers.names+port_names(config.word_bits,PORTS[:3]))
+        word=lambda name:tuple(dispatch.inputs[registers.slices[name]])
+        owner=dispatch.mux(dispatch.AND(dispatch.eq(word('mode'),dispatch.const(Mode.RETURN,config.word_bits)),
+            dispatch.NOT(dispatch.eq(word('sp'),dispatch.const(0,config.word_bits)))),
+            tuple(dispatch.inputs[registers.width+7*config.word_bits:registers.width+8*config.word_bits]),word('task'))
+        valid=dispatch.OR(*(dispatch.eq(owner,dispatch.const(t,config.word_bits))for t in control_bank.groups))
+        owner_values=builder.circuit(dispatch.compile(list(owner[:7])+[valid],target=collect),control+first,'control-owner')
+        paddr,penable,payload=control_pending
+        writing=builder.gate('or',[control_boot,penable],'control/write')
+        address=[builder.gate('or',[builder.gate('and',[control_boot,a],'control/boot-address'),
+            builder.gate('and',[penable,b],'control/pending-address')],'control/address')for a,b in zip(boot_address,paddr)]
+        values=[graph.ffn([(1,a,control_boot),(1,b,penable)],name='control/data',min_level=builder.barrier)
+            for a,b in zip(control_boot_payload,payload)]
+        saved=builder.barrier
+        from .control_packing import PackedBit
+        decode_memo={}
+        data_bits=[PackedBit(values[slot*control_bank.digits_per_word+bit//8],bit%8,
+            min(8,config.word_bits-(bit//8)*8)).realize(builder,decode_memo)
+            for slot in range(control_bank.cache_columns//config.word_bits)for bit in range(config.word_bits)]
+        bit_aliases=[]
+        for column in range(0,control_bank.cache_columns,126):
+            count=min(126,control_bank.cache_columns-column)
+            before=len(head_metadata)
+            bit_aliases.extend(banked_native_read(builder,128,owner_values[:7],address,writing,data_bits[column:column+count],
+                f'read/control/{column}','control',head_metadata))
+            head_metadata[before].update(column_offset=column,columns=count)
+        builder.barrier=saved
+        aliases=[sum(((1<<i)*bit_aliases[slot*config.word_bits+digit*8+i]for i in range(min(8,config.word_bits-digit*8))),Expr())
+            for slot in range(control_bank.cache_columns//config.word_bits)for digit in range(control_bank.digits_per_word)]
+        control=control_bank.logical_inputs(registers,common_control,aliases,bit_aliases)
     second = builder.circuit(address2,control+first,'address2')
     ctxbits = config.context.bit_length()-1
     if program:
@@ -370,13 +479,20 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     else:all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
     options=dict(factor_choices=layout_policy=='compact')
     if packing:options['packed_outputs']=True
-    plan=rule_compiler(registers,**options).finish('attention_delta',target=collect)
+    if plan is None:plan=rule_compiler(registers,**options).finish('attention_delta',target=collect)
     if packing:
         from .control_packing import packed_update_outputs
-        outputs=packed_update_outputs(builder,plan,control+all_reads,features[:packing.width],registers.width,packing.digit_bits)
+        physical=features[:packing.width]+aliases
+        logical_width=control_bank.common.width+control_bank.columns//control_bank.digits_per_word*config.word_bits if control_bank else registers.width
+        outputs=packed_update_outputs(builder,plan,control+all_reads,physical,logical_width,packing.digit_bits)
     else:outputs=builder.circuit(plan,control+all_reads,'transition')
     update_features = features[:packing.width]if packing else control
+    if control_bank:
+        update_features=update_features+control_pending[2]
     update_features = update_features+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
+    if control_bank:
+        outputs=outputs+owner_values
+        update_features=update_features+control_pending[0]+[control_pending[1]]
     if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
     commit_statistics=commit_native_outputs(builder,update_features,outputs)
     validate_native_schedule(graph)
@@ -387,17 +503,17 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         if plan_only:
             layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers,max_ballast)
             return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
-                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,packed_control=bool(packing),control_digit_bits=packing.digit_bits if packing else None,layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
+                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,word_operations=builder.word_operation_count,packed_control=bool(packing),control_digit_bits=packing.digit_bits if packing else None,control_bank=control_bank.metadata()if control_bank else None,layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
         model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast,weight_storage)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage,control_digit_bits)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage,control_digit_bits,bank_control,native_word_ops)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
-               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats(),commit_statistics=commit_statistics)
-    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program,packing)
+               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats(),commit_statistics=commit_statistics,word_operations=builder.word_operation_count)
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program,packing,control_bank)
 
 
 def parameter_storage(model):

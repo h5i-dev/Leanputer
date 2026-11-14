@@ -15,7 +15,10 @@ class PackedBit:
     digit_bits: int = 2
 
     def realize(self,builder,memo):
-        dimension=next(iter(self.feature.terms))
+        dimension=tuple(sorted(self.feature.terms.items()))
+        if not self.feature.terms:return builder.graph.one*0
+        if set(self.feature.terms)=={0}:
+            return builder.graph.one*((int(self.feature.terms[0])>>self.bit)&1)
         g=builder.graph;one=g.one;remainder=self.feature
         for bit in range(self.digit_bits-1,0,-1):
             key=(dimension,bit)

@@ -1,0 +1,23 @@
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `fused_recurrent_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+F.
+======================================================================
+FAIL: test_native_cache_stores_full_126_byte_row_and_preserves_other_owner (tests.test_native_control_lowering.CompactControlTest.test_native_cache_stores_full_126_byte_row_and_preserves_other_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/scratch/leanputer-runs/kernel-algorithms-tree/tests/test_native_control_lowering.py", line 58, in test_native_cache_stores_full_126_byte_row_and_preserves_other_owner
+    self.assertEqual(output.logits[0,0,:].float().tolist(),expected)
+AssertionError: Lists differ: [0.0,[26 chars]6.0, 6.96875, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0[705 chars]25.0] != [0.0,[26 chars]6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14[690 chars]25.0]
+
+First differing element 7:
+6.96875
+7.0
+
+Diff is 1486 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 2 tests in 3.424s
+
+FAILED (failures=1)

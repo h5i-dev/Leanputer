@@ -1,11 +1,19 @@
 # Current whole-program stock delivery
 
-Latest matched checkpoint: [lossless byte controls](../../benchmarks/kernel-byte-controls-stock/README.md)
-passed the same complete source accept/reject and all-register/cache validation.
-Logical size is15,799,810,694parameters, hidden17408/layers581, stored219,396,384bytes.
-The forward took1197.032s. Bounds/rules/word16 are unchanged; the small/practical
-model goal remains unfinished. The detailed21.471B evidence below is the prior
-paired-control baseline, preserved for a matched comparison.
+Latest matched checkpoint: [banked controls and native word lowering](../../benchmarks/kernel-banked-controls-stock/README.md)
+passes the same complete source accept/reject and all-register/cache validation.
+Logical size12,010,486,994parameters; hidden18432/layers413;164,772,060stored bytes.
+Forward856.180s, compile69.289s excluding save.566private controls use binary
+native cache (10extra partitions),385remain shared; all951registers/all17cache
+partitions exact. Byte GDN storage was numerically inexact and rejected. The
+small/practical goal remains unfinished:1380persistent channels still become
+17574allocated slots. Next work must share temporary lifetimes across kernel
+owners/phases with correct conditional clearing and reads.
+
+Previous [byte controls](../../benchmarks/kernel-byte-controls-stock/README.md)
+passed at15,799,810,694parameters,hidden17408/layers581,forward1197.032s.
+Bounds/rules/word16 remain unchanged. The detailed21.471B paired-control evidence
+below is preserved as the original matched baseline.
 
 The safe kernel program is unchanged from 127751c. The compiler keeps all general
 rules: no proof/name/shape pruning, pretrained backbone, CPU emulator, semantic

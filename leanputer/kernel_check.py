@@ -37,7 +37,7 @@ def read_documents(content):
         return rows
 
 
-def check_sources(documents, config, *, device='cuda', batch_size=1, intermediate=512, early_stop=True, weight_storage='sparse_csr', pack_control=True, compiled_machine=None, save_model=None,control_digit_bits=8):
+def check_sources(documents, config, *, device='cuda', batch_size=1, intermediate=512, early_stop=True, weight_storage='sparse_csr', pack_control=True, compiled_machine=None, save_model=None,control_digit_bits=8,bank_control=True,native_word_ops=True):
     if batch_size<1:raise ValueError('positive batch size required')
     results=[];pending=[];positions=[];judgments=[];batches=[]
     for index,document in enumerate(documents):
@@ -61,7 +61,7 @@ def check_sources(documents, config, *, device='cuda', batch_size=1, intermediat
     compilation=0.;machine=None
     if pending:
         started=time.perf_counter()
-        try:machine=compiled_machine if compiled_machine is not None else compile_native_machine(config,intermediate=intermediate,device=device,program=program,weight_storage=weight_storage,pack_control=pack_control,control_digit_bits=control_digit_bits)
+        try:machine=compiled_machine if compiled_machine is not None else compile_native_machine(config,intermediate=intermediate,device=device,program=program,weight_storage=weight_storage,pack_control=pack_control,control_digit_bits=control_digit_bits,bank_control=bank_control and pack_control and control_digit_bits==8,native_word_ops=native_word_ops)
         except (RuntimeError,ImportError,ValueError) as error:
             for position in positions:results[position].update(status='INFERENCE_UNAVAILABLE',reason=str(error),stage='stock_compilation')
         if machine is not None and save_model is not None:
@@ -116,6 +116,8 @@ def main(argv=None):
     parser.add_argument('--save-model',type=Path,help='Save model/ABI tensors for inference reuse')
     parser.add_argument('--unpacked-control',action='store_true',help='Use the historical bit-per-channel control layout')
     parser.add_argument('--control-digit-bits',type=int,choices=(2,4,8),default=8,help='Lossless physical digit packing; logical numeric words are unchanged')
+    parser.add_argument('--bank-control',action=argparse.BooleanOptionalAction,default=True,help='Store compiler-proven private controls in native cache')
+    parser.add_argument('--native-word-ops',action=argparse.BooleanOptionalAction,default=True,help='Lower unsigned word operations directly to stock FFNs')
     parser.add_argument('--fixed-fuel',action='store_true',help='disable native completion stopping for matched diagnostics')
     args=parser.parse_args(argv)
     torch.set_num_threads(1)
@@ -130,7 +132,7 @@ def main(argv=None):
         if args.device=='cuda' and not torch.cuda.is_available():raise ValueError('CUDA unavailable')
         documents=read_documents(args.input.read_text())
         if not documents:raise ValueError('input contains no source rows')
-        report=check_sources(documents,config,device=args.device,batch_size=args.batch_size,early_stop=not args.fixed_fuel,weight_storage=getattr(loaded.model,'_leanputer_weight_storage','dense')if loaded else args.weight_storage,pack_control=bool(loaded.control_packing)if loaded else not args.unpacked_control,compiled_machine=loaded,save_model=args.save_model,control_digit_bits=args.control_digit_bits)
+        report=check_sources(documents,config,device=args.device,batch_size=args.batch_size,early_stop=not args.fixed_fuel,weight_storage=getattr(loaded.model,'_leanputer_weight_storage','dense')if loaded else args.weight_storage,pack_control=bool(loaded.control_packing)if loaded else not args.unpacked_control,compiled_machine=loaded,save_model=args.save_model,control_digit_bits=args.control_digit_bits,bank_control=args.bank_control,native_word_ops=args.native_word_ops)
         text=json.dumps(report,indent=2)+'\n'
         if args.report:
             args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(text)

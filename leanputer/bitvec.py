@@ -55,7 +55,11 @@ class Builder:
 
     def eq(self, a, b):
         width = max(len(a), len(b))
-        return self.AND(*(self.NOT(self.xor(x, y)) for x, y in zip(self.fit(a, width), self.fit(b, width))))
+        result=self.AND(*(self.NOT(self.xor(x, y)) for x, y in zip(self.fit(a, width), self.fit(b, width))))
+        if width>=8 and result>max(tuple(a)+tuple(b)) and all(any(w not in (self.zero,self.one)for w in word)for word in (a,b)):
+            if not hasattr(self.c,'native_word_equalities'):self.c.native_word_equalities=[]
+            self.c.native_word_equalities.append((result,tuple(a),tuple(b)))
+        return result
 
     def xor(self, x, y):
         if self.optimized and x == y:
@@ -63,6 +67,7 @@ class Builder:
         return self.OR(self.AND(x, self.NOT(y)), self.AND(self.NOT(x), y))
 
     def add(self, a, b):
+        left,right=tuple(a),tuple(b)
         width = max(len(a), len(b))
         if self.optimized:
             pairs = list(zip(self.fit(a, width), self.fit(b, width)))
@@ -70,15 +75,19 @@ class Builder:
             propagate = [self.xor(x, y) for x, y in pairs]
             carries = [self.zero] + [self.OR(*(self.AND(generate[j], *propagate[j+1:i]) for j in range(i)))
                                       for i in range(1, width)]
-            return tuple(self.xor(p, carry) for p, carry in zip(propagate, carries))
-        carry, result = self.zero, []
-        for x, y in zip(self.fit(a, width), self.fit(b, width)):
-            different = self.xor(x, y)
-            result.append(self.xor(different, carry))
-            carry = self.OR(self.AND(x, y), self.AND(different, carry))
-        return tuple(result)
+            result=tuple(self.xor(p, carry) for p, carry in zip(propagate, carries))
+        else:
+            carry, result = self.zero, []
+            for x, y in zip(self.fit(a, width), self.fit(b, width)):
+                different = self.xor(x, y)
+                result.append(self.xor(different, carry))
+                carry = self.OR(self.AND(x, y), self.AND(different, carry))
+            result=tuple(result)
+        self.word_operation('add',left,right,result)
+        return result
 
     def sub(self, a, b, borrow_in=False):
+        left,right=tuple(a),tuple(b)
         width = max(len(a), len(b))
         if self.optimized:
             pairs = list(zip(self.fit(a, width), self.fit(b, width)))
@@ -89,6 +98,7 @@ class Builder:
                                           *(self.AND(generate[j], *propagate[j+1:i]) for j in range(i)))
                                       for i in range(1, width+1)]
             result = tuple(self.xor(self.xor(x, y), borrow) for (x, y), borrow in zip(pairs, borrows))
+            self.word_operation('sub',left,right,result+(borrows[-1],),borrow_in)
             return result, borrows[-1]
         carry, result = self.zero if borrow_in else self.one, []
         for x, y in zip(self.fit(a, width), self.fit(b, width)):
@@ -96,23 +106,41 @@ class Builder:
             different = self.xor(x, y)
             result.append(self.xor(different, carry))
             carry = self.OR(self.AND(x, y), self.AND(different, carry))
-        return tuple(result), self.NOT(carry)
+        borrow=self.NOT(carry)
+        self.word_operation('sub',left,right,tuple(result)+(borrow,),borrow_in)
+        return tuple(result), borrow
+
+    def word_operation(self,operation,left,right,outputs,borrow_in=False):
+        if max(len(left),len(right))<8:return
+        if not hasattr(self.c,'native_word_operations'):self.c.native_word_operations=[]
+        self.c.native_word_operations.append((operation,tuple(outputs),left,right,borrow_in if operation=='mux'else bool(borrow_in)))
 
     def lt(self, a, b):
+        left,right=tuple(a),tuple(b)
         if self.optimized:
             width = max(len(a), len(b))
             pairs = list(zip(self.fit(a, width), self.fit(b, width)))
             equal = [self.NOT(self.xor(x, y)) for x, y in pairs]
-            return self.OR(*(self.AND(self.NOT(x), y, *equal[i+1:]) for i, (x, y) in enumerate(pairs)))
-        return self.sub(a, b)[1]
+            result=self.OR(*(self.AND(self.NOT(x), y, *equal[i+1:]) for i, (x, y) in enumerate(pairs)))
+        else:result=self.sub(a, b)[1]
+        # Optional compiler provenance. Boolean outputs and SPEC/IR are
+        # unchanged; a stock lowering may implement this same unsigned op
+        # directly with bounded digits instead of materializing its bit cone.
+        if max(len(left),len(right))>=8 and result>max(left+right):
+            if not hasattr(self.c,'native_word_comparisons'):self.c.native_word_comparisons=[]
+            self.c.native_word_comparisons.append((result,left,right))
+        return result
 
     def mux(self, condition, yes, no):
         width = max(len(yes), len(no))
         if self.optimized and condition in (self.one, self.zero):
             return self.fit(yes if condition == self.one else no, width)
         neg = self.NOT(condition)
-        return tuple(x if self.optimized and x == y else self.OR(self.AND(condition, x), self.AND(neg, y))
+        result=tuple(x if self.optimized and x == y else self.OR(self.AND(condition, x), self.AND(neg, y))
                      for x, y in zip(self.fit(yes, width), self.fit(no, width)))
+        if sum(w>max(tuple(yes)+tuple(no)+(condition,))for w in result)>=width//2:
+            self.word_operation('mux',tuple(yes),tuple(no),result,condition)
+        return result
 
     def compile(self, outputs, target=None):
         if target is not None:

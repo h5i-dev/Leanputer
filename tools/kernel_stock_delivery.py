@@ -18,12 +18,13 @@ from leanputer.kernel_check import read_documents
 from leanputer.native_machine import compile_native_machine
 
 
-def plan(config, intermediate,control_digit_bits=8):
+def plan(config, intermediate,control_digit_bits=8,bank_control=False,native_word_ops=False):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     start = time.perf_counter()
     p = compile_native_machine(config, intermediate=intermediate,
-        reset_layers=64, program=program, pack_control=True, plan_only=True,control_digit_bits=control_digit_bits)
+        reset_layers=64, program=program, pack_control=True, plan_only=True,control_digit_bits=control_digit_bits,
+        bank_control=bank_control,native_word_ops=native_word_ops)
     with torch.device('meta'), no_init_weights():
         model = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**p['stock_config']))
     groups = {}
@@ -39,7 +40,8 @@ def plan(config, intermediate,control_digit_bits=8):
         native_layers=model.config.num_hidden_layers, persistent_channels=p['persistent_channels'],
         allocated_slots=p['allocation'].n_slots, scratch_reset_channels=p['clear_channels'],
         reset_layers=p['reset_layers'], graph=p['graph'].stats(),
-        commit_statistics=p['commit_statistics'],control_digit_bits=control_digit_bits, seconds=time.perf_counter()-start,
+        commit_statistics=p['commit_statistics'],control_digit_bits=control_digit_bits,
+        control_bank=p['control_bank'],word_operations=p['word_operations'],seconds=time.perf_counter()-start,
         small_model_target_met=False, evidence='Whole fixed program/meta shapes only; no GPU weights or inference')
 
 
@@ -65,6 +67,20 @@ def verify(machine, documents):
     for head in machine.native_heads:
         bank, part = head['bank'], head['row_bank']
         memory = cache.layers[head['layer']].recurrent_states[0]
+        if bank=='control':
+            first=head['column_offset'];count=head['columns'];control=machine.control_bank
+            values=memory[:,0,:128,2:2+count].float().cpu()/128
+            if not torch.all((values==0)|(values==1)):raise AssertionError('private control cache domain')
+            expected=torch.zeros_like(values)
+            for i,state in enumerate(references):
+                for owner,names in control.groups.items():
+                    for slot,name in enumerate(names):
+                        for bit in range(config.word_bits):
+                            column=slot*config.word_bits+bit
+                            if first<=column<first+count:expected[i,owner,column-first]=float(bool(state['regs'][name]&(1<<bit)))
+            if not torch.equal(values,expected):raise AssertionError(('private cache mismatch',first))
+            verified.append(dict(bank=bank,column_offset=first,columns=count,rows=128,encoding='binary'))
+            continue
         count = min(128, getattr(config, bank)-128*part)
         fields = spec.BANK_FIELDS[bank]
         values = memory[:, 0, :count, 2:2+fields*config.word_bits].float().cpu()/128
@@ -90,6 +106,8 @@ def main():
     parser.add_argument('--plan', action='store_true')
     parser.add_argument('--intermediate', type=int, default=512)
     parser.add_argument('--control-digit-bits',type=int,choices=(2,4,8),default=8)
+    parser.add_argument('--bank-control',action='store_true')
+    parser.add_argument('--native-word-ops',action='store_true')
     parser.add_argument('--device', choices=('cpu', 'cuda'), default='cuda')
     parser.add_argument('--load-model', type=Path)
     parser.add_argument('--save-model', type=Path)
@@ -98,7 +116,7 @@ def main():
     if args.plan:
         if not args.config:
             parser.error('--plan requires --config')
-        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate,args.control_digit_bits)
+        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate,args.control_digit_bits,args.bank_control,args.native_word_ops)
     else:
         if not args.input or not (args.config or args.load_model):
             parser.error('validation requires --input and --config or --load-model')
@@ -112,7 +130,8 @@ def main():
             config = program.MachineConfig(**json.loads(args.config.read_text()))
             machine = compile_native_machine(config, intermediate=args.intermediate,
                 reset_layers=64, device=args.device, program=program,
-                pack_control=True, weight_storage='sparse_csr',control_digit_bits=args.control_digit_bits)
+                pack_control=True, weight_storage='sparse_csr',control_digit_bits=args.control_digit_bits,
+                bank_control=args.bank_control,native_word_ops=args.native_word_ops)
         compile_seconds = time.perf_counter()-start
         if args.save_model:
             from leanputer.source_model import save_source_machine
