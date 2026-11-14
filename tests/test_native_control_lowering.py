@@ -7,6 +7,85 @@ import unittest
 @unittest.skipUnless(sys.version_info >= (3,11) and importlib.util.find_spec('transformers'),
                      'stock backend requires native environment')
 class CompactControlTest(unittest.TestCase):
+    def test_scoped_native_words_keep_inactive_arithmetic_and_mux_quiet(self):
+        from types import SimpleNamespace
+        import torch
+        from leanputer.bitvec import Builder,pack_words
+        from leanputer.control_packing import ControlPacking
+        from leanputer.native_machine import NativeBuilder,commit_native_outputs
+        from leanputer.native import emit_stock
+        torch.set_num_threads(1)
+        packing=ControlPacking(SimpleNamespace(fields=[('owner',1),('a',17),('b',17),('out',17)],width=52),8)
+        logic=Builder([str(i)for i in range(52)]);owner=logic.inputs[0];a=logic.inputs[1:18];b=logic.inputs[18:35]
+        summed=logic.add(a,b);decremented=logic.sub(a,logic.const(1,17))[0]
+        picked=logic.mux(a[0],summed,b)
+        result=[logic.OR(logic.AND(logic.NOT(owner),x),logic.AND(owner,y))for x,y in zip(picked,decremented)]
+        logic.c.native_phase_context=dict(zero=[7]+[63]*51,one=[56]+[63]*51,forced_zero={},forced_one={},count=2,owners=[0,1])
+        builder=NativeBuilder(intermediate=128,reset_layers=8,native_word_ops=True);physical,inputs=packing.features(builder)
+        latched=builder.graph.ffn([(1,builder.graph.one,physical[0])],min_level=builder.barrier)
+        builder.scratch_guards=[builder.graph.one-latched,latched];builder.graph.scratch_guards=builder.scratch_guards;builder.graph.phase_scratch=True
+        bits=builder.circuit((logic.c,result),inputs,'word-scopes')
+        outputs=list(physical);outputs[0]=builder.graph.one-physical[0]
+        for digit in range(3):outputs[7+digit]=sum(((1<<i)*value for i,value in enumerate(bits[8*digit:8*digit+8])),builder.graph.one*0)
+        commit_native_outputs(builder,physical,outputs)
+        dims=[next(iter(v.terms))for v in physical];results=dims[7:10]+[dims[0]]
+        model,layout,_=emit_stock(builder.graph,results,128,torch.bfloat16,'cpu',keep_dims=set(dims),reset_layers=8)
+        self.assertTrue(any(n.name.startswith('word-')and getattr(n,'scope',None)is not None for n in builder.graph.nodes))
+        rows=[(owner,a,b)for owner in (0,1)for a,b in ((0,131071),(1,65535),(15,16),(65535,65536),(131071,1))]
+        data=packing.encode(torch.tensor([pack_words([owner,a,b,0],[1,17,17,17])for owner,a,b in rows]))
+        state=torch.zeros(len(rows),1,layout.hidden,dtype=torch.bfloat16);state[:,:,:layout.m]=layout.ballast
+        for i,d in enumerate(dims):state[:,0,layout.dim(d)]=data[:,i].to(torch.bfloat16)
+        cache=None
+        with torch.no_grad():
+            for step in range(4):
+                out=model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True)
+                state=out.hidden_states[-2];cache=out.past_key_values
+                expected=[]
+                for owner,a,b in rows:
+                    current=owner^(step%2);value=(a-1)%131072 if current else (a+b)%131072 if a&1 else b
+                    expected.append([float(value&255),float((value>>8)&255),float(value>>16),float(1-current)])
+                self.assertEqual(out.logits[:,0,:].float().tolist(),expected)
+
+    def test_scoped_scratch_clears_conditionally_and_exports_across_owner_changes(self):
+        import itertools
+        import torch
+        from leanputer.bitvec import Builder
+        from leanputer.native_machine import NativeBuilder,commit_native_outputs
+        from leanputer.native import emit_stock
+        torch.set_num_threads(1)
+        logic=Builder(['owner','a','b','out','inverse']);owner,a,b,_,_=logic.inputs
+        chosen=logic.OR(logic.AND(logic.NOT(owner),a),logic.AND(owner,b))
+        logic.c.native_phase_context=dict(zero=[7,63,63,63,63],one=[56,63,63,63,63],
+            forced_zero={},forced_one={},count=2,owners=[0,1])
+        builder=NativeBuilder(intermediate=32,reset_layers=4)
+        features=[builder.feature(n)for n in logic.c.inputs]
+        latched=builder.graph.ffn([(1,builder.graph.one,features[0])],min_level=builder.barrier)
+        builder.scratch_guards=[builder.graph.one-latched,latched]
+        builder.graph.scratch_guards=builder.scratch_guards;builder.graph.phase_scratch=True
+        values=builder.circuit((logic.c,[chosen,logic.NOT(chosen)]),features,'scope')
+        commit_native_outputs(builder,features,[builder.graph.one-features[0],features[1],features[2]]+values)
+        all_dims=[next(iter(v.terms))for v in features];dims=[all_dims[i]for i in (3,4,0)]
+        model,layout,allocation=emit_stock(builder.graph,dims,32,torch.bfloat16,'cpu',keep_dims=set(all_dims),reset_layers=4)
+        self.assertGreater(builder.graph.scratch_statistics['private_window'],0)
+        scoped={}
+        for node in builder.graph.nodes:
+            scope=getattr(node,'scope',None)
+            if scope is not None:scoped.setdefault(scope,set()).add(allocation.slots[node.out])
+        self.assertTrue(scoped[0]&scoped[1])
+        rows=list(itertools.product((0,1),repeat=3));state=torch.zeros(8,1,layout.hidden,dtype=torch.bfloat16)
+        state[:,:,:layout.m]=layout.ballast
+        for i,d in enumerate(all_dims):state[:,0,layout.dim(d)]=torch.tensor([r[i]if i<3 else 0 for r in rows],dtype=torch.bfloat16)
+        cache=None
+        with torch.no_grad():
+            for step in range(4):
+                output=model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True)
+                state=output.hidden_states[-2];cache=output.past_key_values
+                expected=[]
+                for owner,a,b in rows:
+                    current=owner^(step%2);value=b if current else a
+                    expected.append([float(value),float(1-value),float(1-current)])
+                self.assertEqual(output.logits[:,0,:].float().tolist(),expected)
+
     def test_word_arithmetic_and_select_preserve_partial_digits_and_borrow_in(self):
         from types import SimpleNamespace
         import torch

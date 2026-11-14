@@ -73,7 +73,10 @@ def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0,
     """Allocate residual slots and report stock shapes before allocating tensors."""
     results = result_dims
     keep = set(result_dims) | set(keep_dims or ())
-    allocation = allocate(graph, None, keep, intermediate)
+    if getattr(graph,'phase_scratch',False):
+        from .phase_scratch import allocate_scoped
+        allocation=allocate_scoped(graph,keep,intermediate)
+    else:allocation = allocate(graph, None, keep, intermediate)
     layout = pick_layout(allocation.n_slots,max_ballast)
     layout.slots = allocation.slots
     persistent = {layout.dim(d) for d in keep}

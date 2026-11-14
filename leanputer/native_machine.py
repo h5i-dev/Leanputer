@@ -37,13 +37,33 @@ class NativeBuilder:
         self.layout_policy=layout_policy
         self.native_word_ops=native_word_ops
         self.word_operation_count=0
+        self.scope=None
+        self.scratch_guards=None
 
     def feature(self, name): return self.graph.token_feature(name, lambda token:0)
+
+    def scoped_ffn(self,terms,name,scope=None):
+        guard=self.graph.one if scope is None else self.scratch_guards[scope]
+        if scope is not None:
+            if any(a.terms!=self.graph.one.terms for c,a,b in terms):raise ValueError('scoped scalar requires constant up operand')
+            terms=[(c,guard,b)for c,a,b in terms]
+        value=self.graph.ffn(terms,name=name,min_level=max(self.barrier,self.graph.level(guard)))
+        self.graph.nodes[-1].scope=scope
+        if scope is not None:self.graph.nodes[-1].scope_guard=guard
+        return value
+
+    def word_ffn(self,terms,name):return self.scoped_ffn(terms,name,self.scope)
 
     def gate(self, operation, values, name):
         total = sum(values, Expr())
         one = self.graph.one
         if not values and operation in('and','or'):return one if operation=='and'else Expr()
+        if self.scope is not None:
+            if operation=='or':
+                neg=self.word_ffn([(1,one,one-total)],name+'/negative')
+                return self.word_ffn([(1,one,one-neg)],name)
+            terms=[(1,one,one-total if operation=='not'else total+1-len(values))]
+            return self.word_ffn(terms,name)
         if operation=='not' and self.layout_policy=='compact':return one-total
         if operation=='or' and self.layout_policy=='compact':
             # On Boolean inputs OR = 1 - relu(1 - sum(inputs)). One exact
@@ -57,22 +77,30 @@ class NativeBuilder:
     def circuit(self, plan, inputs, name):
         circuit, outputs = plan
         from .control_packing import PackedBit
-        memo={}
+        memo={};value_scopes={};exports={}
         class Values(dict):
             def __getitem__(self,key):
-                value=super().__getitem__(key)
-                if isinstance(value,PackedBit):value=value.realize(self_builder,memo);self[key]=value
+                return self.resolve(key,self_builder.scope)
+            def resolve(self,key,scope):
+                value=super().__getitem__(key);source=value_scopes.get(key)
+                if source is not None and scope is not None and source!=scope:return Expr()
+                if isinstance(value,PackedBit):value=value.realize(self_builder,memo)
+                if source is not None and scope is None:
+                    if key not in exports:
+                        guard=self_builder.scratch_guards[source]
+                        exports[key]=self_builder.graph.ffn([(1,value,guard)],name=f'{name}/export/{key}',
+                            min_level=max(self_builder.barrier,self_builder.graph.level(guard)))
+                    return exports[key]
                 return value
         self_builder=self
         values = Values(enumerate(inputs))
-        word_ops={}
+        word_ops={};scopes=None;op_scopes={}
         if self.native_word_ops:
-            for wire,left,right in getattr(circuit,'native_word_comparisons',[]):word_ops.setdefault(wire,('lt',None,left,right,False))
-            for wire,left,right in getattr(circuit,'native_word_equalities',[]):word_ops.setdefault(wire,('eq',None,left,right,False))
-            for op,op_outputs,left,right,borrow_in in getattr(circuit,'native_word_operations',[]):
-                entry=(op,op_outputs,left,right,borrow_in)
-                for bit,wire in enumerate(op_outputs):
-                    if wire>max(left+right+((borrow_in,)if op=='mux'else())):word_ops.setdefault(wire,entry)
+            from .phase_scratch import operation_map
+            word_ops=operation_map(circuit)
+        if self.scratch_guards is not None and hasattr(circuit,'native_phase_context'):
+            from .phase_scratch import domains
+            scopes,op_scopes=domains(circuit,outputs,word_ops)
         needed = set(outputs); live = []
         for gate in reversed(circuit.gates):
             if gate[0] in needed:
@@ -83,11 +111,16 @@ class NativeBuilder:
                 live.append(gate)
         lowered={}
         for wire, operation, operands in reversed(live):
+            self.scope=None if scopes is None else scopes[wire]
+            if self.scope==-1:
+                values[wire]=Expr();value_scopes[wire]=None;continue
             if wire in word_ops:
                 from .native_words import unsigned_lt,add_sub,equal,select
                 entry=word_ops[wire];op,op_outputs,left,right,borrow_in=entry
+                self.scope=op_scopes.get(entry)
                 if entry not in lowered:
-                    a=[dict.__getitem__(values,i)for i in left];b=[dict.__getitem__(values,i)for i in right]
+                    a=[values.resolve(i,self.scope)if value_scopes.get(i)is not None else dict.__getitem__(values,i)for i in left]
+                    b=[values.resolve(i,self.scope)if value_scopes.get(i)is not None else dict.__getitem__(values,i)for i in right]
                     if op=='lt':lowered[entry]=unsigned_lt(self,a,b,memo)
                     elif op=='eq':lowered[entry]=equal(self,a,b,memo)
                     elif op=='mux':lowered[entry]=select(self,a,b,values[borrow_in],memo)
@@ -95,6 +128,8 @@ class NativeBuilder:
                     self.word_operation_count+=1
                 values[wire]=lowered[entry]if op in ('lt','eq')else lowered[entry][op_outputs.index(wire)]
             else:values[wire] = self.gate(operation, [values[i] for i in operands], f'{name}/{wire}')
+            value_scopes[wire]=self.scope
+        self.scope=None
         return [values[i] for i in outputs]
 
     def onehot(self, bits, enabled, cells, name):
@@ -338,8 +373,9 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense',control_digit_bits=2,bank_control=False,native_word_ops=False):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense',control_digit_bits=2,bank_control=False,native_word_ops=False,phase_scratch=False):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
+    if phase_scratch and not bank_control:raise ValueError('phase scratch requires compiler-owned source controls')
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
     if type(reset_layers)is not int or reset_layers<1:raise ValueError('recurrent native execution requires scratch reset layers')
@@ -444,7 +480,9 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
             dispatch.NOT(dispatch.eq(word('sp'),dispatch.const(0,config.word_bits)))),
             tuple(dispatch.inputs[registers.width+7*config.word_bits:registers.width+8*config.word_bits]),word('task'))
         valid=dispatch.OR(*(dispatch.eq(owner,dispatch.const(t,config.word_bits))for t in control_bank.groups))
-        owner_values=builder.circuit(dispatch.compile(list(owner[:7])+[valid],target=collect),control+first,'control-owner')
+        from .kernel.traversal_machine import Task
+        named=dispatch.OR(*(dispatch.eq(owner,dispatch.const(t,config.word_bits))for t in Task))
+        owner_values=builder.circuit(dispatch.compile(list(owner[:7])+[valid]+([named]if phase_scratch else[]),target=collect),control+first,'control-owner')
         paddr,penable,payload=control_pending
         writing=builder.gate('or',[control_boot,penable],'control/write')
         address=[builder.gate('or',[builder.gate('and',[control_boot,a],'control/boot-address'),
@@ -468,6 +506,13 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         aliases=[sum(((1<<i)*bit_aliases[slot*config.word_bits+digit*8+i]for i in range(min(8,config.word_bits-digit*8))),Expr())
             for slot in range(control_bank.cache_columns//config.word_bits)for digit in range(control_bank.digits_per_word)]
         control=control_bank.logical_inputs(registers,common_control,aliases,bit_aliases)
+        if phase_scratch:
+            guards=[]
+            for owner in plan[0].native_phase_context['owners']:
+                if owner is None:guards.append(graph.one-owner_values[8]);continue
+                if owner>=128:raise ValueError('phase scratch owner exceeds dispatch row width')
+                guards.append(builder.gate('and',[owner_values[8]]+[bit if owner>>i&1 else graph.one-bit for i,bit in enumerate(owner_values[:7])],f'phase/{owner}'))
+            builder.scratch_guards=guards;graph.scratch_guards=guards;graph.phase_scratch=True
     second = builder.circuit(address2,control+first,'address2')
     ctxbits = config.context.bit_length()-1
     if program:
@@ -491,7 +536,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         update_features=update_features+control_pending[2]
     update_features = update_features+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
     if control_bank:
-        outputs=outputs+owner_values
+        outputs=outputs+owner_values[:8]
         update_features=update_features+control_pending[0]+[control_pending[1]]
     if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
     commit_statistics=commit_native_outputs(builder,update_features,outputs)
@@ -503,16 +548,16 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         if plan_only:
             layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers,max_ballast)
             return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
-                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,word_operations=builder.word_operation_count,packed_control=bool(packing),control_digit_bits=packing.digit_bits if packing else None,control_bank=control_bank.metadata()if control_bank else None,layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
+                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,word_operations=builder.word_operation_count,phase_scratch=getattr(graph,'scratch_statistics',None),packed_control=bool(packing),control_digit_bits=packing.digit_bits if packing else None,control_bank=control_bank.metadata()if control_bank else None,layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
         model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast,weight_storage)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage,control_digit_bits,bank_control,native_word_ops)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage,control_digit_bits,bank_control,native_word_ops,phase_scratch)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
-               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats(),commit_statistics=commit_statistics,word_operations=builder.word_operation_count)
+               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats(),commit_statistics=commit_statistics,word_operations=builder.word_operation_count,phase_scratch=getattr(graph,'scratch_statistics',None))
     return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program,packing,control_bank)
 
 

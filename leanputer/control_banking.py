@@ -57,6 +57,8 @@ def ownership(compiler, address_plans):
     forced_one = {empty: cases[1], task_bad: 3 << (3*(count-1))}
     for w in task_eq: forced_zero[w] = forced_zero.get(w, 0) | (3 << (3*(count-1)))
     for w in frame_eq: forced_zero[w] = forced_zero.get(w, 0) | (4 << (3*(count-1)))
+    circuit.native_phase_context=dict(zero=zero[:len(circuit.inputs)],one=one[:len(circuit.inputs)],
+        forced_zero=forced_zero,forced_one=forced_one,count=count,owners=[int(t)if t is not None else None for t in owners])
     for w, op, args in circuit.gates:
         if op == 'not': z, o = one[args[0]], zero[args[0]]
         elif op == 'and':

@@ -13,6 +13,7 @@ class PackedBit:
     feature: object
     bit: int
     digit_bits: int = 2
+    scope: object = None
 
     def realize(self,builder,memo):
         dimension=tuple(sorted(self.feature.terms.items()))
@@ -21,11 +22,11 @@ class PackedBit:
             return builder.graph.one*((int(self.feature.terms[0])>>self.bit)&1)
         g=builder.graph;one=g.one;remainder=self.feature
         for bit in range(self.digit_bits-1,0,-1):
-            key=(dimension,bit)
+            key=(dimension,bit,self.scope)
             if key not in memo:
                 threshold=1<<bit
-                memo[key]=g.ffn([(1,one,remainder-(threshold-1)*one),(-1,one,remainder-threshold*one)],
-                    name=f'unpack/{dimension}/{bit}',min_level=builder.barrier)
+                terms=[(1,one,remainder-(threshold-1)*one),(-1,one,remainder-threshold*one)]
+                memo[key]=builder.scoped_ffn(terms,f'unpack/{dimension}/{bit}',self.scope)
             if bit==self.bit:return memo[key]
             remainder=remainder-(1<<bit)*memo[key]
         return remainder

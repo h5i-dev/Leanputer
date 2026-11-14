@@ -78,11 +78,14 @@ class Alloc:
 
 def reads(n) -> list[int]:
     if isinstance(n, FFN):
-        return [d for _, a, b in n.terms for e in (a, b) for d in e.terms]
+        exprs=[e for _,a,b in n.terms for e in (a,b)]
+        if getattr(n,'scope_guard',None)is not None:exprs.append(n.scope_guard)
+        return [d for e in exprs for d in e.terms]
     exprs = [c.expr for ch in (n.q, n.k) for c in ch.values()]
     for vh in n.vheads():
         exprs += [c.expr for c in vh.v.values()] + [vh.a, *vh.z.values()]
         exprs += [] if vh.beta is None else [vh.beta]
+    if getattr(n,'scope_guard',None)is not None:exprs.append(n.scope_guard)
     return [d for e in exprs for d in e.terms]
 
 
@@ -365,7 +368,8 @@ def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
             units += [(coef, a, b, n.out) for coef, a, b in n.terms]
             if alloc and not n.into and n.out in alloc.subtract:  # clear only the first writer on a slot handover
                 old = alloc.subtract[n.out]
-                units.append((-1, Expr({old: 1}), clear_gate(old), n.out))
+                handover_guard=getattr(alloc,'clear_guards',{}).get(n.out,clear_gate(old))
+                units.append((-1, Expr({old: 1}), handover_guard, n.out))
         units += [(-1, Expr({o: 1}), clear_gate(o), o)
                   for o in (alloc.clears.get(2 * L + 2, []) if alloc else [])]
         if exit_level == 2 * L + 2:

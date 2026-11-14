@@ -20,7 +20,7 @@ def digit_value(builder,bits,memo):
             if first.bit==0:
                 value=first.feature
                 for high in range(first.digit_bits-1,length-1,-1):
-                    value=value-(1<<high)*PackedBit(first.feature,high,first.digit_bits).realize(builder,memo)
+                    value=value-(1<<high)*PackedBit(first.feature,high,first.digit_bits,first.scope).realize(builder,memo)
             else:
                 value=sum(((1<<i)*b.realize(builder,memo)for i,b in enumerate(bits[start:end])),Expr())
         else:value=first
@@ -34,7 +34,7 @@ def unsigned_lt(builder, left, right, memo):
     borrow=Expr()
     for offset in range(0,width,8):
         delta=digit_value(builder,right[offset:offset+8],memo)-digit_value(builder,left[offset:offset+8],memo)+borrow
-        borrow=graph.ffn([(1,one,delta),(-1,one,delta-one)],name='word-lt/borrow',min_level=builder.barrier)
+        borrow=builder.word_ffn([(1,one,delta),(-1,one,delta-one)],'word-lt/borrow')
     return borrow
 
 
@@ -48,13 +48,14 @@ def add_sub(builder,operation,left,right,borrow_in,memo):
         a=digit_value(builder,left[offset:offset+precision],memo);b=digit_value(builder,right[offset:offset+precision],memo)
         if operation=='add':
             total=a+b+carry
-            carry=graph.ffn([(1,one,total-(base-1)*one),(-1,one,total-base*one)],name='word-add/carry',min_level=builder.barrier)
+            carry=builder.word_ffn([(1,one,total-(base-1)*one),(-1,one,total-base*one)],'word-add/carry')
             value=total-base*carry
         else:
             total=a-b-carry
-            carry=graph.ffn([(1,one,-total),(-1,one,-total-one)],name='word-sub/borrow',min_level=builder.barrier)
+            carry=builder.word_ffn([(1,one,-total),(-1,one,-total-one)],'word-sub/borrow')
             value=total+base*carry
-        result.extend(PackedBit(value,bit,precision)for bit in range(precision))
+        if builder.scope is not None:value=builder.word_ffn([(1,one,value)],'word-result')
+        result.extend(PackedBit(value,bit,precision,builder.scope)for bit in range(precision))
     if operation=='sub':result.append(carry)
     return result
 
@@ -65,7 +66,7 @@ def equal(builder,left,right,memo):
     flags=[]
     for offset in range(0,width,8):
         delta=digit_value(builder,left[offset:offset+8],memo)-digit_value(builder,right[offset:offset+8],memo)
-        flags.append(graph.ffn([(1,one,delta+one),(-2,one,delta),(1,one,delta-one)],name='word-eq',min_level=builder.barrier))
+        flags.append(builder.word_ffn([(1,one,delta+one),(-2,one,delta),(1,one,delta-one)],'word-eq'))
     return builder.gate('and',flags,'word-eq/all')
 
 
@@ -73,9 +74,18 @@ def select(builder,left,right,condition,memo):
     graph=builder.graph;one=graph.one
     width=max(len(left),len(right));left=list(left)+[Expr()]*(width-len(left));right=list(right)+[Expr()]*(width-len(right))
     result=[]
+    yes,no=condition,one-condition
+    if builder.scope is not None:
+        guard=builder.scratch_guards[builder.scope]
+        # Shared predicates read zero outside the owner even when the local
+        # condition's physical slot contains a different owner's value.
+        yes=graph.ffn([(1,condition,guard)],name='word-mux/yes',min_level=builder.barrier)
+        no=graph.ffn([(1,one,guard-yes)],name='word-mux/no',min_level=builder.barrier)
     for offset in range(0,width,8):
         precision=min(8,width-offset)
         a=digit_value(builder,left[offset:offset+8],memo);b=digit_value(builder,right[offset:offset+8],memo)
-        value=graph.ffn([(1,a,condition),(1,b,one-condition)],name='word-mux',min_level=builder.barrier)
-        result.extend(PackedBit(value,bit,precision)for bit in range(precision))
+        value=graph.ffn([(1,a,yes),(1,b,no)],name='word-mux',min_level=builder.barrier)
+        graph.nodes[-1].scope=builder.scope
+        if builder.scope is not None:graph.nodes[-1].scope_guard=builder.scratch_guards[builder.scope]
+        result.extend(PackedBit(value,bit,precision,builder.scope)for bit in range(precision))
     return result
