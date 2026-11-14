@@ -422,3 +422,14 @@ at f5bb04d admits an original empty inductive and checks its identity theorem,
 with exact ALL registers/cache rows. It predates projection/counter changes,
 does not establish nested-source STOCK admission, and uses10.35billion parameters;
 the SMALL-model goal remains unmet. No new corpus coverage fraction is claimed.
+
+
+The subsequent [typed conversion controller](conversion-native.md) connects
+binding/application congruence, proof irrelevance, function/structure eta,
+unit-like equality and symbolic universe-vector equivalence through source
+callers. Six source cases/249selected transitions and the combined7-test source
+regression pass; malformed claims reject at adequate bounds and remain RESOURCE
+at insufficient bounds. Primitive-aware negative conversion and unavailable
+private metadata still GAP. This evidence is outside the pinned STOCK report.
+Anonymous structured names are admitted as data, matching pinned
+`environment.cpp:check_name`; the previous nonempty-name restriction was removed.

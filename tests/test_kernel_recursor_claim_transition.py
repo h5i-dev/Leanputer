@@ -43,9 +43,9 @@ def cases():
     bad=deepcopy(mutual);bad['name']='duplicate-claim-names';bad['block']['recursor_claims'][1]=deepcopy(bad['block']['recursor_claims'][0])
     result.append((bad,'INVALID','DUPLICATE_DECLARATION',1))
     bad=deepcopy(good);bad['name']='wrong-claim-cannot-supply-a-type';bad['block']['recursor_claims'][0]['type']=['sort',['zero']]
-    # Full Pi-vs-Sort negative conversion is not implemented. Honest GAP, never
-    # an axiom/type answer or INVALID based solely on failed positive equality.
-    result.append((bad,'GAP','GAP_CONVERSION',0))
+    # General negative conversion performs typed inference; the historical
+    # 16-frame bound exhausts its stack before the negative answer.
+    result.append((bad,'RESOURCE','STACK',0))
     return result
 
 
@@ -78,6 +78,31 @@ class RecursorClaimTransitionTest(unittest.TestCase):
                     inds=tuple(Inductive(a.const(f.symbol,levels),f.type,tuple(Constructor(ct.symbol,ct.type) for ct in f.constructors),f.recursor_symbol) for f in block.families)
                     with self.assertRaises(KernelError):analyze_core(driver.services,inds,block.universe_parameters,block.parameters,r['elim_fresh'] or len(driver.symbols.names)+1,block.recursor_claims)
                 self.assertEqual(circuit.step(state),state)
+
+    def test_negative_claim_at_adequate_physical_bounds(self):
+        from tests.test_kernel_source_nested_transaction import canonical
+        cfg=spec.MachineConfig(heap=4096,stack=64,context=32,constants=2,fuel=65536,word_bits=13)
+        document=cases()[-1][0];source,args,decls=program.parse_document(document)
+        machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls));circuit=CircuitHarness(cfg)
+        seen=set()
+        for step in range(cfg.fuel+2):
+            state=machine.state;r=state['regs'];frame=state['stack'][r['sp']-1] if r['sp'] else [0]*6;key=None
+            if r['task']==spec.Task.CONVERT:
+                key=(int(r['mode']),r['convert_pc'],state['heap'][r['x']][0] if r['x']<cfg.heap else 0)
+            elif r['mode']==spec.Mode.RETURN and frame[3]==spec.Task.CONVERT:key=('return',frame[0],bool(r['r']))
+            before=canonical(state) if key is not None and key not in seen else None
+            expected=machine.step()
+            if before is not None:
+                self.assertEqual(circuit.step(before),expected,(step,key));seen.add(key)
+            if expected['regs']['status']:break
+        r=machine.state['regs']
+        self.assertEqual((r['status'],r['reason']),(spec.Outcome.INVALID,spec.Reason.TYPE_MISMATCH))
+        self.assertEqual((r['env_head'],r['decl'],r['raw_index']),(0,0,0))
+        driver=EnvironmentDriver(source);a=driver.a;block=decls[-1]
+        levels=tuple(a.level(LevelTag.PARAM,p) for p in block.universe_parameters)
+        inds=tuple(Inductive(a.const(f.symbol,levels),f.type,tuple(Constructor(ct.symbol,ct.type) for ct in f.constructors),f.recursor_symbol) for f in block.families)
+        with self.assertRaises(KernelError):
+            analyze_core(driver.services,inds,block.universe_parameters,block.parameters,r['elim_fresh'],block.recursor_claims)
 
 
 if __name__=='__main__':unittest.main()

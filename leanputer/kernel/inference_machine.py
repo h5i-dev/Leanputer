@@ -2,7 +2,7 @@
 
 No runtime host inference calls. Complete source tag dispatch is explicit; raw
 signatures are never accepted as checked signatures. Remaining environment,
-literal/Quot and full conversion callbacks produce GAP. Generic projection
+literal/Quot and primitive-aware negative conversion callbacks produce GAP. Generic projection
 inference/reduction uses the task-owned source controller. Pi/Lam/App/Let
 rules reuse the SAME weighted scope/telescope/substitution/abstraction/levels.
 This is unfinished typed service integration, NOT a full kernel admission path.
@@ -15,10 +15,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_INFER_PI_LEVEL, CALL_INFER_FUNCTION, CALL_INFER_FUNCTION_WHNF,
     CALL_INFER_ARGUMENT, CALL_INFER_ARGUMENT_CONVERT, CALL_INFER_LET_TYPE,
     CALL_INFER_LET_TYPE_WHNF, CALL_INFER_LET_VALUE, CALL_INFER_LET_CONVERT,
-    CALL_INFER_LET_BODY, CALL_CONVERT_FAST, CALL_CONVERT_LEFT_WHNF,
-    CALL_CONVERT_RIGHT_WHNF, CALL_CONVERT_NORMAL)
+    CALL_INFER_LET_BODY)
 
-PRIVATE_PHASES = tuple(range(CALL_INFER_BINDER_DOMAIN, CALL_CONVERT_NORMAL+1))
+PRIVATE_PHASES = tuple(range(CALL_INFER_BINDER_DOMAIN, CALL_INFER_LET_BODY+1))
 
 
 def resume(machine, frame, stop, ret, alloc):
@@ -61,20 +60,6 @@ def resume(machine, frame, stop, ret, alloc):
         else: r.update(mode=Mode.INFER_LET_INSTANTIATE, task=Task.INFER, x=original)
     elif phase == CALL_INFER_LET_BODY:
         r.update(sp=top, mode=Mode.WALK, task=Task.INFER, x=r['r'])
-    elif phase in (CALL_CONVERT_FAST, CALL_CONVERT_NORMAL):
-        if r['r']:
-            r['sp'] = top; ret(1)
-        elif phase == CALL_CONVERT_FAST:
-            replace(CALL_CONVERT_LEFT_WHNF, original=depth, depth=0, first=0, second=0)
-            r.update(mode=Mode.BETA_ZETA, task=Task.BETA_ZETA, x=original, depth=0)
-        else:
-            r.update(mode=Mode.CONVERT_LEFT, task=Task.CONVERT_POSITIVE, x=original, peer=depth)
-    elif phase == CALL_CONVERT_LEFT_WHNF:
-        replace(CALL_CONVERT_RIGHT_WHNF, original=r['r'])
-        r.update(mode=Mode.BETA_ZETA, task=Task.BETA_ZETA, x=original, depth=0)
-    elif phase == CALL_CONVERT_RIGHT_WHNF:
-        replace(CALL_CONVERT_NORMAL, original=original, depth=r['r'])
-        r.update(mode=Mode.WALK, task=Task.EXPR_EQUAL, x=original, peer=r['r'])
 
 
 def step(machine, tag, a, b, c, stop, ret, alloc):
@@ -94,16 +79,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             stop(Outcome.INVALID, Reason.EXPECT_SORT)
         else: stop(Outcome.GAP, Reason.GAP_CONVERSION)
     if r['task'] == Task.CONVERT_POSITIVE:
-        if r['mode'] == Mode.WALK:
-            if push(CALL_CONVERT_FAST, r['x'], r['peer']):
-                r.update(mode=Mode.WALK, task=Task.EXPR_EQUAL)
-        elif r['mode'] == Mode.CONVERT_LEFT:
-            if tag != Tag.SORT: stop(Outcome.GAP, Reason.GAP_CONVERSION)
-            else: r.update(mode=Mode.CONVERT_RIGHT, convert_left_level=a, x=r['peer'])
-        elif r['mode'] == Mode.CONVERT_RIGHT:
-            if tag != Tag.SORT: stop(Outcome.GAP, Reason.GAP_CONVERSION)
-            else: r.update(sp=r['sp']-1, mode=Mode.WALK, task=Task.LEVEL_EQUIVALENT, x=r['convert_left_level'], peer=a)
-        else: stop(Outcome.INVALID, Reason.SYNTAX)
+        if r['mode'] == Mode.WALK:r.update(task=Task.CONVERT,convert_pc=0)
+        else:stop(Outcome.INVALID,Reason.SYNTAX)
         return True
     if r['mode'] == Mode.WALK:
         if tag == Tag.BVAR: stop(Outcome.INVALID, Reason.SCOPE)

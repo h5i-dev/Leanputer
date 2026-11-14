@@ -42,8 +42,8 @@ class EnvironmentDriver:
         self.a.steps = 0
 
     def _name(self, symbol):
-        if not 0 < symbol < len(self.symbols.names) or not self.symbols.names[symbol]:
-            raise KernelError('invalid anonymous declaration name')
+        if not 0 < symbol < len(self.symbols.names):
+            raise KernelError('invalid declaration symbol')
         key = self.symbols.names[symbol]
         if key in ((('str', 'Lean'), ('str', 'reduceBool')), (('str', 'Lean'), ('str', 'reduceNat'))):
             # Justified actual kernel native-code interfaces, not ordinary
@@ -136,9 +136,9 @@ class EnvironmentDriver:
         self._new(entries)
         # A private overlay allows recursive RHS typing. Nothing is published
         # if any restored signature/rule/claim/scope check fails or is missing.
-        family_infos = [(a.expr(family.constant).a,FamilyInfo(raw.parameters,core.families[i].indices,tuple(ct.symbol for ct in family.constructors)))
+        family_infos = [(a.expr(family.constant).a,FamilyInfo(raw.parameters,core.families[i].indices,tuple(ct.symbol for ct in family.constructors),core.is_recursive))
                         for i,family in enumerate(families)]
-        constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(family.constant).a,raw.parameters)) for family in families for ct in family.constructors]
+        constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(family.constant).a,raw.parameters,core.families[i].constructors[j].fields)) for i,family in enumerate(families) for j,ct in enumerate(family.constructors)]
         with s.overlay(entries, records, family_infos, constructor_infos):
             for _, signature in entries:
                 self._scheme(signature.universe_parameters, signature.type)

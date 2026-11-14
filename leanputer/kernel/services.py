@@ -30,12 +30,14 @@ class FamilyInfo:
     parameters: int
     indices: int
     constructors: tuple
+    recursive: bool = False
 
 
 @dataclass(frozen=True)
 class ConstructorInfo:
     family: int
     parameters: int
+    fields: int = 0
 
 
 class KernelServices:
@@ -251,44 +253,95 @@ class KernelServices:
             raise KernelError('data projection from Prop')
         return row.a
 
-    def convert(self, left, right):
-        """Implemented positive congruence fragment; gaps cannot mean false.
+    def _structure(self, symbol):
+        info = self.families.get(symbol)
+        return info if info is not None and not info.recursive and not info.indices and len(info.constructors) == 1 else None
 
-        A top-level Sort comparison can return false. A failed congruence child
-        cannot establish inequality of its parent (proof irrelevance/delta/eta
-        may still apply), so it raises MissingOperation.
+    def convert(self, left, right):
+        """General typed conversion; unfinished genuine primitive extensions GAP.
+
+        Pinned quick binding/literal/Sort rules, checked WHNF, proof irrelevance,
+        application congruence, function/structure eta and unit-like equality.
+        Eager checked WHNF replaces the pinned lazy delta optimization; different
+        physical costs are not an inequality/admission shortcut. Primitive
+        preparation remains explicit where the source extension is unfinished.
         """
-        a, c = self.a, self.c
-        initial_scope = c.mark()
-        pending = [(left, right, True)]
+        a,c = self.a,self.c
+        mark = c.mark()
+        depth = getattr(self,'_conversion_depth',0)+1
+        a.check_stack(range(depth))
+        self._conversion_depth = depth
         try:
-            while pending:
-                a.check_stack(pending); a.tick()
-                x, y, top = pending.pop()
-                x, y = self.whnf(x), self.whnf(y)
-                if x == y:
-                    continue
-                xr, yr = a.expr(x), a.expr(y)
-                if xr.tag == yr.tag == Tag.SORT:
-                    if self.levels.equal(xr.a, yr.a):
-                        continue
-                    if top:
-                        return False
-                elif xr.tag == yr.tag == Tag.CONST and xr.a == yr.a:
-                    xs, ys = a.vector(xr.b), a.vector(yr.b)
-                    if len(xs) == len(ys) and all(self.levels.equal(p, q) for p, q in zip(xs, ys)):
-                        continue
-                elif xr.tag == yr.tag and xr.tag in (Tag.PI, Tag.LAM):
-                    # Infer/validate callers establish the binder types. The
-                    # Local remains live until this conversion scope finishes.
-                    local = c.fresh(xr.a)
-                    pending.extend(((instantiate(a, xr.b, (local,)), instantiate(a, yr.b, (local,)), False),
-                                    (xr.a, yr.a, False)))
-                    continue
-                elif xr.tag == yr.tag == Tag.APP:
-                    pending.extend(((xr.a, yr.a, False), (xr.b, yr.b, False)))
-                    continue
-                raise MissingOperation('typed proof irrelevance/eta/full conversion not integrated')
-            return True
+            return self._convert(left,right)
         finally:
-            c.restore(initial_scope)
+            self._conversion_depth = depth-1
+            c.restore(mark)
+
+    def _convert(self,left,right):
+        a,c = self.a,self.c
+        a.tick()
+        if left == right:return True
+        def quick(x,y):
+            xr,yr = a.expr(x),a.expr(y)
+            if x == y:return True
+            if xr.tag == yr.tag:
+                if xr.tag == Tag.SORT:return self.levels.equal(xr.a,yr.a)
+                if xr.tag in (Tag.NAT,Tag.STRING):return a.vector(xr.a) == a.vector(yr.a)
+                if xr.tag == Tag.MDATA:return self.convert(xr.a,yr.a)
+                if xr.tag in (Tag.PI,Tag.LAM):
+                    if not self.convert(xr.a,yr.a):return False
+                    with c.scope():
+                        local = c.fresh(yr.a,binder_info=yr.c)
+                        return self.convert(instantiate(a,xr.b,(local,)),instantiate(a,yr.b,(local,)))
+            return None
+        result = quick(left,right)
+        if result is not None:return result
+        x,y = self.whnf(left),self.whnf(right)
+        result = quick(x,y)
+        if result is not None:return result
+        xr,yr = a.expr(x),a.expr(y)
+        # If x is a proof, kernel proof irrelevance decides by the proof types.
+        tx = self.infer(x)
+        if self.levels.is_zero(self.ensure_type(tx)):
+            return self.convert(tx,self.infer(y))
+        if xr.tag == yr.tag == Tag.CONST and xr.a == yr.a:
+            xs,ys = a.vector(xr.b),a.vector(yr.b)
+            if len(xs) == len(ys) and all(self.levels.equal(u,v) for u,v in zip(xs,ys)):return True
+        if xr.tag == yr.tag == Tag.LOCAL and xr.a == yr.a:return True
+        if xr.tag == yr.tag == Tag.PROJ and xr.b == yr.b and self.convert(xr.c,yr.c):return True
+        if xr.tag == yr.tag == Tag.APP:
+            xf,xa = spine(a,x);yf,ya = spine(a,y)
+            if len(xa) == len(ya) and self.convert(xf,yf) and all(self.convert(u,v) for u,v in zip(xa,ya)):
+                return True
+        for lam,other in ((x,y),(y,x)):
+            row = a.expr(lam)
+            if row.tag == Tag.LAM and a.expr(other).tag != Tag.LAM:
+                ty = a.expr(self.whnf(self.infer(other)))
+                if ty.tag == Tag.PI and self.convert(row.a,ty.a):
+                    with c.scope():
+                        local = c.fresh(ty.a,binder_info=ty.c)
+                        if self.convert(instantiate(a,row.b,(local,)),a.app(other,(local,))):return True
+        for value,constructed in ((x,y),(y,x)):
+            head,args = spine(a,constructed);head = a.expr(head)
+            info = self.constructors.get(head.a) if head.tag == Tag.CONST else None
+            if info is None or len(args) != info.parameters+info.fields or self._structure(info.family) is None:
+                continue
+            if not self.convert(self.infer(value),self.infer(constructed)):continue
+            if all(self.convert(a.mk(Tag.PROJ,info.family,i,value),args[info.parameters+i]) for i in range(info.fields)):
+                return True
+        if xr.tag in (Tag.NAT,Tag.STRING) or yr.tag in (Tag.NAT,Tag.STRING):
+            raise MissingOperation('literal/constructor conversion preparation not integrated')
+        # Unit-like equality is independent of the syntactic form of y.
+        type_ref = self.whnf(tx);head,_ = spine(a,type_ref);head = a.expr(head)
+        info = self._structure(head.a) if head.tag == Tag.CONST else None
+        if info is not None:
+            ctor = self.constructors.get(info.constructors[0])
+            if ctor is not None and not ctor.fields:return self.convert(type_ref,self.infer(y))
+        # Pending Nat/Quot reduction extensions can affect constant-headed apps.
+        # Until checked primitive bindings are implemented, do not call their
+        # irreducibility a proof of inequality, including literal-free Nat.zero.
+        for value in (x,y):
+            head,args = spine(a,value)
+            if args and a.expr(head).tag == Tag.CONST:
+                raise MissingOperation('primitive-aware negative conversion not integrated')
+        return False

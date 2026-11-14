@@ -37,12 +37,13 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
             s['stack'][r['sp']]=[CALL_RECNAME_PARENT,0,0,Task.CHECK_RECURSOR_NAME,0,0]
             r.update(sp=r['sp']+1,task=Task.GET_NAME_PATH,x=r['symbols_root'],query_symbol=r['name_parent_symbol'])
     elif mode==Mode.RECNAME_LEFT_HEADER:
-        if c!=VectorKind.REFERENCES or not a or not b:stop(Outcome.INVALID,Reason.SYNTAX)
+        if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(mode=Mode.RECNAME_RIGHT_HEADER,x=r['recname_candidate_path'],recname_length=a,recname_head=b)
     elif mode==Mode.RECNAME_RIGHT_HEADER:
         if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
         elif a!=r['recname_length']+1:done(0)
-        else:r.update(mode=Mode.RECNAME_LEFT_CELL,x=r['recname_head'],recname_remaining=r['recname_length'],recname_right=b)
+        else:r.update(mode=Mode.RECNAME_LEFT_CELL if r['recname_length'] else Mode.RECNAME_SUFFIX_CELL,
+            x=r['recname_head'] if r['recname_length'] else b,recname_remaining=r['recname_length'],recname_right=b)
     elif mode==Mode.RECNAME_LEFT_CELL:
         if not r['recname_remaining'] or bool(b)!=(r['recname_remaining']>1):stop(Outcome.INVALID,Reason.SYNTAX)
         else:r.update(mode=Mode.RECNAME_RIGHT_CELL,x=r['recname_right'],recname_next_left=b,recname_part_left=a)

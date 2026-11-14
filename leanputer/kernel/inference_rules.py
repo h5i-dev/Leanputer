@@ -2,7 +2,7 @@
 
 Raw scope is checked before entry. Local types are derived privately after
 domain checking; raw signatures are never consulted as admitted answers.
-Missing environment, literal/Quot and complete conversion remain explicit GAP
+Missing environment, literal/Quot and primitive-dependent conversion remain GAP
 callbacks. This module is not complete source/declaration admission.
 """
 from .arena import Tag
@@ -13,10 +13,9 @@ from .traversal_machine import (Mode, Task, Outcome, Reason,
     CALL_INFER_PI_LEVEL, CALL_INFER_FUNCTION, CALL_INFER_FUNCTION_WHNF,
     CALL_INFER_ARGUMENT, CALL_INFER_ARGUMENT_CONVERT, CALL_INFER_LET_TYPE,
     CALL_INFER_LET_TYPE_WHNF, CALL_INFER_LET_VALUE, CALL_INFER_LET_CONVERT,
-    CALL_INFER_LET_BODY, CALL_CONVERT_FAST, CALL_CONVERT_LEFT_WHNF,
-    CALL_CONVERT_RIGHT_WHNF, CALL_CONVERT_NORMAL)
+    CALL_INFER_LET_BODY)
 
-PRIVATE_PHASES = tuple(range(CALL_INFER_BINDER_DOMAIN, CALL_CONVERT_NORMAL+1))
+PRIVATE_PHASES = tuple(range(CALL_INFER_BINDER_DOMAIN, CALL_INFER_LET_BODY+1))
 
 
 def emit_rules(c):
@@ -71,31 +70,7 @@ def emit_rules(c):
     inspect_return(CALL_INFER_LET_VALUE, Mode.INFER_LET_VALUE_TYPE, True)
     c.emit(at_return(CALL_INFER_LET_BODY), sp=top, mode=Mode.WALK, task=Task.INFER, x=result)
 
-    for phase in (CALL_CONVERT_FAST, CALL_CONVERT_NORMAL):
-        guard = at_return(phase)
-        c.emit(c.AND(guard, truth), sp=top)
-        c.ret(c.AND(guard, truth), 1)
-    fast_false = c.AND(at_return(CALL_CONVERT_FAST), c.NOT(truth))
-    replace(fast_false, CALL_CONVERT_LEFT_WHNF, original=f['depth'], depth=0, first=0, second=0)
-    c.emit(fast_false, mode=Mode.BETA_ZETA, task=Task.BETA_ZETA, x=f['original'], depth=0)
-    c.emit(c.AND(at_return(CALL_CONVERT_NORMAL), c.NOT(truth)), mode=Mode.CONVERT_LEFT,
-        task=Task.CONVERT_POSITIVE, x=f['original'], peer=f['depth'])
-    left_whnf = at_return(CALL_CONVERT_LEFT_WHNF)
-    replace(left_whnf, CALL_CONVERT_RIGHT_WHNF, original=result)
-    c.emit(left_whnf, mode=Mode.BETA_ZETA, task=Task.BETA_ZETA, x=f['original'], depth=0)
-    right_whnf = at_return(CALL_CONVERT_RIGHT_WHNF)
-    replace(right_whnf, CALL_CONVERT_NORMAL, depth=result)
-    c.emit(right_whnf, mode=Mode.WALK, task=Task.EXPR_EQUAL, x=f['original'], peer=result)
-    conversion = c.AND(c.mode(Mode.WALK), c.task(Task.CONVERT_POSITIVE))
-    conversion = push(conversion, CALL_CONVERT_FAST, x, r['peer'])
-    c.emit(conversion, mode=Mode.WALK, task=Task.EXPR_EQUAL)
-    left_conversion = c.mode(Mode.CONVERT_LEFT)
-    c.stop(c.AND(left_conversion, c.NOT(c.tag(Tag.SORT))), Outcome.GAP, Reason.GAP_CONVERSION)
-    c.emit(c.AND(left_conversion, c.tag(Tag.SORT)), mode=Mode.CONVERT_RIGHT, convert_left_level=a, x=r['peer'])
-    right_conversion = c.mode(Mode.CONVERT_RIGHT)
-    c.stop(c.AND(right_conversion, c.NOT(c.tag(Tag.SORT))), Outcome.GAP, Reason.GAP_CONVERSION)
-    c.emit(c.AND(right_conversion, c.tag(Tag.SORT)), sp=top, mode=Mode.WALK, task=Task.LEVEL_EQUIVALENT,
-        x=r['convert_left_level'], peer=a)
+    c.emit(c.AND(c.mode(Mode.WALK),c.task(Task.CONVERT_POSITIVE)),task=Task.CONVERT,convert_pc=0)
 
     walking = c.AND(c.mode(Mode.WALK), c.task(Task.INFER))
     c.stop(c.AND(walking, c.tag(Tag.BVAR)), Outcome.INVALID, Reason.SCOPE)

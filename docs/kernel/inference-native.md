@@ -45,9 +45,10 @@ Current implementation: `inference_machine.py` is the explicit development
 transition reference; `inference_rules.py` emits the matching Boolean IR to the
 SAME stock forward/cache program. The raw entry runs scope before inference.
 The source Sort/FVar/Pi/Lam/App/Let/metadata call chain is lowered, with checked
-binder domains and scoped private records. The current conversion callback is
-only a positive shortcut (representation equality, beta/zeta then equality,
-Sort-universe equivalence). Unhandled conversion cases report GAP, not false.
+binder domains and scoped private records. The [general conversion controller](conversion-native.md) now handles dependent
+binding/application congruence, checked proof irrelevance, symbolic universe
+vectors, function/structure eta and unit-like equality. Unfinished genuine
+primitive reductions keep the negative boundary explicit as GAP.
 Checked constants now use weighted private lookup/universe instantiation after
 source publication. A standalone operation entry still GAPs environment access;
 literal/Quot and remaining primitive services GAP. General projection
@@ -60,4 +61,4 @@ checks the complete state/cache and independently inferred output types. This
 is not full Lean checking. [Ordinary source transactions](environment-native.md)
 now integrate checked-environment access/publication through weighted type/body
 checking. Original-source inductive generation/restoration/publication is connected;
-complete typed conversion and primitive callbacks remain unfinished. No field-count/name classes define that work.
+primitive-aware negative conversion and primitive callbacks remain unfinished. No field-count/name classes define that work.

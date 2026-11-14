@@ -119,7 +119,21 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
         traversal = BlockTraversal(a, c, headers, params, services.whnf)
         analyses = []
         overlay = [(a.expr(ind.constant).a, Signature(universe_parameters, ind.type)) for ind in inductives]
-        family_infos = [(a.expr(ind.constant).a,FamilyInfo(parameter_count,headers[i].index_count,tuple(ct.symbol for ct in ind.constructors)))
+        # Source is_rec scans raw non-parameter constructor domains. It does
+        # not rely on an annotation or successful later positivity checking.
+        raw_recursive = False
+        for ind in inductives:
+            for ctor in ind.constructors:
+                tail = ctor.type
+                for _ in range(parameter_count):
+                    row = a.expr(tail)
+                    if row.tag != Tag.PI:raise KernelError('invalid raw parameter prefix')
+                    tail = row.b
+                while a.expr(tail).tag == Tag.PI:
+                    row = a.expr(tail);a.tick()
+                    raw_recursive = raw_recursive or traversal.has_occurrence(row.a)
+                    tail = row.b
+        family_infos = [(a.expr(ind.constant).a,FamilyInfo(parameter_count,headers[i].index_count,tuple(ct.symbol for ct in ind.constructors),raw_recursive))
                         for i,ind in enumerate(inductives)]
         with services.overlay(overlay,families=family_infos):
             for family_index, ind in enumerate(inductives):
@@ -180,7 +194,7 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                  and len(analyses[0].constructors) == 1 and analyses[0].constructors[0].fields == 0)
             constructors = [(ctor.symbol, Signature(universe_parameters, ctor.type))
                 for ind in inductives for ctor in ind.constructors]
-            constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(ind.constant).a,parameter_count)) for ind in inductives for ct in ind.constructors]
+            constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(ind.constant).a,parameter_count,analyses[i].constructors[j].fields)) for i,ind in enumerate(inductives) for j,ct in enumerate(ind.constructors)]
             with services.overlay(constructors,constructors=constructor_infos):
                 recursors = RecursorBuilder(traversal, inductives, universe_parameters,
                     elimination_level, services.convert).generate()

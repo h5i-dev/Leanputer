@@ -35,7 +35,6 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         else: r.update(mode=Mode.NAME_TABLE_CELL, x=r['name_table_next'])
     elif r['mode'] == Mode.NAME_PATH:
         if c != VectorKind.REFERENCES or bool(a) != bool(b): stop(Outcome.INVALID, Reason.SYNTAX)
-        elif not a: stop(Outcome.INVALID, Reason.INVALID_DECLARATION)
         elif a != 2: ret(1) # Only the two-component GENUINE native interfaces need exclusion.
         else: r.update(mode=Mode.NAME_PATH_CELL, x=b, name_part=0)
     elif r['mode'] == Mode.NAME_PATH_CELL:
