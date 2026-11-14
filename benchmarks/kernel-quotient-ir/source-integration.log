@@ -1,0 +1,11 @@
+source-quotient original-source Quot DONE 16277 steps 1991 heap
+source-quot-lift original-source Quot DONE 21423 steps 2414 heap
+source-quot-lift-nested original-source Quot DONE 30890 steps 3035 heap
+source-derived environment Quot.ind runtime + surplus beta DONE 155 steps
+source-quot-ind-surplus original-source Quot DONE 18017 steps 2187 heap
+Quot selected Boolean transitions 372
+.
+----------------------------------------------------------------------
+Ran 1 test in 73.714s
+
+OK

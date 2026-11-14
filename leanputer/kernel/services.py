@@ -99,6 +99,13 @@ class KernelServices:
                     value = substitute_levels(a, sig.value, dict(zip(sig.universe_parameters, levels)))
                     root = a.app(value, args)
                     continue
+                quotient=getattr(self,'quotient_names',None)
+                if quotient is not None and row.a in (quotient[2],quotient[3]):
+                    major_position=5 if row.a==quotient[2] else 4
+                    if len(args)>major_position:
+                        major=self.whnf(args[major_position]);mk,fields=spine(a,major);mk=a.expr(mk)
+                        if mk.tag==Tag.CONST and mk.a==quotient[1] and len(fields)==3:
+                            root=a.app(a.app(args[3],[fields[2]]),args[major_position+1:]);continue
                 if row.a in self.recursors:
                     rec = self.recursors[row.a]
                     if len(args) > rec.major_position:

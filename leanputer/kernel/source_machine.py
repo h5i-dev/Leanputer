@@ -25,7 +25,7 @@ def resume(machine, frame, stop, ret, alloc):
         r.update(mode=mode, task=task, x=x, depth=0, **updates)
     if phase == 0 and frame[3] == Task.CHECK_SOURCE:
         call(CALL_SOURCE_BLOCK_HEADERS,Task.ANALYZE_HEADERS,r['r'],header_parameters=r['stage_uparams'])
-    elif phase == 14 and frame[3] == Task.CHECK_SOURCE:
+    elif phase in (14,15) and frame[3] == Task.CHECK_SOURCE:
         r.update(sp=r['sp']-1,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
     elif phase == CALL_SOURCE_BLOCK_HEADERS:
         call(CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
@@ -88,7 +88,7 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         else:
             zero = r['free']
             s['heap'][zero] = [CellTag.LEVEL_ZERO, 0, 0, 0]
-            r.update(free=zero+1, kernel_zero=zero, env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,
+            r.update(free=zero+1, kernel_zero=zero, env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,quot_initialized=0,
                 ctx=0, count=0, arg_base=0, local_base=0, sp=0, pending_scope=0, pending_infer=0,
                 pending_open=0, pending_fold=0, pending_compare=0, mode=Mode.SOURCE_READ, x=0)
     elif r['mode'] == Mode.SOURCE_READ:
@@ -104,7 +104,11 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
                     s['stack'][r['sp']] = [CALL_SOURCE_BLOCK_HEADERS if core else 0,0,0,Task.CHECK_SOURCE,0,0]
                     r.update(sp=r['sp']+1,task=Task.ANALYZE_HEADERS if core else Task.NESTED_STAGE,mode=Mode.WALK,x=extra,header_parameters=parameters,stage_pc=0,stage_uparams=parameters)
             elif kind == DeclarationKind.RECURSOR_CLAIM: stop(Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
-            elif kind == DeclarationKind.QUOT_PRIMITIVE: stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
+            elif kind == DeclarationKind.QUOT_PRIMITIVE:
+                if r['sp']>=cfg.stack:stop(Outcome.RESOURCE,Reason.STACK)
+                else:
+                    s['stack'][r['sp']]=[15,0,0,Task.CHECK_SOURCE,0,0]
+                    r.update(sp=r['sp']+1,task=Task.QUOT_INITIALIZE,mode=Mode.WALK,quot_pc=0,quot_claim_kind=extra,quot_claim_symbol=symbol,quot_claim_parameters=parameters,quot_claim_type=type_ref)
             elif kind not in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE):
                 stop(Outcome.INVALID, Reason.INVALID_DECLARATION)
             elif r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)

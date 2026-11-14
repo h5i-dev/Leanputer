@@ -179,7 +179,8 @@ class EnvironmentDriver:
                         raise KernelError('unregistered recursor claim')
                     check_recursor_claim(self.services, self.services.recursors[declaration.symbol], declaration)
                 elif isinstance(declaration, RawPrimitive):
-                    raise MissingOperation('Quot primitive initialization/signature checking not integrated')
+                    from .quotient import initialize
+                    initialize(self,declaration)
                 else:
                     raise KernelError('unknown raw declaration record')
                 self.checked_items += 1

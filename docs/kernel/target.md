@@ -433,3 +433,15 @@ at insufficient bounds. Primitive-aware negative conversion and unavailable
 private metadata still GAP. This evidence is outside the pinned STOCK report.
 Anonymous structured names are admitted as data, matching pinned
 `environment.cpp:check_name`; the previous nonempty-name restriction was removed.
+
+
+The subsequent [quotient controller](quotient-native.md) connects genuine kernel
+Quot initialization and reductions through the original-source driver. Checked
+ordinary Eq and its actual sole constructor authorize fixed primitive signature
+construction, untrusted claims are checked, and all four declarations plus the
+initialized flag publish atomically. Four source cases independently match all
+public signatures/rules;372selected Boolean transitions pass. Source-derived
+environment runtime also checks Quot.ind plus surplus beta separately. Failure
+checks preserve the committed prefix. This is outside the pinned STOCK report;
+Nat/String and conservative primitive-aware conversion gaps remain. The SMALL
+stock-transformer target remains unmet.

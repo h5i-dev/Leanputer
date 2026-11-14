@@ -120,6 +120,10 @@ partial def ensureDeclaration (env : Environment) (n : Name) : ExportM Unit := d
         ("level_params",uparams r.levelParams),("type",ty)]
       modify fun s => {s with declarations := s.declarations.push row, complete := s.complete.insert n, visiting := s.visiting.erase n}
   | .quotInfo q =>
+    -- init_quot has an implicit dependency on the ordinary Eq block even when
+    -- this particular exported quotient signature does not mention Eq. Export
+    -- that raw source; no host validation or initialization answer is supplied.
+    ensureDeclaration env ``Eq
     let kind := match q.kind with
       | .type => "type" | .ctor => "ctor" | .lift => "lift" | .ind => "ind"
     let ty ← expr env q.type

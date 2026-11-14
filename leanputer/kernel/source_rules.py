@@ -38,7 +38,7 @@ def emit_rules(c):
     call(at_return(CALL_SOURCE_RULES),CALL_SOURCE_ASSEMBLY,Task.ASSEMBLE_RECURSORS,0)
     call(c.AND(at_return(CALL_SOURCE_ASSEMBLY),core),CALL_SOURCE_CLAIMS,Task.CHECK_RECURSOR_CLAIMS,r['header_block'])
     call(c.AND(at_return(CALL_SOURCE_ASSEMBLY),c.NOT(core)),14,Task.RESTORE_NESTED_BLOCK,0,publish_pc=0)
-    c.emit(c.AND(at_return(14),c.eq(f['task'],Task.CHECK_SOURCE)),sp=top,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
+    c.emit(c.AND(c.OR(at_return(14),at_return(15)),c.eq(f['task'],Task.CHECK_SOURCE)),sp=top,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
     c.stop(at_return(CALL_SOURCE_CLAIMS),Outcome.GAP,Reason.GAP_RECURSOR_GENERATION)
     call(at_return(CALL_SOURCE_NAME), CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     duplicate = at_return(CALL_SOURCE_DUPLICATE)
@@ -66,7 +66,7 @@ def emit_rules(c):
     c.stop(c.AND(init, counts_ok, c.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
     init = c.AND(init, counts_ok, heap_room)
     c.write('heap', init, r['free'], (CellTag.LEVEL_ZERO, 0, 0, 0))
-    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,
+    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,quot_initialized=0,
         ctx=0, count=0, arg_base=0, local_base=0, sp=0, pending_scope=0, pending_infer=0,
         pending_open=0, pending_fold=0, pending_compare=0, mode=Mode.SOURCE_READ, x=0)
     read = c.mode(Mode.SOURCE_READ)
@@ -81,7 +81,10 @@ def emit_rules(c):
     c.write('stack', c.AND(block, block_room), r['sp'], (c.mux(core,CALL_SOURCE_BLOCK_HEADERS,0),0,0,Task.CHECK_SOURCE,0,0))
     c.emit(c.AND(block, block_room), sp=c.add(r['sp'],1), task=c.mux(core,Task.ANALYZE_HEADERS,Task.NESTED_STAGE), mode=Mode.WALK, x=raw['extra'], header_parameters=raw['parameters'],stage_pc=0,stage_uparams=raw['parameters'])
     c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.RECURSOR_CLAIM)), Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
-    c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.QUOT_PRIMITIVE)), Outcome.GAP, Reason.GAP_PRIMITIVE)
+    quot=c.AND(read,c.eq(raw['kind'],DeclarationKind.QUOT_PRIMITIVE))
+    qr=c.lt(r['sp'],c.cfg.stack);c.stop(c.AND(quot,c.NOT(qr)),Outcome.RESOURCE,Reason.STACK);quot=c.AND(quot,qr)
+    c.write('stack',quot,r['sp'],(15,0,0,Task.CHECK_SOURCE,0,0))
+    c.emit(quot,sp=c.add(r['sp'],1),task=Task.QUOT_INITIALIZE,mode=Mode.WALK,quot_pc=0,quot_claim_kind=raw['extra'],quot_claim_symbol=raw['symbol'],quot_claim_parameters=raw['parameters'],quot_claim_type=raw['type'])
     ordinary = c.OR(*(c.eq(raw['kind'], kind) for kind in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE)))
     known = c.OR(ordinary, *(c.eq(raw['kind'], kind) for kind in (DeclarationKind.BLOCK, DeclarationKind.RECURSOR_CLAIM, DeclarationKind.QUOT_PRIMITIVE)))
     c.stop(c.AND(read, c.NOT(known)), Outcome.INVALID, Reason.INVALID_DECLARATION)

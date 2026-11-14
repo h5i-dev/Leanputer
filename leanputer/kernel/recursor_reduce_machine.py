@@ -59,7 +59,7 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             else:
                 ref = r['free']; s['heap'][ref] = [CellTag.REDUCER_CALL, frame[1], r['gather_base_sp'], 0]
                 frame[1] = ref
-                r.update(free=ref+1, task=Task.REDUCE_RECURSOR, mode=Mode.WALK, x=r['gather_expression'], depth=0)
+                r.update(free=ref+1, task=Task.QUOT_REDUCE if r['gather_service']==Task.QUOT_REDUCE else Task.REDUCE_RECURSOR,quot_reduce_pc=0,mode=Mode.WALK,x=r['gather_expression'],depth=0)
         elif mode == Mode.GATHER_RESTORE:
             r.update(task=Task.BETA_ZETA, ctx=frame[2], arg_base=frame[4], count=frame[5], depth=0)
             if not r['gather_result']:

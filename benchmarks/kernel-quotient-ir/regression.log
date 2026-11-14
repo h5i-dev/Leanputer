@@ -1,0 +1,13 @@
+.conversion source proof-irrelevance DONE 665 steps
+conversion source function-eta DONE 890 steps
+conversion source binder-congruence DONE 415 steps
+conversion source structure-eta DONE 4025 steps
+conversion source unit-like DONE 2725 steps
+conversion source equivalent-level-vector DONE 545 steps
+conversion selected Boolean transitions 249
+...original source ACCEPT; steps 188094 heap 16070 public signatures 12 origins 2 selected Boolean transitions 421 seconds 124.31272703700233
+.
+----------------------------------------------------------------------
+Ran 5 tests in 284.526s
+
+OK

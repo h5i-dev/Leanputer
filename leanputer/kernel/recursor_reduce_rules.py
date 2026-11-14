@@ -93,7 +93,7 @@ def emit_rules(c):
     c.stop(c.AND(save, c.NOT(room)), Outcome.RESOURCE, Reason.HEAP); save = c.AND(save, room)
     c.write('heap', save, r['free'], (CellTag.REDUCER_CALL, f['original'], r['gather_base_sp'], 0))
     c.write('stack', save, top, (0, r['free'], f['depth'], Task.GATHER_RECURSOR_ARGUMENTS, f['first'], f['second']))
-    c.emit(save, free=c.add(r['free'], 1), task=Task.REDUCE_RECURSOR, mode=Mode.WALK, x=r['gather_expression'], depth=0)
+    c.emit(save, free=c.add(r['free'], 1), task=c.mux(c.eq(r['gather_service'],Task.QUOT_REDUCE),Task.QUOT_REDUCE,Task.REDUCE_RECURSOR),quot_reduce_pc=0,mode=Mode.WALK,x=r['gather_expression'],depth=0)
     restored = at(Mode.GATHER_RESTORE); neutral = c.eq(r['gather_result'], 0)
     c.emit(restored, task=Task.BETA_ZETA, ctx=f['depth'], arg_base=f['first'], count=f['second'], depth=0)
     c.emit(c.AND(restored, neutral), sp=top); c.ret(c.AND(restored, neutral), n['a'])

@@ -54,7 +54,9 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         r.update(signature_type=b, mode=Mode.CONST_SCHEME, x=c)
     elif r['mode'] == Mode.CONST_SCHEME:
         if r['task'] == Task.BETA_ZETA and b == 10:
-            r.update(task=Task.GATHER_RECURSOR_ARGUMENTS, mode=Mode.WALK, x=s['stack'][r['sp']-1][1])
+            r.update(task=Task.GATHER_RECURSOR_ARGUMENTS, mode=Mode.WALK, x=s['stack'][r['sp']-1][1],gather_service=Task.REDUCE_RECURSOR)
+        elif r['task']==Task.BETA_ZETA and b==11 and r['quot_initialized'] and c in (3,4):
+            r.update(task=Task.GATHER_RECURSOR_ARGUMENTS,mode=Mode.WALK,x=s['stack'][r['sp']-1][1],gather_service=Task.QUOT_REDUCE)
         elif r['task'] == Task.BETA_ZETA and b not in (DeclarationKind.DEFINITION, DeclarationKind.THEOREM):
             original = s['stack'][r['sp']-1][1]
             r['sp'] -= 1; ret(original)

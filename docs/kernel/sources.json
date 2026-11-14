@@ -85,6 +85,21 @@
           "path": "src/kernel/type_checker.h",
           "sha256": "2e0d3a93e413f37f7a3249fb9e111bce0ac812e966ebe254283d7acd224592b1",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/type_checker.h"
+        },
+        {
+          "path": "src/kernel/quot.h",
+          "sha256": "17105c835e79ccb397194e9663dba71b5515edbc89c9698b0d58a95dc30a8243",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/kernel/quot.h"
+        },
+        {
+          "path": "src/Lean/Environment.lean",
+          "sha256": "320661391284c61b470f1cbf30702eb9ff0f58e6ca0aba82a4f47a5853867569",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/Lean/Environment.lean"
+        },
+        {
+          "path": "src/Lean/Expr.lean",
+          "sha256": "b389b0bce8f4eb8ce175b788a5f83aa60bcaebb4ee137e6651d6dc52c4956638",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/Lean/Expr.lean"
         }
       ]
     },

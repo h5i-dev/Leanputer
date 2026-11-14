@@ -1,0 +1,10 @@
+Quot transaction atomic name INVALID INVALID_DECLARATION
+Quot transaction atomic type INVALID TYPE_MISMATCH
+Quot transaction atomic arity INVALID UNIVERSE_ARITY
+Quot transaction atomic later INVALID TYPE_MISMATCH
+Quot transaction atomic heap RESOURCE HEAP
+.
+----------------------------------------------------------------------
+Ran 1 test in 15.774s
+
+OK

@@ -1,0 +1,3 @@
+independent SPEC CheckResult(status='ACCEPT', reason='', input_items=4, checked_input_items=4, admitted_declarations=7, assumptions=(), syntax_steps=333, kernel_steps=7809)
+weighted source transition reference steps 16995 {'status': 1, 'reason': 0, 'free': 1994, 'raw_index': 4, 'published_declarations': 7, 'quot_initialized': 1}
+ALL public schemes and recursor RHS match independent SPEC. No STOCK run.
