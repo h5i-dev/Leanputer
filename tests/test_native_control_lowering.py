@@ -7,6 +7,33 @@ import unittest
 @unittest.skipUnless(sys.version_info >= (3,11) and importlib.util.find_spec('transformers'),
                      'stock backend requires native environment')
 class CompactControlTest(unittest.TestCase):
+    def test_tail_clear_reclaims_boot_input_and_preserves_identity_feedback(self):
+        import torch
+        from leanputer.native_machine import NativeBuilder,commit_native_outputs
+        from leanputer.native import emit_stock
+        torch.set_num_threads(1)
+        builder=NativeBuilder(intermediate=32,reset_layers=0)
+        value=builder.feature('value');boot=builder.feature('boot')
+        temporary=builder.gate('or',[value,boot],'temporary')
+        commit_native_outputs(builder,[value],[builder.graph.one-value])
+        # The boot feature can be handed to a later scratch value. Tail clears
+        # remove that value as well, before the hidden-state identity feedback.
+        builder.graph.ffn([(1,builder.graph.one,temporary)],name='late-use',min_level=8)
+        dim=next(iter(value.terms));bootdim=next(iter(boot.terms))
+        model,layout,allocation=emit_stock(builder.graph,[dim],32,torch.bfloat16,'cpu',keep_dims={dim},tail_clear=True)
+        state=torch.zeros(2,1,layout.hidden,dtype=torch.bfloat16);state[:,:,:layout.m]=layout.ballast
+        state[:,0,layout.dim(dim)]=torch.tensor([0.,1.],dtype=torch.bfloat16)
+        state[:,0,layout.dim(bootdim)]=1
+        cache=None
+        with torch.no_grad():
+            for step in range(4):
+                out=model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True)
+                state=out.hidden_states[-2];cache=out.past_key_values
+                self.assertEqual(out.logits[:,0,0].float().tolist(),[float((step+1)%2),float(step%2)])
+                self.assertTrue(torch.all(state[:,0,layout.dim(bootdim)]==0))
+                cleared=[i for i in range(layout.m,layout.hidden)if i!=layout.dim(dim)]
+                self.assertTrue(torch.all(state[:,0,cleared]==0))
+
     def test_scoped_native_words_keep_inactive_arithmetic_and_mux_quiet(self):
         from types import SimpleNamespace
         import torch

@@ -18,13 +18,13 @@ from leanputer.kernel_check import read_documents
 from leanputer.native_machine import compile_native_machine
 
 
-def plan(config, intermediate,control_digit_bits=8,bank_control=False,native_word_ops=False,phase_scratch=False):
+def plan(config, intermediate,control_digit_bits=8,bank_control=False,native_word_ops=False,phase_scratch=False,tail_clear=False):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     start = time.perf_counter()
     p = compile_native_machine(config, intermediate=intermediate,
         reset_layers=64, program=program, pack_control=True, plan_only=True,control_digit_bits=control_digit_bits,
-        bank_control=bank_control,native_word_ops=native_word_ops,phase_scratch=phase_scratch)
+        bank_control=bank_control,native_word_ops=native_word_ops,phase_scratch=phase_scratch,tail_clear=tail_clear)
     with torch.device('meta'), no_init_weights():
         model = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**p['stock_config']))
     groups = {}
@@ -41,7 +41,7 @@ def plan(config, intermediate,control_digit_bits=8,bank_control=False,native_wor
         allocated_slots=p['allocation'].n_slots, scratch_reset_channels=p['clear_channels'],
         reset_layers=p['reset_layers'], graph=p['graph'].stats(),
         commit_statistics=p['commit_statistics'],control_digit_bits=control_digit_bits,
-        control_bank=p['control_bank'],word_operations=p['word_operations'],phase_scratch=p['phase_scratch'],seconds=time.perf_counter()-start,
+        control_bank=p['control_bank'],word_operations=p['word_operations'],phase_scratch=p['phase_scratch'],tail_clear=tail_clear,seconds=time.perf_counter()-start,
         small_model_target_met=False, evidence='Whole fixed program/meta shapes only; no GPU weights or inference')
 
 
@@ -109,6 +109,7 @@ def main():
     parser.add_argument('--bank-control',action='store_true')
     parser.add_argument('--native-word-ops',action='store_true')
     parser.add_argument('--phase-scratch',action='store_true')
+    parser.add_argument('--tail-clear',action='store_true')
     parser.add_argument('--device', choices=('cpu', 'cuda'), default='cuda')
     parser.add_argument('--load-model', type=Path)
     parser.add_argument('--save-model', type=Path)
@@ -117,7 +118,7 @@ def main():
     if args.plan:
         if not args.config:
             parser.error('--plan requires --config')
-        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate,args.control_digit_bits,args.bank_control,args.native_word_ops,args.phase_scratch)
+        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate,args.control_digit_bits,args.bank_control,args.native_word_ops,args.phase_scratch,args.tail_clear)
     else:
         if not args.input or not (args.config or args.load_model):
             parser.error('validation requires --input and --config or --load-model')
@@ -132,7 +133,7 @@ def main():
             machine = compile_native_machine(config, intermediate=args.intermediate,
                 reset_layers=64, device=args.device, program=program,
                 pack_control=True, weight_storage='sparse_csr',control_digit_bits=args.control_digit_bits,
-                bank_control=args.bank_control,native_word_ops=args.native_word_ops,phase_scratch=args.phase_scratch)
+                bank_control=args.bank_control,native_word_ops=args.native_word_ops,phase_scratch=args.phase_scratch,tail_clear=args.tail_clear)
         compile_seconds = time.perf_counter()-start
         if args.save_model:
             from leanputer.source_model import save_source_machine

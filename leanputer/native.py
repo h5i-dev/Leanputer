@@ -69,7 +69,7 @@ class ScratchResetCapacity(ValueError):
         super().__init__(f'native scratch reset needs {required} reserved layers')
 
 
-def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0, max_ballast=16):
+def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0, max_ballast=16,tail_clear=False):
     """Allocate residual slots and report stock shapes before allocating tensors."""
     results = result_dims
     keep = set(result_dims) | set(keep_dims or ())
@@ -84,9 +84,10 @@ def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0,
     if reset_layers and len(clear) > reset_layers*intermediate:
         raise ScratchResetCapacity((len(clear)+intermediate-1)//intermediate)
     layers = graph.n_layers()
+    tail_layers=(len(clear)+intermediate-1)//intermediate if tail_clear else 0
     memory_layers={(node.level-1)//2 for node in graph.nodes if isinstance(node,Head)}
     tc = dict(hidden_size=layout.hidden, vocab_size=len(results), intermediate_size=intermediate,
-              num_hidden_layers=layers+1, layer_types=['linear_attention'if layer in memory_layers else'full_attention'for layer in range(layers)]+['full_attention'],
+              num_hidden_layers=layers+tail_layers+1, layer_types=['linear_attention'if layer in memory_layers else'full_attention'for layer in range(layers)]+['full_attention']*(tail_layers+1),
               hidden_act='silu', linear_conv_kernel_dim=4, linear_key_head_dim=128, linear_value_head_dim=128,
               linear_num_key_heads=graph.target.key_heads, linear_num_value_heads=graph.target.value_heads, num_attention_heads=1, num_key_value_heads=1,
               head_dim=2, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
@@ -95,12 +96,12 @@ def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0,
     return layout,allocation,tc,clear
 
 
-def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0, max_ballast=16, weight_storage='dense'):
+def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0, max_ballast=16, weight_storage='dense',tail_clear=False):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     if weight_storage not in ('dense','sparse_csr'):raise ValueError('unknown stock parameter storage')
-    layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers,max_ballast)
-    layers=graph.n_layers()
+    layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers,max_ballast,tail_clear)
+    body_layers=graph.n_layers();layers=tc['num_hidden_layers']-1
     native_config = Qwen3_5TextConfig(**tc)
     native_config._attn_implementation = 'eager'
     # Build stock modules directly at the target dtype/device, then copy one
@@ -143,7 +144,20 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
             if weight_storage=='sparse_csr'and layer%32==0:
                 import sys
                 print(f'stock sparse emission layer {layer}/{layers}',file=sys.stderr,flush=True)
-            state=emit_layers(graph,layout,tc,0,'model.',allocation,only_layer=layer,sparse=weight_storage=='sparse_csr')
+            if layer<body_layers:
+                state=emit_layers(graph,layout,tc,0,'model.',allocation,only_layer=layer,sparse=weight_storage=='sparse_csr')
+            else:
+                from .native_vendor.qwenputer.emit import SparseMatrix
+                matrix=lambda r,c:SparseMatrix(r,c)if weight_storage=='sparse_csr'else torch.zeros(r,c)
+                prefix=f'model.layers.{layer}.mlp.'
+                state={prefix+'gate_proj.weight':matrix(intermediate,layout.hidden),
+                    prefix+'up_proj.weight':matrix(intermediate,layout.hidden),
+                    prefix+'down_proj.weight':matrix(layout.hidden,intermediate)}
+                start=(layer-body_layers)*intermediate
+                for index,slot in enumerate(clear[start:start+intermediate]):
+                    row(graph.one,layout,state[prefix+'gate_proj.weight'][index],128.)
+                    state[prefix+'up_proj.weight'][index,slot]=1/(128*layout.scale)
+                    state[prefix+'down_proj.weight'][slot,index]=-1.
             if layer<reset_layers:
                 prefix=f'model.layers.{layer}.mlp.'
                 for index,slot in enumerate(clear[layer*intermediate:(layer+1)*intermediate]):
