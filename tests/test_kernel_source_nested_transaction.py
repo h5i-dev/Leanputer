@@ -65,6 +65,7 @@ class SourceNestedTransactionTest(unittest.TestCase):
         self.assertEqual((r['status'],r['reason'],r['raw_index'],r['decl']),(spec.Outcome.DONE,0,2,2))
         self.assertEqual(committed,[1,2]);self.assertEqual((r['typing_active'],r['ctx'],r['sp']),(0,0,0))
         signatures=linked(state,r['env_head']);self.assertEqual(len(signatures),12)
+        self.assertEqual((r['published_declarations'],program.admitted_declarations_from_state(r)),(12,12))
         origins=linked(state,r['nested_registry_head']);self.assertEqual(len(origins),2)
         self.assertEqual([state['heap'][ref][1] for ref in origins],[state['constants'][1][5],state['constants'][0][5]])
         # Every exposed family/constructor retains its original symbol; auxiliaries
@@ -97,6 +98,7 @@ class SourceNestedTransactionTest(unittest.TestCase):
                 self.assertEqual(r['status'],spec.Outcome.INVALID if bad_claim else spec.Outcome.RESOURCE)
                 self.assertEqual(r['reason'],spec.Reason.UNKNOWN_CONSTANT if bad_claim else spec.Reason.HEAP)
                 self.assertEqual(len(linked(machine.state,r['env_head'])),7)
+                self.assertEqual(r['published_declarations'],7)
                 self.assertEqual(len(linked(machine.state,r['nested_registry_head'])),1)
 
 

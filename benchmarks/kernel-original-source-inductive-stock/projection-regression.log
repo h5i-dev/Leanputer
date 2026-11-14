@@ -1,0 +1,15 @@
+.original source ACCEPT; steps 186850 heap 16070 public signatures 12 origins 2 selected Boolean transitions 421 seconds 116.83738198199717
+..projection source dependent-field DONE 4268 steps
+projection source projection-surplus-beta DONE 4483 steps
+projection source wrong-family INVALID 4108 steps
+projection source out-of-range INVALID 4251 steps
+projection source prop-data-denied INVALID 4998 steps
+projection source prop-unused-data-skipped DONE 5215 steps
+projection source prop-dependent-data-denied INVALID 5724 steps
+projection source universe-parameter-prefix DONE 5288 steps
+projection selected Boolean transitions 142
+...
+----------------------------------------------------------------------
+Ran 6 tests in 221.939s
+
+OK

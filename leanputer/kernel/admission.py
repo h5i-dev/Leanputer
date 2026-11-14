@@ -10,7 +10,7 @@ from .arena import KernelError, LevelTag, Tag
 from .operations import check_scope, instantiate, spine, substitute_levels
 from .positivity import BlockTraversal, Family
 from .recursor import RecursorBuilder
-from .services import Signature
+from .services import Signature,FamilyInfo,ConstructorInfo
 from .telescope import consume_parameters, open_telescope
 
 
@@ -119,7 +119,9 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
         traversal = BlockTraversal(a, c, headers, params, services.whnf)
         analyses = []
         overlay = [(a.expr(ind.constant).a, Signature(universe_parameters, ind.type)) for ind in inductives]
-        with services.overlay(overlay):
+        family_infos = [(a.expr(ind.constant).a,FamilyInfo(parameter_count,headers[i].index_count,tuple(ct.symbol for ct in ind.constructors)))
+                        for i,ind in enumerate(inductives)]
+        with services.overlay(overlay,families=family_infos):
             for family_index, ind in enumerate(inductives):
                 constructors = []
                 for ctor in ind.constructors:
@@ -178,7 +180,8 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
                  and len(analyses[0].constructors) == 1 and analyses[0].constructors[0].fields == 0)
             constructors = [(ctor.symbol, Signature(universe_parameters, ctor.type))
                 for ind in inductives for ctor in ind.constructors]
-            with services.overlay(constructors):
+            constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(ind.constant).a,parameter_count)) for ind in inductives for ct in ind.constructors]
+            with services.overlay(constructors,constructors=constructor_infos):
                 recursors = RecursorBuilder(traversal, inductives, universe_parameters,
                     elimination_level, services.convert).generate()
                 if recursor_claims:

@@ -45,5 +45,11 @@ def assumptions_from_state(declarations, registers):
     return assumptions(prefix)
 
 
+def admitted_declarations_from_state(registers):
+    # Diagnostic model output only: raw cursor counts blocks, this counter counts
+    # actually published signatures (including generated public recursors).
+    return registers['published_declarations']
+
+
 program_name = 'kernel.source-transactions.v1'
 primitive_basis = ()

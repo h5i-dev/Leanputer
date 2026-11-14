@@ -2,7 +2,8 @@
 
 No runtime host inference calls. Complete source tag dispatch is explicit; raw
 signatures are never accepted as checked signatures. Remaining environment,
-projection/literal and full conversion callbacks produce GAP. Pi/Lam/App/Let
+literal/Quot and full conversion callbacks produce GAP. Generic projection
+inference/reduction uses the task-owned source controller. Pi/Lam/App/Let
 rules reuse the SAME weighted scope/telescope/substitution/abstraction/levels.
 This is unfinished typed service integration, NOT a full kernel admission path.
 """
@@ -116,7 +117,7 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
                 r.update(free=r['free']+1, r=r['free'], mode=Mode.INFER_SORT_EXPR)
         elif tag == Tag.CONST: stop(Outcome.GAP, Reason.GAP_ENVIRONMENT)
         elif tag in (Tag.NAT, Tag.STRING): stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
-        elif tag == Tag.PROJ: stop(Outcome.GAP, Reason.GAP_PROJECTION)
+        elif tag == Tag.PROJ: r.update(task=Task.PROJECTION_INFER,projection_pc=0)
         elif tag == Tag.MDATA: r['x'] = a
         elif tag in (Tag.PI, Tag.LAM):
             if push(CALL_INFER_BINDER_DOMAIN, r['x'], r['ctx'], second=tag): r.update(x=a)

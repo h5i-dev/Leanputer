@@ -53,6 +53,10 @@ class CellTag(IntEnum):
     FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
     RECURSOR_COUNTS = 180        # Derived (numParams,numIndices,sharedCounts181).
     RECURSOR_SHARED_COUNTS = 181 # Derived (numMotives,numMinors,block182).
+    PROJECTION_FAMILY_INFO = 191 # Derived (nparams,nindices,checkedRawFamily).
+    PROJECTION_SETUP = 192 # Private (majorTypeSpine,majorType,ownerConst).
+    PROJECTION_STATE = 193 # Private (setup,familyInfo,isProp).
+    PROJECTION_BINDER = 194 # Private (domain,body,0).
     NESTED_TYPE_COMPAT = 190 # Private (restoredSignature,originalType,next).
     NESTED_REC_MAP = 189 # Private (expandedRecSymbol,restoredRecSymbol,next).
     NESTED_SPECIALIZATION = 187 # Private (abstractOriginalApplication,auxSymbol,next).

@@ -144,6 +144,7 @@ class NativeMachine:
         encoder=self.program.prepare if self.program else prepare
         get_assumptions=self.program.assumptions if self.program else lambda ds:[d.name for d in ds if d.value is None]
         assumptions_from_state=getattr(self.program, 'assumptions_from_state', None) if self.program else None
+        admitted_from_state=getattr(self.program,'admitted_declarations_from_state',None) if self.program else None
         outcome_class=self.program.Outcome if self.program else Outcome
         reason_class=self.program.Reason if self.program else Reason
         parsed = [parser(document) for document in documents]
@@ -212,7 +213,7 @@ class NativeMachine:
                         reason=reason_class(r['reason']).name,
                         assumptions=(assumptions_from_state(judgment[2],r) if assumptions_from_state else get_assumptions(judgment[2])),
                         input_axiom_candidates=get_assumptions(judgment[2]),
-                        environment_declarations=len(judgment[2]),admitted_declarations=r['decl'],input_heap_nodes=initial_state['regs']['free']-1,
+                        environment_declarations=len(judgment[2]),admitted_declarations=(admitted_from_state(r) if admitted_from_state else r['decl']),input_heap_nodes=initial_state['regs']['free']-1,
                         allocated_heap_nodes=r['free']-1,
                         semantic_steps=self.config.fuel-r['fuel']+int(r['reason']==reason_class.FUEL))
                    for index,(document,judgment,initial_state,r) in enumerate(zip(documents,parsed,states,registers))]

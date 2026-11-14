@@ -1,7 +1,8 @@
 # General native inference integration
 
 The inference core and ordinary declaration driver are implemented; complete
-conversion/inductive/primitive services remain unfinished. Authority
+conversion and primitive services remain unfinished. Original-source inductive
+transactions and generic projection inference/reduction are now connected. Authority
 is pinned Lean4.31 `src/kernel/type_checker.cpp:infer_type_core, infer_lambda,
 infer_pi, infer_app, infer_let, infer_constant, infer_fvar, infer_proj` and the
 complete conversion/reduction contract in target.md. All Expr tags have fixed
@@ -49,12 +50,14 @@ only a positive shortcut (representation equality, beta/zeta then equality,
 Sort-universe equivalence). Unhandled conversion cases report GAP, not false.
 Checked constants now use weighted private lookup/universe instantiation after
 source publication. A standalone operation entry still GAPs environment access;
-projection/literal and remaining primitive services GAP. Raw signatures never
+literal/Quot and remaining primitive services GAP. General projection
+inference/reduction now follows the pinned dependent telescope and Prop rules
+with [selected original-source evidence](projection-native.md). Raw signatures never
 supply their inferred answers.
 
 [Focused stock evidence](../../benchmarks/kernel-inference-core-stock/README.md)
 checks the complete state/cache and independently inferred output types. This
 is not full Lean checking. [Ordinary source transactions](environment-native.md)
 now integrate checked-environment access/publication through weighted type/body
-checking. Full inductive generation, complete typed conversion and primitive
-callbacks remain unfinished. No field-count/name classes define that work.
+checking. Original-source inductive generation/restoration/publication is connected;
+complete typed conversion and primitive callbacks remain unfinished. No field-count/name classes define that work.

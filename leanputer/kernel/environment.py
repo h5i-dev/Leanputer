@@ -11,7 +11,7 @@ from .arena import KernelError, LevelTag, LocalContext, ResourceError
 from .nested import NestedRestorer, NestedSpecializer, PriorBlock
 from .operations import check_scope
 from .recursor import Constructor, Inductive
-from .services import KernelServices, MissingOperation, Signature
+from .services import KernelServices, MissingOperation, Signature, FamilyInfo, ConstructorInfo
 from .syntax import RawBlock, RawDeclaration, RawPrimitive, RawRecursorClaim
 
 
@@ -136,7 +136,10 @@ class EnvironmentDriver:
         self._new(entries)
         # A private overlay allows recursive RHS typing. Nothing is published
         # if any restored signature/rule/claim/scope check fails or is missing.
-        with s.overlay(entries, records):
+        family_infos = [(a.expr(family.constant).a,FamilyInfo(raw.parameters,core.families[i].indices,tuple(ct.symbol for ct in family.constructors)))
+                        for i,family in enumerate(families)]
+        constructor_infos = [(ct.symbol,ConstructorInfo(a.expr(family.constant).a,raw.parameters)) for family in families for ct in family.constructors]
+        with s.overlay(entries, records, family_infos, constructor_infos):
             for _, signature in entries:
                 self._scheme(signature.universe_parameters, signature.type)
                 s.ensure_type(signature.type)
@@ -158,6 +161,8 @@ class EnvironmentDriver:
         # Atomic publication. Prior container descriptors retain ORIGINAL raw
         # types for the next block's specialization, never auxiliary artifacts.
         s.constants.update(entries)
+        s.families.update(family_infos)
+        s.constructors.update(constructor_infos)
         s.recursors.update((record.symbol, record) for record in records)
         self.blocks.append(PriorBlock(raw.universe_parameters, raw.parameters, tuple(families)))
 

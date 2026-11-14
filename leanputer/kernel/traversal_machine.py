@@ -57,6 +57,7 @@ class Reason(IntEnum):
     INVALID_INDUCTIVE_APPLICATION = 28
     GAP_RECURSOR_GENERATION = 29
     INVALID_RECURSOR_NAME = 30
+    INVALID_PROJECTION = 33
     GAP_NESTED_RESTORATION = 32
     INVALID_NESTED_PARAMETERS = 31
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
@@ -155,6 +156,10 @@ class Task(IntEnum):
     HAS_RAW_FAMILIES = 89     # Same occurrence operation over raw all-queued family data.
     IS_NESTED_APPLICATION = 90 # Complete source application/parameter/occurrence condition.
     INSTANTIATE_PI_PARAMETERS = 91 # Raw Pi strip + bulk instantiate_rev at declared count.
+    FAMILY_INFO = 98           # Checked family counts from origin/private header provenance.
+    PROJECTION_INFER = 99      # General dependent projection type rule.
+    PROJECTION_REDUCE = 100    # General checked-constructor projection reduction.
+    PROJECTION_BRIDGE = 101    # Frame-only WHNF continuation; not an entry task.
     RESTORE_NESTED_BLOCK = 97  # Restored rechecks and atomic source publication.
     RESTORE_NESTED_EXPR = 95   # General leading-prefix reopen/restore/fold.
     RESTORE_NESTED_CALLBACK = 96 # Fixed restoration preorder callback.
@@ -904,7 +909,8 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'stage_ctor_vector', 'stage_new_aux', 'stage_new_family', 'stage_final_vector',
     'copy_ctor_map_record', 'copy_ctor_record', 'copy_ctor_vector', 'copy_lookup_aux', 'copy_new_aux', 'copy_new_family', 'copy_original_ctor_vector', 'copy_original_vector', 'copy_template_head', 'copy_template_record',
     'restore_cb_argument_count', 'restore_cb_arguments', 'restore_cb_constructor', 'restore_cb_function', 'restore_cb_levels', 'restore_cb_lookup', 'restore_cb_new_symbol', 'restore_cb_next', 'restore_cb_original_args', 'restore_cb_pc', 'restore_cb_rename', 'restore_cb_result', 'restore_cb_root', 'restore_cb_symbol', 'restore_cb_template', 'restore_expr_pc', 'restore_parameter_base', 'restore_parameter_end', 'restore_prefix_tag', 'restore_rec_map', 'rewrite_restoring',
-    'publish_K', 'publish_block', 'publish_check_cursor', 'publish_check_kind', 'publish_check_next', 'publish_check_payload', 'publish_check_rhs', 'publish_check_rule_next', 'publish_check_rules', 'publish_check_type', 'publish_compat', 'publish_counts', 'publish_ctor_fields', 'publish_ctor_next', 'publish_ctor_ordinal', 'publish_ctor_remaining', 'publish_ctor_symbol', 'publish_ctor_type', 'publish_current_family', 'publish_entry_kind', 'publish_entry_parameters', 'publish_entry_payload', 'publish_entry_return', 'publish_entry_scheme', 'publish_entry_signature', 'publish_entry_symbol', 'publish_entry_type', 'publish_expanded_head', 'publish_families', 'publish_family_cursor', 'publish_family_next', 'publish_family_remaining', 'publish_family_symbol', 'publish_family_type', 'publish_family_vector', 'publish_flags', 'publish_head', 'publish_main', 'publish_map_cursor', 'publish_map_next', 'publish_nindices', 'publish_nminors', 'publish_nmotives', 'publish_nparams', 'publish_old_head', 'publish_origin', 'publish_original_type', 'publish_owner_symbol', 'publish_payload', 'publish_pc', 'publish_raw_aux', 'publish_raw_family', 'publish_rec_index', 'publish_rec_new_symbol', 'publish_rec_next', 'publish_rec_old_symbol', 'publish_rec_owner', 'publish_rec_parameters', 'publish_rec_remaining', 'publish_rec_rules', 'publish_rec_source', 'publish_rec_type', 'publish_recs', 'publish_registry', 'publish_rule', 'publish_rule_constructor', 'publish_rule_count', 'publish_rule_fields', 'publish_rule_next', 'publish_rule_remaining', 'publish_rule_rhs', 'publish_rule_vector', 'publish_rules', 'publish_shared')
+    'publish_K', 'publish_block', 'publish_check_cursor', 'publish_check_kind', 'publish_check_next', 'publish_check_payload', 'publish_check_rhs', 'publish_check_rule_next', 'publish_check_rules', 'publish_check_type', 'publish_compat', 'publish_counts', 'publish_ctor_fields', 'publish_ctor_next', 'publish_ctor_ordinal', 'publish_ctor_remaining', 'publish_ctor_symbol', 'publish_ctor_type', 'publish_current_family', 'publish_entry_kind', 'publish_entry_parameters', 'publish_entry_payload', 'publish_entry_return', 'publish_entry_scheme', 'publish_entry_signature', 'publish_entry_symbol', 'publish_entry_type', 'publish_expanded_head', 'publish_families', 'publish_family_cursor', 'publish_family_next', 'publish_family_remaining', 'publish_family_symbol', 'publish_family_type', 'publish_family_vector', 'publish_flags', 'publish_head', 'publish_main', 'publish_map_cursor', 'publish_map_next', 'publish_nindices', 'publish_nminors', 'publish_nmotives', 'publish_nparams', 'publish_old_head', 'publish_origin', 'publish_original_type', 'publish_owner_symbol', 'publish_payload', 'publish_pc', 'publish_raw_aux', 'publish_raw_family', 'publish_rec_index', 'publish_rec_new_symbol', 'publish_rec_next', 'publish_rec_old_symbol', 'publish_rec_owner', 'publish_rec_parameters', 'publish_rec_remaining', 'publish_rec_rules', 'publish_rec_source', 'publish_rec_type', 'publish_recs', 'publish_registry', 'publish_rule', 'publish_rule_constructor', 'publish_rule_count', 'publish_rule_fields', 'publish_rule_next', 'publish_rule_remaining', 'publish_rule_rhs', 'publish_rule_vector', 'publish_rules', 'publish_shared',
+    'published_declarations', 'publish_entry_count', 'family_info_pc', 'info_indices', 'info_next', 'info_parameters', 'info_raw', 'info_remaining', 'info_symbol', 'projection_pc', 'projection_reduce_pc')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -1003,7 +1009,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION, Task.INSTANTIATE_PI_PARAMETERS, Task.NESTED_STAGE, Task.REWRITE_NESTED, Task.REPLACE_NESTED, Task.RESTORE_NESTED_EXPR, Task.RESTORE_NESTED_CALLBACK, Task.RESTORE_NESTED_BLOCK):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION, Task.INSTANTIATE_PI_PARAMETERS, Task.NESTED_STAGE, Task.REWRITE_NESTED, Task.REPLACE_NESTED, Task.RESTORE_NESTED_EXPR, Task.RESTORE_NESTED_CALLBACK, Task.RESTORE_NESTED_BLOCK, Task.FAMILY_INFO, Task.PROJECTION_INFER, Task.PROJECTION_REDUCE, Task.PROJECTION_BRIDGE):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -1090,7 +1096,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.RESTORE_NESTED_BLOCK
+                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.PROJECTION_BRIDGE
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -1151,7 +1157,7 @@ class SpecMachine:
         from . import raw_prefix_machine as raw_prefix
         from . import nested_application_machine as nested_application
         from . import pi_parameters_machine as pi_parameters
-        from . import nested_stage_rules, nested_copy_rules, nested_rewrite_rules, nested_restore_rules, nested_transaction_rules
+        from . import nested_stage_rules, nested_copy_rules, nested_rewrite_rules, nested_restore_rules, nested_transaction_rules, projection_rules
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -1172,8 +1178,8 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if task in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK):
-                    {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules}[task].step(self)
+                if task in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE):
+                    {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules}[task].step(self)
                 elif task == Task.INSTANTIATE_PI_PARAMETERS:
                     pi_parameters.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif task == Task.IS_NESTED_APPLICATION:
@@ -1319,8 +1325,8 @@ class SpecMachine:
                 else:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
             return s
-        if r['task'] in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK):
-            {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules}[r['task']].step(self)
+        if r['task'] in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE):
+            {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules}[r['task']].step(self)
             return s
         if r['task'] == Task.CHECK_SOURCE and r['mode'] != Mode.SOURCE_TYPE_SORT:
             source.step(self, 0, 0, 0, 0, stop, ret, alloc)
@@ -1823,6 +1829,8 @@ class SpecMachine:
                 mode=Mode.WALK, x=b, depth=0, task=Task.INSTANTIATE_ONE, substitution=r['r'])
             return s
         if r['mode'] == Mode.BETA_ZETA:
+            if tag == Tag.PROJ:
+                projection_rules.step(self); return s
             if tag == Tag.MDATA:
                 r['x'] = a
             elif tag == Tag.APP:

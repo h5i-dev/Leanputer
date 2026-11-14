@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional
 from .arena import KernelError, ResourceError, Tag
 from .levels import LevelOps
-from .operations import abstract, instantiate, spine, substitute_levels
+from .operations import abstract, has_loose_bvars, instantiate, spine, substitute_levels
 from .reduction import BetaZeta
 
 
@@ -25,19 +25,34 @@ class Signature:
     opaque: bool = False
 
 
+@dataclass(frozen=True)
+class FamilyInfo:
+    parameters: int
+    indices: int
+    constructors: tuple
+
+
+@dataclass(frozen=True)
+class ConstructorInfo:
+    family: int
+    parameters: int
+
+
 class KernelServices:
     def __init__(self, arena, context):
         self.a, self.c = arena, context
         self.levels = LevelOps(arena)
         self.constants = {}  # Only a caller's checked environment/private overlay.
         self.recursors = {}
+        self.families, self.constructors = {}, {}
         self.beta_zeta = BetaZeta(arena, context)
 
     @contextmanager
-    def overlay(self, entries, recursors=()):
+    def overlay(self, entries, recursors=(), families=(), constructors=()):
         """Private, exception-safe declarations. This never publishes a block."""
         original = self.constants.copy()
         original_recursors = self.recursors.copy()
+        original_families, original_constructors = self.families.copy(), self.constructors.copy()
         try:
             for symbol, signature in entries:
                 if symbol in self.constants:
@@ -49,10 +64,13 @@ class KernelServices:
                 if record.symbol in self.recursors or record.symbol not in self.constants:
                     raise KernelError('invalid staged recursor registration')
                 self.recursors[record.symbol] = record
+            self.families.update(families)
+            self.constructors.update(constructors)
             yield
         finally:
             self.constants = original
             self.recursors = original_recursors
+            self.families, self.constructors = original_families, original_constructors
 
     def _signature_type(self, row):
         if row.a not in self.constants:
@@ -85,8 +103,18 @@ class KernelServices:
                         pending.append((root, rec, levels, args))
                         root = args[rec.major_position]
                         continue
-            # Constructor-headed reduction is implemented. K/structure/literal
-            # major expansion, projection and genuine primitives are still gaps.
+            if row.tag == Tag.PROJ:
+                major = self.whnf(row.c)
+                if a.expr(major).tag == Tag.STRING:
+                    raise MissingOperation('projection String literal preparation not integrated')
+                constructor, fields = spine(a, major)
+                ctor = a.expr(constructor)
+                info = self.constructors.get(ctor.a) if ctor.tag == Tag.CONST else None
+                if info is not None and info.parameters+row.b < len(fields):
+                    root = a.app(fields[info.parameters+row.b], args)
+                    continue
+            # K/structure/literal major expansion and genuine primitives remain
+            # separate gaps in this executable development SPEC.
             while pending:
                 from .recursor import reduce_constructor_rule
                 original, rec, levels, arguments = pending.pop()
@@ -136,8 +164,12 @@ class KernelServices:
                         pending.extend((('function', row.b), ('infer', row.a)))
                     elif row.tag == Tag.LET:
                         pending.extend((('let_type', ref), ('infer', row.a)))
+                    elif row.tag == Tag.PROJ:
+                        pending.extend((('projection', ref), ('infer', row.c)))
                     else:
                         raise MissingOperation('projection/literal inference not integrated')
+                elif operation == 'projection':
+                    results.append(self._projection_type(frame[1], self.whnf(results.pop())))
                 elif operation == 'binder_domain':
                     row = a.expr(frame[1])
                     domain_sort = a.expr(self.whnf(results.pop()))
@@ -187,6 +219,37 @@ class KernelServices:
             return results[0]
         finally:
             c.restore(initial_scope)
+
+    def _projection_type(self, root, major_type):
+        """Pinned type_checker::infer_proj, including dependent Prop restrictions."""
+        a = self.a
+        projection = a.expr(root)
+        head, arguments = spine(a, major_type)
+        owner = a.expr(head)
+        if owner.tag != Tag.CONST or owner.a != projection.a or owner.a not in self.families:
+            raise KernelError('invalid projection family')
+        info = self.families[owner.a]
+        if len(info.constructors) != 1 or len(arguments) != info.parameters+info.indices:
+            raise KernelError('invalid projection arity or constructor count')
+        type_ref = self._signature_type(a.expr(a.const(info.constructors[0],a.vector(owner.b))))
+        for argument in arguments[:info.parameters]:
+            a.tick();row = a.expr(self.whnf(type_ref))
+            if row.tag != Tag.PI:raise KernelError('invalid projection parameter prefix')
+            type_ref = instantiate(a,row.b,(argument,))
+        prop = self.levels.is_zero(self.ensure_type(major_type))
+        for index in range(projection.b):
+            a.tick();row = a.expr(self.whnf(type_ref))
+            if row.tag != Tag.PI:raise KernelError('projection field out of range')
+            if has_loose_bvars(a,row.b):
+                if prop and not self.levels.is_zero(self.ensure_type(row.a)):
+                    raise KernelError('dependent data projection from Prop')
+                type_ref = instantiate(a,row.b,(a.mk(Tag.PROJ,projection.a,index,projection.c),))
+            else:type_ref = row.b
+        row = a.expr(self.whnf(type_ref))
+        if row.tag != Tag.PI:raise KernelError('projection field out of range')
+        if prop and not self.levels.is_zero(self.ensure_type(row.a)):
+            raise KernelError('data projection from Prop')
+        return row.a
 
     def convert(self, left, right):
         """Implemented positive congruence fragment; gaps cannot mean false.

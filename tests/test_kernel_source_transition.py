@@ -91,6 +91,7 @@ class SourceTransitionTest(unittest.TestCase):
                 self.assertEqual(tag,160);self.assertEqual(state['heap'][meta][0],165)
                 published.append(symbol)
             self.assertEqual(len(published),r['decl'])
+            self.assertEqual(r['published_declarations'],len(published))
             assumed=program.assumptions_from_state(decls,r)
             self.assertTrue(all(symbol in published for symbol in assumed))
             independent=EnvironmentDriver(source).check()

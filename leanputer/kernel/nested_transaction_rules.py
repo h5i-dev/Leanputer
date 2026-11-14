@@ -59,7 +59,7 @@ def emit_rules(c):
     returning=c.AND(c.mode(Mode.RETURN),c.NOT(c.eq(r['sp'],0)),c.eq(f['task'],Task.RESTORE_NESTED_BLOCK))
     c.emit(returning,sp=top,task=Task.RESTORE_NESTED_BLOCK,mode=Mode.WALK,publish_pc=f['original'],x=r['r'])
     go(at(P.INIT),P.RAW_BLOCK,publish_head=r['env_head'],publish_old_head=r['env_head'],publish_expanded_head=r['typing_head'],
-        publish_rec_source=r['core_rec_signatures'],publish_families=0,publish_recs=0,publish_compat=0,
+        publish_rec_source=r['core_rec_signatures'],publish_entry_count=0,publish_families=0,publish_recs=0,publish_compat=0,
         ctx=0,count=0,arg_base=0,local_base=0,restore_rec_map=0,x=r['stage_original'])
     g=at(P.RAW_BLOCK,C.RAW_BLOCK);go(g,P.FAMILIES,x=n['b'])
     g=shape(at(P.FAMILIES,C.VECTOR));go(g,P.MAIN_CELL,publish_family_remaining=n['a'],publish_family_cursor=n['b'],x=n['b'])
@@ -218,8 +218,8 @@ def emit_rules(c):
     go(at(P.CLAIMS),P.ORIGIN)
     store(at(P.ORIGIN),(C.BLOCK_ORIGIN,r['stage_original'],r['stage_uparams'],r['publish_family_vector']),P.ORIGIN_LINK,publish_origin=r['free'])
     store(at(P.ORIGIN_LINK),(C.VECTOR_CELL,r['publish_origin'],r['nested_registry_head'],0),P.COMMIT,publish_registry=r['free'])
-    g=at(P.COMMIT)
-    c.emit(g,env_head=r['publish_head'],nested_registry_head=r['publish_registry'],raw_index=c.add(r['raw_index'],1),decl=c.add(r['decl'],1),
+    g,published=c.checked_add(at(P.COMMIT),r['published_declarations'],r['publish_entry_count'])
+    c.emit(g,published_declarations=published,env_head=r['publish_head'],nested_registry_head=r['publish_registry'],raw_index=c.add(r['raw_index'],1),decl=c.add(r['decl'],1),
         typing_active=0,typing_head=0,ctx=0,count=0,arg_base=0,local_base=0)
     c.ret(g,1)
     # All new public names are checked against prior Γ and this private overlay.
@@ -229,7 +229,7 @@ def emit_rules(c):
     go(c.AND(g,empty),P.ENTRY_SCHEME)
     store(at(P.ENTRY_SCHEME),(C.CHECKED_SCHEME,r['publish_entry_parameters'],r['publish_entry_kind'],r['publish_entry_payload']),P.ENTRY_SIG,publish_entry_scheme=r['free'])
     store(at(P.ENTRY_SIG),(C.CHECKED_SIGNATURE,r['publish_entry_symbol'],r['publish_entry_type'],r['publish_entry_scheme']),P.ENTRY_LINK,publish_entry_signature=r['free'])
-    store(at(P.ENTRY_LINK),(C.VECTOR_CELL,r['publish_entry_signature'],r['publish_head'],0),P.ENTRY_FINISH,publish_head=r['free'])
+    store(at(P.ENTRY_LINK),(C.VECTOR_CELL,r['publish_entry_signature'],r['publish_head'],0),P.ENTRY_FINISH,publish_head=r['free'],publish_entry_count=c.add(r['publish_entry_count'],1))
     g=at(P.ENTRY_FINISH);c.emit(g,publish_pc=r['publish_entry_return'])
 
 

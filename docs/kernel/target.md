@@ -365,7 +365,9 @@ target without assuming it. Original schemes feed the SAME constant lookup and
 universe instantiation. [General checked delta](reduction-native.md) now unfolds
 source-permitted definition/theorem bodies on that environment. Raw-bank cursor
 advancement/publication and ordinary inference are implemented. Complete typed
-conversion and Quot/literal/projection services remain unfinished. Original-source
+conversion and Quot/literal services remain unfinished. General projection
+inference/reduction now has selected original-source IR evidence; String literal
+projection preparation remains a primitive GAP. Original-source
 nested staging/restoration/rechecking/publication is now connected in Boolean IR;
 its independent semantic and selected-transition evidence is described below. Ordinary native source
 evidence is distinct from operation DONEs and offline inductive specs.
@@ -407,3 +409,16 @@ committed first block. These are development semantic/IR checks, **not STOCK nes
 source admission** or full-kernel coverage. The complete6378-step private-stage
 Boolean sweep was stopped; it is not recorded as a pass. Conversion/projection/
 literal/Quot gaps remain explicit, and current model size remains an unmet goal.
+
+
+Subsequent [general projection integration](projection-native.md) follows pinned
+`infer_proj/reduce_proj`: dependent preceding fields, full universe/parameter
+specialization, Prop restrictions and reentrant WHNF with pending applications.
+Eight source cases and142selected Boolean transitions pass, together with the
+nested transaction regression. A separate weighted published-signature counter
+now distinguishes generated declarations from checked raw blocks in reports.
+[Original-source STOCK evidence](../../benchmarks/kernel-original-source-inductive-stock/README.md)
+at f5bb04d admits an original empty inductive and checks its identity theorem,
+with exact ALL registers/cache rows. It predates projection/counter changes,
+does not establish nested-source STOCK admission, and uses10.35billion parameters;
+the SMALL-model goal remains unmet. No new corpus coverage fraction is claimed.

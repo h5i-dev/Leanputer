@@ -2,7 +2,7 @@
 
 Raw scope is checked before entry. Local types are derived privately after
 domain checking; raw signatures are never consulted as admitted answers.
-Environment, projection/literals and complete conversion remain explicit GAP
+Missing environment, literal/Quot and complete conversion remain explicit GAP
 callbacks. This module is not complete source/declaration admission.
 """
 from .arena import Tag
@@ -111,7 +111,7 @@ def emit_rules(c):
     c.emit(sort, free=c.add(r['free'], 1), r=r['free'], mode=Mode.INFER_SORT_EXPR)
     c.stop(c.AND(walking, c.tag(Tag.CONST), c.eq(r['env_ready'], 0)), Outcome.GAP, Reason.GAP_ENVIRONMENT)
     c.stop(c.AND(walking, c.tag(Tag.NAT, Tag.STRING)), Outcome.GAP, Reason.GAP_PRIMITIVE)
-    c.stop(c.AND(walking, c.tag(Tag.PROJ)), Outcome.GAP, Reason.GAP_PROJECTION)
+    c.emit(c.AND(walking,c.tag(Tag.PROJ)),task=Task.PROJECTION_INFER,projection_pc=0)
     c.emit(c.AND(walking, c.tag(Tag.MDATA)), x=a)
     binder = push(c.AND(walking, c.tag(Tag.PI, Tag.LAM)), CALL_INFER_BINDER_DOMAIN, x, r['ctx'], second=n['tag'])
     c.emit(binder, x=a)

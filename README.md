@@ -30,9 +30,12 @@ It ends GAP before rule assembly/claims/restoration. Private grouped metadata/
 signature assembly has subsequent IR evidence, outside that pinned stock report.
 Original-source nested queue/restoration/rechecking/publication now has independent
 semantic and selected Boolean integration evidence; it is outside the historical
-stock report. Complete conversion/reduction/primitive/projection/literal services
-remain gaps. The earlier uncommitted projection work is preserved.
-An [original-scheme syntax interface](docs/kernel/input.md) is available for
+stock report. General projection inference/reduction now also has selected source IR evidence.
+Complete conversion/reduction/primitive/literal services remain gaps. The earlier uncommitted projection work is preserved.
+An [original-source STOCK checkpoint](benchmarks/kernel-original-source-inductive-stock/README.md)
+admits an empty inductive and checks its identity theorem; it uses10.35billion
+parameters and does not meet the small-model goal or establish nested STOCK
+coverage. An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax
 export is separate from checking or native proof acceptance.
 

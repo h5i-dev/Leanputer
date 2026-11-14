@@ -1,0 +1,8 @@
+{"source_commit": "f5bb04dbc70452ef76de4403372f8b3c7c3f8a33", "started_utc": "2026-11-14T00:11:26Z"}
+{"phase": "reference", "inputs": 1, "statuses": ["DONE"]}
+{"phase": "compiled", "seconds": 200.97989793399756, "parameters": 10351376008}
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `fused_recurrent_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+{"phase": "passed", "statuses": ["DONE"], "forward_seconds": 472.8418603169994, "report": "/mnt/scratch/leanputer-runs/original-source-empty-stock/report.json"}
