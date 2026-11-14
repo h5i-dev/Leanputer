@@ -1,0 +1,9 @@
+../mnt/scratch/leanputer-runs/kernel-algorithms-tree/leanputer/native.py:126: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:53.)
+  value=torch.sparse_csr_tensor(torch.zeros(rows+1,dtype=torch.int64),torch.empty(0,dtype=torch.int64),torch.empty(0,dtype=dtype),size=(rows,cols),device=device)
+stock sparse emission layer 0/12
+stock sparse emission layer 0/18
+.
+----------------------------------------------------------------------
+Ran 3 tests in 4.021s
+
+OK

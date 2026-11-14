@@ -1,5 +1,12 @@
 # Current whole-program stock delivery
 
+Latest matched checkpoint: [lossless byte controls](../../benchmarks/kernel-byte-controls-stock/README.md)
+passed the same complete source accept/reject and all-register/cache validation.
+Logical size is15,799,810,694parameters, hidden17408/layers581, stored219,396,384bytes.
+The forward took1197.032s. Bounds/rules/word16 are unchanged; the small/practical
+model goal remains unfinished. The detailed21.471B evidence below is the prior
+paired-control baseline, preserved for a matched comparison.
+
 The safe kernel program is unchanged from 127751c. The compiler keeps all general
 rules: no proof/name/shape pruning, pretrained backbone, CPU emulator, semantic
 host inference, or trusted source metadata. The runtime is stock

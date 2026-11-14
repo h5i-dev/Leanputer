@@ -18,12 +18,12 @@ from leanputer.kernel_check import read_documents
 from leanputer.native_machine import compile_native_machine
 
 
-def plan(config, intermediate):
+def plan(config, intermediate,control_digit_bits=8):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     start = time.perf_counter()
     p = compile_native_machine(config, intermediate=intermediate,
-        reset_layers=64, program=program, pack_control=True, plan_only=True)
+        reset_layers=64, program=program, pack_control=True, plan_only=True,control_digit_bits=control_digit_bits)
     with torch.device('meta'), no_init_weights():
         model = Qwen3_5ForCausalLM(Qwen3_5TextConfig(**p['stock_config']))
     groups = {}
@@ -39,7 +39,7 @@ def plan(config, intermediate):
         native_layers=model.config.num_hidden_layers, persistent_channels=p['persistent_channels'],
         allocated_slots=p['allocation'].n_slots, scratch_reset_channels=p['clear_channels'],
         reset_layers=p['reset_layers'], graph=p['graph'].stats(),
-        commit_statistics=p['commit_statistics'], seconds=time.perf_counter()-start,
+        commit_statistics=p['commit_statistics'],control_digit_bits=control_digit_bits, seconds=time.perf_counter()-start,
         small_model_target_met=False, evidence='Whole fixed program/meta shapes only; no GPU weights or inference')
 
 
@@ -47,6 +47,7 @@ def verify(machine, documents):
     # The production model runs to completion before reference state exists.
     report = machine.check(documents, diagnostic_cache=True, early_stop=True)
     cache = report.pop('diagnostic_cache')
+    print(json.dumps(dict(phase='model_inference_returned',results=report['results'])),flush=True)
     from leanputer.kernel import traversal_machine as spec
     from leanputer.bitvec import unpack_words
     config = machine.config
@@ -88,6 +89,7 @@ def main():
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--plan', action='store_true')
     parser.add_argument('--intermediate', type=int, default=512)
+    parser.add_argument('--control-digit-bits',type=int,choices=(2,4,8),default=8)
     parser.add_argument('--device', choices=('cpu', 'cuda'), default='cuda')
     parser.add_argument('--load-model', type=Path)
     parser.add_argument('--save-model', type=Path)
@@ -96,7 +98,7 @@ def main():
     if args.plan:
         if not args.config:
             parser.error('--plan requires --config')
-        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate)
+        report = plan(program.MachineConfig(**json.loads(args.config.read_text())), args.intermediate,args.control_digit_bits)
     else:
         if not args.input or not (args.config or args.load_model):
             parser.error('validation requires --input and --config or --load-model')
@@ -110,11 +112,13 @@ def main():
             config = program.MachineConfig(**json.loads(args.config.read_text()))
             machine = compile_native_machine(config, intermediate=args.intermediate,
                 reset_layers=64, device=args.device, program=program,
-                pack_control=True, weight_storage='sparse_csr')
+                pack_control=True, weight_storage='sparse_csr',control_digit_bits=args.control_digit_bits)
         compile_seconds = time.perf_counter()-start
         if args.save_model:
             from leanputer.source_model import save_source_machine
             save_source_machine(machine, args.save_model)
+        print(json.dumps(dict(phase='compiled_or_loaded',seconds=compile_seconds,
+            hidden=machine.layout.hidden,layers=machine.model.config.num_hidden_layers)),flush=True)
         report = verify(machine, read_documents(args.input.read_text()))
         report.update(compile_or_load_seconds=compile_seconds)
     args.report.parent.mkdir(parents=True, exist_ok=True)

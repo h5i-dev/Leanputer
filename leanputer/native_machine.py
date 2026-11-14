@@ -281,7 +281,8 @@ class NativeMachine:
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
                     boot_tokens=len(boot),applied_steps=applied_steps,early_stop=early_stop and not bool(diagnostic_steps),
                     halt_interval=halt_interval,completion_flush_forwards=1 if flush_after is not None and applied_steps>=flush_after else 0)
-        report.update(parameter_storage(self.model),packed_control=bool(self.control_packing))
+        report.update(parameter_storage(self.model),packed_control=bool(self.control_packing),
+                      control_digit_bits=self.control_packing.digit_bits if self.control_packing else None)
         if diagnostic_cache:
             # Development evidence only. Never consulted to decide the result
             # or provide a semantic answer to a subsequent inference token.
@@ -291,7 +292,7 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense'):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense',control_digit_bits=2):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
@@ -305,7 +306,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     constants_width=program.constant_fields if program else 3
     builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
     from .control_packing import ControlPacking
-    packing=ControlPacking(registers)if pack_control else None
+    packing=ControlPacking(registers,control_digit_bits)if pack_control else None
     if packing:features,control=packing.features(builder)
     else:features=[builder.feature(name)for name in registers.names];control=list(features)
     pending = {}
@@ -372,7 +373,7 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     plan=rule_compiler(registers,**options).finish('attention_delta',target=collect)
     if packing:
         from .control_packing import packed_update_outputs
-        outputs=packed_update_outputs(builder,plan,control+all_reads,features[:packing.width],registers.width)
+        outputs=packed_update_outputs(builder,plan,control+all_reads,features[:packing.width],registers.width,packing.digit_bits)
     else:outputs=builder.circuit(plan,control+all_reads,'transition')
     update_features = features[:packing.width]if packing else control
     update_features = update_features+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
@@ -386,12 +387,12 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
         if plan_only:
             layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers,max_ballast)
             return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
-                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,packed_control=bool(packing),layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
+                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,packed_control=bool(packing),control_digit_bits=packing.digit_bits if packing else None,layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
         model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast,weight_storage)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage,control_digit_bits)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),

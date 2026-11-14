@@ -1,4 +1,4 @@
-"""Lossless two-bit residual packing; inference unpacking is emitted stock FFNs.
+"""Lossless bounded-digit packing; inference unpacking is emitted stock FFNs.
 
 Host encode/decode methods are serialization only. Model feedback stays an
 identity wire. No checker result, normalization or semantic state update occurs
@@ -11,51 +11,55 @@ import torch
 @dataclass(frozen=True)
 class PackedBit:
     feature: object
-    high: bool
+    bit: int
+    digit_bits: int = 2
 
     def realize(self,builder,memo):
         dimension=next(iter(self.feature.terms))
-        if dimension not in memo:
-            g=builder.graph;one=g.one
-            memo[dimension]=g.ffn([(1,one,self.feature-one),(-1,one,self.feature-2*one)],
-                name='unpack/'+str(dimension),min_level=builder.barrier)
-        bit=memo[dimension]
-        return bit if self.high else self.feature-2*bit
+        g=builder.graph;one=g.one;remainder=self.feature
+        for bit in range(self.digit_bits-1,0,-1):
+            key=(dimension,bit)
+            if key not in memo:
+                threshold=1<<bit
+                memo[key]=g.ffn([(1,one,remainder-(threshold-1)*one),(-1,one,remainder-threshold*one)],
+                    name=f'unpack/{dimension}/{bit}',min_level=builder.barrier)
+            if bit==self.bit:return memo[key]
+            remainder=remainder-(1<<bit)*memo[key]
+        return remainder
 
 
 class ControlPacking:
-    def __init__(self,registers):
-        self.logical_width=registers.width;self.pairs=[];self.slices={};offset=0
+    def __init__(self,registers,digit_bits=2):
+        if digit_bits not in (2,4,8):raise ValueError('native control digits must contain 2, 4 or 8 bits')
+        self.digit_bits=digit_bits;self.logical_width=registers.width;self.chunks=[];self.slices={};offset=0
         for name,width in registers.fields:
-            start=len(self.pairs)
-            self.pairs.extend((offset+i,offset+i+1 if i+1<width else None)for i in range(0,width,2))
-            self.slices[name]=slice(start,len(self.pairs));offset+=width
-        self.width=len(self.pairs)
-        self.low=torch.tensor([a for a,b in self.pairs],dtype=torch.long)
-        self.high=torch.tensor([b if b is not None else a for a,b in self.pairs],dtype=torch.long)
-        self.high_mask=torch.tensor([b is not None for a,b in self.pairs])
+            start=len(self.chunks)
+            self.chunks.extend(tuple(range(offset+i,offset+min(i+digit_bits,width)))for i in range(0,width,digit_bits))
+            self.slices[name]=slice(start,len(self.chunks));offset+=width
+        self.width=len(self.chunks)
+        self.indices=torch.tensor([list(chunk)+[0]*(digit_bits-len(chunk))for chunk in self.chunks],dtype=torch.long)
+        self.weights=torch.tensor([[1<<i if i<len(chunk)else 0 for i in range(digit_bits)]for chunk in self.chunks])
+        self.bit_features=torch.tensor([i for i,chunk in enumerate(self.chunks)for _ in chunk],dtype=torch.long)
+        self.bit_powers=torch.tensor([1<<bit for chunk in self.chunks for bit in range(len(chunk))])
+        self.maxima=torch.tensor([(1<<len(chunk))-1 for chunk in self.chunks])
 
     def encode(self,bits):
-        return bits.index_select(-1,self.low.to(bits.device))+2*bits.index_select(-1,self.high.to(bits.device))*self.high_mask.to(bits.device)
+        selected=bits.index_select(-1,self.indices.flatten().to(bits.device)).reshape(*bits.shape[:-1],self.width,self.digit_bits)
+        return (selected*self.weights.to(bits.device)).sum(dim=-1)
 
     def decode(self,digits):
-        if not torch.all((digits>=0)&(digits<=3)&(digits==digits.floor())):raise ValueError('native packed control left exact digit domain')
-        bits=digits.new_zeros((*digits.shape[:-1],self.logical_width))
-        for i,(a,b)in enumerate(self.pairs):
-            bits[...,a]=digits[...,i]%2
-            if b is not None:bits[...,b]=torch.floor_divide(digits[...,i],2)
-        return bits
+        if not torch.all((digits>=0)&(digits<=self.maxima.to(digits.device))&(digits==digits.floor())):raise ValueError('native packed control left exact digit domain')
+        return torch.floor_divide(digits.index_select(-1,self.bit_features.to(digits.device)),self.bit_powers.to(digits.device))%2
 
     def features(self,builder):
         physical=[builder.feature('packed-control/'+str(i))for i in range(self.width)]
         logical=[None]*self.logical_width
-        for feature,(a,b)in zip(physical,self.pairs):
-            logical[a]=PackedBit(feature,False)
-            if b is not None:logical[b]=PackedBit(feature,True)
+        for feature,chunk in zip(physical,self.chunks):
+            for bit,index in enumerate(chunk):logical[index]=PackedBit(feature,bit,len(chunk))
         return physical,logical
 
 
-def packed_update_outputs(builder,plan,inputs,physical_features,logical_width):
+def packed_update_outputs(builder,plan,inputs,physical_features,logical_width,digit_bits=2):
     """Compile keep*old_digit + updated_bits, preserving overlapping updates."""
     from .native_vendor.qwenputer.expr import Expr
     circuit,logical_outputs=plan;graph=builder.graph
@@ -66,12 +70,12 @@ def packed_update_outputs(builder,plan,inputs,physical_features,logical_width):
     values=builder.circuit((circuit,roots),inputs,'transition');cursor=0;outputs=[];physical=0
     for name,keep,updated in circuit.native_packed_fields:
         condition=values[cursor];cursor+=1;bits=values[cursor:cursor+len(updated)];cursor+=len(updated)
-        for i in range(0,len(bits),2):
+        for i in range(0,len(bits),digit_bits):
             old=physical_features[physical];physical+=1
             if condition.terms==graph.one.terms:retained=old
             elif not condition.terms:retained=Expr()
             else:retained=graph.ffn([(1,old,condition)],name='packed-keep/'+str(physical),min_level=builder.barrier)
-            outputs.append(retained+bits[i]+(2*bits[i+1]if i+1<len(bits)else Expr()))
+            outputs.append(retained+sum(((1<<j)*value for j,value in enumerate(bits[i:i+digit_bits])),Expr()))
     outputs.extend(values[cursor:]);return coalesce_packed_outputs(graph,outputs,physical)
 
 

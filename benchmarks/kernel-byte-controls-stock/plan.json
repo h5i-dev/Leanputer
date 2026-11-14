@@ -1,0 +1,15 @@
+{
+  "logical_parameters": 15799810694,
+  "hidden": 17408,
+  "slots": 17283,
+  "persistent": 2207,
+  "graph": {
+    "layers": 580,
+    "dims": 117156,
+    "heads": 7,
+    "ffn_units": 131934,
+    "max_units": 256,
+    "max_heads": 1
+  },
+  "seconds": 9.99193202497554
+}

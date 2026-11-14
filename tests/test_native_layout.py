@@ -64,27 +64,28 @@ class NativeLayoutSmoke(unittest.TestCase):
         from leanputer.native import emit_stock
         from leanputer.native_machine import NativeBuilder,commit_native_outputs,validate_native_schedule
         torch.set_num_threads(1)
-        packing=ControlPacking(SimpleNamespace(fields=[('a',3),('b',3),('flags',2)],width=8))
-        logic=Builder([str(i)for i in range(8)]);a=logic.inputs[:3];b=logic.inputs[3:6];f=logic.inputs[6:]
-        fields=[];updated=[]
-        for name,bits,choices in [('a',a,[(f[0],b),(f[1],b)]),('b',b,[(f[1],logic.add(a,logic.const(1,3)))]),('flags',f,[(logic.one,tuple(logic.NOT(v)for v in f))])]:
-            keep=logic.NOT(logic.OR(*(g for g,v in choices)))
-            fresh=[logic.masked_or([(g,v[i])for g,v in choices])for i in range(len(bits))]
-            fields.append((name,keep,fresh));updated.extend(fresh)
-        logic.c.native_packed_fields=fields
-        builder=NativeBuilder(intermediate=64,reset_layers=4);physical,logical=packing.features(builder)
-        values=packed_update_outputs(builder,(logic.c,[logic.zero]*8),logical,physical,8)
-        commit_native_outputs(builder,physical,values);validate_native_schedule(builder.graph)
-        dims=[next(iter(v.terms))for v in physical];model,layout,_=emit_stock(builder.graph,dims,64,torch.bfloat16,'cuda'if torch.cuda.is_available()else'cpu',reset_layers=4,weight_storage='sparse_csr')
-        rows=list(itertools.product(range(8),range(8),range(4)))
-        source=torch.tensor([pack_words([a,b,f],[3,3,2])for a,b,f in rows]);digits=packing.encode(source)
-        self.assertEqual(packing.decode(digits).tolist(),source.tolist())
-        state=torch.zeros(len(rows),1,layout.hidden,dtype=torch.bfloat16,device=next(model.parameters()).device);state[:,:,:layout.m]=layout.ballast
-        for i,dim in enumerate(dims):state[:,0,layout.dim(dim)]=digits[:,i].to(torch.bfloat16)
-        with torch.no_grad():
-            cache=None
-            for step in range(3):
-                out=model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True);cache=out.past_key_values;state=out.hidden_states[-2]
-                rows=[(b if f else a,(a+1)&7 if f&2 else b,f^3)for a,b,f in rows]
-                expected=torch.tensor([pack_words([a,b,f],[3,3,2])for a,b,f in rows])
-                self.assertEqual(packing.decode(out.logits[:,0,:].float().cpu()).tolist(),expected.tolist())
+        for width,digit_bits in ((3,2),(8,8)):
+            packing=ControlPacking(SimpleNamespace(fields=[('a',width),('b',width),('flags',2)],width=2*width+2),digit_bits)
+            logic=Builder([str(i)for i in range(2*width+2)]);a=logic.inputs[:width];b=logic.inputs[width:2*width];f=logic.inputs[2*width:]
+            fields=[];updated=[]
+            for name,bits,choices in [('a',a,[(f[0],b),(f[1],b)]),('b',b,[(f[1],logic.add(a,logic.const(1,width)))]),('flags',f,[(logic.one,tuple(logic.NOT(v)for v in f))])]:
+                keep=logic.NOT(logic.OR(*(g for g,v in choices)))
+                fresh=[logic.masked_or([(g,v[i])for g,v in choices])for i in range(len(bits))]
+                fields.append((name,keep,fresh));updated.extend(fresh)
+            logic.c.native_packed_fields=fields
+            builder=NativeBuilder(intermediate=64,reset_layers=4);physical,logical=packing.features(builder)
+            values=packed_update_outputs(builder,(logic.c,[logic.zero]*(2*width+2)),logical,physical,2*width+2,digit_bits)
+            commit_native_outputs(builder,physical,values);validate_native_schedule(builder.graph)
+            dims=[next(iter(v.terms))for v in physical];model,layout,_=emit_stock(builder.graph,dims,64,torch.bfloat16,'cuda'if torch.cuda.is_available()else'cpu',reset_layers=4,weight_storage='sparse_csr')
+            rows=list(itertools.product(range(8),range(8),range(4))) if width==3 else [(a,(73*a+19)%256,f)for a in range(256)for f in range(4)]
+            source=torch.tensor([pack_words([a,b,f],[width,width,2])for a,b,f in rows]);digits=packing.encode(source)
+            self.assertEqual(packing.decode(digits).tolist(),source.tolist())
+            state=torch.zeros(len(rows),1,layout.hidden,dtype=torch.bfloat16,device=next(model.parameters()).device);state[:,:,:layout.m]=layout.ballast
+            for i,dim in enumerate(dims):state[:,0,layout.dim(dim)]=digits[:,i].to(torch.bfloat16)
+            with torch.no_grad():
+                cache=None
+                for step in range(3):
+                    out=model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True);cache=out.past_key_values;state=out.hidden_states[-2]
+                    rows=[(b if f else a,(a+1)&((1<<width)-1) if f&2 else b,f^3)for a,b,f in rows]
+                    expected=torch.tensor([pack_words([a,b,f],[width,width,2])for a,b,f in rows])
+                    self.assertEqual(packing.decode(out.logits[:,0,:].float().cpu()).tolist(),expected.tolist())
