@@ -28,8 +28,10 @@ elimination/K permissions and builds all-family motives, all constructor minors/
 functional IHs, closed recursor types and computation rules in stock weights.
 It ends GAP before rule assembly/claims/restoration. Private grouped metadata/
 signature assembly has subsequent IR evidence, outside that pinned stock report.
-Original-source nested staging
-and complete conversion/reduction/primitive/projection/literal services remain gaps. The earlier uncommitted projection work is preserved.
+Original-source nested queue/restoration/rechecking/publication now has independent
+semantic and selected Boolean integration evidence; it is outside the historical
+stock report. Complete conversion/reduction/primitive/projection/literal services
+remain gaps. The earlier uncommitted projection work is preserved.
 An [original-scheme syntax interface](docs/kernel/input.md) is available for
 general-kernel development via `leanputer.preparation --kernel-schemes`; syntax
 export is separate from checking or native proof acceptance.

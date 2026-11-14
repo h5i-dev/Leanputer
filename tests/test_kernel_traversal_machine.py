@@ -96,7 +96,10 @@ class CircuitHarness:
 
     def step(self, state):
         cfg = self.cfg
-        control = self.layout.encode(state)[0, :self.control.width].tolist()
+        # Address/rule circuits consume control bits only. Packing untouched
+        # heap rows here adds no verification and dominates larger source tests.
+        control = pack_words([state['regs'][n] for n, _ in self.control.fields],
+            [width for _, width in self.control.fields])
         first_query = evaluate(self.address1, control)
         banks = [bank for bank, count in spec.first_banks for _ in range(count)]
         addresses = unpack_words(first_query, [getattr(cfg, bank).bit_length()-1 for bank in banks])

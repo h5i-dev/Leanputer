@@ -2,7 +2,8 @@
 
 Raw declaration kinds/names/schemes are DATA. Types and bodies are checked by
 shared weighted services BEFORE checked records are generated. Required missing
-inductive/recursor/primitive/conversion callbacks GAP; no placeholder axioms.
+primitive/conversion callbacks GAP; no placeholder axioms. Inductive blocks
+share the complete staging/CORE/restoration/rechecking/publication controller.
 """
 from .arena import Tag
 from .native_cells import CellTag, DeclarationKind
@@ -24,8 +25,8 @@ def emit_rules(c):
         c.write('stack', guard, top, (phase, 0, 0, Task.CHECK_SOURCE, 0, 0))
         c.emit(guard, mode=mode, task=task, x=x, depth=0, **updates)
     core = c.AND(c.NOT(c.eq(r['core_operation'],0)),c.eq(r['raw_index'],r['core_index']))
-    c.stop(c.AND(at_return(CALL_SOURCE_BLOCK_HEADERS),c.NOT(core)), Outcome.GAP, Reason.GAP_INDUCTIVE)
-    call(c.AND(at_return(CALL_SOURCE_BLOCK_HEADERS),core),CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
+    call(c.AND(at_return(0),c.eq(f['task'],Task.CHECK_SOURCE)),CALL_SOURCE_BLOCK_HEADERS,Task.ANALYZE_HEADERS,result,header_parameters=r['stage_uparams'])
+    call(at_return(CALL_SOURCE_BLOCK_HEADERS),CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
     call(at_return(CALL_SOURCE_CORE_CONSTRUCTORS),CALL_SOURCE_CORE_NAMES,Task.CHECK_CORE_NAMES,0)
     call(at_return(CALL_SOURCE_CORE_NAMES),CALL_SOURCE_DECLARE_CONSTRUCTORS,Task.DECLARE_CONSTRUCTORS,0)
     call(at_return(CALL_SOURCE_DECLARE_CONSTRUCTORS),CALL_SOURCE_FLAGS,Task.BLOCK_FLAGS,0)
@@ -35,7 +36,9 @@ def emit_rules(c):
     call(at_return(CALL_SOURCE_MINORS),CALL_SOURCE_REC_TYPES,Task.BUILD_RECURSOR_TYPES,0)
     call(at_return(CALL_SOURCE_REC_TYPES),CALL_SOURCE_RULES,Task.BUILD_RECURSOR_RULES,0)
     call(at_return(CALL_SOURCE_RULES),CALL_SOURCE_ASSEMBLY,Task.ASSEMBLE_RECURSORS,0)
-    call(at_return(CALL_SOURCE_ASSEMBLY),CALL_SOURCE_CLAIMS,Task.CHECK_RECURSOR_CLAIMS,r['header_block'])
+    call(c.AND(at_return(CALL_SOURCE_ASSEMBLY),core),CALL_SOURCE_CLAIMS,Task.CHECK_RECURSOR_CLAIMS,r['header_block'])
+    call(c.AND(at_return(CALL_SOURCE_ASSEMBLY),c.NOT(core)),14,Task.RESTORE_NESTED_BLOCK,0,publish_pc=0)
+    c.emit(c.AND(at_return(14),c.eq(f['task'],Task.CHECK_SOURCE)),sp=top,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
     c.stop(at_return(CALL_SOURCE_CLAIMS),Outcome.GAP,Reason.GAP_RECURSOR_GENERATION)
     call(at_return(CALL_SOURCE_NAME), CALL_SOURCE_DUPLICATE, Task.ENV_LOOKUP, r['active_type'], query_symbol=r['active_symbol'], lookup_head=r['env_head'])
     duplicate = at_return(CALL_SOURCE_DUPLICATE)
@@ -75,8 +78,8 @@ def emit_rules(c):
     block = c.AND(read, c.eq(raw['kind'], DeclarationKind.BLOCK))
     block_room = c.lt(r['sp'], c.cfg.stack)
     c.stop(c.AND(block, c.NOT(block_room)), Outcome.RESOURCE, Reason.STACK)
-    c.write('stack', c.AND(block, block_room), r['sp'], (CALL_SOURCE_BLOCK_HEADERS,0,0,Task.CHECK_SOURCE,0,0))
-    c.emit(c.AND(block, block_room), sp=c.add(r['sp'],1), task=Task.ANALYZE_HEADERS, mode=Mode.WALK, x=raw['extra'], header_parameters=raw['parameters'])
+    c.write('stack', c.AND(block, block_room), r['sp'], (c.mux(core,CALL_SOURCE_BLOCK_HEADERS,0),0,0,Task.CHECK_SOURCE,0,0))
+    c.emit(c.AND(block, block_room), sp=c.add(r['sp'],1), task=c.mux(core,Task.ANALYZE_HEADERS,Task.NESTED_STAGE), mode=Mode.WALK, x=raw['extra'], header_parameters=raw['parameters'],stage_pc=0,stage_uparams=raw['parameters'])
     c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.RECURSOR_CLAIM)), Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
     c.stop(c.AND(read, c.eq(raw['kind'], DeclarationKind.QUOT_PRIMITIVE)), Outcome.GAP, Reason.GAP_PRIMITIVE)
     ordinary = c.OR(*(c.eq(raw['kind'], kind) for kind in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE)))

@@ -5,8 +5,33 @@ Authority: Lean68218e876d2a38b1985b8590fff244a83c321783,
 `elim_nested_inductive_result::restore_nested`, `mk_aux_rec_name_map`, and
 `environment::add_inductive`; executable development operations in `nested.py`
 and `environment.py`. These determine the complete algorithm before lowering.
-The original-source controller retains its GAP until the whole transaction is
-connected. The CORE function API cannot approve an original nested block.
+The original-source controller now connects the whole transaction; remaining
+required kernel service gaps still propagate. The CORE function API cannot
+approve an original nested block.
+
+## Current implementation and evidence
+
+The original-source driver now connects this complete transaction through
+`nested_stage_rules.py`, `nested_copy_rules.py`, `nested_rewrite_rules.py`,
+`nested_restore_rules.py` and `nested_transaction_rules.py`. The raw Pi bulk
+specializer is shared with the interrupted prior implementation. The fixed
+rules compile to the existing Boolean/stock backend; `algorithm_reference.py`
+only evaluates development transition semantics. It is never a native inference
+callback, and shared-rule correspondence alone is not independent validation.
+
+The original `kernel-nested-source.jsonl` fixture, with a prior mutual container
+and a dependent two-parameter nested family, reaches reference DONE in186850steps,
+16070heap rows,12public signatures and2committed original origins. Independent
+EnvironmentDriver accepts the separately parsed source.421selected transitions
+match the Boolean program's complete registers/banks. A bad second-block claim
+and a second-block heap failure leave the first public environment/registry and
+raw cursor intact. These are **SPEC/reference and selected IR** results, not stock
+nested source admission. Full conversion, projection, literal and Quot services
+remain separate gaps. No model-size/throughput/coverage percentage is claimed.
+The original constructor's restoration also matches the independent syntax SPEC.
+
+The operation-stage notes after the algorithm below are historical checkpoints;
+their then-pending queue/producer statements are superseded by this section.
 
 ## Data and lifetime
 

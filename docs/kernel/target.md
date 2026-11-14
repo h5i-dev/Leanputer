@@ -365,8 +365,9 @@ target without assuming it. Original schemes feed the SAME constant lookup and
 universe instantiation. [General checked delta](reduction-native.md) now unfolds
 source-permitted definition/theorem bodies on that environment. Raw-bank cursor
 advancement/publication and ordinary inference are implemented. Complete typed
-conversion, original-source nested transformation/restoration/publication and
-Quot/literal/projection services remain unfinished. Ordinary native source
+conversion and Quot/literal/projection services remain unfinished. Original-source
+nested staging/restoration/rechecking/publication is now connected in Boolean IR;
+its independent semantic and selected-transition evidence is described below. Ordinary native source
 evidence is distinct from operation DONEs and offline inductive specs.
 No complete857-source native rerun/mathlib fraction is claimed.
 
@@ -376,9 +377,9 @@ argument descriptors, names, constructors, flags/elimination/K, motives,
 minors/IHs, closed recursor types/computation rules, grouped private signatures
 and optional untrusted recursor-claim inference/universe renaming/comparison from
 raw syntax, with exact register/cache agreement. Both cases end
-GAP_RECURSOR_GENERATION; public Γ/admitted count zero. Original-source still
-GAPs before missing nested staging. The explicit kernel-function API cannot
-certify an original nested declaration or theorem.
+GAP_RECURSOR_GENERATION; public Γ/admitted count zero. This historical stock pin
+predates original-source nested integration. The explicit kernel-function API
+cannot certify an original nested declaration or theorem.
 
 Subsequent focused semantic-IR modules implement shared application spines,
 reference/slice traversal, derived-rule lookup/specialization/application and
@@ -393,5 +394,16 @@ are reported separately from proof rejection and accepted source theorems.
 The complete nested-native [data/queue/restoration map](nested-native.md) fixes
 original-block provenance, whole-mutual specialization, FIFO growth, fixed
 replacement callbacks, fresh-name operations and atomic publication before
-further lowering. The first shared origin-registry lookup has focused IR tests;
-this is data traversal, not original-source admission.
+lowering. The source driver now runs the FIFO specialization queue, whole prior
+mutual-block copying, structural maps, universe/parameter substitution, complete
+preorder restoration, restored overlay scope/type/RHS and constructor-compatibility
+checks, untrusted claims and atomic environment/origin publication. Every source
+block uses this transaction. Raw syntax cannot enter these internal services or
+supply committed origins. The two-block dependent mutual-container fixture reaches
+DONE in the transition reference in186850steps, publishes12signatures and2original
+origins; independent EnvironmentDriver also accepts.421selected Boolean transitions
+match all registers and banks. Bad second claims and heap exhaustion preserve the
+committed first block. These are development semantic/IR checks, **not STOCK nested
+source admission** or full-kernel coverage. The complete6378-step private-stage
+Boolean sweep was stopped; it is not recorded as a pass. Conversion/projection/
+literal/Quot gaps remain explicit, and current model size remains an unmet goal.

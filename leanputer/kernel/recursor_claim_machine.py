@@ -47,7 +47,6 @@ def step(machine,tag,a,b,c,stop,ret,alloc):
             r.update(sp=r['sp']+1,claim_expected_uparams=r['count'],claim_seen=0,claim_checked=0,mode=Mode.CLAIM_VECTOR,x=c)
     elif mode==Mode.CLAIM_VECTOR:
         if c!=VectorKind.REFERENCES or bool(a)!=bool(b):stop(Outcome.INVALID,Reason.SYNTAX)
-        elif a and a!=r['header_seen']:stop(Outcome.INVALID,Reason.INVALID_DECLARATION)
         elif not a:call(CALL_CLAIM_RESTORE,Task.LOAD_PARAMETERS,r['core_rec_parameters'])
         else:r.update(claim_remaining=a,mode=Mode.CLAIM_CELL,x=b)
     elif mode==Mode.CLAIM_CELL:

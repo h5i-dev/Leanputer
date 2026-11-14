@@ -2,7 +2,7 @@
 
 Pure syntax transport: no service/admission/reduction module is imported.
 Input records and derived checked records have distinct tags. This packer is
-not itself a native checking path; the whole-source weighted driver is pending.
+not itself a native checking path; checking belongs to the weighted source driver.
 Only reachable ORIGINAL declarations/expressions/names are packed, so running
 an offline spec earlier cannot accidentally supply its generated artifacts.
 """
@@ -53,6 +53,10 @@ class CellTag(IntEnum):
     FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
     RECURSOR_COUNTS = 180        # Derived (numParams,numIndices,sharedCounts181).
     RECURSOR_SHARED_COUNTS = 181 # Derived (numMotives,numMinors,block182).
+    NESTED_TYPE_COMPAT = 190 # Private (restoredSignature,originalType,next).
+    NESTED_REC_MAP = 189 # Private (expandedRecSymbol,restoredRecSymbol,next).
+    NESTED_SPECIALIZATION = 187 # Private (abstractOriginalApplication,auxSymbol,next).
+    NESTED_CONSTRUCTOR_MAP = 188 # Private (auxCtorSymbol,originalCtorSymbol,specialization).
     NESTED_APPLICATION = 186    # Derived (priorBlockOrigin,applicationSpine,0), not admission.
     BLOCK_ORIGIN = 185          # Private (originalRawBlock,originalUparams,familySigVector).
     REDUCER_CALL = 184          # Private (originalHead,pendingStackBase,0).

@@ -57,6 +57,7 @@ class Reason(IntEnum):
     INVALID_INDUCTIVE_APPLICATION = 28
     GAP_RECURSOR_GENERATION = 29
     INVALID_RECURSOR_NAME = 30
+    GAP_NESTED_RESTORATION = 32
     INVALID_NESTED_PARAMETERS = 31
     UNSUPPORTED_DECLARATION = 15  # Shared reporting ABI; never emitted here.
 
@@ -153,6 +154,13 @@ class Task(IntEnum):
     LOOSE_BVAR_WALK = 88      # Internal all-Expr depth-aware predicate walker.
     HAS_RAW_FAMILIES = 89     # Same occurrence operation over raw all-queued family data.
     IS_NESTED_APPLICATION = 90 # Complete source application/parameter/occurrence condition.
+    INSTANTIATE_PI_PARAMETERS = 91 # Raw Pi strip + bulk instantiate_rev at declared count.
+    RESTORE_NESTED_BLOCK = 97  # Restored rechecks and atomic source publication.
+    RESTORE_NESTED_EXPR = 95   # General leading-prefix reopen/restore/fold.
+    RESTORE_NESTED_CALLBACK = 96 # Fixed restoration preorder callback.
+    NESTED_STAGE = 92          # Original raw block -> private growing expanded block.
+    REWRITE_NESTED = 93       # Fixed preorder callback, all expression children.
+    REPLACE_NESTED = 94       # Structural specialization and whole prior-block copy.
 
 
 
@@ -569,6 +577,10 @@ class Mode(IntEnum):
     NESTED_APP_ARGUMENTS = 149
     NESTED_APP_SELECT = 150
     NESTED_APP_RESULT = 151
+    PI_PARAMS_HEADER = 145
+    PI_PARAMS_CELL = 146
+    PI_PARAMS_ARGUMENT = 147
+    PI_PARAMS_STRIP = 148
 
 
 CALL_BETA_ZETA = 16
@@ -868,7 +880,31 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'generated_rec_indexed', 'generated_rec_index', 'generated_suffix_head', 'generated_suffix_length',
     'generated_suffix_remaining', 'generated_suffix_bytes', 'generated_name_component', 'generated_name_cell',
     'raw_prefix_count', 'raw_prefix_remaining', 'raw_family_vector', 'family_occurrence_root',
-    'nested_registry_head', 'nested_parameter_count', 'nested_parameter_index', 'nested_has_current', 'nested_has_loose')
+    'nested_registry_head', 'nested_parameter_count', 'nested_parameter_index', 'nested_has_current', 'nested_has_loose',
+    'pi_parameter_vector', 'pi_parameter_limit', 'pi_parameter_count', 'pi_parameter_remaining',
+    'pi_parameter_vector_remaining', 'pi_parameter_cursor', 'pi_parameter_next',
+    'stage_pc', 'stage_original', 'stage_uparams', 'stage_parameter_count', 'stage_levels',
+    'stage_front', 'stage_front_count', 'stage_back', 'stage_back_count', 'stage_all', 'stage_all_count',
+    'stage_done', 'stage_done_count', 'stage_family', 'stage_symbol', 'stage_type', 'stage_aux', 'stage_rec',
+    'stage_ctor_cursor', 'stage_ctor_remaining', 'stage_ctor_next', 'stage_ctor_symbol', 'stage_ctor_type',
+    'stage_ctors', 'stage_ctor_count', 'stage_param_snapshot', 'stage_parameters_base', 'stage_parameters_end',
+    'stage_saved_ctx', 'stage_saved_count', 'stage_saved_arg_base', 'stage_reserved', 'stage_fresh_counter',
+    'stage_maps', 'stage_ctor_maps', 'stage_original_count', 'stage_expanded', 'stage_original_claims',
+    'copy_pc', 'copy_application', 'copy_origin', 'copy_spine', 'copy_arguments', 'copy_argument_count',
+    'copy_function', 'copy_owner', 'copy_levels', 'copy_uparams', 'copy_parameter_count', 'copy_key',
+    'copy_lookup', 'copy_lookup_next', 'copy_selected', 'copy_family_cursor', 'copy_family_remaining',
+    'copy_family_next', 'copy_original_symbol', 'copy_family_type', 'copy_family_aux', 'copy_aux_symbol',
+    'copy_rec_symbol', 'copy_template', 'copy_ctor_cursor', 'copy_ctor_remaining', 'copy_ctor_next',
+    'copy_ctor_symbol', 'copy_ctor_type', 'copy_ctor_new_symbol', 'copy_ctors', 'copy_ctor_count',
+    'copy_fold_type', 'copy_result', 'copy_name_candidate', 'copy_name_rec', 'copy_name_pass',
+    'copy_name_query', 'copy_name_return', 'copy_name_origin',
+    'rewrite_pc', 'stage_reserve_cursor', 'stage_reserve_remaining', 'stage_original_vector',
+    'stage_reserve_next', 'stage_reserve_symbol', 'stage_reserve_aux', 'stage_reserve_ctor_vector',
+    'stage_reserve_ctor_remaining', 'stage_reserve_ctor_next', 'stage_ctor_record',
+    'stage_ctor_vector', 'stage_new_aux', 'stage_new_family', 'stage_final_vector',
+    'copy_ctor_map_record', 'copy_ctor_record', 'copy_ctor_vector', 'copy_lookup_aux', 'copy_new_aux', 'copy_new_family', 'copy_original_ctor_vector', 'copy_original_vector', 'copy_template_head', 'copy_template_record',
+    'restore_cb_argument_count', 'restore_cb_arguments', 'restore_cb_constructor', 'restore_cb_function', 'restore_cb_levels', 'restore_cb_lookup', 'restore_cb_new_symbol', 'restore_cb_next', 'restore_cb_original_args', 'restore_cb_pc', 'restore_cb_rename', 'restore_cb_result', 'restore_cb_root', 'restore_cb_symbol', 'restore_cb_template', 'restore_expr_pc', 'restore_parameter_base', 'restore_parameter_end', 'restore_prefix_tag', 'restore_rec_map', 'rewrite_restoring',
+    'publish_K', 'publish_block', 'publish_check_cursor', 'publish_check_kind', 'publish_check_next', 'publish_check_payload', 'publish_check_rhs', 'publish_check_rule_next', 'publish_check_rules', 'publish_check_type', 'publish_compat', 'publish_counts', 'publish_ctor_fields', 'publish_ctor_next', 'publish_ctor_ordinal', 'publish_ctor_remaining', 'publish_ctor_symbol', 'publish_ctor_type', 'publish_current_family', 'publish_entry_kind', 'publish_entry_parameters', 'publish_entry_payload', 'publish_entry_return', 'publish_entry_scheme', 'publish_entry_signature', 'publish_entry_symbol', 'publish_entry_type', 'publish_expanded_head', 'publish_families', 'publish_family_cursor', 'publish_family_next', 'publish_family_remaining', 'publish_family_symbol', 'publish_family_type', 'publish_family_vector', 'publish_flags', 'publish_head', 'publish_main', 'publish_map_cursor', 'publish_map_next', 'publish_nindices', 'publish_nminors', 'publish_nmotives', 'publish_nparams', 'publish_old_head', 'publish_origin', 'publish_original_type', 'publish_owner_symbol', 'publish_payload', 'publish_pc', 'publish_raw_aux', 'publish_raw_family', 'publish_rec_index', 'publish_rec_new_symbol', 'publish_rec_next', 'publish_rec_old_symbol', 'publish_rec_owner', 'publish_rec_parameters', 'publish_rec_remaining', 'publish_rec_rules', 'publish_rec_source', 'publish_rec_type', 'publish_recs', 'publish_registry', 'publish_rule', 'publish_rule_constructor', 'publish_rule_count', 'publish_rule_fields', 'publish_rule_next', 'publish_rule_remaining', 'publish_rule_rhs', 'publish_rule_vector', 'publish_rules', 'publish_shared')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -967,7 +1003,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION, Task.INSTANTIATE_PI_PARAMETERS, Task.NESTED_STAGE, Task.REWRITE_NESTED, Task.REPLACE_NESTED, Task.RESTORE_NESTED_EXPR, Task.RESTORE_NESTED_CALLBACK, Task.RESTORE_NESTED_BLOCK):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -1054,7 +1090,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.IS_NESTED_APPLICATION
+                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.RESTORE_NESTED_BLOCK
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -1114,6 +1150,8 @@ class SpecMachine:
         from . import make_rec_name_machine as make_rec_name
         from . import raw_prefix_machine as raw_prefix
         from . import nested_application_machine as nested_application
+        from . import pi_parameters_machine as pi_parameters
+        from . import nested_stage_rules, nested_copy_rules, nested_rewrite_rules, nested_restore_rules, nested_transaction_rules
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -1134,7 +1172,11 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if task == Task.IS_NESTED_APPLICATION:
+                if task in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK):
+                    {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules}[task].step(self)
+                elif task == Task.INSTANTIATE_PI_PARAMETERS:
+                    pi_parameters.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
+                elif task == Task.IS_NESTED_APPLICATION:
                     nested_application.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif task == Task.OPEN_RAW_PREFIX:
                     raw_prefix.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -1198,7 +1240,7 @@ class SpecMachine:
                     occurrence.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in telescope.PRIVATE_PHASES:
                     telescope.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
-                elif phase in source.PRIVATE_PHASES:
+                elif phase in source.PRIVATE_PHASES or (task == Task.CHECK_SOURCE and phase in (0,14)):
                     source.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif phase in constant.PRIVATE_PHASES:
                     constant.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
@@ -1276,6 +1318,9 @@ class SpecMachine:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
                 else:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
+            return s
+        if r['task'] in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK):
+            {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules}[r['task']].step(self)
             return s
         if r['task'] == Task.CHECK_SOURCE and r['mode'] != Mode.SOURCE_TYPE_SORT:
             source.step(self, 0, 0, 0, 0, stop, ret, alloc)
@@ -1387,7 +1432,8 @@ class SpecMachine:
         raw_prefix_tag = (Tag.BVAR <= tag <= Tag.MDATA) if r['mode']==Mode.RAW_PREFIX_LOOP else False
         raw_family_tag = (tag==CellTag.VECTOR if r['mode']==Mode.RAW_FAMILY_VECTOR else tag==CellTag.VECTOR_CELL if r['mode']==Mode.FAMILY_SET_CELL else tag==CellTag.RAW_FAMILY if r['mode']==Mode.FAMILY_SET_SIGNATURE else Tag.BVAR <= tag <= Tag.MDATA if r['mode']==Mode.WALK else False)
         nested_app_tag = (Tag.BVAR <= tag <= Tag.MDATA if r['mode'] in (Mode.WALK,Mode.NESTED_APP_HEAD) else tag==nested_application.TAGS.get(r['mode']))
-        valid_tag = (nested_app_tag if r['task']==Task.IS_NESTED_APPLICATION else raw_family_tag if r['task']==Task.HAS_RAW_FAMILIES else raw_prefix_tag if r['task']==Task.OPEN_RAW_PREFIX else prefix_tag if r['task']==Task.REPLACE_NAME_PREFIX else splice_tag if r['task']==Task.VECTOR_SPLICE else intern_tag if r['task']==Task.INTERN_NAME_PATH else name_path_tag if r['task']==Task.COMPARE_NAME_PATH else prior_block_tag if r['task']==Task.PRIOR_BLOCK_LOOKUP else reduce_tag if r['task']==Task.REDUCE_RECURSOR else gather_tag if r['task']==Task.GATHER_RECURSOR_ARGUMENTS else major_tag if r['task']==Task.PREPARE_RECURSOR_MAJOR else reference_tag if r['task']==Task.VECTOR_REFERENCE else iota_tag if r['task']==Task.APPLY_RECURSOR_RULE else application_tag if r['task'] in (Task.APPLICATION_SPINE,Task.APPLY_VECTOR_SLICE) else claim_tag if r['task']==Task.CHECK_RECURSOR_CLAIMS else sigv_tag if r['task']==Task.SIGNATURE_VECTOR_LOOKUP else tag==CellTag.VECTOR_CELL if r['task']==Task.SYMBOL_MEMBER else tag==assemble_recursors.TAGS.get(r['mode']) if r['task']==Task.ASSEMBLE_RECURSORS else tag==recursor_rule.TAGS.get(r['mode']) if r['task']==Task.BUILD_RECURSOR_RULES else restore_tag if r['task']==Task.RESTORE_SCOPE else tag==recursor_type.TAGS.get(r['mode']) if r['task']==Task.BUILD_RECURSOR_TYPES else tag==minor.TAGS.get(r['mode']) if r['task']==Task.BUILD_MINORS else generation_tag if r['task']==Task.FIND_MOTIVE else tag==CellTag.VECTOR_CELL if r['task']==Task.APPLY_LIST and r['mode']==Mode.LIST_CELL else tag==open_prefix.TAGS.get(r['mode']) if r['task']==Task.OPEN_RECURSIVE_PREFIX else flags_tag if r['task']==Task.BLOCK_FLAGS else motive_tag if r['task']==Task.BUILD_MOTIVES else tag == CellTag.LOCAL_DECL if r['task']==Task.APPLY_SCOPE and r['mode']==Mode.APPLY_SCOPE_RECORD else elimination_tag if r['task'] == Task.INIT_ELIMINATION else tag == decl_ctor_tag if r['task'] == Task.DECLARE_CONSTRUCTORS else tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
+        pi_parameters_tag = (Tag.BVAR <= tag <= Tag.MDATA if r['mode'] in (Mode.WALK,Mode.PI_PARAMS_ARGUMENT,Mode.PI_PARAMS_STRIP) else tag==CellTag.VECTOR if r['mode']==Mode.PI_PARAMS_HEADER else tag==CellTag.VECTOR_CELL if r['mode']==Mode.PI_PARAMS_CELL else False)
+        valid_tag = (pi_parameters_tag if r['task']==Task.INSTANTIATE_PI_PARAMETERS else nested_app_tag if r['task']==Task.IS_NESTED_APPLICATION else raw_family_tag if r['task']==Task.HAS_RAW_FAMILIES else raw_prefix_tag if r['task']==Task.OPEN_RAW_PREFIX else prefix_tag if r['task']==Task.REPLACE_NAME_PREFIX else splice_tag if r['task']==Task.VECTOR_SPLICE else intern_tag if r['task']==Task.INTERN_NAME_PATH else name_path_tag if r['task']==Task.COMPARE_NAME_PATH else prior_block_tag if r['task']==Task.PRIOR_BLOCK_LOOKUP else reduce_tag if r['task']==Task.REDUCE_RECURSOR else gather_tag if r['task']==Task.GATHER_RECURSOR_ARGUMENTS else major_tag if r['task']==Task.PREPARE_RECURSOR_MAJOR else reference_tag if r['task']==Task.VECTOR_REFERENCE else iota_tag if r['task']==Task.APPLY_RECURSOR_RULE else application_tag if r['task'] in (Task.APPLICATION_SPINE,Task.APPLY_VECTOR_SLICE) else claim_tag if r['task']==Task.CHECK_RECURSOR_CLAIMS else sigv_tag if r['task']==Task.SIGNATURE_VECTOR_LOOKUP else tag==CellTag.VECTOR_CELL if r['task']==Task.SYMBOL_MEMBER else tag==assemble_recursors.TAGS.get(r['mode']) if r['task']==Task.ASSEMBLE_RECURSORS else tag==recursor_rule.TAGS.get(r['mode']) if r['task']==Task.BUILD_RECURSOR_RULES else restore_tag if r['task']==Task.RESTORE_SCOPE else tag==recursor_type.TAGS.get(r['mode']) if r['task']==Task.BUILD_RECURSOR_TYPES else tag==minor.TAGS.get(r['mode']) if r['task']==Task.BUILD_MINORS else generation_tag if r['task']==Task.FIND_MOTIVE else tag==CellTag.VECTOR_CELL if r['task']==Task.APPLY_LIST and r['mode']==Mode.LIST_CELL else tag==open_prefix.TAGS.get(r['mode']) if r['task']==Task.OPEN_RECURSIVE_PREFIX else flags_tag if r['task']==Task.BLOCK_FLAGS else motive_tag if r['task']==Task.BUILD_MOTIVES else tag == CellTag.LOCAL_DECL if r['task']==Task.APPLY_SCOPE and r['mode']==Mode.APPLY_SCOPE_RECORD else elimination_tag if r['task'] == Task.INIT_ELIMINATION else tag == decl_ctor_tag if r['task'] == Task.DECLARE_CONSTRUCTORS else tag == core_name_tag if r['task'] == Task.CHECK_CORE_NAMES else (tag in (CellTag.NAME_STRING,CellTag.NAME_NUMERAL) if recname_part else tag == recname_tag) if r['task'] == Task.CHECK_RECURSOR_NAME else tag == ctor_tag if r['task'] == Task.CHECK_CONSTRUCTORS and ctor_tag is not None else tag == header_tag if r['task'] == Task.ANALYZE_HEADERS and header_tag is not None else names.valid_tag(r['mode'], tag) if r['task'] in (Task.CHECK_NAME,Task.GET_NAME_PATH) else
             tag == (CellTag.VECTOR if r['mode'] == Mode.WALK else CellTag.VECTOR_CELL) if r['task'] == Task.LOAD_PARAMETERS else
             tag == CellTag.CHECKED_FAMILY if r['mode'] == Mode.APP_METADATA else
             tag == CellTag.CHECKED_SCHEME if r['mode'] in (Mode.CONST_SCHEME, Mode.APP_SCHEME) else
@@ -1408,6 +1454,8 @@ class SpecMachine:
             return s
         task, depth = r['task'], r['depth']
         if binder_ops.step(self, tag, a, b, c, stop, ret, alloc):
+            return s
+        if pi_parameters.step(self, tag, a, b, c, stop, ret, alloc):
             return s
         if nested_application.step(self, tag, a, b, c, stop, ret, alloc):
             return s

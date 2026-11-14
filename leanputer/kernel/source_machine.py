@@ -2,7 +2,8 @@
 
 This is not a native inference callback. It checks raw names, unique parameters,
 scopes, type Sort and body conversion BEFORE private publication. Missing general
-inductive/recursor/primitive/full-conversion services report GAP, never axioms.
+primitive/full-conversion services report GAP, never axioms. General inductive
+blocks use the growing nested transaction before restored atomic publication.
 Ordinary source algorithms are generic; no name/field-count feature catalog.
 """
 from .arena import Tag
@@ -22,10 +23,12 @@ def resume(machine, frame, stop, ret, alloc):
     def call(next_phase, task, x, mode=Mode.WALK, **updates):
         s['stack'][r['sp']-1] = [next_phase, 0, 0, Task.CHECK_SOURCE, 0, 0]
         r.update(mode=mode, task=task, x=x, depth=0, **updates)
-    if phase == CALL_SOURCE_BLOCK_HEADERS:
-        if r['core_operation'] and r['raw_index']==r['core_index']:
-            call(CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
-        else:stop(Outcome.GAP, Reason.GAP_INDUCTIVE) # Original-source nested staging remains missing.
+    if phase == 0 and frame[3] == Task.CHECK_SOURCE:
+        call(CALL_SOURCE_BLOCK_HEADERS,Task.ANALYZE_HEADERS,r['r'],header_parameters=r['stage_uparams'])
+    elif phase == 14 and frame[3] == Task.CHECK_SOURCE:
+        r.update(sp=r['sp']-1,task=Task.CHECK_SOURCE,mode=Mode.SOURCE_READ,x=0)
+    elif phase == CALL_SOURCE_BLOCK_HEADERS:
+        call(CALL_SOURCE_CORE_CONSTRUCTORS,Task.CHECK_CONSTRUCTORS,0)
     elif phase == CALL_SOURCE_CORE_CONSTRUCTORS:
         call(CALL_SOURCE_CORE_NAMES,Task.CHECK_CORE_NAMES,0)
     elif phase == CALL_SOURCE_CORE_NAMES:
@@ -45,7 +48,9 @@ def resume(machine, frame, stop, ret, alloc):
     elif phase == CALL_SOURCE_RULES:
         call(CALL_SOURCE_ASSEMBLY,Task.ASSEMBLE_RECURSORS,0)
     elif phase == CALL_SOURCE_ASSEMBLY:
-        call(CALL_SOURCE_CLAIMS,Task.CHECK_RECURSOR_CLAIMS,r['header_block'])
+        if r['core_operation'] and r['raw_index']==r['core_index']:
+            call(CALL_SOURCE_CLAIMS,Task.CHECK_RECURSOR_CLAIMS,r['header_block'])
+        else: call(14,Task.RESTORE_NESTED_BLOCK,0,publish_pc=0)
     elif phase == CALL_SOURCE_CLAIMS:
         stop(Outcome.GAP,Reason.GAP_RECURSOR_GENERATION)
     elif phase == CALL_SOURCE_NAME:
@@ -95,8 +100,9 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             elif kind == DeclarationKind.BLOCK:
                 if r['sp'] >= cfg.stack: stop(Outcome.RESOURCE, Reason.STACK)
                 else:
-                    s['stack'][r['sp']] = [CALL_SOURCE_BLOCK_HEADERS,0,0,Task.CHECK_SOURCE,0,0]
-                    r.update(sp=r['sp']+1,task=Task.ANALYZE_HEADERS,mode=Mode.WALK,x=extra,header_parameters=parameters)
+                    core = r['core_operation'] and r['raw_index']==r['core_index']
+                    s['stack'][r['sp']] = [CALL_SOURCE_BLOCK_HEADERS if core else 0,0,0,Task.CHECK_SOURCE,0,0]
+                    r.update(sp=r['sp']+1,task=Task.ANALYZE_HEADERS if core else Task.NESTED_STAGE,mode=Mode.WALK,x=extra,header_parameters=parameters,stage_pc=0,stage_uparams=parameters)
             elif kind == DeclarationKind.RECURSOR_CLAIM: stop(Outcome.GAP, Reason.GAP_RECURSOR_CLAIM)
             elif kind == DeclarationKind.QUOT_PRIMITIVE: stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
             elif kind not in (DeclarationKind.AXIOM, DeclarationKind.DEFINITION, DeclarationKind.THEOREM, DeclarationKind.OPAQUE):
