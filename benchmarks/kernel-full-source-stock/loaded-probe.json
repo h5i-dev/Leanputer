@@ -1,0 +1,8 @@
+{
+  "phase": "passed",
+  "scope": "Latest saved FULL stock model loaded without compilation; first TWO source transitions, ALL951 registers exact. Not a second admission run.",
+  "seconds": 10.460164018993964,
+  "logical_parameters": 21471112926,
+  "stored_weight_bytes": 288206120,
+  "small_model_target_met": false
+}

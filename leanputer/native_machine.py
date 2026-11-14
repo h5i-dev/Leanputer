@@ -41,7 +41,12 @@ class NativeBuilder:
     def gate(self, operation, values, name):
         total = sum(values, Expr())
         one = self.graph.one
+        if not values and operation in('and','or'):return one if operation=='and'else Expr()
         if operation=='not' and self.layout_policy=='compact':return one-total
+        if operation=='or' and self.layout_policy=='compact':
+            # On Boolean inputs OR = 1 - relu(1 - sum(inputs)). One exact
+            # SwiGLU unit suffices; the complement is a free linear form.
+            return one-self.graph.ffn([(1,one,one-total)],name=name,min_level=self.barrier)
         if operation == 'not': terms = [(1, one, one-total)]
         elif operation == 'and': terms = [(1, one, total+1-len(values))]
         else: terms = [(1, one, total),(-1, one, total-1)]
@@ -49,7 +54,15 @@ class NativeBuilder:
 
     def circuit(self, plan, inputs, name):
         circuit, outputs = plan
-        values = dict(enumerate(inputs))
+        from .control_packing import PackedBit
+        memo={}
+        class Values(dict):
+            def __getitem__(self,key):
+                value=super().__getitem__(key)
+                if isinstance(value,PackedBit):value=value.realize(self_builder,memo);self[key]=value
+                return value
+        self_builder=self
+        values = Values(enumerate(inputs))
         needed = set(outputs); live = []
         for gate in reversed(circuit.gates):
             if gate[0] in needed: needed.update(gate[2]); live.append(gate)
@@ -98,6 +111,34 @@ def banked_native_read(builder, cells, query, address, enable, values, name,
     return [sum((part[i]for part in parts),Expr())for i in range(width)]
 
 
+def commit_native_outputs(builder,features,outputs):
+    """Commit a fixed circuit without copying already materialized gate values.
+
+    Only expressions reading a mutable input feature need a snapshot. Other
+    expressions read immutable intermediate dimensions computed before this
+    barrier. Unchanged features need no write. This is whole-circuit dependency
+    analysis, independent of input proofs or the runtime active kernel task.
+    """
+    graph=builder.graph
+    mutable={next(iter(feature.terms))for feature in features}
+    unchanged=[value.terms==feature.terms for feature,value in zip(features,outputs)]
+    values=list(outputs);snapshots=0
+    barrier=max((node.level for node in graph.nodes),default=0)+2
+    for index,value in enumerate(outputs):
+        if not unchanged[index]and mutable.intersection(value.terms):
+            values[index]=graph.ffn([(1,graph.one,value)],name=f'snapshot/{index}',min_level=barrier);snapshots+=1
+    last_read={d:0 for d in mutable}
+    for node in graph.nodes:
+        for d in reads(node):
+            if d in last_read:last_read[d]=max(last_read[d],node.level)
+    for index,(feature,value)in enumerate(zip(features,values)):
+        if not unchanged[index]:
+            dimension=next(iter(feature.terms))
+            barrier=max(last_read[dimension],graph.level(value))+1
+            graph.ffn([(1,graph.one,value),(-1,graph.one,feature)],name=f'commit/{index}',into=feature,min_level=barrier)
+    return dict(output_channels=len(outputs),snapshots=snapshots,unchanged=sum(unchanged),direct_commits=len(outputs)-snapshots-sum(unchanged))
+
+
 def validate_native_schedule(graph):
     """Check read/write dependencies after compiler-only channel scheduling."""
     writers={}
@@ -129,6 +170,7 @@ class NativeMachine:
     bank_layout: str='accumulate'
     max_ballast: int=64
     program: object=None
+    control_packing: object=None
 
     def embeddings(self, features):
         parameter = next(self.model.parameters())
@@ -149,7 +191,12 @@ class NativeMachine:
         reason_class=self.program.Reason if self.program else Reason
         parsed = [parser(document) for document in documents]
         states = [encoder(self.config,*judgment) for judgment in parsed]
-        control_width = self.register_layout.width
+        logical_width=self.register_layout.width
+        packing=self.control_packing
+        control_width=packing.width if packing else logical_width
+        def encoded_control(state):
+            bits=self.state_layout.encode(state)[0,:logical_width]
+            return packing.encode(bits)if packing else bits
         # Static syntax load. Equal capacities give every item the same boot length.
         boot = []
         boot_length = (self.program.boot_length if self.program and hasattr(self.program, 'boot_length') else
@@ -159,7 +206,7 @@ class NativeMachine:
             for row in range(max(boot_length(bank, state) for state in states)):
                 packet = torch.zeros(len(states),len(self.feature_slots))
                 for index,state in enumerate(states):
-                    packet[index,:control_width] = self.state_layout.encode(state)[0,:control_width]
+                    packet[index,:control_width] = encoded_control(state)
                     packet[index,self.offsets['boot/'+bank]] = float(row < boot_length(bank, state))
                     for bit in range(self.offsets['address_width']):
                         packet[index,self.offsets['boot/address']+bit] = float(bool(row & (1 << bit)))
@@ -168,18 +215,19 @@ class NativeMachine:
                     packet[index,self.offsets['boot/payload']:self.offsets['boot/payload']+len(values)] = torch.tensor(values)
                 boot.append(packet)
         initial = torch.zeros(len(states),1,len(self.feature_slots))
-        for index,state in enumerate(states): initial[index,0,:control_width] = self.state_layout.encode(state)[0,:control_width]
+        for index,state in enumerate(states): initial[index,0,:control_width] = encoded_control(state)
         device = next(self.model.parameters()).device
         if device.type=='cuda': torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction=False
         if device.type=='cuda': torch.cuda.synchronize()
         if device.type=='cuda': torch.cuda.reset_peak_memory_stats(device)
         started = time.perf_counter()
-        with torch.inference_mode():
+        context=torch.no_grad if getattr(self.model,'_leanputer_weight_storage','dense')=='sparse_csr'else torch.inference_mode
+        with context():
             loaded = self.model(inputs_embeds=self.embeddings(torch.stack(boot,dim=1)), use_cache=True)
             state = self.embeddings(initial)
             cache = loaded.past_key_values
             applied_steps=0;flush_after=None
-            status_slice=self.register_layout.slices['status']
+            status_slice=(packing.slices if packing else self.register_layout.slices)['status']
             for step in range(diagnostic_steps or self.config.fuel+2):
                 output = self.model(inputs_embeds=state, past_key_values=cache,
                                     use_cache=True,output_hidden_states=True)
@@ -194,7 +242,8 @@ class NativeMachine:
                     if bool(torch.all(torch.any(status_bits!=0,dim=-1))):flush_after=applied_steps+1
                 if diagnostic_steps:
                     raw = state[:,0,self.feature_slots].float().cpu()
-                    values = output.logits[:,0,:].float().cpu()[0]
+                    values = output.logits[:,0,:].float().cpu()
+                    values=(packing.decode(values)if packing else values)[0]
                     decoded = {name:sum(int(values[s.start+i]) << i for i in range(s.stop-s.start))
                                for name,s in self.register_layout.slices.items()}
                     memory = cache.layers[self.native_heads[0]['layer']].recurrent_states[0]
@@ -203,6 +252,7 @@ class NativeMachine:
                                           heap5=memory[0,0,5,2:26].float().cpu().tolist())),flush=True)
         if device.type=='cuda': torch.cuda.synchronize()
         bits = output.logits[:,0,:].float().cpu()
+        if packing:bits=packing.decode(bits)
         if not torch.all((bits==0)|(bits==1)):
             raise ValueError('native control left Boolean domain; no rounding permitted')
         registers = []
@@ -231,6 +281,7 @@ class NativeMachine:
                     hidden_size=self.layout.hidden,native_layers=self.model.config.num_hidden_layers,
                     boot_tokens=len(boot),applied_steps=applied_steps,early_stop=early_stop and not bool(diagnostic_steps),
                     halt_interval=halt_interval,completion_flush_forwards=1 if flush_after is not None and applied_steps>=flush_after else 0)
+        report.update(parameter_storage(self.model),packed_control=bool(self.control_packing))
         if diagnostic_cache:
             # Development evidence only. Never consulted to decide the result
             # or provide a semantic answer to a subsequent inference token.
@@ -240,7 +291,7 @@ class NativeMachine:
 
 def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,constants=2,fuel=128),
                            intermediate=1024, reset_layers=4, device='cpu', dtype=torch.bfloat16,
-                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None):
+                           layout_policy='compact',plan_only=False,bank_layout='accumulate',max_ballast=64,program=None,pack_control=False,weight_storage='dense'):
     if layout_policy not in ('compact','legacy'):raise ValueError('unknown native layout policy')
     if bank_layout not in ('separate','accumulate'):raise ValueError('unknown native bank layout')
     if type(intermediate)is not int or intermediate<4:raise ValueError('native FFN width must be >=4')
@@ -253,8 +304,10 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
     rule_compiler=program.RuleCompiler if program else RuleCompiler
     constants_width=program.constant_fields if program else 3
     builder = NativeBuilder(intermediate,reset_layers,layout_policy); graph = builder.graph
-    features = [builder.feature(name) for name in registers.names]
-    control = list(features)
+    from .control_packing import ControlPacking
+    packing=ControlPacking(registers)if pack_control else None
+    if packing:features,control=packing.features(builder)
+    else:features=[builder.feature(name)for name in registers.names];control=list(features)
     pending = {}
     for bank,fields,reg in [('heap',4,'free'),('stack',6,'sp'),('context',1,'ctx')]:
         address_width = getattr(config,bank).bit_length()-1
@@ -314,38 +367,48 @@ def compile_native_machine(config=MachineConfig(heap=32,stack=8,context=4,consta
             all_reads.extend(read(bank,second[offset:offset+bits],f'read/second/{index}/{bank}'));offset+=bits
         if offset!=len(second):raise ValueError('program read address ABI differs')
     else:all_reads = first+read('context',second[:ctxbits],'read/context')+read('constants',second[ctxbits:],'read/constant')
-    plan = rule_compiler(registers,factor_choices=layout_policy=='compact').finish('attention_delta',target=collect)
-    outputs = builder.circuit(plan,control+all_reads,'transition')
-    update_features = control+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
+    options=dict(factor_choices=layout_policy=='compact')
+    if packing:options['packed_outputs']=True
+    plan=rule_compiler(registers,**options).finish('attention_delta',target=collect)
+    if packing:
+        from .control_packing import packed_update_outputs
+        outputs=packed_update_outputs(builder,plan,control+all_reads,features[:packing.width],registers.width)
+    else:outputs=builder.circuit(plan,control+all_reads,'transition')
+    update_features = features[:packing.width]if packing else control
+    update_features = update_features+sum((address+[enable]+payload for address,enable,payload in pending.values()),[])
     if len(outputs)!=len(update_features): raise ValueError('native controller output ABI differs')
-    # Snapshot every selected output before mutating any input register slot.
-    # In particular write addresses select OLD free/sp, while next registers
-    # increment those fields. A direct late read would observe the increment.
-    level = max(graph.level(expression) for expression in outputs)+2
-    outputs = [graph.ffn([(1,graph.one,value)],name=f'snapshot/{index}',min_level=level)
-               for index,value in enumerate(outputs)]
-    level = max(graph.level(expression) for expression in outputs)+2
-    for index,(feature,value) in enumerate(zip(update_features,outputs)):
-        graph.ffn([(1,graph.one,value),(-1,graph.one,feature)], name=f'commit/{index}',into=feature,min_level=level)
+    commit_statistics=commit_native_outputs(builder,update_features,outputs)
     validate_native_schedule(graph)
-    dimensions = [next(iter(expression.terms))for expression in control]
+    dimensions = [next(iter(expression.terms))for expression in (features[:packing.width]if packing else control)]
     keep = {next(iter(expression.terms))for expression in features}
     required_reset = None
     try:
         if plan_only:
             layout,allocation,tc,clear=plan_stock(graph,dimensions,intermediate,keep,reset_layers,max_ballast)
             return dict(graph=graph,layout=layout,allocation=allocation,stock_config=tc,reset_layers=reset_layers,
-                        persistent_channels=len(keep),clear_channels=len(clear),layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
-        model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast)
+                        persistent_channels=len(keep),clear_channels=len(clear),commit_statistics=commit_statistics,packed_control=bool(packing),layout_policy=layout_policy,bank_layout=bank_layout,max_ballast=max_ballast)
+        model,layout,allocation = emit_stock(graph,dimensions,intermediate,dtype,device,keep,reset_layers,max_ballast,weight_storage)
     except ScratchResetCapacity as error:
         required_reset = error.required
     if required_reset is not None:
-        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program)
+        return compile_native_machine(config,intermediate,required_reset,device,dtype,layout_policy,plan_only,bank_layout,max_ballast,program,pack_control,weight_storage)
     slots = [layout.dim(next(iter(expression.terms)))for expression in features]
     stats=dict(allocated_slots=allocation.n_slots,persistent_channels=len(keep),
                subtract_handovers=len(allocation.subtract),head_clears=sum(map(len,allocation.clears.values())),
-               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats())
-    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program)
+               logic_units_per_layer=graph.target.intermediate,reset_layers=reset_layers,graph=graph.stats(),commit_statistics=commit_statistics)
+    return NativeMachine(model,layout,state_layout,registers,slots,config,offsets,head_metadata,layout_policy,stats,bank_layout,max_ballast,program,packing)
+
+
+def parameter_storage(model):
+    """Physical tensor storage accounting, distinct from logical parameter count."""
+    logical=stored=nonzero=0
+    for parameter in model.parameters():
+        logical+=parameter.numel()
+        if parameter.layout==torch.sparse_csr:
+            nonzero+=parameter.values().numel()
+            stored+=sum(t.numel()*t.element_size()for t in(parameter.values(),parameter.crow_indices(),parameter.col_indices()))
+        else:stored+=parameter.numel()*parameter.element_size();nonzero+=int(torch.count_nonzero(parameter))
+    return dict(logical_parameters=logical,stored_weight_bytes=stored,stored_nonzero_values=nonzero,weight_storage=getattr(model,'_leanputer_weight_storage','dense'),small_model_target_met=False)
 
 
 def check_documents(machine, documents, batch_size=4):

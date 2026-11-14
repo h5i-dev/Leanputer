@@ -67,7 +67,7 @@ def compile_addresses(layout, optimized=True, target=None):
 
 
 class RuleCompiler:
-    def __init__(self, layout, optimized=True, factor_choices=True):
+    def __init__(self, layout, optimized=True, factor_choices=True, packed_outputs=False):
         self.layout, self.cfg = layout, layout.config
         self.width = self.cfg.word_bits
         self.g = Builder(layout.names+port_names(self.width), optimized)
@@ -75,6 +75,7 @@ class RuleCompiler:
         self.choices = {n: [] for n, _ in layout.fields}
         self.writes = {bank: [] for bank in ('heap', 'stack', 'context')}
         self.factor = factor_choices
+        self.packed_outputs=packed_outputs
         self.read = {}
         offset = len(layout.names)
         for port, fields in PORTS:
@@ -832,10 +833,13 @@ class RuleCompiler:
         if memory_update != 'attention_delta':
             raise ValueError('kernel traversal uses addressed native memory ABI')
         self.rules()
-        outputs = []
+        outputs = [];packed_fields=[]
         for name, _ in self.layout.fields:
             choices = self.choices[name]
             keep = self.NOT(self.OR(*(guard for guard, _ in choices)))
+            if self.packed_outputs:
+                updated=[self.g.masked_or([(guard,value[i])for guard,value in choices],self.factor)for i in range(len(self.r[name]))]
+                packed_fields.append((name,keep,updated))
             for i, old in enumerate(self.r[name]):
                 outputs.append(self.g.masked_or([(keep, old)]+[(guard, value[i]) for guard, value in choices], self.factor))
         for bank, fields in (('heap', 4), ('stack', 6), ('context', 1)):
@@ -845,4 +849,5 @@ class RuleCompiler:
             outputs.append(self.OR(*(guard for guard, address, row in choices)))
             for field in range(fields):
                 outputs.extend(self.g.masked_or([(guard, row[field][i]) for guard, address, row in choices], self.factor) for i in range(self.width))
+        if self.packed_outputs:self.g.c.native_packed_fields=packed_fields
         return self.g.compile(outputs, target)

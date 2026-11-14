@@ -1,0 +1,8 @@
+{
+  "path": "/mnt/scratch/leanputer-runs/current-full-stock/compiled-source-efficient",
+  "metadata_sha256": "f3ad66136664e0a29db342625da1ef470689b8cb6682d37488b0df0de7ec0f2b",
+  "weights_sha256": "70378e0de963ebfc73b057de0cc1c831672f70a0125b72ad9eec66cbbfeaf713",
+  "semantic_commit": "127751c",
+  "weight_storage": "sparse_csr",
+  "small_model_target_met": false
+}

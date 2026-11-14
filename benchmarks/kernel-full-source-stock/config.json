@@ -1,0 +1,8 @@
+{
+  "heap": 512,
+  "stack": 32,
+  "context": 8,
+  "constants": 4,
+  "fuel": 8192,
+  "word_bits": 16
+}

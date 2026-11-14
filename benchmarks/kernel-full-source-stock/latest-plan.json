@@ -1,0 +1,43 @@
+{
+  "format": "leanputer.full-source-stock-plan.v1",
+  "config": {
+    "heap": 512,
+    "stack": 32,
+    "context": 8,
+    "constants": 4,
+    "fuel": 8192,
+    "word_bits": 16
+  },
+  "logical_parameters": 21471112926,
+  "bf16_dense_equivalent_bytes": 42942225852,
+  "parameter_groups": {
+    "embeddings_and_head": 342786048,
+    "full_attention": 134269264,
+    "mlp": 20865613824,
+    "norms": 27191296,
+    "linear_attention": 101252494
+  },
+  "hidden_size": 22528,
+  "native_layers": 603,
+  "persistent_channels": 7913,
+  "allocated_slots": 21864,
+  "scratch_reset_channels": 14593,
+  "reset_layers": 64,
+  "graph": {
+    "layers": 602,
+    "dims": 122831,
+    "heads": 7,
+    "ffn_units": 137494,
+    "max_units": 256,
+    "max_heads": 1
+  },
+  "commit_statistics": {
+    "output_channels": 7804,
+    "snapshots": 0,
+    "unchanged": 112,
+    "direct_commits": 7692
+  },
+  "seconds": 10.648496131005231,
+  "small_model_target_met": false,
+  "evidence": "Whole fixed program/meta shapes only; no GPU weights or inference"
+}

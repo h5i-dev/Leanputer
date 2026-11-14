@@ -18,7 +18,7 @@ from .checker import Config, build_checker_ir
 from .terms import App, Lam, Var, encode
 from .native_vendor.qwenputer.emit import Layout, allocate, emit_layers
 from .native_vendor.qwenputer.expr import Expr
-from .native_vendor.qwenputer.ir import Graph, Target
+from .native_vendor.qwenputer.ir import Graph, Target, Head
 
 
 def pick_layout(slots, max_ballast=16):
@@ -81,19 +81,21 @@ def plan_stock(graph, result_dims, intermediate, keep_dims=None, reset_layers=0,
     if reset_layers and len(clear) > reset_layers*intermediate:
         raise ScratchResetCapacity((len(clear)+intermediate-1)//intermediate)
     layers = graph.n_layers()
+    memory_layers={(node.level-1)//2 for node in graph.nodes if isinstance(node,Head)}
     tc = dict(hidden_size=layout.hidden, vocab_size=len(results), intermediate_size=intermediate,
-              num_hidden_layers=layers+1, layer_types=['linear_attention']*layers+['full_attention'],
+              num_hidden_layers=layers+1, layer_types=['linear_attention'if layer in memory_layers else'full_attention'for layer in range(layers)]+['full_attention'],
               hidden_act='silu', linear_conv_kernel_dim=4, linear_key_head_dim=128, linear_value_head_dim=128,
               linear_num_key_heads=graph.target.key_heads, linear_num_value_heads=graph.target.value_heads, num_attention_heads=1, num_key_value_heads=1,
-              head_dim=256, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
-              rope_parameters=dict(rope_type='default', rope_theta=10000000, partial_rotary_factor=.25,
-                                   mrope_section=[11,11,10], mrope_interleaved=True), max_position_embeddings=8192)
+              head_dim=2, rms_norm_eps=1e-6, attn_output_gate=True, tie_word_embeddings=False,
+              rope_parameters=dict(rope_type='default', rope_theta=10000000, partial_rotary_factor=1.,
+                                   mrope_section=[1,0,0], mrope_interleaved=True), max_position_embeddings=8192)
     return layout,allocation,tc,clear
 
 
-def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0, max_ballast=16):
+def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, reset_layers=0, max_ballast=16, weight_storage='dense'):
     from transformers import Qwen3_5ForCausalLM, Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
+    if weight_storage not in ('dense','sparse_csr'):raise ValueError('unknown stock parameter storage')
     layout,allocation,tc,clear=plan_stock(graph,result_dims,intermediate,keep_dims,reset_layers,max_ballast)
     layers=graph.n_layers()
     native_config = Qwen3_5TextConfig(**tc)
@@ -104,29 +106,63 @@ def emit_stock(graph, result_dims, intermediate, dtype, device, keep_dims=None, 
     original_dtype=torch.get_default_dtype()
     try:
         torch.set_default_dtype(dtype)
-        with torch.device(device),no_init_weights():
+        with torch.device('meta'if weight_storage=='sparse_csr'else device),no_init_weights():
             model=Qwen3_5ForCausalLM(native_config)
     finally:
         torch.set_default_dtype(original_dtype)
     with torch.no_grad():
-        for parameter in model.parameters(): parameter.zero_()
+        def install(name,tensor):
+            parent,attribute=name.rsplit('.',1);module=model.get_submodule(parent)
+            from .native_vendor.qwenputer.emit import SparseMatrix
+            value=tensor.tensor(dtype)if isinstance(tensor,SparseMatrix)else tensor.to(dtype=dtype)
+            if value.ndim==2 and value.layout==torch.strided:value=value.to_sparse_csr()
+            setattr(module,attribute,torch.nn.Parameter(value.to(device),requires_grad=False))
+        if weight_storage=='sparse_csr':
+            # Shapes are unchanged stock parameters. Only their zero storage is
+            # compressed; nn.Linear and the complete model forward stay stock.
+            for name,parameter in list(model.named_parameters()):
+                if parameter.ndim==2:
+                    rows,cols=parameter.shape
+                    value=torch.sparse_csr_tensor(torch.zeros(rows+1,dtype=torch.int64),torch.empty(0,dtype=torch.int64),torch.empty(0,dtype=dtype),size=(rows,cols),device=device)
+                    parent,attribute=name.rsplit('.',1);setattr(model.get_submodule(parent),attribute,torch.nn.Parameter(value,requires_grad=False))
+                else:
+                    parent,attribute=name.rsplit('.',1);setattr(model.get_submodule(parent),attribute,torch.nn.Parameter(torch.zeros(parameter.shape,dtype=dtype,device=device),requires_grad=False))
+            # Materialize the stock default RoPE buffers exactly as its ctor does.
+            for module in model.modules():
+                if hasattr(module,'compute_default_rope_parameters')and hasattr(module,'inv_freq'):
+                    with torch.device(device):inv,scale=module.compute_default_rope_parameters(native_config)
+                    module.inv_freq=inv.to(device);module.original_inv_freq=inv.clone().to(device);module.attention_scaling=scale
+            if any(b.device.type=='meta'for b in model.buffers()):raise ValueError('unmaterialized stock buffer')
+        else:
+            for parameter in model.parameters():parameter.zero_()
         from .native_vendor.qwenputer.emit import row
         for layer in range(layers):
-            state=emit_layers(graph,layout,tc,0,'model.',allocation,only_layer=layer)
+            if weight_storage=='sparse_csr'and layer%32==0:
+                import sys
+                print(f'stock sparse emission layer {layer}/{layers}',file=sys.stderr,flush=True)
+            state=emit_layers(graph,layout,tc,0,'model.',allocation,only_layer=layer,sparse=weight_storage=='sparse_csr')
             if layer<reset_layers:
                 prefix=f'model.layers.{layer}.mlp.'
                 for index,slot in enumerate(clear[layer*intermediate:(layer+1)*intermediate]):
                     row(graph.one,layout,state[prefix+'gate_proj.weight'][index],128.)
                     state[prefix+'up_proj.weight'][index,slot]=1/(128*layout.scale)
                     state[prefix+'down_proj.weight'][slot,index]=-1.
-            _,unexpected=model.load_state_dict(state,strict=False)
-            if unexpected: raise ValueError('native compiler tensor names differ from stock model')
+            if weight_storage=='sparse_csr':
+                for name,tensor in state.items():install(name,tensor)
+            else:
+                _,unexpected=model.load_state_dict(state,strict=False)
+                if unexpected:raise ValueError('native compiler tensor names differ from stock model')
             del state
         model.model.norm.weight.fill_(-1.)
         for index,dimension in enumerate(result_dims):
             slot=layout.dim(dimension)
             model.model.norm.weight[slot]=1/layout.scale
-            model.lm_head.weight[index,slot]=1.
+            if weight_storage=='dense':model.lm_head.weight[index,slot]=1.
+        if weight_storage=='sparse_csr':
+            slots=[layout.dim(d)for d in result_dims];count=len(slots)
+            value=torch.sparse_csr_tensor(torch.arange(count+1,dtype=torch.int64),torch.tensor(slots,dtype=torch.int64),torch.ones(count,dtype=dtype),size=(count,layout.hidden),device=device)
+            model.lm_head.weight=torch.nn.Parameter(value,requires_grad=False)
+    model._leanputer_weight_storage=weight_storage
     model.requires_grad_(False)
     model=model.eval()
     return model, layout, allocation

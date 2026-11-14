@@ -1,0 +1,12 @@
+../mnt/scratch/leanputer-runs/kernel-algorithms-tree/leanputer/native.py:126: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:53.)
+  value=torch.sparse_csr_tensor(torch.zeros(rows+1,dtype=torch.int64),torch.empty(0,dtype=torch.int64),torch.empty(0,dtype=dtype),size=(rows,cols),device=device)
+stock sparse emission layer 0/12
+..[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `fused_recurrent_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+...
+----------------------------------------------------------------------
+Ran 7 tests in 5.727s
+
+OK

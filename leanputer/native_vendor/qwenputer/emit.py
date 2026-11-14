@@ -86,7 +86,7 @@ def reads(n) -> list[int]:
     return [d for e in exprs for d in e.terms]
 
 
-def allocate(g: Graph, clearable: set[int] | None, keep: set[int], unit_cap: int,
+def allocate_legacy(g: Graph, clearable: set[int] | None, keep: set[int], unit_cap: int,
              overlay: set[int] | None = None, overlay_cap: int = 0) -> Alloc:
     """Assign slots; dims in ``keep`` are never handed over (outputs read by the lm_head).
 
@@ -159,6 +159,64 @@ def allocate(g: Graph, clearable: set[int] | None, keep: set[int], unit_cap: int
     return a
 
 
+def allocate(g: Graph, clearable: set[int] | None, keep: set[int], unit_cap: int,
+             overlay: set[int] | None = None, overlay_cap: int = 0) -> Alloc:
+    """The same first-fit allocation, indexed by eligibility time and slot.
+
+    A slot enters independent FFN/head ready queues at exactly the old predicate's
+    first eligible level. Generation stamps invalidate its other queue entries
+    on reuse. Picking the minimum eligible slot preserves legacy first-fit,
+    including per-level subtraction/clear capacity and overlay fallback.
+    """
+    from heapq import heappush,heappop
+    top=max(n.level for n in g.nodes)+1
+    last={d:g.dims[d].level for d in range(1,len(g.dims))}
+    for node in g.nodes:
+        for d in reads(node):
+            if d!=ONE:last[d]=max(last[d],node.level)
+    for d in keep:last[d]=top
+    sticky={d for n in g.nodes if isinstance(n,Head)and n.tiny for vh in n.vheads()for _,d,_ in vh.out}
+    units=dict(g.units);pools=([],[]);versions=([],[])
+    waiting=([[],[]],[[],[]]);ready=([[],[]],[[],[]])
+    a=Alloc({},0)
+    def schedule(pool,slot,d):
+        if d in keep or d in sticky or(clearable is not None and d not in clearable):return
+        born=g.dims[d].level;version=versions[pool][slot]
+        if d not in getattr(g,'big',()):heappush(waiting[pool][0],(max(last[d],born+1),slot,version))
+        heappush(waiting[pool][1],(max(last[d]+1,born+2,3),slot,version))
+    def candidate(pool,kind,level):
+        wait,available=waiting[pool][kind],ready[pool][kind]
+        while wait and wait[0][0]<=level:
+            _,slot,version=heappop(wait)
+            if versions[pool][slot]==version:heappush(available,(slot,version))
+        while available and versions[pool][available[0][0]]!=available[0][1]:heappop(available)
+        return heappop(available)[0]if available else None
+    def take(d,level,by_ffn):
+        for pool in (1,0)if overlay is not None and d in overlay else(0,):
+            owner=pools[pool];kind=0 if by_ffn else 1;clear_level=level if by_ffn else level-1
+            slot=candidate(pool,kind,level)if units.get(clear_level,0)<unit_cap else None
+            if slot is not None:
+                old=owner[slot];units[clear_level]=units.get(clear_level,0)+1
+                if by_ffn:a.subtract[d]=old
+                else:a.clears.setdefault(clear_level,[]).append(old)
+                owner[slot]=d;versions[pool][slot]+=1
+                (a.over if pool else a.slots)[d]=slot;schedule(pool,slot,d);return
+            if pool==0 or len(owner)<overlay_cap:
+                slot=len(owner);owner.append(d);versions[pool].append(0)
+                (a.over if pool else a.slots)[d]=slot;schedule(pool,slot,d);return
+    for d in sorted(g.token_fns):take(d,0,False)
+    defined={}
+    for node in g.nodes:
+        if isinstance(node,FFN):
+            if not node.into:defined.setdefault(node.level,[]).append((node.out,True))
+        else:
+            for vh in node.vheads():
+                if not vh.into:defined.setdefault(node.level,[]).extend((d,False)for _,d,_ in vh.out)
+    for level in sorted(defined):
+        for d,by_ffn in defined[level]:take(d,level,by_ffn)
+    a.n_slots=len(pools[0]);a.final=list(pools[0]);a.final_over=list(pools[1]);return a
+
+
 def bf16_parts(x: float, n: int) -> list[float]:
     """Split x into at most n bf16 values that sum to it exactly."""
     parts = []
@@ -171,6 +229,26 @@ def bf16_parts(x: float, n: int) -> list[float]:
     if x != 0:
         raise ValueError(f"constant needs more than {n} bf16 parts")
     return parts
+
+
+class SparseMatrix:
+    """Compiler-only sparse row accumulator; never an inference layer."""
+    def __init__(self,rows,cols):self.shape=(rows,cols);self.entries={}
+    def __getitem__(self,key):
+        if isinstance(key,tuple):return self.entries.get(key,0.)
+        matrix=self
+        class Row:
+            def __getitem__(self,column):return matrix.entries.get((key,column),0.)
+            def __setitem__(self,column,value):matrix.entries[key,column]=float(value)
+        return Row()
+    def __setitem__(self,key,value):self.entries[key]=float(value)
+    def tensor(self,dtype=torch.float32):
+        entries=[(r,c,v)for(r,c),v in self.entries.items()if v]
+        if entries:
+            indices=torch.tensor([(r,c)for r,c,v in entries],dtype=torch.int64).T
+            values=torch.tensor([v for r,c,v in entries],dtype=dtype)
+        else:indices=torch.empty((2,0),dtype=torch.int64);values=torch.empty(0,dtype=dtype)
+        return torch.sparse_coo_tensor(indices,values,self.shape).coalesce().to_sparse_csr()
 
 
 def row(e: Expr, lay: Layout, out: torch.Tensor, w: float = 1.0) -> None:
@@ -189,6 +267,7 @@ def row(e: Expr, lay: Layout, out: torch.Tensor, w: float = 1.0) -> None:
 
 
 def check_bf16(name: str, t: torch.Tensor) -> None:
+    if isinstance(t,SparseMatrix):t=torch.tensor(list(t.entries.values()),dtype=torch.float32)
     b = t.to(torch.bfloat16).to(t.dtype)
     bad = ((b != t) | ~torch.isfinite(b)).nonzero()  # (a weight beyond bf16 rounds to inf)
     if len(bad):
@@ -211,7 +290,7 @@ def clearable_dims(g: Graph, traces: list[list[int]]) -> set[int]:
 
 def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
                 alloc: Alloc | None = None, keep: set[int] | None = None,
-                chip: Expr | None = None, only_layer: int | None = None) -> dict:
+                chip: Expr | None = None, only_layer: int | None = None, sparse=False) -> dict:
     """Weights of the chip layers, named ``{prefix}layers.{first + i}.*``.
 
     With ``keep``, the MLP sublayer of the nodes named ``exit.*`` also clears every chip dim
@@ -236,19 +315,20 @@ def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
     over = alloc.over if alloc else {}
     assert chip is not None or not over, "an overlay needs the chip-token gate"
     one = Expr({ONE: 1})
+    matrix=lambda rows,cols:SparseMatrix(rows,cols)if sparse else torch.zeros(rows,cols,dtype=f32)
     for L in range(g.n_layers()):
         if only_layer is not None and L != only_layer:
             continue
         p = f"{prefix}layers.{first + L}."
-        qkv = torch.zeros(2 * nk * HD + nv * HD, h, dtype=f32)
+        qkv = matrix(2 * nk * HD + nv * HD,h)
         convw = torch.zeros(2 * nk * HD + nv * HD, 1, tc["linear_conv_kernel_dim"], dtype=f32)
-        zw = torch.zeros(nv * HD, h, dtype=f32)
-        bw = torch.zeros(nv, h, dtype=f32)
-        aw = torch.zeros(nv, h, dtype=f32)
-        ow = torch.zeros(h, nv * HD, dtype=f32)
-        gate = torch.zeros(inter, h, dtype=f32)
-        up = torch.zeros(inter, h, dtype=f32)
-        down = torch.zeros(h, inter, dtype=f32)
+        zw = matrix(nv * HD,h)
+        bw = matrix(nv,h)
+        aw = matrix(nv,h)
+        ow = matrix(h,nv * HD)
+        gate = matrix(inter,h)
+        up = matrix(inter,h)
+        down = matrix(h,inter)
         heads = [n for n in g.nodes if isinstance(n, Head) and n.level == 2 * L + 1]
         for j, n in enumerate(heads):
             vhs = n.vheads()
@@ -283,7 +363,7 @@ def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
             if not (isinstance(n, FFN) and n.level == 2 * L + 2):
                 continue
             units += [(coef, a, b, n.out) for coef, a, b in n.terms]
-            if alloc and n.out in alloc.subtract:  # hand the slot over: remove the old value
+            if alloc and not n.into and n.out in alloc.subtract:  # clear only the first writer on a slot handover
                 old = alloc.subtract[n.out]
                 units.append((-1, Expr({old: 1}), clear_gate(old), n.out))
         units += [(-1, Expr({o: 1}), clear_gate(o), o)
@@ -318,6 +398,7 @@ def emit_layers(g: Graph, lay: Layout, tc: dict, first: int, prefix: str,
             "mlp.down_proj.weight": down,
         }
         for k, t in layer.items():
+            if k.startswith('linear_attn.')and tc.get('layer_types',['linear_attention']*g.n_layers())[L]!='linear_attention':continue
             check_bf16(p + k, t)
             out[p + k] = t
     return out

@@ -10,6 +10,13 @@ Active development follows the [pinned general kernel contract](docs/kernel/targ
 declarations are input data, and shared algorithms traverse arbitrary bounded
 telescopes, indices, mutual blocks and recursive arguments. Field/name catalogs
 and count-specific feature paths are no longer the development strategy.
+The [full current source checker](benchmarks/kernel-full-source-stock/README.md)
+now runs on the A10G with stock sparse parameter tensors and reusable compiled
+weights. An original inductive, standalone recursor claim and identity proof
+accept; a wrong proof rejects, with every register/cache row exact. The complete
+fixed program has21.47B logical parameters despite288MB stored weights: the
+small-model target remains unmet. [Whole-program accounting and runnable commands](docs/kernel/stock-delivery.md)
+separate this current evidence from the historical checkpoints below.
 The [shared traversal stock smoke](benchmarks/kernel-traversal-stock/README.md)
 verifies lift/instantiation/abstraction/occurrence operations with one stock
 model and exact output-cache comparison. It does **not** establish full
@@ -33,8 +40,8 @@ semantic and selected Boolean integration evidence; it is outside the historical
 stock report. General projection inference/reduction now also has selected source IR evidence.
 [Typed conversion](docs/kernel/conversion-native.md) now has source/IR evidence
 for proof irrelevance, binding/application congruence, eta and unit-like rules.
-Primitive-aware negative conversion, literal/Quot and missing primitive reductions
-remain gaps. The earlier uncommitted projection work is preserved.
+Nat/String/Quot source controllers now have targeted SPEC/selected IR evidence;
+unavailable primitive bindings and private metadata remain explicit gaps.
 An [original-source STOCK checkpoint](benchmarks/kernel-original-source-inductive-stock/README.md)
 admits an empty inductive and checks its identity theorem; it uses10.35billion
 parameters and does not meet the small-model goal or establish nested STOCK
