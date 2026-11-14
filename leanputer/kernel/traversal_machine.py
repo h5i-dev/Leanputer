@@ -158,6 +158,8 @@ class Task(IntEnum):
     INSTANTIATE_PI_PARAMETERS = 91 # Raw Pi strip + bulk instantiate_rev at declared count.
     CONVERT = 102             # General task-owned typed conversion.
     LEVELS_EQUIVALENT = 103    # Counted symbolic universe-vector comparison.
+    NAT_BINDINGS = 107       # Checked genuine natural literal bindings.
+    NAT_LITERAL = 108        # Arbitrary limb inference/constructor preparation.
     QUOT_REDUCE = 106        # Reentrant initialized quotient computation.
     QUOT_INITIALIZE = 105    # Genuine quot.cpp atomic source initialization.
     STRUCTURE_INFO = 104      # Checked nonrecursive structure/count query.
@@ -922,7 +924,12 @@ REGISTERS = ('mode', 'status', 'reason', 'fuel', 'free', 'sp', 'decl',
     'quot_symbol_eq', 'quot_symbol_quot', 'quot_symbol_mk', 'quot_symbol_lift', 'quot_symbol_ind', 'quot_symbol_u', 'quot_symbol_v',
     'quot_eq_signature', 'quot_eq_type', 'quot_eq_u', 'quot_refl_type', 'quot_refl_u', 'quot_eq', 'quot_refl',
     'quot_parameters', 'quot_lift_parameters', 'quot_type', 'quot_ctor', 'quot_lift', 'quot_ind', 'quot_scheme', 'quot_signature',
-    'quot_claim_kind', 'quot_claim_symbol', 'quot_claim_parameters', 'quot_claim_type', 'quot_expected', 'gather_service', 'quot_reduce_pc', 'quot_reduce_args', 'quot_reduce_element', 'quot_reduce_result')
+    'quot_claim_kind', 'quot_claim_symbol', 'quot_claim_parameters', 'quot_claim_type', 'quot_expected', 'gather_service', 'quot_reduce_pc', 'quot_reduce_args', 'quot_reduce_element', 'quot_reduce_result',
+    'nat_validated', 'nat_binding_pc', 'nat_name_base', 'nat_symbol_type', 'nat_symbol_zero', 'nat_symbol_succ',
+    'nat_empty_levels', 'nat_type', 'nat_level_one', 'nat_expected_type', 'nat_expected_succ', 'nat_check_type', 'nat_family_signature',
+    'nat_binding_remaining', 'nat_binding_seen', 'nat_binding_next', 'nat_literal_pc', 'nat_literal_operation', 'nat_literal_root', 'nat_literal_vector',
+    'nat_limb_remaining', 'nat_limb_cursor', 'nat_limb_head', 'nat_limb_count', 'nat_borrow', 'nat_limb_next', 'nat_limb_value', 'nat_limb_drop',
+    'nat_predecessor_vector', 'nat_predecessor', 'nat_succ_expression', 'nat_literal_result')
 BANK_FIELDS = {'heap': 4, 'stack': 6, 'context': 1, 'constants': 6}
 
 
@@ -1021,7 +1028,7 @@ def parse_document(doc):
             raise KernelError('noncanonical expression table')
     a.expr(doc['root'])
     task = Task[doc['task']]
-    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION, Task.INSTANTIATE_PI_PARAMETERS, Task.NESTED_STAGE, Task.REWRITE_NESTED, Task.REPLACE_NESTED, Task.RESTORE_NESTED_EXPR, Task.RESTORE_NESTED_CALLBACK, Task.RESTORE_NESTED_BLOCK, Task.FAMILY_INFO, Task.PROJECTION_INFER, Task.PROJECTION_REDUCE, Task.PROJECTION_BRIDGE, Task.CONVERT, Task.LEVELS_EQUIVALENT, Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE):
+    if task in (Task.INSTANTIATE_ONE, Task.ABSTRACT_ONE, Task.FOLD_TELESCOPE, Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_EQUAL, Task.LEVEL_NOT_ZERO, Task.LEVEL_OFFSET, Task.LEVEL_MAX, Task.LEVEL_IMAX, Task.LEVEL_INSTANTIATE, Task.EXPR_LEVEL_INSTANTIATE, Task.LEVEL_ORDER, Task.LEVEL_NORMALIZE, Task.LEVEL_MERGE, Task.LEVEL_NORMAL_SUCC, Task.LEVEL_EQUIVALENT, Task.LEVEL_GEQ, Task.LEVEL_GEQ_CORE, Task.EXPR_SCOPE, Task.EXPR_EQUAL, Task.VECTOR_EQUAL, Task.INFER, Task.CONVERT_POSITIVE, Task.ENV_LOOKUP, Task.LOAD_PARAMETERS, Task.CHECK_NAME, Task.CHECK_SOURCE, Task.CONSUME_PARAMETERS, Task.PREPARE_REUSE, Task.HAS_CONSTANTS, Task.ANALYZE_HEADERS, Task.HAS_FAMILIES, Task.FAMILY_APPLICATION, Task.FORMAL_LEVELS, Task.CHECK_POSITIVITY, Task.ABSTRACT_SCOPE, Task.RECURSIVE_ARGUMENT, Task.REVERSE_LIST, Task.CHECK_CONSTRUCTORS, Task.GET_NAME_PATH, Task.CHECK_RECURSOR_NAME, Task.CHECK_CORE_NAMES, Task.DECLARE_CONSTRUCTORS, Task.INIT_ELIMINATION, Task.FRESH_LOCAL, Task.APPLY_SCOPE, Task.BUILD_MOTIVES, Task.BLOCK_FLAGS, Task.INSTANTIATE_SCOPE, Task.SNAPSHOT_SCOPE, Task.OPEN_RECURSIVE_PREFIX, Task.APPLY_LIST, Task.FIND_MOTIVE, Task.BUILD_MINORS, Task.BUILD_RECURSOR_TYPES, Task.RESTORE_SCOPE, Task.BUILD_RECURSOR_RULES, Task.ASSEMBLE_RECURSORS, Task.INSTANTIATE_SCHEME, Task.SIGNATURE_VECTOR_LOOKUP, Task.SYMBOL_MEMBER, Task.CHECK_RECURSOR_CLAIMS, Task.APPLICATION_SPINE, Task.APPLY_VECTOR_SLICE, Task.APPLY_RECURSOR_RULE, Task.VECTOR_REFERENCE, Task.PREPARE_RECURSOR_MAJOR, Task.REDUCE_RECURSOR, Task.GATHER_RECURSOR_ARGUMENTS, Task.PRIOR_BLOCK_LOOKUP, Task.COMPARE_NAME_PATH, Task.INTERN_NAME_PATH, Task.VECTOR_SPLICE, Task.WORD_DECIMAL, Task.REPLACE_NAME_PREFIX, Task.MAKE_RECURSOR_NAME, Task.OPEN_RAW_PREFIX, Task.HAS_LOOSE_BVARS, Task.LOOSE_BVAR_WALK, Task.HAS_RAW_FAMILIES, Task.IS_NESTED_APPLICATION, Task.INSTANTIATE_PI_PARAMETERS, Task.NESTED_STAGE, Task.REWRITE_NESTED, Task.REPLACE_NESTED, Task.RESTORE_NESTED_EXPR, Task.RESTORE_NESTED_CALLBACK, Task.RESTORE_NESTED_BLOCK, Task.FAMILY_INFO, Task.PROJECTION_INFER, Task.PROJECTION_REDUCE, Task.PROJECTION_BRIDGE, Task.CONVERT, Task.LEVELS_EQUIVALENT, Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE,Task.NAT_BINDINGS,Task.NAT_LITERAL):
         raise KernelError('internal service has no raw-data entry point')
     operands = tuple(a.word(v) for v in doc.get('operands', ()))
     if task == Task.INSTANTIATE:
@@ -1108,7 +1115,7 @@ class SpecMachine:
                 return False
             return True
         if (not 0 < r['free'] <= cfg.heap or r['sp'] > cfg.stack or r['count'] > cfg.context or r['ctx'] > cfg.context
-                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.QUOT_REDUCE
+                or r['mode'] > Mode.MINOR_LINK or r['task'] > Task.NAT_LITERAL
                 or r['bounded'] > 1 or r['pending_open'] > 1 or r['pending_fold'] > 1
                 or r['typing_active'] > 1 or r['core_operation'] > 1 or r['occurrence_internal'] > 1 or r['occurrence_found'] > 1 or r['pending_reuse'] > 1 or r['reuse_whnf'] > 1 or r['pending_scope'] > 1 or r['env_ready'] > 1 or r['pending_infer'] > 1 or r['local_base'] > cfg.context
                 or r['vec_changed'] > 1 or r['pending_compare'] > 2 or r['order_same_base'] > 1
@@ -1169,7 +1176,7 @@ class SpecMachine:
         from . import raw_prefix_machine as raw_prefix
         from . import nested_application_machine as nested_application
         from . import pi_parameters_machine as pi_parameters
-        from . import nested_stage_rules, nested_copy_rules, nested_rewrite_rules, nested_restore_rules, nested_transaction_rules, projection_rules, conversion_rules, structure_info_rules, quotient_rules, quotient_reduce_rules
+        from . import nested_stage_rules, nested_copy_rules, nested_rewrite_rules, nested_restore_rules, nested_transaction_rules, projection_rules, conversion_rules, structure_info_rules, quotient_rules, quotient_reduce_rules, nat_literal_rules
         if r['mode'] == Mode.RETURN:
             if not r['sp']:
                 if r['pending_reuse']:
@@ -1190,8 +1197,8 @@ class SpecMachine:
                     stop(Outcome.DONE)
             else:
                 phase, original, depth, task, first, second = s['stack'][r['sp']-1]
-                if task in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE,Task.CONVERT,Task.LEVELS_EQUIVALENT,Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE):
-                    {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules,Task.CONVERT:conversion_rules,Task.LEVELS_EQUIVALENT:conversion_rules,Task.STRUCTURE_INFO:structure_info_rules,Task.QUOT_INITIALIZE:quotient_rules,Task.QUOT_REDUCE:quotient_reduce_rules}[task].step(self)
+                if task in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE,Task.CONVERT,Task.LEVELS_EQUIVALENT,Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE,Task.NAT_BINDINGS,Task.NAT_LITERAL):
+                    {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules,Task.CONVERT:conversion_rules,Task.LEVELS_EQUIVALENT:conversion_rules,Task.STRUCTURE_INFO:structure_info_rules,Task.QUOT_INITIALIZE:quotient_rules,Task.QUOT_REDUCE:quotient_reduce_rules,Task.NAT_BINDINGS:nat_literal_rules,Task.NAT_LITERAL:nat_literal_rules}[task].step(self)
                 elif task == Task.INSTANTIATE_PI_PARAMETERS:
                     pi_parameters.resume(self, (phase, original, depth, task, first, second), stop, ret, alloc)
                 elif task == Task.IS_NESTED_APPLICATION:
@@ -1337,8 +1344,8 @@ class SpecMachine:
                 else:
                     r.update(mode=Mode.RESUME, x=original, depth=depth, task=task)
             return s
-        if r['task'] in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE,Task.CONVERT,Task.LEVELS_EQUIVALENT,Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE):
-            {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules,Task.CONVERT:conversion_rules,Task.LEVELS_EQUIVALENT:conversion_rules,Task.STRUCTURE_INFO:structure_info_rules,Task.QUOT_INITIALIZE:quotient_rules,Task.QUOT_REDUCE:quotient_reduce_rules}[r['task']].step(self)
+        if r['task'] in (Task.NESTED_STAGE,Task.REPLACE_NESTED,Task.REWRITE_NESTED,Task.RESTORE_NESTED_EXPR,Task.RESTORE_NESTED_CALLBACK,Task.RESTORE_NESTED_BLOCK,Task.FAMILY_INFO,Task.PROJECTION_INFER,Task.PROJECTION_REDUCE,Task.PROJECTION_BRIDGE,Task.CONVERT,Task.LEVELS_EQUIVALENT,Task.STRUCTURE_INFO,Task.QUOT_INITIALIZE,Task.QUOT_REDUCE,Task.NAT_BINDINGS,Task.NAT_LITERAL):
+            {Task.NESTED_STAGE:nested_stage_rules,Task.REPLACE_NESTED:nested_copy_rules,Task.REWRITE_NESTED:nested_rewrite_rules,Task.RESTORE_NESTED_EXPR:nested_restore_rules,Task.RESTORE_NESTED_CALLBACK:nested_restore_rules,Task.RESTORE_NESTED_BLOCK:nested_transaction_rules,Task.FAMILY_INFO:projection_rules,Task.PROJECTION_INFER:projection_rules,Task.PROJECTION_REDUCE:projection_rules,Task.PROJECTION_BRIDGE:projection_rules,Task.CONVERT:conversion_rules,Task.LEVELS_EQUIVALENT:conversion_rules,Task.STRUCTURE_INFO:structure_info_rules,Task.QUOT_INITIALIZE:quotient_rules,Task.QUOT_REDUCE:quotient_reduce_rules,Task.NAT_BINDINGS:nat_literal_rules,Task.NAT_LITERAL:nat_literal_rules}[r['task']].step(self)
             return s
         if r['task'] == Task.CHECK_SOURCE and r['mode'] != Mode.SOURCE_TYPE_SORT:
             source.step(self, 0, 0, 0, 0, stop, ret, alloc)

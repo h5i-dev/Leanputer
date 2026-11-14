@@ -139,6 +139,12 @@ class KernelServices:
             else:
                 return root
 
+    def _nat_primitives(self):
+        from .literal_reference import NatPrimitives
+        if not hasattr(self,'literal_symbols'):
+            raise MissingOperation('Nat literal name context unavailable')
+        return NatPrimitives(self,self.literal_symbols)
+
     def _major_when_k(self,recursor,major):
         a = self.a
         major_type = self.whnf(self.infer(major))
@@ -154,8 +160,10 @@ class KernelServices:
     def _major_when_structure(self,recursor,major):
         a = self.a
         row = a.expr(major)
-        if row.tag in (Tag.NAT,Tag.STRING):
-            raise MissingOperation('literal recursor-major preparation not integrated')
+        if row.tag==Tag.NAT:
+            return self._nat_primitives().to_constructor(major)
+        if row.tag==Tag.STRING:
+            raise MissingOperation('String literal recursor-major preparation not integrated')
         head,_ = spine(a,major);head = a.expr(head)
         if head.tag == Tag.CONST and head.a in self.constructors:return major
         info = self._structure(recursor.owner)
@@ -206,8 +214,10 @@ class KernelServices:
                         pending.extend((('let_type', ref), ('infer', row.a)))
                     elif row.tag == Tag.PROJ:
                         pending.extend((('projection', ref), ('infer', row.c)))
+                    elif row.tag==Tag.NAT:
+                        results.append(self._nat_primitives().infer(ref))
                     else:
-                        raise MissingOperation('projection/literal inference not integrated')
+                        raise MissingOperation('String literal inference not integrated')
                 elif operation == 'projection':
                     results.append(self._projection_type(frame[1], self.whnf(results.pop())))
                 elif operation == 'binder_domain':

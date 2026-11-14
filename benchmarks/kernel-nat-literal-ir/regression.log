@@ -1,0 +1,30 @@
+original Nat literal 0 source DONE 7864 steps 864 heap
+original Nat literal 1 source DONE 8183 steps 901 heap
+original Nat literal 65536 source DONE 8190 steps 904 heap
+original Nat literal 1461501637330902918203684832716283019655932542976 source DONE 8271 steps 931 heap
+original Nat literal 340282366920938463463374607431768211473 source DONE 8256 steps 927 heap
+Nat literal selected Boolean transitions 143
+.Nat literal boundary missing GAP GAP_PRIMITIVE
+Nat literal boundary empty GAP GAP_PRIMITIVE
+Nat literal boundary two-fields GAP GAP_PRIMITIVE
+Nat literal boundary narrow-borrow RESOURCE INDEX
+.Quot transaction atomic name INVALID INVALID_DECLARATION
+Quot transaction atomic type INVALID TYPE_MISMATCH
+Quot transaction atomic arity INVALID UNIVERSE_ARITY
+Quot transaction atomic later INVALID TYPE_MISMATCH
+Quot transaction atomic heap RESOURCE HEAP
+.source-quotient original-source Quot DONE 16277 steps 1991 heap
+source-quot-lift original-source Quot DONE 21423 steps 2414 heap
+source-quot-lift-nested original-source Quot DONE 30890 steps 3035 heap
+source-derived environment Quot.ind runtime + surplus beta DONE 155 steps
+source-quot-ind-surplus original-source Quot DONE 18017 steps 2187 heap
+Quot selected Boolean transitions 372
+.original source major expansion source-K-major DONE 2514 steps
+original source major expansion source-structure-major DONE 3924 steps
+original source major expansion restored-owner-parameter-count DONE 49051 steps
+major expansion selected Boolean transitions 130
+.
+----------------------------------------------------------------------
+Ran 5 tests in 166.179s
+
+OK

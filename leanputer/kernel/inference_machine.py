@@ -93,7 +93,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
                 s['heap'][r['free']] = [CellTag.LEVEL_SUCC, a, 0, 0]
                 r.update(free=r['free']+1, r=r['free'], mode=Mode.INFER_SORT_EXPR)
         elif tag == Tag.CONST: stop(Outcome.GAP, Reason.GAP_ENVIRONMENT)
-        elif tag in (Tag.NAT, Tag.STRING): stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
+        elif tag==Tag.NAT:r.update(task=Task.NAT_LITERAL,nat_literal_pc=0,nat_literal_operation=0)
+        elif tag==Tag.STRING:stop(Outcome.GAP,Reason.GAP_PRIMITIVE)
         elif tag == Tag.PROJ: r.update(task=Task.PROJECTION_INFER,projection_pc=0)
         elif tag == Tag.MDATA: r['x'] = a
         elif tag in (Tag.PI, Tag.LAM):

@@ -445,3 +445,12 @@ environment runtime also checks Quot.ind plus surplus beta separately. Failure
 checks preserve the committed prefix. This is outside the pinned STOCK report;
 Nat/String and conservative primitive-aware conversion gaps remain. The SMALL
 stock-transformer target remains unmet.
+
+Subsequent [Nat literal integration](literals-native.md) connects checked finite
+primitive bindings, all-limb inference and borrow/decrement/constructor-major
+preparation through the original source transaction and generated recursor.
+Five sources/143selected Boolean transitions pass, plus four terminal GAP/resource
+checks and independent public scheme/RHS comparisons. Combined Nat/Quot/restored
+owner regression PASS5tests166.179s. This is outside STOCK evidence. Full Nat
+arithmetic, String and primitive-aware negative conversion remain unfinished;
+independent arithmetic SPEC does not provide native answers or coverage.

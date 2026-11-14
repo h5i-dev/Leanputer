@@ -130,7 +130,8 @@ def emit_rules(c):
     call(constructor, c.mux(path(Path.K_TYPE), Phase.K_APPLY, Phase.ETA_APPLY), Task.APPLY_VECTOR_SLICE, r['major_type_arguments'],
         slice_body=r['free'], slice_start=0, slice_take=r['major_parameters'])
     value = at(Mode.MAJOR_VALUE); literal = c.tag(Tag.NAT, Tag.STRING)
-    c.stop(c.AND(value, literal), Outcome.GAP, Reason.GAP_PRIMITIVE)
+    c.stop(c.AND(value,c.tag(Tag.STRING)),Outcome.GAP,Reason.GAP_PRIMITIVE)
+    call(c.AND(value,c.tag(Tag.NAT)),Phase.WHNF,Task.NAT_LITERAL,r['x'],nat_literal_pc=0,nat_literal_operation=1)
     call(c.AND(value, c.NOT(literal)), Phase.MAJOR_SPINE, Task.APPLICATION_SPINE, r['x'])
     c.emit(at(Mode.MAJOR_APP), mode=Mode.MAJOR_HEAD, x=n['a'])
     head = at(Mode.MAJOR_HEAD); constant = c.tag(Tag.CONST)

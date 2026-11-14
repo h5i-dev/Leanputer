@@ -67,8 +67,12 @@ partial def expr (env : Environment) (e : Expr) : ExportM Json := do
   | .proj n i v =>
     ensureDeclaration env n
     return arr [text "proj", name n, toJson i, ← expr env v]
-  | .lit (.natVal n) => return arr [text "nat", text (toString n)]
-  | .lit (.strVal s) => return arr [text "string", text s]
+  | .lit (.natVal n) =>
+    ensureDeclaration env ``Nat
+    return arr [text "nat", text (toString n)]
+  | .lit (.strVal s) =>
+    ensureDeclaration env ``String
+    return arr [text "string", text s]
   | .mdata _ inner => return arr [text "mdata", ← expr env inner]
   | .fvar _ => throw "invalid external free variable in closed source"
   | .mvar _ => throw "invalid unresolved expression metavariable"

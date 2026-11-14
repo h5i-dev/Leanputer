@@ -66,7 +66,7 @@ def emit_rules(c):
     c.stop(c.AND(init, counts_ok, c.NOT(heap_room)), Outcome.RESOURCE, Reason.HEAP)
     init = c.AND(init, counts_ok, heap_room)
     c.write('heap', init, r['free'], (CellTag.LEVEL_ZERO, 0, 0, 0))
-    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,quot_initialized=0,
+    c.emit(init, free=c.add(r['free'], 1), kernel_zero=r['free'], env_ready=1, env_head=0, typing_active=0, typing_head=0, decl=0, raw_index=0, published_declarations=0,quot_initialized=0,nat_validated=0,
         ctx=0, count=0, arg_base=0, local_base=0, sp=0, pending_scope=0, pending_infer=0,
         pending_open=0, pending_fold=0, pending_compare=0, mode=Mode.SOURCE_READ, x=0)
     read = c.mode(Mode.SOURCE_READ)

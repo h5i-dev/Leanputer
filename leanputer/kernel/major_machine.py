@@ -116,7 +116,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
             call(Phase.K_APPLY if r['major_path'] == Path.K_TYPE else Phase.ETA_APPLY,
                 Task.APPLY_VECTOR_SLICE, r['major_type_arguments'], slice_body=ref, slice_start=0, slice_take=r['major_parameters'])
     elif mode == Mode.MAJOR_VALUE:
-        if tag in (Tag.NAT, Tag.STRING): stop(Outcome.GAP, Reason.GAP_PRIMITIVE)
+        if tag==Tag.NAT:call(Phase.WHNF,Task.NAT_LITERAL,r['x'],nat_literal_pc=0,nat_literal_operation=1)
+        elif tag==Tag.STRING:stop(Outcome.GAP,Reason.GAP_PRIMITIVE)
         else: call(Phase.MAJOR_SPINE, Task.APPLICATION_SPINE, r['x'])
     elif mode == Mode.MAJOR_APP: r.update(mode=Mode.MAJOR_HEAD, x=a)
     elif mode == Mode.MAJOR_HEAD:

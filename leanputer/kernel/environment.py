@@ -36,6 +36,7 @@ class EnvironmentDriver:
         self.source, self.a, self.symbols = source, source.arena, source.symbols
         self.c = LocalContext(self.a)
         self.services = KernelServices(self.a, self.c)
+        self.services.literal_symbols = self.symbols
         self.blocks, self.axioms = [], []
         self.checked_items = 0
         self.syntax_steps = self.a.steps
