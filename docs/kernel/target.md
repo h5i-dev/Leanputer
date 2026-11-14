@@ -469,3 +469,19 @@ Quot overwrites need dependent-prefix/origin invalidation. Initialization now
 explicitly GAPs on an existing ordinary binding, preserving the prior committed
 environment/registry; actual initialized claims remain idempotent. No full-kernel,
 SMALL-model, nested-source STOCK or corpus coverage claim is made.
+
+## String literal controller checkpoint
+
+Original-source String typing/helper construction, contextual projection and
+recursor preparation, and the pinned String.ofList conversion extension are
+connected through the shared Boolean compiler. See [string-native.md](string-native.md)
+for selected IR evidence and explicit helper/physical-word boundaries.
+The SMALL standalone stock target remains unmet; the earlier10.35B smoke does
+not establish that target or later modules.
+
+Literal typing now checks only its monomorphic Nat/String Type0 binding through
+a shared weighted operation. Constructor and String expansion interfaces are
+validated when reduction needs them; ordinary formation remains generic. Some
+neutral non-Sort/non-Pi failures are still conservatively classified GAP by the
+inference/source controllers. This is an explicit failure-classification gap,
+not a native inference answer or acceptance.

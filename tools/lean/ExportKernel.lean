@@ -72,6 +72,8 @@ partial def expr (env : Environment) (e : Expr) : ExportM Json := do
     return arr [text "nat", text (toString n)]
   | .lit (.strVal s) =>
     ensureDeclaration env ``String
+    ensureDeclaration env ``Char.ofNat
+    ensureDeclaration env ``String.ofList
     return arr [text "string", text s]
   | .mdata _ inner => return arr [text "mdata", ← expr env inner]
   | .fvar _ => throw "invalid external free variable in closed source"

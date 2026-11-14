@@ -1,0 +1,17 @@
+String boundary missing GAP GAP_PRIMITIVE
+String boundary mismatched GAP GAP_PRIMITIVE
+String boundary negative-bytes INVALID TYPE_MISMATCH
+String boundary narrow-word RESOURCE INDEX
+.String source source-String-1-projection DONE 54517 steps 5577 heap
+String source source-String-3-projection DONE 55148 steps 5624 heap
+String source source-String-1-recursor DONE 48683 steps 5214 heap
+String source source-String-3-recursor DONE 56425 steps 5701 heap
+String source source-String-1-opaque DONE 55345 steps 5638 heap
+String source source-String-1-projection DONE 49685 steps 5223 heap
+String source source-String-1-projection DONE 60594 steps 6023 heap
+String selected Boolean transitions 434
+.
+----------------------------------------------------------------------
+Ran 2 tests in 218.351s
+
+OK

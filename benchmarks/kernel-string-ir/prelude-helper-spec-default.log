@@ -1,0 +1,4 @@
+CheckResult(status='RESOURCE', reason='fuel', input_items=262, checked_input_items=151, admitted_declarations=215, assumptions=(), syntax_steps=61933, kernel_steps=1000001)
+seconds 6.295685541990679
+blocked raw RawBlock(universe_parameters=(2, 26, 27), parameters=3, families=(RawInductive(symbol=224, type=178, constructors=(RawConstructor(symbol=223, type=4143),), recursor_symbol=225),), recursor_claims=(RawRecursorClaim(symbol=225, universe_parameters=(6, 2, 26, 27), type=4163),))
+symbol None

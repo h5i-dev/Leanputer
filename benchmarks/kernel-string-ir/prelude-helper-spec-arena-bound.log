@@ -1,0 +1,4 @@
+CheckResult(status='RESOURCE', reason='expression arena', input_items=262, checked_input_items=197, admitted_declarations=269, assumptions=(), syntax_steps=61933, kernel_steps=1865610)
+seconds 10.830492510984186
+blocked raw RawDeclaration(kind='theorem', symbol=277, universe_parameters=(), type=5887, value=5908)
+symbols [(('str', 'Nat'), ('str', 'div_rec_fuel_lemma'))]

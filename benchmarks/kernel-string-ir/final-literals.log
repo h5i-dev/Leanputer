@@ -1,0 +1,41 @@
+String boundary missing GAP GAP_PRIMITIVE
+String boundary mismatched GAP GAP_PRIMITIVE
+String boundary negative-bytes INVALID TYPE_MISMATCH
+String boundary narrow-word RESOURCE INDEX
+.String original-source typing/helper-bootstrap False DONE 1058 steps 219 heap
+String original-source typing/helper-bootstrap True DONE 45516 steps 4933 heap
+String type/bootstrap selected Boolean transitions 28
+.String source source-String-1-projection DONE 54893 steps 5602 heap
+String source source-String-3-projection DONE 55524 steps 5649 heap
+String source source-String-1-recursor DONE 48945 steps 5228 heap
+String source source-String-3-recursor DONE 56687 steps 5715 heap
+String source source-String-1-opaque DONE 55721 steps 5663 heap
+String source source-String-1-projection DONE 49947 steps 5237 heap
+String source source-String-1-projection DONE 60970 steps 6048 heap
+String selected Boolean transitions 460
+.original Nat literal 0 source DONE 7975 steps 875 heap
+original Nat literal 1 source DONE 8294 steps 912 heap
+original Nat literal 65536 source DONE 8301 steps 915 heap
+original Nat literal 1461501637330902918203684832716283019655932542976 source DONE 8382 steps 942 heap
+original Nat literal 340282366920938463463374607431768211473 source DONE 8367 steps 938 heap
+Nat literal selected Boolean transitions 241
+.Nat literal boundary missing GAP GAP_PRIMITIVE
+Nat literal boundary empty DONE NONE
+Nat literal boundary two-fields DONE NONE
+Nat literal boundary narrow-borrow RESOURCE INDEX
+.Nat offset/shift boundary negative-offset INVALID TYPE_MISMATCH 38117 steps
+Nat offset/shift boundary large-right DONE NONE 37194 steps
+Nat offset/shift boundary large-left-zero DONE NONE 37190 steps
+Nat offset/shift boundary large-left-resource RESOURCE INDEX 37139 steps
+.Nat arithmetic whole source neutral-primitive-name-still-ordinary-data DONE 695 steps 124 heap 1 signatures; no assumptions
+Nat arithmetic whole source source-composed-kernel-Nat-primitives DONE 52354 steps 5270 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-composed-Nat-false-predicates DONE 52353 steps 5268 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-multiple-limb-multiply-divide DONE 41530 steps 4937 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-pow-cap-delta-fallback DONE 37040 steps 3527 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-zero-literal-conversion DONE 36866 steps 3445 heap 29 signatures; no assumptions
+Nat arithmetic selected Boolean transitions 636
+.
+----------------------------------------------------------------------
+Ran 7 tests in 542.320s
+
+OK

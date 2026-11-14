@@ -6,7 +6,7 @@ Authority: pinned Lean68218e876d2a38b1985b8590fff244a83c321783,
 `try_eta_expansion_core`778, `try_eta_struct_core`793 and
 `is_def_eq_unit_like`1043. `type_checker.h`86–93 tries both eta orientations.
 
-The next integrated feature is the complete fixed tag/typed algorithm:
+The connected fixed tag/typed algorithm includes:
 structural quick equality; dependent binding comparison with scoped fresh locals;
 symbolic Sort/literal quick cases; checked WHNF; proof irrelevance by inferred
 proposition/type comparison; constant universe equivalence; neutral projection
@@ -16,11 +16,13 @@ is supplied by the input loader or by an external checker.
 
 The implementation uses eager checked delta/WHNF in place of the pinned lazy
 optimization. This can change physical costs, but a resource failure never means
-inequality. Missing literal/Quot/primitive preparation must GAP. In particular,
-a negative comparison of unresolved constant-headed applications stays GAP until
-checked primitive bindings rule out the genuine Nat/Quot extension; even
-literal-free `Nat.zero` can participate in such a rule. Successful congruence,
-proof irrelevance or eta is still available before that final negative boundary.
+inequality. Subsequent [Nat arithmetic](nat-arithmetic-plan.md),
+[Quot](quotient-native.md) and [String](string-native.md) controllers connect the
+genuine primitive reductions and typed offset/String extensions. Final
+canonical-form negatives no longer blanket GAP on literals or constant-headed
+applications after these paths. Missing/incompatible primitive bindings and
+unavailable private metadata remain explicit boundaries. The measurements below
+are historical pins, not evidence for later primitive controllers.
 
 Conversion contexts and all live data must belong to task-owned frames and
 immutable records across recursive inference, conversion and WHNF. A returned

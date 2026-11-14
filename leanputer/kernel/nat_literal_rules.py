@@ -74,11 +74,14 @@ def emit_rules(c):
     valid=c.AND(c.OR(zero,succ),c.OR(c.eq(r['nat_binding_seen'],0),c.AND(zero,c.eq(r['nat_binding_seen'],2)),c.AND(succ,c.eq(r['nat_binding_seen'],1))))
     g=check(g,valid);more=c.lt(1,r['nat_binding_remaining'])
     go(c.AND(g,more),46,x=r['nat_binding_next'],nat_binding_remaining=1,nat_binding_seen=c.mux(zero,1,2))
-    c.emit(c.AND(g,c.NOT(more)),nat_validated=1);c.ret(c.AND(g,c.NOT(more)),1)
+    c.emit(c.AND(g,c.NOT(more)),nat_validated=1,nat_type_validated=1);c.ret(c.AND(g,c.NOT(more)),1)
+
+    from .literal_type_rules import emit_type_binding
+    emit_type_binding(c,(at,go,call,store,check),300,'nat',('Nat',))
 
     at,go,call,store,check=controller(Task.NAT_LITERAL,'nat_literal_pc')
     g=at(0,Tag.NAT);c.emit(g,nat_literal_root=r['x'],nat_literal_vector=n['a'])
-    call(g,1,Task.NAT_BINDINGS,0,nat_binding_pc=0)
+    call(g,1,Task.NAT_BINDINGS,0,nat_binding_pc=c.mux(c.eq(r['nat_literal_operation'],0),300,0))
     go(at(1),2,x=r['nat_literal_vector'])
     g=at(2,C.VECTOR);shape=c.AND(c.eq(n['c'],V.LIMBS),c.eq(c.mux(c.eq(n['a'],0),0,1),c.mux(c.eq(n['b'],0),0,1)))
     c.stop(c.AND(g,c.NOT(shape)),Outcome.INVALID,Reason.SYNTAX);g=c.AND(g,shape)

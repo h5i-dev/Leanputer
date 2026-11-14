@@ -19,7 +19,10 @@ Quot initialization, so validated Nat bindings can be reused in that source run.
 Source initialization resets the cache; input cannot provide it.
 
 The literal is a canonical little-endian vector of arbitrary16bit limbs.
-Inference validates every limb/link/count and returns checked Nat. Preparation
+Inference validates every limb/link/count and returns checked Nat using only
+the checked monomorphic Type0 signature. The shared literal_type_rules.py
+implements that type check for Nat and String. Constructor membership/signatures
+are checked separately when preparation/arithmetic requires them. Preparation
 maps0to the checked zero constructor, otherwise computes the predecessor by a
 generic borrow scan, removes a leading zero limb, reverses the accumulated vector
 and constructs the checked successor application. No host integer or inference
@@ -33,8 +36,9 @@ inside an arbitrary vector. Independent EnvironmentDriver accepts all five and
 all public schemes/RHS match;143SELECTED Boolean transitions compare every
 register/bank. Initial four-case pass was22.565s/141selected; the final integrated
 regression log records the five-case test plus Quot/restored-owner regressions.
-Missing, empty and differently shaped ordinary Nat bindings GAP only at literal
-use. A twelve-bit physical-word predecessor borrow reports RESOURCE INDEX.
+Missing Nat type bindings GAP at literal typing. Empty/differently shaped Nat
+inductives can still type a literal; their unsupported primitive constructor
+interface GAPs when a reduction needs it. A twelve-bit physical-word predecessor borrow reports RESOURCE INDEX.
 Four additional selected terminal transitions match the Boolean program.
 This is source semantic/selected IR evidence, not Nat STOCK or full arithmetic.
 
@@ -46,7 +50,7 @@ original-source WHNF and general conversion. Numeric candidates and exact arity
 are recognized before requiring primitive bindings; ordinary declarations with
 these names and neutral operands still reach their ordinary delta bodies.
 Constant-headed canonical-form negatives no longer blanket GAP after the
-completed Nat/Quot/offset paths. String literal cases still GAP.
+completed Nat/Quot/offset paths. String paths are connected as described below.
 
 `literal_reference.py` remains independent development SPEC, never a native
 inference callback. Its Python integer/math operations supply expected semantics
@@ -54,16 +58,26 @@ only; weighted arithmetic uses arbitrary private bit/limb loops. Source/selected
 IR evidence and physical/semantic limits are recorded with the controller.
 No new Nat STOCK or SMALL-model evidence is claimed.
 
-## Remaining integration
+## String integration and remaining boundaries
 
-String literal binding/type, UTF8 scalar decoding and Char/List/String helper
-construction, projection preparation and literal conversion remain GAP. Their
-bootstrap/helper dependencies are being audited against pinned safe original
-sources. No supplied String constructor certificate is accepted. Syntax export
-currently records the implicit Nat/String type dependency from Literal.type;
-String construction will also need the genuine implicit helper closure.
+The [String controller](string-native.md) connects original-byte scalar decoding,
+checked helper signatures, typing, contextual projection/recursor preparation
+and the pinned String.ofList conversion extension. No String layout or supplied
+constructor certificate is trusted. The syntax exporter includes the implicit
+Nat/String type and Char.ofNat/String.ofList helper dependencies. Unavailable or
+incompatible expansion helpers remain explicit GAP when expansion is needed;
+literal typing itself checks only String and permits helper bootstrap literals; the decoder requires at least a16bit physical word (otherwise RESOURCE).
 Quot initialization overwriting already committed ordinary bindings explicitly
 GAPs until dependent-prefix/registry invalidation is implemented; repeated claims
 after actual initialization remain idempotent. Private metadata gaps remain
 explicit. The compiler targets unmodified stock forward/cache with identity
 feedback. The10.35B historical STOCK smoke does not meet the SMALL-model target.
+
+The shared literal-type refinement and String integration pass the final targeted
+7test542.320s run (benchmarks/kernel-string-ir/final-literals.log). Nat typing now
+accepts an already checked empty or differently shaped Nat family without claiming
+that its constructor interface supports primitive reduction. Five recursor-major
+values pass241SELECTED all-state Boolean transitions; four type/missing/borrow
+terminal transitions also match. Historical143selected counts above predate this
+refinement. String helper-bootstrap typing is independently checked as described
+in the linked controller. No additional STOCK evidence is implied.

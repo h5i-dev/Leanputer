@@ -30,6 +30,7 @@ class ReferenceRules:
     def add(self, x, y): return (x+y)&self.mask
     def sub(self, x, y): return (x-y)&self.mask
     def mux(self, guard, x, y): return x if guard else y
+    def word_low_bits(self,value,count): return value&((1<<count)-1)
     def word_lsb(self,value): return value&1
     def word_shr1(self,value): return value>>1
     def word_shl1(self,value): return (value<<1)&self.mask

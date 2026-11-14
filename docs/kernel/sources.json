@@ -100,6 +100,16 @@
           "path": "src/Lean/Expr.lean",
           "sha256": "b389b0bce8f4eb8ce175b788a5f83aa60bcaebb4ee137e6651d6dc52c4956638",
           "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/Lean/Expr.lean"
+        },
+        {
+          "path": "src/runtime/utf8.cpp",
+          "sha256": "21470d514b0a1e2f71089ccd7e0d8a2b7afede16bcf6d506b7892730a38d5c6f",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/runtime/utf8.cpp"
+        },
+        {
+          "path": "src/runtime/utf8.h",
+          "sha256": "b058ce07b43a3def7af16ad8061127336340ce7a5bb219b13468414d1ffd1b48",
+          "url": "https://github.com/leanprover/lean4/blob/68218e876d2a38b1985b8590fff244a83c321783/src/runtime/utf8.h"
         }
       ]
     },

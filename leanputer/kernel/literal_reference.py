@@ -76,7 +76,7 @@ class NatPrimitives:
 
     def infer(self,expr):
         if self.a.expr(expr).tag!=Tag.NAT:raise KernelError('expected natural literal')
-        nat,_,_=self.validate_nat();self.value(expr)
+        nat=self.name('Nat');self.signature(nat,self.a.mk(Tag.SORT,self.a.level(LevelTag.SUCC,self.a.zero)));self.value(expr)
         return self.a.const(nat)
 
     def to_constructor(self,expr):

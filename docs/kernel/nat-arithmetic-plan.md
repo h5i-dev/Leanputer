@@ -48,8 +48,9 @@ It validates the finite Nat interface, compares literal predecessors recursively
 and decides checked zero/successor disjointness. General conversion still owns
 proof irrelevance, binder/app congruence, function/structure eta, projections,
 unit-like equality and context restoration. Completed Nat/Quot reductions and
-offset rules precede final canonical-form negatives. String literal conversion
-remains GAP and unavailable private metadata still propagates GAP.
+offset rules precede final canonical-form negatives. The subsequent
+[String controller](string-native.md) connects String cases; unavailable private
+metadata still propagates GAP.
 
 The original-source test checks general Nat/Eq/Bool blocks, ordinary function
 bindings and genuine Quot initialization/claims before target checking. Function
@@ -65,7 +66,8 @@ reject; enormous shifts return either correct0or explicit physical RESOURCE.
 Raw logs and exact counts are archived in the checkpoint benchmark directory.
 No complete-step Boolean or Nat STOCK evidence is claimed.
 
-Remaining: String typing/helper/UTF8/projection/conversion; Quot initialization
+Remaining: String helper bootstrap/unavailable bindings (see linked controller);
+Quot initialization
 that would overwrite an existing ordinary binding(currently explicit GAP to
 preserve prefix/original-registry invariants); private metadata boundaries;
 SMALL-model architecture and full nested-source STOCK capacity. The historical

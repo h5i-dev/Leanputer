@@ -176,7 +176,7 @@ def step(machine):
 
 class R(IntEnum):
     INIT=0; MAJOR=1; SPINE=2; HEAD=3; FOUND=4; SIG=5; SCHEME=6; META=7; INFO=8
-    ROOT=9; ARGUMENTS=10; SELECTED=11
+    ROOT=9; ARGUMENTS=10; SELECTED=11; STRING_PREPARED=12
 
 
 def emit_reduce_rules(c):
@@ -211,8 +211,9 @@ def emit_reduce_rules(c):
     c.write('stack',g,r['sp'],(R.MAJOR,r['x'],0,Task.PROJECTION_REDUCE,0,0))
     c.emit(g,sp=c.add(r['sp'],1),task=Task.BETA_ZETA,mode=Mode.BETA_ZETA,x=n['c'])
     g=at(R.MAJOR);string=c.tag(Tag.STRING)
-    c.stop(c.AND(g,string),Outcome.GAP,Reason.GAP_PRIMITIVE)
+    call(c.AND(g,string),R.STRING_PREPARED,Task.STRING_WHNF,r['r'],string_whnf_pc=0,string_tail_major=0)
     call(c.AND(g,c.NOT(string)),R.SPINE,Task.APPLICATION_SPINE,r['r'])
+    call(at(R.STRING_PREPARED),R.SPINE,Task.APPLICATION_SPINE,r['r'])
     g=at(R.SPINE,C.APPLICATION_SPINE);frame(g,args=n['b']);go(g,R.HEAD,x=n['a'])
     g=at(R.HEAD);constant=c.tag(Tag.CONST);finish(c.AND(g,c.NOT(constant)))
     call(c.AND(g,constant),R.FOUND,Task.ENV_LOOKUP,0,query_symbol=n['a'],lookup_head=c.mux(c.eq(r['typing_active'],0),r['env_head'],r['typing_head']))

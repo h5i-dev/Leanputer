@@ -31,7 +31,7 @@ def document(value):
 
 
 class NatLiteralSourceTest(unittest.TestCase):
-    def test_unavailable_bindings_and_narrow_borrow_are_explicit(self):
+    def test_type_only_bindings_and_narrow_borrow_are_explicit(self):
         circuit=None
         for kind in ('missing','empty','two-fields','narrow-borrow'):
             doc=document('65536' if kind=='narrow-borrow' else '0')
@@ -46,7 +46,7 @@ class NatLiteralSourceTest(unittest.TestCase):
                 doc['declarations'][0]['families'][0]['constructors'][1]['type']=['pi',0,nat,['pi',0,nat,nat]]
             if kind!='narrow-borrow':
                 source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()
-                self.assertEqual(oracle.status,'GAP',(kind,oracle))
+                self.assertEqual(oracle.status,'GAP'if kind=='missing'else'ACCEPT',(kind,oracle))
             cfg=spec.MachineConfig(heap=2048,stack=64,context=32,constants=2,fuel=100000,word_bits=12)
             if circuit is None:circuit=CircuitHarness(cfg)
             source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls))
@@ -56,8 +56,9 @@ class NatLiteralSourceTest(unittest.TestCase):
                 if r['status']:
                     before=canonical(state);before['regs']=prior_regs;self.assertEqual(circuit.step(before),canonical(state),kind)
                     break
-            self.assertEqual(r['status'],spec.Outcome.RESOURCE if kind=='narrow-borrow' else spec.Outcome.GAP,(kind,r['reason']))
+            self.assertEqual(r['status'],spec.Outcome.RESOURCE if kind=='narrow-borrow' else spec.Outcome.GAP if kind=='missing' else spec.Outcome.DONE,(kind,r['reason']))
             if kind=='narrow-borrow':self.assertEqual(r['reason'],spec.Reason.INDEX)
+            elif kind!='missing':self.assertEqual((r['nat_type_validated'],r['nat_validated']),(1,0))
             self.assertEqual(r['published_declarations'],0 if kind=='missing' else 2 if kind=='empty' else 4)
             print('Nat literal boundary',kind,spec.Outcome(r['status']).name,spec.Reason(r['reason']).name,flush=True)
 

@@ -76,7 +76,7 @@ class P(IntEnum):
     STRUCTURE_TYPE_RESULT_READ=124; STRUCTURE_LOOP_COUNT=125; STRUCTURE_LOOP_SCAN=126
     STRUCTURE_LOOP_VALUE=127; STRUCTURE_FIELD_RECORD=128; STRUCTURE_FIELD_READ=129
     STRUCTURE_FIELD_RESULT_READ=130; STRUCTURE_ADVANCE_READ=131; UNIT_WHNF=132
-    UNIT_SPINE_READ=133; NEGATIVE_LEFT=134; NAT_OFFSET_DONE=135
+    UNIT_SPINE_READ=133; NEGATIVE_LEFT=134; NAT_OFFSET_DONE=135; STRING_RESULT=136
 
 
 def emit_rules(c):
@@ -298,7 +298,10 @@ def emit_rules(c):
     b=store(c.AND(g,orientation,c.NOT(second)),(C.CONVERT_ORIENTATION,f['depth'],f['original'],1),P.STRUCTURE_ORIENT,x=f['original']);frame(b,info=r['free'])
     c.stop(c.AND(g,c.NOT(c.OR(orientation,chain))),Outcome.INVALID,Reason.SYNTAX)
     # Unit-like comparison uses checked structure metadata and inferred types.
-    call(at(P.UNIT_START),P.UNIT_TYPE,Task.INFER,f['original'])
+    call(at(P.UNIT_START),P.STRING_RESULT,Task.STRING_COMPARE,f['original'],peer=f['depth'],string_compare_pc=0)
+    g=at(P.STRING_RESULT);known=c.NOT(c.eq(r['r'],0))
+    finish(c.AND(g,known),c.mux(c.eq(r['r'],1),1,0))
+    call(c.AND(g,c.NOT(known)),P.UNIT_TYPE,Task.INFER,f['original'])
     call(at(P.UNIT_TYPE),P.UNIT_WHNF,Task.BETA_ZETA,r['r'],Mode.BETA_ZETA)
     g=at(P.UNIT_WHNF);frame(g,info=r['r'],phase=P.UNIT_SPINE);c.emit(g,task=Task.APPLICATION_SPINE,mode=Mode.WALK,x=r['r'],depth=0)
     g=at(P.UNIT_SPINE,C.APPLICATION_SPINE);go(g,P.UNIT_HEAD,x=n['a'])
@@ -313,17 +316,15 @@ def emit_rules(c):
     go(c.AND(g,c.NOT(empty)),P.NEGATIVE,x=f['original']);call(c.AND(g,empty),P.UNIT_OTHER,Task.INFER,f['depth'])
     call(at(P.UNIT_OTHER),P.UNIT_COMPARE,Task.CONVERT_POSITIVE,f['second'],peer=r['r'])
     g=at(P.UNIT_COMPARE);same=c.NOT(c.eq(r['r'],0));finish(c.AND(g,same),1);go(c.AND(g,c.NOT(same)),P.NEGATIVE,x=f['original'])
-    g=at(P.NEGATIVE);literal=c.tag(Tag.STRING);app=c.tag(Tag.APP)
-    c.stop(c.AND(g,literal),Outcome.GAP,Reason.GAP_PRIMITIVE)
+    g=at(P.NEGATIVE);app=c.tag(Tag.APP)
     call(c.AND(g,app),P.NEGATIVE_SPINE,Task.APPLICATION_SPINE,f['original'])
-    go(c.AND(g,c.NOT(c.OR(literal,app))),P.NEGATIVE_OTHER,x=f['depth'])
+    go(c.AND(g,c.NOT(app)),P.NEGATIVE_OTHER,x=f['depth'])
     g=at(P.NEGATIVE_SPINE,C.APPLICATION_SPINE);go(g,P.NEGATIVE_HEAD,x=n['a'])
     g=at(P.NEGATIVE_HEAD);constant=c.tag(Tag.CONST)
     go(g,P.NEGATIVE_OTHER,x=f['depth'])
-    g=at(P.NEGATIVE_OTHER);literal=c.tag(Tag.STRING);app=c.tag(Tag.APP)
-    c.stop(c.AND(g,literal),Outcome.GAP,Reason.GAP_PRIMITIVE)
+    g=at(P.NEGATIVE_OTHER);app=c.tag(Tag.APP)
     call(c.AND(g,app),P.NEGATIVE_RIGHT_SPINE,Task.APPLICATION_SPINE,f['depth'])
-    finish(c.AND(g,c.NOT(c.OR(literal,app))),0)
+    finish(c.AND(g,c.NOT(app)),0)
     g=at(P.NEGATIVE_RIGHT_SPINE,C.APPLICATION_SPINE);go(g,P.NEGATIVE_RIGHT_HEAD,x=n['a'])
     g=at(P.NEGATIVE_RIGHT_HEAD);constant=c.tag(Tag.CONST)
     finish(g,0)

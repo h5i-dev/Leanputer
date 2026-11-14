@@ -94,7 +94,7 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
                 r.update(free=r['free']+1, r=r['free'], mode=Mode.INFER_SORT_EXPR)
         elif tag == Tag.CONST: stop(Outcome.GAP, Reason.GAP_ENVIRONMENT)
         elif tag==Tag.NAT:r.update(task=Task.NAT_LITERAL,nat_literal_pc=0,nat_literal_operation=0)
-        elif tag==Tag.STRING:stop(Outcome.GAP,Reason.GAP_PRIMITIVE)
+        elif tag==Tag.STRING:r.update(task=Task.STRING_LITERAL,string_pc=0,string_operation=0)
         elif tag == Tag.PROJ: r.update(task=Task.PROJECTION_INFER,projection_pc=0)
         elif tag == Tag.MDATA: r['x'] = a
         elif tag in (Tag.PI, Tag.LAM):

@@ -58,8 +58,9 @@ arity/later claim and allocator-exhaustion tests preserve the committed prefix;
 allocator failure is explicitly injected at the source transaction boundary.
 The final combined regression is recorded in the checkpoint evidence log.
 
-Literal/Nat/String algorithms and conservative primitive-aware negative
-conversion gaps remain. The pinned 10.35B original-source STOCK smoke predates
+Subsequent [Nat](nat-arithmetic-plan.md) and [String](string-native.md) controllers
+connect literal operations and primitive-aware canonical-form negatives. Their
+explicit helper/bootstrap/physical limits and Quot replacement boundary remain. The pinned 10.35B original-source STOCK smoke predates
 this code and does not satisfy the requested SMALL stock-transformer target.
 
 Final checkpoint regressions PASS5tests284.526s (ordinary source, typed

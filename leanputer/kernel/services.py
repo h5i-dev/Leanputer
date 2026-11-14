@@ -122,7 +122,7 @@ class KernelServices:
             if row.tag == Tag.PROJ:
                 major = self.whnf(row.c)
                 if a.expr(major).tag == Tag.STRING:
-                    raise MissingOperation('projection String literal preparation not integrated')
+                    major=self.whnf(self._string_primitives().to_constructor(major))
                 constructor, fields = spine(a, major)
                 ctor = a.expr(constructor)
                 info = self.constructors.get(ctor.a) if ctor.tag == Tag.CONST else None
@@ -143,6 +143,11 @@ class KernelServices:
                 root = original
             else:
                 return root
+
+    def _string_primitives(self):
+        from .string_reference import StringPrimitives
+        if not hasattr(self,'literal_symbols'):raise MissingOperation('String literal name context unavailable')
+        return StringPrimitives(self,self.literal_symbols)
 
     def _nat_primitives(self):
         from .literal_reference import NatPrimitives
@@ -168,7 +173,7 @@ class KernelServices:
         if row.tag==Tag.NAT:
             return self._nat_primitives().to_constructor(major)
         if row.tag==Tag.STRING:
-            raise MissingOperation('String literal recursor-major preparation not integrated')
+            return self.whnf(self._string_primitives().to_constructor(major))
         head,_ = spine(a,major);head = a.expr(head)
         if head.tag == Tag.CONST and head.a in self.constructors:return major
         info = self._structure(recursor.owner)
@@ -222,7 +227,7 @@ class KernelServices:
                     elif row.tag==Tag.NAT:
                         results.append(self._nat_primitives().infer(ref))
                     else:
-                        raise MissingOperation('String literal inference not integrated')
+                        results.append(self._string_primitives().infer(ref))
                 elif operation == 'projection':
                     results.append(self._projection_type(frame[1], self.whnf(results.pop())))
                 elif operation == 'binder_domain':
@@ -392,7 +397,12 @@ class KernelServices:
             if all(self.convert(a.mk(Tag.PROJ,info.family,i,value),args[info.parameters+i]) for i in range(info.fields)):
                 return True
         if xr.tag==Tag.STRING or yr.tag==Tag.STRING:
-            raise MissingOperation('String literal/constructor conversion preparation not integrated')
+            literal,other=(x,y)if xr.tag==Tag.STRING else(y,x)
+            row=a.expr(other)
+            if row.tag==Tag.APP:
+                fn=a.expr(row.a)
+                if fn.tag==Tag.CONST and not a.vector(fn.b) and fn.a==self._string_primitives().name('String','ofList'):
+                    return self.convert(self.whnf(self._string_primitives().to_constructor(literal)),other)
         if xr.tag==Tag.NAT or yr.tag==Tag.NAT:return False
         # Unit-like equality is independent of the syntactic form of y.
         type_ref = self.whnf(tx);head,_ = spine(a,type_ref);head = a.expr(head)

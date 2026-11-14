@@ -1,0 +1,45 @@
+Nat offset/shift boundary negative-offset INVALID TYPE_MISMATCH 37973 steps
+Nat offset/shift boundary large-right DONE NONE 37050 steps
+Nat offset/shift boundary large-left-zero DONE NONE 37046 steps
+Nat offset/shift boundary large-left-resource RESOURCE INDEX 36995 steps
+.Nat arithmetic whole source neutral-primitive-name-still-ordinary-data DONE 695 steps 124 heap 1 signatures; no assumptions
+Nat arithmetic whole source source-composed-kernel-Nat-primitives DONE 52210 steps 5259 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-composed-Nat-false-predicates DONE 52209 steps 5257 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-multiple-limb-multiply-divide DONE 41386 steps 4926 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-pow-cap-delta-fallback DONE 36852 steps 3516 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-zero-literal-conversion DONE 36722 steps 3434 heap 29 signatures; no assumptions
+Nat arithmetic selected Boolean transitions 636
+.Quot transaction atomic name INVALID INVALID_DECLARATION
+Quot transaction atomic type INVALID TYPE_MISMATCH
+Quot transaction atomic arity INVALID UNIVERSE_ARITY
+Quot transaction atomic later INVALID TYPE_MISMATCH
+Quot transaction atomic heap RESOURCE HEAP
+.Quot committed-name collision explicit GAP; origins/environment preserved
+.source-quotient original-source Quot DONE 16282 steps 1991 heap
+source-quot-lift original-source Quot DONE 21466 steps 2414 heap
+source-quot-lift-nested original-source Quot DONE 30982 steps 3035 heap
+source-derived environment Quot.ind runtime + surplus beta DONE 233 steps
+source-quot-ind-surplus original-source Quot DONE 18017 steps 2187 heap
+Quot selected Boolean transitions 372
+.conversion source proof-irrelevance DONE 731 steps
+conversion source function-eta DONE 948 steps
+conversion source binder-congruence DONE 415 steps
+conversion source structure-eta DONE 4154 steps
+conversion source unit-like DONE 2823 steps
+conversion source equivalent-level-vector DONE 559 steps
+conversion selected Boolean transitions 251
+.projection source dependent-field DONE 4314 steps
+projection source projection-surplus-beta DONE 4554 steps
+projection source wrong-family INVALID 4152 steps
+projection source out-of-range INVALID 4307 steps
+projection source prop-data-denied INVALID 5030 steps
+projection source prop-unused-data-skipped DONE 5249 steps
+projection source prop-dependent-data-denied INVALID 5756 steps
+projection source universe-parameter-prefix DONE 5333 steps
+projection selected Boolean transitions 142
+..original source ACCEPT; steps 188375 heap 16070 public signatures 12 origins 2 selected Boolean transitions 421 seconds 135.80632045201492
+.
+----------------------------------------------------------------------
+Ran 9 tests in 595.544s
+
+OK

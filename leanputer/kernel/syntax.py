@@ -205,7 +205,9 @@ class SyntaxCodec:
             elif tag == 'string':
                 if not isinstance(node[1], str):
                     raise KernelError('expected string literal')
-                ref = a.mk(Tag.STRING, a.vec(node[1].encode('utf-8')))
+                try:encoded=node[1].encode('utf-8')
+                except UnicodeError as error:raise KernelError('invalid Unicode scalar in string literal')from error
+                ref = a.mk(Tag.STRING,a.vec(encoded))
             else:
                 text = node[1]
                 if not isinstance(text, str) or not text or any(c not in '0123456789' for c in text):
