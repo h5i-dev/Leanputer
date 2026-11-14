@@ -1,0 +1,143 @@
+{
+  "format": "leanputer.kernel-datapath-budget.v1",
+  "rows": [
+    {
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 43,
+      "rom_layers": 16,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 4096,
+      "record_bits": 112,
+      "logical_dense_parameters": 46800598,
+      "bf16_parameter_bytes": 93601196,
+      "groups": {
+        "embeddings_and_head": 98304,
+        "linear_attention": 21273046,
+        "mlp": 25362432,
+        "norms": 66816
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 2818048,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    },
+    {
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 51,
+      "rom_layers": 24,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 6144,
+      "record_bits": 112,
+      "logical_dense_parameters": 55489254,
+      "bf16_parameter_bytes": 110978508,
+      "groups": {
+        "embeddings_and_head": 98304,
+        "linear_attention": 25230822,
+        "mlp": 30081024,
+        "norms": 79104
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 3342336,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    },
+    {
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 59,
+      "rom_layers": 32,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 8192,
+      "record_bits": 112,
+      "logical_dense_parameters": 64177910,
+      "bf16_parameter_bytes": 128355820,
+      "groups": {
+        "embeddings_and_head": 98304,
+        "linear_attention": 29188598,
+        "mlp": 34799616,
+        "norms": 91392
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 3866624,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    },
+    {
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 91,
+      "rom_layers": 64,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 16384,
+      "record_bits": 112,
+      "logical_dense_parameters": 98932534,
+      "bf16_parameter_bytes": 197865068,
+      "groups": {
+        "embeddings_and_head": 98304,
+        "linear_attention": 45019702,
+        "mlp": 53673984,
+        "norms": 140544
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 5963776,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    },
+    {
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 97,
+      "rom_layers": 70,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 17920,
+      "record_bits": 112,
+      "logical_dense_parameters": 105449026,
+      "bf16_parameter_bytes": 210898052,
+      "groups": {
+        "embeddings_and_head": 98304,
+        "linear_attention": 47988034,
+        "mlp": 57212928,
+        "norms": 149760
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 6356992,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    },
+    {
+      "hidden": 1024,
+      "intermediate": 256,
+      "layers": 91,
+      "rom_layers": 64,
+      "datapath_layers": 22,
+      "protocol_reset_layers": 4,
+      "output_layer": 1,
+      "rom_records_capacity": 16384,
+      "record_bits": 112,
+      "logical_dense_parameters": 131859510,
+      "bf16_parameter_bytes": 263719020,
+      "groups": {
+        "embeddings_and_head": 131072,
+        "linear_attention": 59975734,
+        "mlp": 71565312,
+        "norms": 187392
+      },
+      "gdn_cache_recurrent_fp32_bytes_per_item": 5963776,
+      "ordinary_record_forward_budget": 1,
+      "register_commit_forward_budget_per_candidate_word": 2,
+      "evidence": "Stock meta shapes/formula only; no datapath implementation, compiled kernel mapping or inference"
+    }
+  ]
+}

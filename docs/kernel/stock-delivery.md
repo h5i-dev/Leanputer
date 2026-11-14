@@ -1,24 +1,12 @@
 # Current whole-program stock delivery
 
-Latest matched checkpoint: [banked controls and native word lowering](../../benchmarks/kernel-banked-controls-stock/README.md)
-passes the same complete source accept/reject and all-register/cache validation.
-Logical size12,010,486,994parameters; hidden18432/layers413;164,772,060stored bytes.
-Forward856.180s, compile69.289s excluding save.566private controls use binary
-native cache (10extra partitions),385remain shared; all951registers/all17cache
-partitions exact. Byte GDN storage was numerically inexact and rejected. The
-small/practical goal remains unfinished:1380persistent channels still become
-17574allocated slots. Next work must share temporary lifetimes across kernel
-owners/phases with correct conditional clearing and reads.
+Latest validated matched checkpoint: [boot reclamation and tail clearing](../../benchmarks/kernel-tail-clear-stock/README.md), commit4d4c063. Same complete source accept/reject/all951registers/all17cache partitions pass at8,128,493,942logical parameters, H9984/L518;118,467,864stored CSR bytes and1081.347s forward. CSR is storage, not a small dense architecture. The faster f05dc32 banked alternative is12.010B/H18432/L413 and856.180s.
 
-Previous [byte controls](../../benchmarks/kernel-byte-controls-stock/README.md)
-passed at15,799,810,694parameters,hidden17408/layers581,forward1197.032s.
-Bounds/rules/word16 remain unchanged. The detailed21.471B paired-control evidence
-below is preserved as the original matched baseline.
+Subsequent grouped-layout candidates FAILED. One emitted a rounded pointer during a signed-slot handover; the separate-clear/centered-byte candidate also fails the paired source case. Pending code and frozen failed artifacts are preserved, with no success claim or validated replacement. Large candidate retries are paused at the user's architecture budget gate.
 
-The safe kernel program is unchanged from 127751c. The compiler keeps all general
-rules: no proof/name/shape pruning, pretrained backbone, CPU emulator, semantic
-host inference, or trusted source metadata. The runtime is stock
-transformers.Qwen3_5ForCausalLM.forward/cache and identity hidden-state feedback.
+The [compact checker datapath assessment](compact-datapath-budget.md) proposes genuine temporal operator reuse and in-weights control, inspired by Qwenputer's shared register-file/ALU/RAM design. Complete stock META shapes count46.80M parameters for4K records or98.93M for16K records. No full kernel microcode mapping, small native checker or practical forward-count bound has been established. The proposed100M ceiling and desired10–50M range are engineering assessment budgets, not achieved/agreed guarantees.
+
+All general source rules, words and data domains remain required. No per-proof/name/shape pruning, pretrained backbone, CPU emulator, host checking or custom runtime is authorized. The remainder documents the historical21.471B baseline, not current small-model delivery.
 
 ## Matched physical domain and actual planning
 
@@ -42,9 +30,9 @@ stock source acceptance/rejection evidence. Dense-equivalent bytes are not GPU a
 The indexed allocator preserves first-fit policy and reduces planning from427s
 to about11s. No corpus, differential, scaling or throughput campaign was run.
 
-## Storage and unmodified stock execution
+## Original baseline storage and unmodified stock execution
 
-The current architecture has hidden22528/layers603 and7913persistent channels.
+That original baseline has hidden22528/layers603 and7913persistent channels.
 It is **not a small logical Transformer**. The latest model has 21.471B logical
 parameters regardless of sparse storage. The small-model target remains unmet.
 Only the seven RAM layers require Gated DeltaNet. Other layers use standard

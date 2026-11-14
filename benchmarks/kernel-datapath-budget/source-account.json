@@ -1,0 +1,53 @@
+{
+  "format": "leanputer.kernel-datapath-source-account.v1",
+  "semantic_register_words": 951,
+  "word_bits": 16,
+  "source_field_assignments": 13243,
+  "distinct_field_guard_word_choices": 13237,
+  "memory_row_write_choices": {
+    "heap": 719,
+    "stack": 679,
+    "context": 11
+  },
+  "boolean_wires": 160937,
+  "boolean_gates": 145449,
+  "private_register_words": 566,
+  "max_private_owner_words": 74,
+  "examples": [
+    {
+      "name": "current-general-source-empty-claim-id",
+      "semantic_steps": 1316,
+      "status": "DONE",
+      "reason": "NONE",
+      "changed_register_words": {
+        "total": 5134,
+        "mean": 3.9012158054711246,
+        "median": 4.0,
+        "max": 12
+      },
+      "changed_bank_rows": {
+        "total": 464,
+        "max": 3
+      },
+      "note": "Changed-value counts only, not active assignments, microcode length, full-kernel worst case or native timing."
+    },
+    {
+      "name": "current-source-invalid-target",
+      "semantic_steps": 1355,
+      "status": "INVALID",
+      "reason": "TYPE_MISMATCH",
+      "changed_register_words": {
+        "total": 5255,
+        "mean": 3.878228782287823,
+        "median": 4,
+        "max": 12
+      },
+      "changed_bank_rows": {
+        "total": 489,
+        "max": 3
+      },
+      "note": "Changed-value counts only, not active assignments, microcode length, full-kernel worst case or native timing."
+    }
+  ],
+  "evidence": "Static source compilation and development SPEC accounting after existing stock baseline; no new native admission or microcode compiler."
+}
