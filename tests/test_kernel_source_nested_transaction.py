@@ -128,7 +128,10 @@ def assert_public_matches_independent(test,state,driver):
         return transform(a,root,rename)
     found=set()
     for sig in linked(state,state['regs']['env_head']):
-        _,symbol,type_ref,scheme=packed.heap[sig];symbol=symbols[symbol];found.add(symbol)
+        _,symbol,type_ref,scheme=packed.heap[sig];symbol=symbols[symbol]
+        # Γ is a persistent map: latest entry shadows a historical signature.
+        if symbol in found:continue
+        found.add(symbol)
         _,parameters,kind,payload=packed.heap[scheme];parameters=vector(packed,parameters,VectorKind.SYMBOLS)
         expected=driver.services.constants[symbol]
         test.assertEqual(len(parameters),len(expected.universe_parameters))

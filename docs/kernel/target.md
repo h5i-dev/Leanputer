@@ -485,3 +485,12 @@ validated when reduction needs them; ordinary formation remains generic. Some
 neutral non-Sort/non-Pi failures are still conservatively classified GAP by the
 inference/source controllers. This is an explicit failure-classification gap,
 not a native inference answer or acceptance.
+
+Quot initialization now follows pinned current-map replacement. The nested
+condition requires a current inductive signature before consulting historical
+origins; full copies read current family/constructor schemes. All primitive
+binding caches clear when the map changes. A partially replaced prior mutual
+group remains an explicit metadata GAP, corresponding to the pinned copier's
+all-members-inductive assertion. See quotient-native.md for source/selected IR
+evidence. The safe kernel is not yet claimed complete, and the small stock-model
+target remains unresolved.

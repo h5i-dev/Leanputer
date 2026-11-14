@@ -14,8 +14,9 @@ requires checked signatures and zero-universe arities, compares their required
 types through the general conversion service, and checks family provenance and
 constructor membership. An unavailable/incompatible primitive binding GAPs; an
 ordinary inductive with a different constructor shape is still checked normally.
-The source environment is immutable after publication except the disjoint genuine
-Quot initialization, so validated Nat bindings can be reused in that source run.
+The source environment grows after publication except genuine Quot map
+replacement. All literal/Bool binding caches clear at that initialization, so
+validated bindings can be reused until then.
 Source initialization resets the cache; input cannot provide it.
 
 The literal is a canonical little-endian vector of arbitrary16bit limbs.
@@ -67,9 +68,10 @@ constructor certificate is trusted. The syntax exporter includes the implicit
 Nat/String type and Char.ofNat/String.ofList helper dependencies. Unavailable or
 incompatible expansion helpers remain explicit GAP when expansion is needed;
 literal typing itself checks only String and permits helper bootstrap literals; the decoder requires at least a16bit physical word (otherwise RESOURCE).
-Quot initialization overwriting already committed ordinary bindings explicitly
-GAPs until dependent-prefix/registry invalidation is implemented; repeated claims
-after actual initialization remain idempotent. Private metadata gaps remain
+Quot initialization now replaces existing bindings, invalidates primitive binding
+caches and requires current Γ provenance for later nested detection/copy. A
+partially replaced mutual family remains an explicit metadata GAP; repeated
+claims after actual initialization remain idempotent. Private metadata gaps remain
 explicit. The compiler targets unmodified stock forward/cache with identity
 feedback. The10.35B historical STOCK smoke does not meet the SMALL-model target.
 

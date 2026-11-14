@@ -1,0 +1,11 @@
+Quot original-source replacement replacement DONE NONE 18252 steps 2233 heap 8 public
+Quot original-source replacement replacement-then-nested DONE NONE 208879 steps 18129 heap 20 public
+Quot original-source replacement bad-replacement-claim INVALID TYPE_MISMATCH 12647 steps 1801 heap 6 public
+Quot original-source replacement shadowed-head INVALID INVALID_INDUCTIVE_APPLICATION 20836 steps 2566 heap 8 public
+Quot original-source replacement partially-shadowed-mutual GAP GAP_PRIMITIVE 29983 steps 3508 heap 11 public
+Quot replacement selected Boolean all-state transitions 369
+..
+----------------------------------------------------------------------
+Ran 2 tests in 176.848s
+
+OK

@@ -49,16 +49,16 @@ def instantiate_parameters(arena, root, parameters):
 
 
 class NestedSpecializer:
-    def __init__(self, arena, context, symbols, prior_blocks, reserved_symbols=()):
+    def __init__(self, arena, context, symbols, prior_blocks, reserved_symbols=(),services=None):
         self.a, self.c, self.symbols = arena, context, symbols
-        self.prior = {}
+        self.prior = {};self.services=services
         self.reserved = set(reserved_symbols)
         for block in prior_blocks:
             for family in block.families:
                 symbol = arena.expr(family.constant).a
                 if symbol in self.prior:
                     raise KernelError('duplicate prior family')
-                self.prior[symbol] = block
+                if services is None or symbol in services.families:self.prior[symbol] = block
                 self.reserved.update((symbol, family.recursor_symbol))
                 self.reserved.update(ctor.symbol for ctor in family.constructors)
         self.counter = 0
@@ -114,7 +114,6 @@ class NestedSpecializer:
             levels = a.vector(row.b)
             if len(levels) != len(prior.universe_parameters):
                 raise KernelError('nested constant universe arity')
-            level_substitution = dict(zip(prior.universe_parameters, levels))
             result = None
             # Copy ALL members, regardless of which family first occurred.
             for family in prior.families:
@@ -123,7 +122,15 @@ class NestedSpecializer:
                 auxiliary = self._fresh(original)
                 template = abstract(a, a.app(a.const(original, levels), actual), parameters)
                 by_specialization[template] = auxiliary
-                type_ref = substitute_levels(a, family.type, level_substitution)
+                family_type,family_levels=family.type,prior.universe_parameters
+                if self.services is not None:
+                    if original not in self.services.families:
+                        from .services import MissingOperation
+                        raise MissingOperation('prior mutual member is no longer an inductive after replacement')
+                    signature=self.services.constants[original]
+                    family_type,family_levels=signature.type,signature.universe_parameters
+                if len(levels)!=len(family_levels):raise KernelError('nested family universe arity')
+                type_ref = substitute_levels(a,family_type,dict(zip(family_levels,levels)))
                 type_ref = instantiate_parameters(a, type_ref, actual)
                 type_ref = fold_telescope(a, c, parameters, type_ref)
                 ctors, ctor_mapping = [], []
@@ -131,7 +138,12 @@ class NestedSpecializer:
                     a.tick()
                     ctor_symbol = self.symbols.replace_prefix(ctor.symbol, original, auxiliary)
                     self.reserved.add(ctor_symbol)
-                    ctor_type = substitute_levels(a, ctor.type, level_substitution)
+                    ctor_type,ctor_levels=ctor.type,prior.universe_parameters
+                    if self.services is not None:
+                        signature=self.services.constants[ctor.symbol]
+                        ctor_type,ctor_levels=signature.type,signature.universe_parameters
+                    if len(levels)!=len(ctor_levels):raise KernelError('nested constructor universe arity')
+                    ctor_type = substitute_levels(a,ctor_type,dict(zip(ctor_levels,levels)))
                     ctor_type = instantiate_parameters(a, ctor_type, actual)
                     ctor_type = fold_telescope(a, c, parameters, ctor_type)
                     ctors.append(Constructor(ctor_symbol, ctor_type))

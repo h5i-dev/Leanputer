@@ -138,23 +138,81 @@ class QuotientSourceTest(unittest.TestCase):
             self.assertEqual(r['status'],spec.Outcome.RESOURCE if kind=='heap' else spec.Outcome.INVALID,(kind,r['reason']))
             print('Quot transaction atomic',kind,spec.Outcome(r['status']).name,spec.Reason(r['reason']).name,flush=True)
 
-    def test_initialization_collision_does_not_reuse_stale_origins(self):
-        doc=document();prop=['sort',['zero']];type0=['sort',['succ',['zero']]]
-        old=dict(kind='inductive_block',level_params=[],parameters=0,recursor_claims=[],families=[dict(
-            name=name('Quot'),recursor_name=name('Quot.rec'),type=type0,constructors=[dict(name=name('Quot.mk'),type=['const',name('Quot'),[]])])])
-        doc['declarations'].insert(0,old)
-        source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()
-        self.assertEqual((oracle.status,oracle.checked_input_items,oracle.admitted_declarations),('GAP',2,6),oracle)
-        cfg=spec.MachineConfig(heap=16384,stack=128,context=64,constants=8,fuel=250000,word_bits=16)
-        source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls));prefix=None
+    def test_replacement_current_environment_and_original_nested_registry(self):
+        circuit=None;seen=set();checks=0
+        for kind in ('replacement','replacement-then-nested','bad-replacement-claim','shadowed-head','partially-shadowed-mutual'):
+            doc=document();type0=('sort',['succ',['zero']]);prop=('sort',['zero'])
+            old=dict(kind='inductive_block',level_params=[],parameters=0,recursor_claims=[],families=[dict(
+                name=name('Quot'),recursor_name=name('Quot.rec'),type=raw(type0),constructors=[dict(name=name('Quot.mk'),type=raw(const('Quot')))])])
+            if kind in ('shadowed-head','partially-shadowed-mutual'):
+                old['parameters']=1
+                old['families'][0].update(type=raw(pi('a',type0,type0)),constructors=[dict(name=name('Quot.mk'),type=raw(pi('a',type0,pi('x','a',app(const('Quot'),'a')))))])
+            if kind=='partially-shadowed-mutual':
+                old['families'].append(dict(name=name('SurvivingMember'),recursor_name=name('SurvivingMember.rec'),type=raw(pi('a',type0,type0)),constructors=[dict(
+                    name=name('unrelatedMemberConstructor'),type=raw(pi('a',type0,pi('x','a',app(const('SurvivingMember'),'a')))))]))
+            doc['declarations'].insert(0,old)
+            if kind=='replacement-then-nested':
+                nested=json.loads(Path('tests/fixtures/kernel-nested-source.jsonl').read_text())
+                doc['declarations'].insert(1,nested['declarations'][0]);doc['declarations'].append(nested['declarations'][1]);doc['target']=nested['target']
+            elif kind=='bad-replacement-claim':doc['declarations'][2]['type']=raw(prop)
+            elif kind in ('shadowed-head','partially-shadowed-mutual'):
+                family='AfterReplacement';ft=const(family)
+                field=app(const('SurvivingMember'),ft)if kind=='partially-shadowed-mutual'else app(const('Quot',['succ',['zero']]),ft,lam('x',ft,lam('y',ft,pi('P',prop,pi('h','P','P')))))
+                doc['declarations'].append(dict(kind='inductive_block',level_params=[],parameters=0,recursor_claims=[],families=[dict(
+                    name=name(family),recursor_name=name(family+'.rec'),type=raw(type0),constructors=[dict(name=name(family+'.mk'),type=raw(pi('field',field,ft)))])]))
+            source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()
+            expected_oracle='REJECT'if kind in('bad-replacement-claim','shadowed-head')else'GAP'if kind=='partially-shadowed-mutual'else'ACCEPT'
+            self.assertEqual(oracle.status,expected_oracle,(kind,oracle))
+            cfg=spec.MachineConfig(heap=32768,stack=256,context=128,constants=16,fuel=600000,word_bits=16)
+            source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls))
+            if circuit is None:circuit=CircuitHarness(cfg)
+            prefix=None
+            for step in range(cfg.fuel+2):
+                state=machine.state;r=state['regs'];frame=state['stack'][r['sp']-1]if r['sp']else[0]*6;key=None
+                if kind=='bad-replacement-claim'and r['raw_index']==2 and prefix is None:prefix=tuple(r[k]for k in('env_head','nested_registry_head','published_declarations','quot_initialized'))
+                if r['task']==spec.Task.QUOT_INITIALIZE:key=('quot',r['quot_pc'],r['quot_new'],bool(r['r']))
+                elif r['task']==spec.Task.IS_NESTED_APPLICATION:key=('condition',int(r['mode']),frame[0],bool(r['r']))
+                elif r['task']==spec.Task.REPLACE_NESTED and r['copy_pc']>=58:key=('current-copy',r['copy_pc'],int(r['mode']),bool(r['r']))
+                elif r['mode']==spec.Mode.RETURN and frame[3]in(spec.Task.QUOT_INITIALIZE,spec.Task.IS_NESTED_APPLICATION):key=('return',int(frame[3]),frame[0],frame[1],bool(r['r']))
+                before=canonical(state)if key is not None and key not in seen else None
+                state=machine.step();r=state['regs']
+                if before is not None:
+                    self.assertEqual(circuit.step(before),state,(kind,step,key));seen.add(key);checks+=1
+                if r['status']:break
+            expected=spec.Outcome.INVALID if expected_oracle=='REJECT'else spec.Outcome.GAP if expected_oracle=='GAP'else spec.Outcome.DONE
+            self.assertEqual(r['status'],expected,(kind,r['reason'],step,r['task'],r['mode'],r['copy_pc']))
+            if expected_oracle=='ACCEPT':
+                self.assertEqual(oracle.assumptions,());assert_public_matches_independent(self,state,driver)
+                self.assertEqual(r['published_declarations'],len(driver.services.constants))
+                self.assertEqual(r['quot_initialized'],1)
+                if kind=='replacement-then-nested':self.assertTrue(r['stage_maps']);self.assertEqual(len(linked(state,r['nested_registry_head'])),4)
+            elif kind=='bad-replacement-claim':self.assertEqual(tuple(r[k]for k in('env_head','nested_registry_head','published_declarations','quot_initialized')),prefix)
+            elif kind=='shadowed-head':self.assertEqual(r['reason'],spec.Reason.INVALID_INDUCTIVE_APPLICATION);self.assertEqual(r['stage_maps'],0)
+            else:self.assertEqual(r['reason'],spec.Reason.GAP_PRIMITIVE);self.assertEqual((r['raw_index'],r['published_declarations'],len(linked(state,r['nested_registry_head']))),(6,11,2))
+            print('Quot original-source replacement',kind,spec.Outcome(r['status']).name,spec.Reason(r['reason']).name,step+1,'steps',r['free'],'heap',r['published_declarations'],'public',flush=True)
+        print('Quot replacement selected Boolean all-state transitions',checks,flush=True)
+
+    def test_replacement_invalidates_model_generated_literal_binding_caches(self):
+        from tests.test_kernel_string_source import source_document
+        strings=source_document();doc=document();type0=['sort',['succ',['zero']]]
+        old=dict(kind='inductive_block',level_params=[],parameters=0,recursor_claims=[],families=[dict(name=name('Quot'),recursor_name=name('Quot.rec'),type=type0,constructors=[dict(name=name('Quot.mk'),type=['const',name('Quot'),[]])])])
+        doc['declarations']=[old]+strings['declarations']+[strings['target']]+doc['declarations'][1:]
+        source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check();self.assertEqual(oracle.status,'ACCEPT',oracle)
+        cfg=spec.MachineConfig(heap=32768,stack=256,context=128,constants=16,fuel=600000,word_bits=16)
+        source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls));circuit=CircuitHarness(cfg);checked=False
+        keys=('nat_validated','nat_type_validated','bool_validated','string_validated','string_type_validated')
         for step in range(cfg.fuel+2):
             state=machine.state;r=state['regs']
-            if r['raw_index']==2 and prefix is None:prefix=tuple(r[k]for k in('env_head','nested_registry_head','published_declarations'))
-            machine.step()
+            boundary=r['task']==spec.Task.QUOT_INITIALIZE and r['mode']==spec.Mode.WALK and r['quot_pc']==22
+            if boundary:
+                self.assertEqual(tuple(r[k]for k in keys),(1,1,0,1,1));before=canonical(state)
+            state=machine.step();r=state['regs']
+            if boundary:
+                self.assertEqual(circuit.step(before),state);self.assertEqual(tuple(r[k]for k in keys),(0,0,0,0,0));checked=True
             if r['status']:break
-        self.assertEqual((r['status'],r['reason'],r['raw_index'],r['quot_initialized']),(spec.Outcome.GAP,spec.Reason.GAP_PRIMITIVE,2,0))
-        self.assertEqual(tuple(r[k]for k in('env_head','nested_registry_head','published_declarations')),prefix)
-        print('Quot committed-name collision explicit GAP; origins/environment preserved',flush=True)
+        self.assertTrue(checked);self.assertEqual((r['status'],r['reason'],r['quot_initialized']),(spec.Outcome.DONE,0,1))
+        self.assertEqual(tuple(r[k]for k in keys),(0,0,0,0,0));assert_public_matches_independent(self,state,driver);self.assertEqual(oracle.assumptions,())
+        print('Quot replacement after original-source String/Nat computation: DONE',step+1,'steps',r['free'],'heap',r['published_declarations'],'public; one cache-clear Boolean ALL-state check',flush=True)
 
     def check_source(self,doc):
         source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()

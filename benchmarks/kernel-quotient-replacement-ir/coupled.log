@@ -1,0 +1,20 @@
+source-quotient original-source Quot DONE 16282 steps 1991 heap
+source-quot-lift original-source Quot DONE 21466 steps 2414 heap
+source-quot-lift-nested original-source Quot DONE 30982 steps 3035 heap
+source-derived environment Quot.ind runtime + surplus beta DONE 233 steps
+source-quot-ind-surplus original-source Quot DONE 18017 steps 2187 heap
+Quot selected Boolean transitions 372
+.Quot transaction atomic name INVALID INVALID_DECLARATION
+Quot transaction atomic type INVALID TYPE_MISMATCH
+Quot transaction atomic arity INVALID UNIVERSE_ARITY
+Quot transaction atomic later INVALID TYPE_MISMATCH
+Quot transaction atomic heap RESOURCE HEAP
+..original source major expansion source-K-major DONE 2544 steps
+original source major expansion source-structure-major DONE 3981 steps
+original source major expansion restored-owner-parameter-count DONE 49196 steps
+major expansion selected Boolean transitions 130
+.
+----------------------------------------------------------------------
+Ran 4 tests in 176.589s
+
+OK

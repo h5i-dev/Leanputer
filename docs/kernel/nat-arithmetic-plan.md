@@ -67,9 +67,9 @@ Raw logs and exact counts are archived in the checkpoint benchmark directory.
 No complete-step Boolean or Nat STOCK evidence is claimed.
 
 Remaining: String helper bootstrap/unavailable bindings (see linked controller);
-Quot initialization
-that would overwrite an existing ordinary binding(currently explicit GAP to
-preserve prefix/original-registry invariants); private metadata boundaries;
+nested copying of a partially replaced mutual family after Quot initialization
+(explicit metadata GAP; ordinary replacement now follows the pinned map rules);
+private metadata boundaries;
 SMALL-model architecture and full nested-source STOCK capacity. The historical
 10.35B source STOCK smoke is not the requested small model. No broad corpus,
 fuzzing/profile or optimization campaign, coverage percentage or ETA is claimed.

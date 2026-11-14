@@ -89,16 +89,15 @@ def emit_rules(c):
     g=check(at(P.EQ_COMPARED),c.NOT(c.eq(r['r'],0)))
     call(g,P.REFL_COMPARED,Task.EXPR_EQUAL,r['quot_refl'],peer=r['quot_refl_type'])
     g=check(at(P.REFL_COMPARED),c.NOT(c.eq(r['r'],0)));go(g,P.OVERLAY,quot_head=r['env_head'])
-    go(at(P.OVERLAY),600)
+    go(at(P.OVERLAY),600,nat_validated=0,nat_type_validated=0,bool_validated=0,string_validated=0,string_type_validated=0)
     for index,(key,name) in enumerate([('type','quot'),('ctor','mk'),('lift','lift'),('ind','ind')]):
         pc=600+index*6
         call(at(pc),pc+1,Task.ENV_LOOKUP,0,query_symbol=r['quot_symbol_'+name],lookup_head=r['env_head'])
         existing=at(pc+1);fresh=c.eq(r['r'],0)
-        # Primitive replacement can invalidate earlier original-block provenance
-        # and dependent declarations. Preserve an explicit boundary until that
-        # whole-prefix invalidation/recheck transaction is implemented.
-        c.stop(c.AND(existing,c.NOT(fresh)),Outcome.GAP,Reason.GAP_PRIMITIVE)
-        go(c.AND(existing,fresh),pc+2,quot_new=c.add(r['quot_new'],1))
+        # add_core replaces only these map entries. The current checked
+        # signature determines its kind; original-block records are historical
+        # provenance, never permission to reuse a shadowed family/constructor.
+        go(existing,pc+2,quot_new=c.add(r['quot_new'],c.mux(fresh,1,0)))
         store(at(pc+2),(C.CHECKED_SCHEME,r['quot_lift_parameters'] if key=='lift' else r['quot_parameters'],11,index+1),pc+3,quot_scheme=r['free'])
         store(at(pc+3),(C.CHECKED_SIGNATURE,r['quot_symbol_'+name],r['quot_'+key],r['quot_scheme']),pc+4,quot_signature=r['free'])
         store(at(pc+4),(C.VECTOR_CELL,r['quot_signature'],r['quot_head'],0),pc+5,quot_head=r['free'])

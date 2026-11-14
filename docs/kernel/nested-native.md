@@ -80,8 +80,10 @@ word/heap/stack/fuel bounds. They never select a supported shape class.
    remaining Expr with a fixed **preorder replacement callback**. A replacement
    is returned as a whole subtree and is not traversed again, matching source
    `replace`. Domains and bodies use the shared binder-depth traversal.
-3. The callback considers an application with Const head belonging to the
-   committed prior-block registry. Split its arguments; require at least the
+3. The callback first looks up the CURRENT checked Γ signature and requires an
+   inductive kind, then looks up its committed prior-block origin. Historical
+   origins cannot authorize a shadowed former family. It considers that Const
+   head belonging to the committed prior-block registry. Split its arguments; require at least the
    prior block's declared parameter count. Scan **all** actual parameter Exprs
    for current/all-queued family constants and for loose bound variables. No
    occurrence means no replacement; occurrence plus a loose BVar is invalid.
@@ -92,7 +94,7 @@ word/heap/stack/fuel bounds. They never select a supported shape class.
    actual indices.
 5. New entry: specialize the **whole prior mutual block** at the triggering
    universe arguments and actual parameters. Check universe arity; instantiate
-   each original type/constructor universe scheme, strip the exact declared raw
+   each CURRENT checked type/constructor universe scheme, strip the exact declared raw
    Pi parameter prefix, bulk instantiate in telescope order, then Pi-fold current
    parameters. Generate fresh auxiliary/prefix-replaced constructor names and
    entries before enqueueing. Publish every auxiliary to the private all-family
@@ -245,3 +247,14 @@ private ABI fixture, not a published original-source block. The full prior
 registration, specialization/copying, restoration/rechecking and original-source
 publication path remains unfinished. These IR checks do not expand the pinned
 stock report or mathlib theorem coverage.
+
+## Primitive replacement and current Γ
+
+Subsequent Quot initialization follows pinned map replacement. Original origins
+are retained, while nested detection verifies the current signature kind and
+whole copying reads current family/constructor signatures and universe binders.
+A partially replaced mutual group remains an explicit metadata GAP because the
+pinned copying loop asserts that every member is still an inductive. See
+[quotient-native.md](quotient-native.md) for original-source mixed replacement +
+nested transaction and cache-invalidation evidence. No host prefix checker or
+per-name container catalog is used.

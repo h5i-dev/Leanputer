@@ -1,6 +1,7 @@
 """Complete source is_nested_inductive_app predicate, DEVELOPMENT reference.
 
-Registry provenance belongs to restored source publication, still unfinished.
+Registry provenance comes from restored source publication. The current checked
+signature must still describe an inductive before that provenance is consulted.
 This operation never authorizes a block or supplies any inferred type.
 """
 from .arena import Tag
@@ -23,6 +24,10 @@ def resume(machine, frame, stop, ret, alloc):
         else:
             s['stack'][r['sp']-1][2] = r['r']
             r.update(task=Task.IS_NESTED_APPLICATION, mode=Mode.NESTED_APP_ORIGIN, x=r['r'])
+    elif phase == 5:
+        if not r['r']:
+            r.update(task=Task.IS_NESTED_APPLICATION,sp=r['sp']-1);ret(0)
+        else:r.update(task=Task.IS_NESTED_APPLICATION,mode=Mode.NESTED_APP_BINDING,x=r['r'])
     elif phase == 2:
         parameter = r['r']; call(3, Task.HAS_RAW_FAMILIES, parameter)
     elif phase == 3:
@@ -56,8 +61,14 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
     elif mode == Mode.NESTED_APP_HEAD:
         if tag != Tag.CONST: finish()
         else:
-            frame[0] = 1
-            r.update(task=Task.PRIOR_BLOCK_LOOKUP, mode=Mode.WALK, x=r['nested_registry_head'], query_symbol=a, depth=0)
+            frame[0]=5;frame[1]=a
+            r.update(task=Task.ENV_LOOKUP,mode=Mode.WALK,x=0,query_symbol=a,lookup_head=r['env_head'],depth=0)
+    elif mode==Mode.NESTED_APP_BINDING:r.update(mode=Mode.NESTED_APP_SCHEME,x=c)
+    elif mode==Mode.NESTED_APP_SCHEME:
+        if b!=8:finish()
+        else:
+            frame[0]=1
+            r.update(task=Task.PRIOR_BLOCK_LOOKUP,mode=Mode.WALK,x=r['nested_registry_head'],query_symbol=frame[1],depth=0)
     elif mode == Mode.NESTED_APP_ORIGIN: r.update(mode=Mode.NESTED_APP_BLOCK, x=a)
     elif mode == Mode.NESTED_APP_BLOCK:
         r.update(nested_parameter_count=a, mode=Mode.NESTED_APP_ARGUMENTS, x=frame[5])

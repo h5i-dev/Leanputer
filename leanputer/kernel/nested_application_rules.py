@@ -5,7 +5,8 @@ from .traversal_machine import Mode, Task, Outcome, Reason
 
 NO_NODE = (Mode.NESTED_APP_SELECT, Mode.NESTED_APP_RESULT)
 TAGS = {Mode.NESTED_APP_SPINE: CellTag.APPLICATION_SPINE, Mode.NESTED_APP_ORIGIN: CellTag.BLOCK_ORIGIN,
-    Mode.NESTED_APP_BLOCK: CellTag.RAW_BLOCK, Mode.NESTED_APP_ARGUMENTS: CellTag.VECTOR}
+    Mode.NESTED_APP_BLOCK: CellTag.RAW_BLOCK, Mode.NESTED_APP_ARGUMENTS: CellTag.VECTOR,
+    Mode.NESTED_APP_BINDING: CellTag.CHECKED_SIGNATURE, Mode.NESTED_APP_SCHEME: CellTag.CHECKED_SCHEME}
 
 
 def emit_rules(c):
@@ -24,6 +25,9 @@ def emit_rules(c):
     finish(c.AND(looked, c.NOT(found))); looked = c.AND(looked, found)
     c.write('stack', looked, top, (1, f['original'], r['r'], Task.IS_NESTED_APPLICATION, f['first'], f['second']))
     c.emit(looked, task=Task.IS_NESTED_APPLICATION, mode=Mode.NESTED_APP_ORIGIN, x=r['r'])
+    current=phase(5);found=c.NOT(c.eq(r['r'],0))
+    finish(c.AND(current,c.NOT(found)))
+    c.emit(c.AND(current,found),task=Task.IS_NESTED_APPLICATION,mode=Mode.NESTED_APP_BINDING,x=r['r'])
     call(phase(2), 3, Task.HAS_RAW_FAMILIES, r['r'], parameter=r['r'])
     current = c.OR(c.NOT(c.eq(r['nested_has_current'], 0)), c.NOT(c.eq(r['r'], 0)))
     c.emit(phase(3), nested_has_current=c.mux(current, 1, 0))
@@ -36,7 +40,7 @@ def emit_rules(c):
     finish(c.AND(last, c.NOT(has_current)))
     c.stop(c.AND(last, has_current, loose), Outcome.INVALID, Reason.INVALID_NESTED_PARAMETERS)
     c.emit(c.AND(last, has_current, c.NOT(loose)), task=Task.IS_NESTED_APPLICATION, mode=Mode.NESTED_APP_RESULT)
-    c.stop(c.AND(returning, c.NOT(c.OR(*(c.eq(f['phase'], p) for p in range(5))))), Outcome.INVALID, Reason.SYNTAX)
+    c.stop(c.AND(returning, c.NOT(c.OR(*(c.eq(f['phase'], p) for p in range(6))))), Outcome.INVALID, Reason.SYNTAX)
     active = c.task(Task.IS_NESTED_APPLICATION); at = lambda m: c.AND(active, c.mode(m))
     init = at(Mode.WALK); app = c.tag(Tag.APP); room = c.lt(r['sp'], c.cfg.stack)
     c.ret(c.AND(init, c.NOT(app)), 0)
@@ -48,7 +52,11 @@ def emit_rules(c):
     c.emit(split, mode=Mode.NESTED_APP_HEAD, x=n['a'])
     head = at(Mode.NESTED_APP_HEAD); constant = c.tag(Tag.CONST)
     finish(c.AND(head, c.NOT(constant)))
-    call(c.AND(head, constant), 1, Task.PRIOR_BLOCK_LOOKUP, r['nested_registry_head'], query_symbol=n['a'])
+    call(c.AND(head, constant),5,Task.ENV_LOOKUP,0,parameter=n['a'],query_symbol=n['a'],lookup_head=r['env_head'])
+    c.emit(at(Mode.NESTED_APP_BINDING),mode=Mode.NESTED_APP_SCHEME,x=n['c'])
+    scheme=at(Mode.NESTED_APP_SCHEME);family=c.eq(n['b'],8)
+    finish(c.AND(scheme,c.NOT(family)))
+    call(c.AND(scheme,family),1,Task.PRIOR_BLOCK_LOOKUP,r['nested_registry_head'],query_symbol=f['original'])
     c.emit(at(Mode.NESTED_APP_ORIGIN), mode=Mode.NESTED_APP_BLOCK, x=n['a'])
     c.emit(at(Mode.NESTED_APP_BLOCK), nested_parameter_count=n['a'], mode=Mode.NESTED_APP_ARGUMENTS, x=f['second'])
     arguments = at(Mode.NESTED_APP_ARGUMENTS)

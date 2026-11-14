@@ -122,7 +122,7 @@ class EnvironmentDriver:
             if fresh not in raw.universe_parameters:
                 break
             counter = a.word(counter+1)
-        nested = NestedSpecializer(a, self.c, self.symbols, self.blocks, s.constants).specialize(
+        nested = NestedSpecializer(a, self.c, self.symbols, self.blocks, s.constants,services=s).specialize(
             families, raw.universe_parameters, raw.parameters)
         core = analyze_core(s, nested.families, raw.universe_parameters, raw.parameters, fresh)
         restorer = NestedRestorer(a, self.c, self.symbols, nested)

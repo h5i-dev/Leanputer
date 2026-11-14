@@ -1,7 +1,7 @@
 """Complete nested condition over raw query syntax and derived prior metadata.
 
 The origin list here is a private ABI fixture, NOT a published original-source
-block. The source producer/restoration transaction is still missing and GAPs.
+block. The real source producer/restoration transaction is tested separately.
 """
 from copy import deepcopy
 from types import SimpleNamespace
@@ -57,6 +57,9 @@ class NestedApplicationTest(unittest.TestCase):
             base['heap'][ref] = list(map(int, (tag, a, b, c))); base['regs']['free'] = ref+1; return ref
         origin = cell(CellTag.BLOCK_ORIGIN, base['constants'][0][5], base['constants'][0][2], base['regs']['core_family_vector'])
         registry = cell(CellTag.VECTOR_CELL, origin)
+        # The condition checks the current checked signature before provenance.
+        for signature in vector(SimpleNamespace(heap=base['heap']),base['regs']['core_family_vector'],VectorKind.REFERENCES):
+            base['regs']['env_head']=cell(CellTag.VECTOR_CELL,signature,base['regs']['env_head'])
         current_vector = base['heap'][base['constants'][1][5]][2]
         packed = pack_source(source, CellCapacities(heap=cfg.heap, constants=cfg.constants, word_bits=cfg.word_bits))
         # Re-encoding existing syntax keys supplies no checker/reducer result.

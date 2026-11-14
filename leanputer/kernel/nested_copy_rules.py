@@ -23,6 +23,8 @@ class P(IntEnum):
     ENQUEUE=47; ALL_LINK=48; ALL_VECTOR=49; NEXT_FAMILY=50
     RESULT_CONST=51; RESULT_PARAMETERS=52; RESULT_ARGUMENTS=53; FINISH=54
     FAMILY_VECTOR=55; FOUND=56; CTOR_BEGIN=57
+    FAMILY_CURRENT=58; FAMILY_SIGNATURE=59; FAMILY_SCHEME=60
+    CTOR_CURRENT=61; CTOR_SIGNATURE=62; CTOR_SCHEME=63
 
 
 def emit_rules(c):
@@ -79,7 +81,15 @@ def emit_rules(c):
     c.stop(c.AND(g,c.NOT(valid)),Outcome.INVALID,Reason.SYNTAX);g=c.AND(g,valid)
     go(g,P.FAMILY,copy_family_next=n['b'],x=n['a'])
     g=at(P.FAMILY,C.RAW_FAMILY);go(g,P.FAMILY_AUX,copy_original_symbol=n['a'],copy_family_type=n['b'],copy_family_aux=n['c'],x=n['c'])
-    g=at(P.FAMILY_AUX,C.RAW_FAMILY_AUX);go(g,P.NAME_START,copy_original_ctor_vector=n['a'])
+    g=at(P.FAMILY_AUX,C.RAW_FAMILY_AUX);c.emit(g,copy_original_ctor_vector=n['a'])
+    call(g,P.FAMILY_CURRENT,Task.ENV_LOOKUP,0,query_symbol=r['copy_original_symbol'],lookup_head=r['env_head'])
+    go(at(P.FAMILY_CURRENT),P.FAMILY_SIGNATURE,x=r['r'])
+    g=at(P.FAMILY_SIGNATURE,C.CHECKED_SIGNATURE);go(g,P.FAMILY_SCHEME,copy_family_type=n['b'],x=n['c'])
+    g=at(P.FAMILY_SCHEME,C.CHECKED_SCHEME);family=c.eq(n['b'],8)
+    # Pinned code asserts every mutual member is still an inductive. Preserve
+    # an explicit metadata boundary for a partially replaced mutual group.
+    c.stop(c.AND(g,c.NOT(family)),Outcome.GAP,Reason.GAP_PRIMITIVE)
+    go(c.AND(g,family),P.NAME_START,copy_family_parameters=n['a'])
     # Private names may alpha-rename. The shared name builder uses arbitrary
     # original paths plus a counted suffix, with actual Γ/reserved freshness.
     g,next_index=c.checked_add(at(P.NAME_START),r['stage_fresh_counter'],1)
@@ -106,7 +116,7 @@ def emit_rules(c):
     go(at(P.TEMPLATE_ABSTRACTED),P.TEMPLATE_STORE,copy_template=r['r'])
     store(at(P.TEMPLATE_STORE),(C.NESTED_SPECIALIZATION,r['copy_template'],r['copy_aux_symbol'],r['stage_maps']),P.TYPE_UNIVERSES,
         stage_maps=r['free'],copy_template_record=r['free'],copy_selected=c.mux(c.eq(r['copy_original_symbol'],r['copy_owner']),r['copy_aux_symbol'],r['copy_selected']))
-    call(at(P.TYPE_UNIVERSES),P.TYPE_PARAMETERS,Task.INSTANTIATE_SCHEME,r['copy_family_type'],parameter_vector=r['copy_uparams'],level_vector=r['copy_levels'])
+    call(at(P.TYPE_UNIVERSES),P.TYPE_PARAMETERS,Task.INSTANTIATE_SCHEME,r['copy_family_type'],parameter_vector=r['copy_family_parameters'],level_vector=r['copy_levels'])
     call(at(P.TYPE_PARAMETERS),P.TYPE_FOLDED,Task.INSTANTIATE_PI_PARAMETERS,r['r'],pi_parameter_vector=r['copy_arguments'],pi_parameter_limit=r['copy_parameter_count'])
     call(at(P.TYPE_FOLDED),P.CTOR_BEGIN,Task.FOLD_TELESCOPE,r['r'],Mode.FOLD_SELECT,fold_body=r['r'],fold_base=r['stage_parameters_base'],fold_tag=Tag.PI)
     go(at(P.CTOR_BEGIN),P.CTOR_VECTOR,copy_fold_type=r['r'],ctx=r['stage_parameters_end'],copy_ctors=0,copy_ctor_count=0,x=r['copy_original_ctor_vector'])
@@ -120,7 +130,11 @@ def emit_rules(c):
     g=at(P.CTOR,C.RAW_CONSTRUCTOR);c.emit(g,copy_ctor_symbol=n['a'],copy_ctor_type=n['b'])
     call(g,P.CTOR_RENAMED,Task.REPLACE_NAME_PREFIX,0,query_symbol=n['a'],name_parent_symbol=r['copy_original_symbol'],name_candidate_symbol=r['copy_aux_symbol'])
     g=at(P.CTOR_RENAMED);c.emit(g,copy_ctor_new_symbol=r['r'])
-    call(g,P.CTOR_UNIVERSES,Task.INSTANTIATE_SCHEME,r['copy_ctor_type'],parameter_vector=r['copy_uparams'],level_vector=r['copy_levels'])
+    call(g,P.CTOR_CURRENT,Task.ENV_LOOKUP,0,query_symbol=r['copy_ctor_symbol'],lookup_head=r['env_head'])
+    go(at(P.CTOR_CURRENT),P.CTOR_SIGNATURE,x=r['r'])
+    g=at(P.CTOR_SIGNATURE,C.CHECKED_SIGNATURE);go(g,P.CTOR_SCHEME,copy_ctor_type=n['b'],x=n['c'])
+    g=at(P.CTOR_SCHEME,C.CHECKED_SCHEME);c.emit(g,copy_ctor_parameters=n['a'])
+    call(g,P.CTOR_UNIVERSES,Task.INSTANTIATE_SCHEME,r['copy_ctor_type'],parameter_vector=n['a'],level_vector=r['copy_levels'])
     call(at(P.CTOR_UNIVERSES),P.CTOR_PARAMETERS,Task.INSTANTIATE_PI_PARAMETERS,r['r'],pi_parameter_vector=r['copy_arguments'],pi_parameter_limit=r['copy_parameter_count'])
     call(at(P.CTOR_PARAMETERS),P.CTOR_FOLDED,Task.FOLD_TELESCOPE,r['r'],Mode.FOLD_SELECT,fold_body=r['r'],fold_base=r['stage_parameters_base'],fold_tag=Tag.PI)
     go(at(P.CTOR_FOLDED),P.CTOR_RECORD,copy_ctor_type=r['r'],ctx=r['stage_parameters_end'])
