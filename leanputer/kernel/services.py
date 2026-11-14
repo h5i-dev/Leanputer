@@ -102,8 +102,10 @@ class KernelServices:
                 if row.a in self.recursors:
                     rec = self.recursors[row.a]
                     if len(args) > rec.major_position:
+                        major = args[rec.major_position]
+                        if rec.k_eligible:major = self._major_when_k(rec,major)
                         pending.append((root, rec, levels, args))
-                        root = args[rec.major_position]
+                        root = major
                         continue
             if row.tag == Tag.PROJ:
                 major = self.whnf(row.c)
@@ -115,13 +117,13 @@ class KernelServices:
                 if info is not None and info.parameters+row.b < len(fields):
                     root = a.app(fields[info.parameters+row.b], args)
                     continue
-            # K/structure/literal major expansion and genuine primitives remain
-            # separate gaps in this executable development SPEC.
+            # K/structure major expansion uses the checked owner family, whose
+            # parameter count can differ from a restored auxiliary recursor.
             while pending:
                 from .recursor import reduce_constructor_rule
                 original, rec, levels, arguments = pending.pop()
                 arguments = list(arguments)
-                arguments[rec.major_position] = root
+                arguments[rec.major_position] = self._major_when_structure(rec,root)
                 reduced = reduce_constructor_rule(a, rec, levels, arguments, lambda value: value)
                 if reduced is not None:
                     root = reduced
@@ -129,6 +131,35 @@ class KernelServices:
                 root = original
             else:
                 return root
+
+    def _major_when_k(self,recursor,major):
+        a = self.a
+        major_type = self.whnf(self.infer(major))
+        head,args = spine(a,major_type);head = a.expr(head)
+        if head.tag != Tag.CONST or head.a != recursor.owner:return major
+        info = self.families.get(head.a)
+        if info is None or len(info.constructors) != 1:return major
+        constructor = self.constructors.get(info.constructors[0])
+        if constructor is None or constructor.fields or len(args) < recursor.parameters:return major
+        candidate = a.app(a.const(info.constructors[0],a.vector(head.b)),args[:recursor.parameters])
+        return candidate if self.convert(major_type,self.infer(candidate)) else major
+
+    def _major_when_structure(self,recursor,major):
+        a = self.a
+        row = a.expr(major)
+        if row.tag in (Tag.NAT,Tag.STRING):
+            raise MissingOperation('literal recursor-major preparation not integrated')
+        head,_ = spine(a,major);head = a.expr(head)
+        if head.tag == Tag.CONST and head.a in self.constructors:return major
+        info = self._structure(recursor.owner)
+        if info is None:return major
+        major_type = self.whnf(self.infer(major));head,args = spine(a,major_type);head = a.expr(head)
+        if head.tag != Tag.CONST or head.a != recursor.owner:return major
+        if self.levels.is_zero(self.ensure_type(major_type)):return major
+        constructor = self.constructors.get(info.constructors[0])
+        if constructor is None:raise MissingOperation('checked structure constructor metadata unavailable')
+        result = a.app(a.const(info.constructors[0],a.vector(head.b)),args[:info.parameters])
+        return a.app(result,(a.mk(Tag.PROJ,recursor.owner,index,major) for index in range(constructor.fields)))
 
     def ensure_type(self, root):
         type_ref = self.whnf(self.infer(root))

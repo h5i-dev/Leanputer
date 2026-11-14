@@ -21,6 +21,7 @@ class Phase(IntEnum):
     ETA_SORT_INFER = 12
     ETA_SORT_WHNF = 13
     ETA_APPLY = 14
+    CHECK_STRUCTURE = 15
 
 
 class Path(IntEnum):
@@ -35,7 +36,7 @@ NO_NODE = (Mode.MAJOR_CONSTRUCTOR, Mode.MAJOR_PROJECTION, Mode.MAJOR_APPLY_PROJE
 EXPRESSION_MODES = (Mode.MAJOR_TYPE_HEAD, Mode.MAJOR_VALUE, Mode.MAJOR_HEAD, Mode.MAJOR_SORT)
 TAGS = {Mode.WALK: CellTag.CHECKED_RECURSOR, Mode.MAJOR_METADATA: CellTag.CHECKED_RECURSOR,
     Mode.MAJOR_COUNTS: CellTag.RECURSOR_COUNTS, Mode.MAJOR_SHARED: CellTag.RECURSOR_SHARED_COUNTS,
-    Mode.MAJOR_BLOCK: CellTag.RECURSOR_BLOCK, Mode.MAJOR_FLAGS: CellTag.BLOCK_FLAGS,
+    Mode.MAJOR_BLOCK: CellTag.RECURSOR_BLOCK, Mode.MAJOR_STRUCTURE: CellTag.STRUCTURE_INFO,
     Mode.MAJOR_OWNER: CellTag.CHECKED_SIGNATURE, Mode.MAJOR_TYPE_APP: CellTag.APPLICATION_SPINE,
     Mode.MAJOR_RULE_VECTOR: CellTag.VECTOR, Mode.MAJOR_RULE_CELL: CellTag.VECTOR_CELL,
     Mode.MAJOR_RULE: CellTag.CHECKED_RULE, Mode.MAJOR_APP: CellTag.APPLICATION_SPINE,
@@ -78,6 +79,9 @@ def emit_rules(c):
     call(phase(Phase.ETA_SORT_INFER), Phase.ETA_SORT_WHNF, Task.BETA_ZETA, r['r'], Mode.BETA_ZETA)
     c.emit(phase(Phase.ETA_SORT_WHNF), task=Task.PREPARE_RECURSOR_MAJOR, mode=Mode.MAJOR_SORT, x=r['r'])
     c.emit(phase(Phase.ETA_APPLY), task=Task.PREPARE_RECURSOR_MAJOR, mode=Mode.MAJOR_PROJECTION, major_accumulator=r['r'], major_cursor=0)
+    checked=phase(Phase.CHECK_STRUCTURE);found=c.NOT(c.eq(r['r'],0))
+    finish(c.AND(checked,c.NOT(found)))
+    c.emit(c.AND(checked,found),task=Task.PREPARE_RECURSOR_MAJOR,mode=Mode.MAJOR_STRUCTURE,x=r['r'])
     task = c.task(Task.PREPARE_RECURSOR_MAJOR); walk = c.eq(r['mode'], Mode.WALK)
     c.stop(c.AND(c.active, task, c.NOT(walk), c.NOT(c.eq(r['mode'], Mode.RETURN)), c.NOT(nonempty)), Outcome.INVALID, Reason.SYNTAX)
     active = c.AND(task, c.OR(walk, nonempty)); at = lambda m: c.AND(active, c.mode(m))
@@ -92,12 +96,12 @@ def emit_rules(c):
     initial = c.AND(block, path(Path.INITIAL)); k = c.NOT(c.eq(n['a'], 0))
     call(c.AND(initial, k), Phase.K_INFER, Task.INFER, f['original'])
     call(c.AND(initial, c.NOT(k)), Phase.WHNF, Task.BETA_ZETA, f['original'], Mode.BETA_ZETA)
-    eligibility = c.AND(block, path(Path.ETA_ELIGIBILITY)); indices = c.NOT(c.eq(r['major_indices'], 0))
-    finish(c.AND(eligibility, indices))
-    c.emit(c.AND(eligibility, c.NOT(indices)), mode=Mode.MAJOR_FLAGS, x=n['b'])
-    c.emit(c.AND(block, c.NOT(path(Path.INITIAL)), c.NOT(path(Path.ETA_ELIGIBILITY))), mode=Mode.MAJOR_OWNER, x=r['major_owner'])
-    flags = at(Mode.MAJOR_FLAGS); recursive = c.NOT(c.eq(n['a'], 0))
-    finish(c.AND(flags, recursive)); c.emit(c.AND(flags, c.NOT(recursive)), mode=Mode.MAJOR_RULE_VECTOR, x=r['major_rules'])
+    structure=c.AND(block,c.OR(path(Path.ETA_ELIGIBILITY),path(Path.ETA_BUILD)))
+    call(structure,Phase.CHECK_STRUCTURE,Task.STRUCTURE_INFO,r['major_owner'],structure_pc=0)
+    c.emit(c.AND(block,c.NOT(path(Path.INITIAL)),c.NOT(c.OR(path(Path.ETA_ELIGIBILITY),path(Path.ETA_BUILD)))),mode=Mode.MAJOR_OWNER,x=r['major_owner'])
+    checked=at(Mode.MAJOR_STRUCTURE)
+    c.emit(c.AND(checked,path(Path.ETA_ELIGIBILITY)),mode=Mode.MAJOR_RULE_VECTOR,x=r['major_rules'])
+    c.emit(c.AND(checked,c.NOT(path(Path.ETA_ELIGIBILITY))),major_parameters=n['b'],mode=Mode.MAJOR_OWNER,x=r['major_owner'])
     c.emit(at(Mode.MAJOR_OWNER), major_owner_symbol=n['a'], mode=Mode.MAJOR_TYPE_APP, x=f['second'])
     c.emit(at(Mode.MAJOR_TYPE_APP), major_type_arguments=n['b'], mode=Mode.MAJOR_TYPE_HEAD, x=n['a'])
     head = at(Mode.MAJOR_TYPE_HEAD); valid = c.AND(c.tag(Tag.CONST), c.eq(n['a'], r['major_owner_symbol']))

@@ -5,7 +5,7 @@ not a raw-declaration admission API. Complete transaction/nested restoration,
 primitive initialization and stock lowering remain to be integrated. No caller
 may treat this private analysis as a trusted input answer to native inference.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from .arena import KernelError, LevelTag, Tag
 from .operations import check_scope, instantiate, spine, substitute_levels
 from .positivity import BlockTraversal, Family
@@ -198,6 +198,8 @@ def analyze_core(services, inductives, universe_parameters, parameter_count, fre
             with services.overlay(constructors,constructors=constructor_infos):
                 recursors = RecursorBuilder(traversal, inductives, universe_parameters,
                     elimination_level, services.convert).generate()
+                recursors = tuple(replace(rec,owner=a.expr(ind.constant).a,k_eligible=k,recursive=raw_recursive)
+                    for rec,ind in zip(recursors,inductives))
                 if recursor_claims:
                     claims = {claim.symbol: claim for claim in recursor_claims}
                     if len(claims) != len(recursor_claims) or set(claims) != {rec.symbol for rec in recursors}:

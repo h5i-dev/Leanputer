@@ -222,6 +222,11 @@ class NestedRestorer:
                         raise KernelError('auxiliary recursor rule has unknown constructor')
                     constructor = self.constructors[constructor][1]
                 rules.append(Rule(constructor, rule.fields, self.expression(rule.rhs)))
+            owner = record.owner
+            if owner in self.templates:
+                head, _ = spine(self.a,self.templates[owner].specialization)
+                owner = self.a.expr(head).a
             restored.append(Recursor(symbol, record.universe_parameters, self.expression(record.type),
-                record.parameters, record.motives, record.minors, record.indices, tuple(rules)))
+                record.parameters, record.motives, record.minors, record.indices, tuple(rules),
+                owner,record.k_eligible,record.recursive))
         return tuple(restored)

@@ -195,3 +195,15 @@ Literal/Quot/projection reduction and complete typed conversion remain required
 services. Original-source nested staging/restoration/publication is still
 unfinished; the source controller retains its GAP boundary. The existence of
 this generic reducer does not bypass any of those checks.
+
+The restored-owner audit corrects structure-major preparation to query the
+checked **owner family's** normal recursor and parameter count. A restored
+auxiliary recursor can belong to a recursive expanded block and have a different
+parameter prefix from its prior owner. The weighted `STRUCTURE_INFO` query now
+controls this path; reentrant inference cannot supply stale block flags/counts.
+Independent SPEC implements K and structure-major preparation as well.
+`test_kernel_source_major_expansion.py` checks three original-source computation
+cases: K, neutral structure, and restored nested container with owner1parameter
+versus recursor2parameters. They reach DONE2514/3924/49051steps;130selected Boolean
+transitions match all registers/banks, independently accepted by EnvironmentDriver.
+This is source semantic/selected IR evidence, outside the pinned STOCK reports.

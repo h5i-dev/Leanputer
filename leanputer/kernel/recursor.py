@@ -41,6 +41,9 @@ class Recursor:
     minors: int
     indices: int
     rules: tuple
+    owner: int = 0
+    k_eligible: bool = False
+    recursive: bool = False
 
     @property
     def major_position(self):

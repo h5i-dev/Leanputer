@@ -40,6 +40,10 @@ def resume(machine, frame, stop, ret, alloc):
         call(Phase.ETA_SORT_WHNF, Task.BETA_ZETA, r['r'], Mode.BETA_ZETA)
     elif phase == Phase.ETA_SORT_WHNF:
         r.update(task=Task.PREPARE_RECURSOR_MAJOR, mode=Mode.MAJOR_SORT, x=r['r'])
+    elif phase == Phase.CHECK_STRUCTURE:
+        if not r['r']:
+            r.update(task=Task.PREPARE_RECURSOR_MAJOR,sp=r['sp']-1);ret(original)
+        else:r.update(task=Task.PREPARE_RECURSOR_MAJOR,mode=Mode.MAJOR_STRUCTURE,x=r['r'])
     elif phase == Phase.ETA_APPLY:
         r.update(task=Task.PREPARE_RECURSOR_MAJOR, mode=Mode.MAJOR_PROJECTION,
             major_accumulator=r['r'], major_cursor=0)
@@ -80,13 +84,12 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         if path == Path.INITIAL:
             if a: call(Phase.K_INFER, Task.INFER, frame[1])
             else: call(Phase.WHNF, Task.BETA_ZETA, frame[1], Mode.BETA_ZETA)
-        elif path == Path.ETA_ELIGIBILITY:
-            if r['major_indices']: finish()
-            else: r.update(mode=Mode.MAJOR_FLAGS, x=b)
+        elif path in (Path.ETA_ELIGIBILITY,Path.ETA_BUILD):
+            call(Phase.CHECK_STRUCTURE,Task.STRUCTURE_INFO,r['major_owner'],structure_pc=0)
         else: r.update(mode=Mode.MAJOR_OWNER, x=r['major_owner'])
-    elif mode == Mode.MAJOR_FLAGS:
-        if a: finish()
-        else: r.update(mode=Mode.MAJOR_RULE_VECTOR, x=r['major_rules'])
+    elif mode == Mode.MAJOR_STRUCTURE:
+        if r['major_path'] == Path.ETA_ELIGIBILITY:r.update(mode=Mode.MAJOR_RULE_VECTOR,x=r['major_rules'])
+        else:r.update(major_parameters=b,mode=Mode.MAJOR_OWNER,x=r['major_owner'])
     elif mode == Mode.MAJOR_OWNER:
         r.update(major_owner_symbol=a, mode=Mode.MAJOR_TYPE_APP, x=frame[5])
     elif mode == Mode.MAJOR_TYPE_APP:
