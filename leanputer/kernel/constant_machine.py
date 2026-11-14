@@ -51,7 +51,8 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
     if not r['sp']:
         stop(Outcome.INVALID, Reason.SYNTAX); return True
     if r['mode'] == Mode.CONST_SIGNATURE:
-        r.update(signature_type=b, mode=Mode.CONST_SCHEME, x=c)
+        if r['task']==Task.BETA_ZETA:r.update(task=Task.NAT_BRIDGE,mode=Mode.WALK,nat_bridge_pc=0)
+        else:r.update(signature_type=b,mode=Mode.CONST_SCHEME,x=c)
     elif r['mode'] == Mode.CONST_SCHEME:
         if r['task'] == Task.BETA_ZETA and b == 10:
             r.update(task=Task.GATHER_RECURSOR_ARGUMENTS, mode=Mode.WALK, x=s['stack'][r['sp']-1][1],gather_service=Task.REDUCE_RECURSOR)

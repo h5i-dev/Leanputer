@@ -95,6 +95,11 @@ class NatPrimitives:
     def reduce(self,expr):
         a,s=self.a,self.s;head,args=spine(a,expr);operation=self.classify(head)
         if operation is None or len(args)!=(1 if operation=='succ' else 2):return None
+        values=[]
+        for arg in args:
+            value=self.value(s.whnf(arg))
+            if value is None:return None
+            values.append(value)
         nat,_,_=self.validate_nat();nt=a.const(nat)
         result_type=nt
         if operation in ('beq','ble'):
@@ -102,11 +107,6 @@ class NatPrimitives:
         expected=a.mk(Tag.PI,nt,result_type)
         if operation!='succ':expected=a.mk(Tag.PI,nt,expected)
         self.signature(a.expr(head).a,expected)
-        values=[]
-        for arg in args:
-            value=self.value(s.whnf(arg))
-            if value is None:return None
-            values.append(value)
         x=values[0];y=values[1] if len(values)>1 else 0
         # The exponent cap is a pinned semantic neutral result, not RESOURCE.
         if operation=='pow' and y>1<<24:return None

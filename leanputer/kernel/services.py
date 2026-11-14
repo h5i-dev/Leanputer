@@ -95,6 +95,11 @@ class KernelServices:
                 levels = a.vector(row.b)
                 if len(levels) != len(sig.universe_parameters):
                     raise KernelError('constant universe arity')
+                if hasattr(self,'literal_symbols'):
+                    primitives=self._nat_primitives()
+                    if primitives.classify(head) is not None:
+                        primitive=primitives.reduce(root)
+                        if primitive is not None:root=primitive;continue
                 if sig.value is not None and not sig.opaque:
                     value = substitute_levels(a, sig.value, dict(zip(sig.universe_parameters, levels)))
                     root = a.app(value, args)
@@ -348,6 +353,15 @@ class KernelServices:
         result = quick(x,y)
         if result is not None:return result
         xr,yr = a.expr(x),a.expr(y)
+        if xr.tag==Tag.NAT or yr.tag==Tag.NAT:
+            literal,other=(x,y) if xr.tag==Tag.NAT else (y,x)
+            primitives=self._nat_primitives();nat,zero,succ=primitives.validate_nat()
+            head,args=spine(a,other);head=a.expr(head)
+            if head.tag==Tag.CONST and not a.vector(head.b):
+                value=primitives.value(literal)
+                if head.a==zero and not args:return value==0
+                if head.a==succ and len(args)==1:
+                    return False if not value else self.convert(primitives.literal(value-1),args[0])
         # If x is a proof, kernel proof irrelevance decides by the proof types.
         tx = self.infer(x)
         if self.levels.is_zero(self.ensure_type(tx)):
@@ -377,19 +391,15 @@ class KernelServices:
             if not self.convert(self.infer(value),self.infer(constructed)):continue
             if all(self.convert(a.mk(Tag.PROJ,info.family,i,value),args[info.parameters+i]) for i in range(info.fields)):
                 return True
-        if xr.tag in (Tag.NAT,Tag.STRING) or yr.tag in (Tag.NAT,Tag.STRING):
-            raise MissingOperation('literal/constructor conversion preparation not integrated')
+        if xr.tag==Tag.STRING or yr.tag==Tag.STRING:
+            raise MissingOperation('String literal/constructor conversion preparation not integrated')
+        if xr.tag==Tag.NAT or yr.tag==Tag.NAT:return False
         # Unit-like equality is independent of the syntactic form of y.
         type_ref = self.whnf(tx);head,_ = spine(a,type_ref);head = a.expr(head)
         info = self._structure(head.a) if head.tag == Tag.CONST else None
         if info is not None:
             ctor = self.constructors.get(info.constructors[0])
             if ctor is not None and not ctor.fields:return self.convert(type_ref,self.infer(y))
-        # Pending Nat/Quot reduction extensions can affect constant-headed apps.
-        # Until checked primitive bindings are implemented, do not call their
-        # irreducibility a proof of inequality, including literal-free Nat.zero.
-        for value in (x,y):
-            head,args = spine(a,value)
-            if args and a.expr(head).tag == Tag.CONST:
-                raise MissingOperation('primitive-aware negative conversion not integrated')
+        # Nat/Quot reduction and Nat offset are now complete before this
+        # canonical-form negative. String literal cases still GAP above.
         return False

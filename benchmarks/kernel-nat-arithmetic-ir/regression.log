@@ -1,0 +1,44 @@
+original Nat literal 0 source DONE 7893 steps 864 heap
+original Nat literal 1 source DONE 8212 steps 901 heap
+original Nat literal 65536 source DONE 8219 steps 904 heap
+original Nat literal 1461501637330902918203684832716283019655932542976 source DONE 8300 steps 931 heap
+original Nat literal 340282366920938463463374607431768211473 source DONE 8285 steps 927 heap
+Nat literal selected Boolean transitions 143
+.Nat literal boundary missing GAP GAP_PRIMITIVE
+Nat literal boundary empty GAP GAP_PRIMITIVE
+Nat literal boundary two-fields GAP GAP_PRIMITIVE
+Nat literal boundary narrow-borrow RESOURCE INDEX
+.Quot transaction atomic name INVALID INVALID_DECLARATION
+Quot transaction atomic type INVALID TYPE_MISMATCH
+Quot transaction atomic arity INVALID UNIVERSE_ARITY
+Quot transaction atomic later INVALID TYPE_MISMATCH
+Quot transaction atomic heap RESOURCE HEAP
+.Quot committed-name collision explicit GAP; origins/environment preserved
+.source-quotient original-source Quot DONE 16282 steps 1991 heap
+source-quot-lift original-source Quot DONE 21466 steps 2414 heap
+source-quot-lift-nested original-source Quot DONE 30982 steps 3035 heap
+source-derived environment Quot.ind runtime + surplus beta DONE 233 steps
+source-quot-ind-surplus original-source Quot DONE 18017 steps 2187 heap
+Quot selected Boolean transitions 372
+.conversion source proof-irrelevance DONE 731 steps
+conversion source function-eta DONE 948 steps
+conversion source binder-congruence DONE 415 steps
+conversion source structure-eta DONE 4154 steps
+conversion source unit-like DONE 2819 steps
+conversion source equivalent-level-vector DONE 559 steps
+conversion selected Boolean transitions 249
+.projection source dependent-field DONE 4314 steps
+projection source projection-surplus-beta DONE 4554 steps
+projection source wrong-family INVALID 4152 steps
+projection source out-of-range INVALID 4307 steps
+projection source prop-data-denied INVALID 5030 steps
+projection source prop-unused-data-skipped DONE 5249 steps
+projection source prop-dependent-data-denied INVALID 5756 steps
+projection source universe-parameter-prefix DONE 5333 steps
+projection selected Boolean transitions 142
+..original source ACCEPT; steps 188375 heap 16070 public signatures 12 origins 2 selected Boolean transitions 421 seconds 130.66458603701903
+.
+----------------------------------------------------------------------
+Ran 9 tests in 364.831s
+
+OK

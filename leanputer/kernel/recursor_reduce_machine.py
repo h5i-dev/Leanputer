@@ -57,12 +57,15 @@ def step(machine, tag, a, b, c, stop, ret, alloc):
         elif mode == Mode.GATHER_SAVE:
             if r['free'] >= cfg.heap: stop(Outcome.RESOURCE, Reason.HEAP)
             else:
-                ref = r['free']; s['heap'][ref] = [CellTag.REDUCER_CALL, frame[1], r['gather_base_sp'], 0]
+                ref = r['free']; s['heap'][ref] = [CellTag.REDUCER_CALL,frame[1],r['gather_base_sp'],r['gather_fallback'] if r['gather_service']==Task.NAT_REDUCE else 0]
                 frame[1] = ref
-                r.update(free=ref+1, task=Task.QUOT_REDUCE if r['gather_service']==Task.QUOT_REDUCE else Task.REDUCE_RECURSOR,quot_reduce_pc=0,mode=Mode.WALK,x=r['gather_expression'],depth=0)
+                r.update(free=ref+1, task=Task.NAT_REDUCE if r['gather_service']==Task.NAT_REDUCE else Task.QUOT_REDUCE if r['gather_service']==Task.QUOT_REDUCE else Task.REDUCE_RECURSOR,nat_reduce_pc=0,quot_reduce_pc=0,mode=Mode.WALK,x=r['gather_expression'],depth=0)
         elif mode == Mode.GATHER_RESTORE:
             r.update(task=Task.BETA_ZETA, ctx=frame[2], arg_base=frame[4], count=frame[5], depth=0)
-            if not r['gather_result']:
+            if not r['gather_result'] and c:
+                s['stack'][r['sp']-1]=[CALL_INFER_CONSTANT_LOOKUP,a,frame[2],Task.BETA_ZETA,frame[4],frame[5]]
+                r.update(task=Task.NAT_BRIDGE,mode=Mode.WALK,nat_bridge_pc=20,x=c)
+            elif not r['gather_result']:
                 r['sp'] -= 1; ret(a)
             else: r.update(sp=b, mode=Mode.BETA_ZETA, x=r['gather_result'])
         else: stop(Outcome.INVALID, Reason.SYNTAX)

@@ -19,9 +19,12 @@ sole constructor, and structurally compares both types as specified by
 `Eq.refl`; nor is there a separate hardcoded Eq parameter-count rule. It builds
 `Quot`, `Quot.mk`, `Quot.lift`, and `Quot.ind` types from fixed kernel syntax,
 using checked scheme symbols as data. Their types are never supplied by the
-exported claims. The pinned kernel's insertion replaces existing bindings; the
-private linked overlay implements that behavior and counts only newly added
-names. All generated bindings and the initialization flag publish together
+exported claims. The pinned kernel's insertion replaces existing bindings. Such replacement can
+invalidate earlier original-block provenance and dependent declarations. The
+current implementation explicitly GAPs if initialization would overwrite an
+ordinary committed binding; whole-prefix invalidation/rechecking is unfinished.
+Repeated claims after actual initialization remain idempotent. The private
+overlay counts the newly added primitive names. All generated bindings and the initialization flag publish together
 after the current claim's name/interface, universe uniqueness/arity, scope,
 type Sort and universe-specialized conversion checks. Failure preserves the
 public environment, origins, raw cursor and initialized flag. Physical words

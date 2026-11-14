@@ -53,6 +53,11 @@ class CellTag(IntEnum):
     FAMILY_RULE = 179            # Private (familySig,generatedRule,0).
     RECURSOR_COUNTS = 180        # Derived (numParams,numIndices,sharedCounts181).
     RECURSOR_SHARED_COUNTS = 181 # Derived (numMotives,numMinors,block182).
+    NAT_FALLBACK = 210 # Private(scheme,type,originalHead) for neutral Nat delta.
+    NAT_REDUCE_STATE = 211 # Private(arguments,leftBits,rightBits).
+    NAT_BITS = 207 # Private canonical little-endian bit vector (length,head,0).
+    NAT_DIV_RESULT = 208 # Private arbitrary Nat (quotientBits,remainderBits,0).
+    NAT_ARITHMETIC = 209 # Private algorithm state; never emitted by loader.
     STRUCTURE_INFO = 195 # Derived (ownerSymbol,nparams,detail).
     STRUCTURE_DETAIL = 196 # Derived (ctorSymbol,nfields,0).
     CONVERT_BINDER = 197 # Private conversion binder/eta state.

@@ -88,7 +88,7 @@ def check_sources(documents, config, *, device='cuda', batch_size=1, intermediat
         native_attempted=sum(row['native_attempted'] for row in results),
         full_kernel_native_support=False,
         validation_scope='Original-source declaration checking with explicit GAP callbacks; not full Lean or mathlib coverage',
-        implementation_gaps=['Nat/String literal services (including String projection preparation)','primitive-aware negative conversion and missing primitive reductions'],
+        implementation_gaps=['String literal typing/construction/projection/conversion','Quot initialization overwriting existing bindings (prefix/registry invalidation)','unavailable private metadata during source checking'],
         timing_scope='Cold compilation and forward batches with a fixed fuel cap and optional native completion stopping; syntax/imports excluded from model timings; no steady-state throughput claim')
     if machine is not None:
         report.update(stock_class=type(machine.model).__module__+'.'+type(machine.model).__name__,

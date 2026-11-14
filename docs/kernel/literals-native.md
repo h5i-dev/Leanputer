@@ -38,29 +38,32 @@ use. A twelve-bit physical-word predecessor borrow reports RESOURCE INDEX.
 Four additional selected terminal transitions match the Boolean program.
 This is source semantic/selected IR evidence, not Nat STOCK or full arithmetic.
 
+## Nat arithmetic integration
+
+The subsequent [native arithmetic controller](nat-arithmetic-plan.md) connects
+all15pinned Nat operations and typed zero/successor offset conversion through
+original-source WHNF and general conversion. Numeric candidates and exact arity
+are recognized before requiring primitive bindings; ordinary declarations with
+these names and neutral operands still reach their ordinary delta bodies.
+Constant-headed canonical-form negatives no longer blanket GAP after the
+completed Nat/Quot/offset paths. String literal cases still GAP.
+
+`literal_reference.py` remains independent development SPEC, never a native
+inference callback. Its Python integer/math operations supply expected semantics
+only; weighted arithmetic uses arbitrary private bit/limb loops. Source/selected
+IR evidence and physical/semantic limits are recorded with the controller.
+No new Nat STOCK or SMALL-model evidence is claimed.
+
 ## Remaining integration
 
-`literal_reference.py` is independent development SPEC only. It includes all
-pinned Nat primitive semantic expectations: successor/add/sub/mul/pow/gcd/mod/div,
-beq/ble, bitwiseand/or/xor, shifts; the pinned pow exponent cap; division/modulus
-at zero; checked Nat/Bool interfaces and bounded output literals. Those
-arithmetic reductions are **not connected to the weighted controller yet** and
-never supply native inference answers. Nat successor/literal conversion and the
-other primitive-aware negative conversion paths can still GAP.
-
-Next is a fixed Nat arithmetic controller over private arbitrary bit/limb vectors:
-addition/borrow, multiplication, binary division, Euclid, exponentiation, bitwise
-operations and shifts. Nat WHNF must try a genuine primitive before ordinary
-delta unfolding and preserve fallback when operands are neutral or pow exceeds
-the pinned semantic cap. It must preserve immutable state across recursively
-normalized operands and mixed inductive/Quot reductions. This is kernel arithmetic,
-not a proof-supplied opcode program or generic CPU emulator.
-
 String literal binding/type, UTF8 scalar decoding and Char/List/String helper
-construction, projection preparation and literal conversion remain GAP. The
-bootstrap/helper dependencies must be audited against pinned safe original
-sources; no supplied String constructor certificate will be accepted. Syntax
-export now records the implicit Nat/String type dependency from Literal.type.
-The compiler still targets unmodified stock forward/cache with identity feedback.
-The10.35B historical STOCK smoke is outside this evidence and does not meet the
-SMALL-model target; no model-size/performance claim or broad campaign is made.
+construction, projection preparation and literal conversion remain GAP. Their
+bootstrap/helper dependencies are being audited against pinned safe original
+sources. No supplied String constructor certificate is accepted. Syntax export
+currently records the implicit Nat/String type dependency from Literal.type;
+String construction will also need the genuine implicit helper closure.
+Quot initialization overwriting already committed ordinary bindings explicitly
+GAPs until dependent-prefix/registry invalidation is implemented; repeated claims
+after actual initialization remain idempotent. Private metadata gaps remain
+explicit. The compiler targets unmodified stock forward/cache with identity
+feedback. The10.35B historical STOCK smoke does not meet the SMALL-model target.

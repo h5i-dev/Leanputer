@@ -1,0 +1,9 @@
+Nat offset/shift boundary negative-offset INVALID TYPE_MISMATCH 37965 steps
+Nat offset/shift boundary large-right DONE NONE 37050 steps
+Nat offset/shift boundary large-left-zero DONE NONE 37046 steps
+Nat offset/shift boundary large-left-resource RESOURCE INDEX 36995 steps
+.
+----------------------------------------------------------------------
+Ran 1 test in 39.619s
+
+OK

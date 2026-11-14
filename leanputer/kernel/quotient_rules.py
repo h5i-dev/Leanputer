@@ -93,7 +93,12 @@ def emit_rules(c):
     for index,(key,name) in enumerate([('type','quot'),('ctor','mk'),('lift','lift'),('ind','ind')]):
         pc=600+index*6
         call(at(pc),pc+1,Task.ENV_LOOKUP,0,query_symbol=r['quot_symbol_'+name],lookup_head=r['env_head'])
-        go(at(pc+1),pc+2,quot_new=c.add(r['quot_new'],c.mux(c.eq(r['r'],0),1,0)))
+        existing=at(pc+1);fresh=c.eq(r['r'],0)
+        # Primitive replacement can invalidate earlier original-block provenance
+        # and dependent declarations. Preserve an explicit boundary until that
+        # whole-prefix invalidation/recheck transaction is implemented.
+        c.stop(c.AND(existing,c.NOT(fresh)),Outcome.GAP,Reason.GAP_PRIMITIVE)
+        go(c.AND(existing,fresh),pc+2,quot_new=c.add(r['quot_new'],1))
         store(at(pc+2),(C.CHECKED_SCHEME,r['quot_lift_parameters'] if key=='lift' else r['quot_parameters'],11,index+1),pc+3,quot_scheme=r['free'])
         store(at(pc+3),(C.CHECKED_SIGNATURE,r['quot_symbol_'+name],r['quot_'+key],r['quot_scheme']),pc+4,quot_signature=r['free'])
         store(at(pc+4),(C.VECTOR_CELL,r['quot_signature'],r['quot_head'],0),pc+5,quot_head=r['free'])

@@ -454,3 +454,18 @@ checks and independent public scheme/RHS comparisons. Combined Nat/Quot/restored
 owner regression PASS5tests166.179s. This is outside STOCK evidence. Full Nat
 arithmetic, String and primitive-aware negative conversion remain unfinished;
 independent arithmetic SPEC does not provide native answers or coverage.
+
+The subsequent [Nat arithmetic/offset controller](nat-arithmetic-plan.md) now
+connects all15genuine pinned Nat operations, arbitrary bit/limb algorithms,
+recursive mixed operands, semantic pow-cap/neutral ordinary delta fallback and
+typed zero/successor offset conversion through original source. Six cases use
+no assumptions, independently match every public type/RHS and compare636selected
+Boolean transitions; negative/huge-shift boundaries and nine-test source
+regression pass. [Raw evidence](../../benchmarks/kernel-nat-arithmetic-ir/README.md)
+distinguishes these from STOCK and Std-body admission. Canonical-form conversion
+negatives no longer blanket GAP on constant-headed applications after these
+positive paths; String literal conversion still GAPs. An audit identified that
+Quot overwrites need dependent-prefix/origin invalidation. Initialization now
+explicitly GAPs on an existing ordinary binding, preserving the prior committed
+environment/registry; actual initialized claims remain idempotent. No full-kernel,
+SMALL-model, nested-source STOCK or corpus coverage claim is made.

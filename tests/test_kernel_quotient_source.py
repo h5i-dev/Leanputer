@@ -138,6 +138,24 @@ class QuotientSourceTest(unittest.TestCase):
             self.assertEqual(r['status'],spec.Outcome.RESOURCE if kind=='heap' else spec.Outcome.INVALID,(kind,r['reason']))
             print('Quot transaction atomic',kind,spec.Outcome(r['status']).name,spec.Reason(r['reason']).name,flush=True)
 
+    def test_initialization_collision_does_not_reuse_stale_origins(self):
+        doc=document();prop=['sort',['zero']];type0=['sort',['succ',['zero']]]
+        old=dict(kind='inductive_block',level_params=[],parameters=0,recursor_claims=[],families=[dict(
+            name=name('Quot'),recursor_name=name('Quot.rec'),type=type0,constructors=[dict(name=name('Quot.mk'),type=['const',name('Quot'),[]])])])
+        doc['declarations'].insert(0,old)
+        source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()
+        self.assertEqual((oracle.status,oracle.checked_input_items,oracle.admitted_declarations),('GAP',2,6),oracle)
+        cfg=spec.MachineConfig(heap=16384,stack=128,context=64,constants=8,fuel=250000,word_bits=16)
+        source,args,decls=program.parse_document(doc);machine=spec.SpecMachine(cfg,program.prepare(cfg,source,args,decls));prefix=None
+        for step in range(cfg.fuel+2):
+            state=machine.state;r=state['regs']
+            if r['raw_index']==2 and prefix is None:prefix=tuple(r[k]for k in('env_head','nested_registry_head','published_declarations'))
+            machine.step()
+            if r['status']:break
+        self.assertEqual((r['status'],r['reason'],r['raw_index'],r['quot_initialized']),(spec.Outcome.GAP,spec.Reason.GAP_PRIMITIVE,2,0))
+        self.assertEqual(tuple(r[k]for k in('env_head','nested_registry_head','published_declarations')),prefix)
+        print('Quot committed-name collision explicit GAP; origins/environment preserved',flush=True)
+
     def check_source(self,doc):
         source,args,decls=program.parse_document(doc);driver=EnvironmentDriver(source);oracle=driver.check()
         self.assertEqual(oracle.status,'ACCEPT',oracle)

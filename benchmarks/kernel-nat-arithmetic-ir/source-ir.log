@@ -1,0 +1,12 @@
+Nat arithmetic whole source neutral-primitive-name-still-ordinary-data DONE 695 steps 124 heap 1 signatures; no assumptions
+Nat arithmetic whole source source-composed-kernel-Nat-primitives DONE 52210 steps 5259 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-composed-Nat-false-predicates DONE 52209 steps 5257 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-multiple-limb-multiply-divide DONE 41386 steps 4926 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-pow-cap-delta-fallback DONE 36852 steps 3516 heap 29 signatures; no assumptions
+Nat arithmetic whole source source-Nat-zero-literal-conversion DONE 36722 steps 3434 heap 29 signatures; no assumptions
+Nat arithmetic selected Boolean transitions 636
+.
+----------------------------------------------------------------------
+Ran 1 test in 200.332s
+
+OK

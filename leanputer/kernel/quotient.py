@@ -39,6 +39,9 @@ def initialize(driver, claim):
             alpha=c.fresh(sort(u),binder_info=1);x=c.fresh(alpha)
             expected=pi([alpha,x],a.app(a.const(eq,(u,)),[alpha,x,x]))
             if not representation_equal(a,expected,refl.type):raise KernelError('unexpected Eq constructor type')
+        if any(name in s.constants for name in names):
+            from .services import MissingOperation
+            raise MissingOperation('Quot would overwrite committed bindings; dependent prefix/registry invalidation not implemented')
         us,vs=symbol('u'),symbol('v')
         u,v=a.level(LevelTag.PARAM,us),a.level(LevelTag.PARAM,vs)
         with c.scope():
