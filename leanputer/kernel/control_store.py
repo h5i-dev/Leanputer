@@ -137,10 +137,11 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False):
         role_dispatch=role_dispatch or mode_dispatch
         family_dispatch=family_dispatch or role_dispatch
         self.mode_dispatch=mode_dispatch
+        self.indexed_phases=indexed_phases
         self.role_dispatch=role_dispatch
         self.capture_statistics=compiler.g.statistics()
         self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
@@ -346,7 +347,7 @@ class ControlStore:
                 block=self.block();code=WordCode(self,block);a=code.get(case['variable'])
                 code.block.emit('TEST_WORD_LT',a=a,b=Operand('literal',parts[split][0],a.width),yes=left,no=right,width=a.width)
                 return block.label
-            entry=select(ranges)
+            entry=self.control_cases(case['variable'],ranges)if self.indexed_phases else select(ranges)
         self.phase_entries[key]=entry;return entry
 
     def block(self):
@@ -588,7 +589,7 @@ class ControlStore:
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
             source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
-            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,
+            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):

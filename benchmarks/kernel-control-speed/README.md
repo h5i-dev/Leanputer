@@ -234,3 +234,18 @@ No long rerun is scheduled. Source ports, guard initialization and commit overhe
 are still being reduced. Existing kernel semantic GAPs and larger-domain native
 coverage remain explicit. Proposed100M size gate passes; practical tool delivery
 is still unfinished.
+
+Shared-key memory experiment (2026-11-15): `--grouped-memory` uses four
+independent stock GDN value heads per key head. RF/heap pages share their
+low-seven-bit keys; frame/declaration/context banks use disjoint key coordinates.
+Logical rows, permissions, all rules and source bounds are unchanged. Targeted
+STOCK RF page/wrap/borrow and arena/read-only-declaration modules pass. The whole
+bundled candidate plans at 59,632,528 dense parameters, H1024/I256/L63, five
+active GDN layers, 50,960 immutable records (`grouped-memory-plan.json`).
+A short integrated stock prefix is pending; no whole-source or latency result
+is claimed for this layout. Default baseline remains the audited 48.29M model.
+
+Optional indexed private-phase dispatch preserves every matched source state
+offline but yields 173,182/177,684 forwards versus 175,953/180,686 for bundled
+controls, with 60,432 records. This minor reduction is not selected for GPU
+validation or practical delivery (`indexed-phase-costs.txt`).

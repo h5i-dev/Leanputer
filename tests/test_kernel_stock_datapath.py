@@ -29,6 +29,9 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_grouped_value_head_memory_preserves_word_rf_pages(self):
+        self.check_core('byte_pages',grouped_memory=True)
+
     def test_parallel_word_carry_wrap_borrow_and_rf_coherence(self):
         self.check_core('byte_pages',parallel_carry=True,hidden=896)
 
@@ -194,7 +197,13 @@ class SharedDatapathTest(unittest.TestCase):
             self.assertEqual([[word(v[i:i+16])for i in range(0,96,16)]for v in extra.float().tolist()],[[1,2,3,4,5,6]]*2)
         print(chip.report,flush=True)
 
+    def test_grouped_value_heads_preserve_all_arena_banks(self):
+        self.check_arena(grouped_memory=True)
+
     def test_arena_reads_writes_and_read_only_declaration_bank(self):
+        self.check_arena()
+
+    def check_arena(self,**options):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
         program=[CoreRecord(O.HEAP_WRITE,a=rf(1),b=rf(2),auxiliary=1,yes=1),
@@ -211,7 +220,7 @@ class SharedDatapathTest(unittest.TestCase):
         program=[replace(r,yes=r.yes+5*int(r.yes>=7),no=r.no+5*int(r.no>=7))for r in program]
         program[7:7]=[CoreRecord(O.HEAP_ROW_READ,dest=rf(504*7),a=rf(1),yes=8),CoreRecord(O.FRAME_ROW_READ,dest=rf(505*7),a=rf(3),yes=9),CoreRecord(O.CONTEXT_ROW_READ,dest=rf(506*7),a=rf(4),yes=10),CoreRecord(O.DECLARATION_ROW_READ,dest=rf(507*7),a=rf(5),yes=11),CoreRecord(O.CLEAR_RF_ROW,dest=rf(510*7),yes=12)]
         program[6]=replace(program[6],yes=7)
-        chip=build(program,rom_layout='byte_pages',compact_attention=True)
+        chip=build(program,rom_layout='byte_pages',compact_attention=True,**options)
         packets=[]
         for kind,address in((0,0),(0,1),(0,504),(0,505),(0,506),(0,507),(0,510),(1,273),(2,19),(3,5),(4,1)):
             batch=[]
@@ -238,11 +247,11 @@ class SharedDatapathTest(unittest.TestCase):
         for bank,row,expected in(('heap',17,[11,65535,33,44]),('stack',19,[11,22,65535,44,55,66]),('context',5,[65535]),('constants',1,[11,22,33,44,0x1234,66])):
             page=2 if bank=='heap'else 0
             head=next(h for h in chip.report['arena_heads']if h['bank']==bank and h['page']==page)
-            stored=cache.layers[head['layer']].recurrent_states[0][:,0,row,2:2+16*len(expected)]/A_BIT
+            stored=cache.layers[head['layer']].recurrent_states[0][:,head.get('value_head',0),head.get('row_offset',0)+row,2:2+16*len(expected)]/A_BIT
             self.assertEqual([[word(values[i:i+16])for i in range(0,len(values),16)]for values in stored.float().tolist()],[expected,expected])
         for head in chip.report['rf_heads']:
             if head['page']!=3:continue
-            memory=cache.layers[head['layer']].recurrent_states[0][:,0]
+            memory=cache.layers[head['layer']].recurrent_states[0][:,head.get('value_head',0)]
             self.assertEqual(memory[:,126,2:].sum().item(),0)
             for row,expected in ((504,[11,65535,33,44,105,106,107]),(505,[11,22,65535,44,55,66,207]),(506,[65535,302,303,304,305,306,307]),(507,[11,22,33,44,0x1234,66,407])):
                 values=(memory[:,row-384,2:128]/A_BIT).float().tolist()

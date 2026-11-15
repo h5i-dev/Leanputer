@@ -119,7 +119,7 @@ class StockDatapath:
         return StaticCache(config=config,max_cache_len=1)
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False):
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
@@ -133,7 +133,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     module_start=1+rom_layers+decode_layers;layers=rom_layers+decode_layers+datapath_layers+5
     logical_count=layers*(3*hidden*intermediate+644*hidden+1666)+129*hidden
     if not compact_attention and logical_count>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
-    builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;fixed=FixedSlots(hidden//64+1);features={};physical={}
+    builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;g.target.value_heads=4 if grouped_memory else 1;fixed=FixedSlots(hidden//64+1);features={};physical={}
     def feature(name,width):
         slots=fixed.add(name,width);values=[builder.feature(f'{name}/{i}')for i in range(width)]
         for value,slot in zip(values,slots):physical[next(iter(value.terms))]=slot
@@ -224,13 +224,20 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
             z={i+2:K*one for i in range(126)};outs=[(i+2,128.)for i in range(126)];into=list(outputs)
         g.head(f'rf.{port}.{page}',q,k,values,0,z,outs,beta=write_flags[page],min_level=2*layer,into=into)
         rf_metadata.append(dict(port=port,page=page,layer=g.nodes[-1].level//2))
-    for page in range(4):head(0,page,query_a,A,literal_a)
+    if grouped_memory:
+        from .stock_memory import grouped_rf,grouped_arenas
+        grouped_rf(builder,0,query_a,A,write_flags,address,payload,run,literal_a,suppress_dest,module_start,rf_metadata)
+    else:
+        for page in range(4):head(0,page,query_a,A,literal_a)
     queued_main=A[:3]+[Expr()]+A[3:11];queued_shadow=A[:3]+[one]+A[3:11]
     shadow_dest=field_dest[:3]+[one]+field_dest[4:]
     if bundled:
         query_b=[g.ffn([(1,queued_shadow[i],committing),(1,shadow_dest[i],merging),(1,code[28+i],guard),(1,code[30+i],one-committing-merging-guard)],name='flat-query-B')for i in range(12)]
     else:query_b=select(committing,queued_shadow,select(merging,shadow_dest,code[30:42],'source-B-field'),'query-B-address')
-    for page in range(4):head(1,page,query_b,B,code[91]-g.ffn([(1,code[91],merging+committing+guard)],name='source-B-literal-mask'))
+    literal_b=code[91]-g.ffn([(1,code[91],merging+committing+guard)],name='source-B-literal-mask')
+    if grouped_memory:grouped_rf(builder,1,query_b,B,write_flags,address,payload,run,literal_b,suppress_dest,module_start+1,rf_metadata)
+    else:
+        for page in range(4):head(1,page,query_b,B,literal_b)
     if bundled:
         queue_target=[Expr()]*3+queue_write_address
         query_d=[g.ffn([(1,queued_shadow[i],commit_clear),(1,queued_main[i],commit_main),(1,shadow_dest[i],merge_value),(1,queue_target[i],merge_append),(1,code[50+i],guard),(1,code[6+i],one-committing-merging-guard)],name='flat-query-D')for i in range(12)]
@@ -238,7 +245,9 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         merge_dest=select(stage[0],[Expr()]*3+queue_write_address,shadow_dest,'merge-destination')
         commit_dest=select(stage[0],queued_shadow,queued_main,'commit-destination')
         query_d=select(committing,commit_dest,select(merging,merge_dest,code[6:18],'destination-field'),'query-D-address')
-    for page in range(4):head(2,page,query_d,D)
+    if grouped_memory:grouped_rf(builder,2,query_d,D,write_flags,address,payload,run,Expr(),suppress_dest,module_start+2,rf_metadata)
+    else:
+        for page in range(4):head(2,page,query_d,D)
     guard_third=None
     if bundled:
         # Capture the RF row before arena heads reuse the same residual lanes.
@@ -252,19 +261,21 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     bank_metadata=[]
     # The same pending packet writes ONE bank per forward. RF copies consume
     # it first; arena banks consume it later, before any new packet is committed.
-    bank_specs=[('heap',512,4,1,WordAction.HEAP_READ,WordAction.HEAP_WRITE,12),('stack',32,6,2,WordAction.FRAME_READ,WordAction.FRAME_WRITE,16),('constants',4,6,4,WordAction.DECLARATION_READ,None,17),('context',8,1,3,WordAction.CONTEXT_READ,WordAction.CONTEXT_WRITE,18)]
-    for bank,cells,words,bank_id,reading,storing,start_layer in bank_specs:
-        row_read={WordAction.HEAP_READ:WordAction.HEAP_ROW_READ,WordAction.FRAME_READ:WordAction.FRAME_ROW_READ,WordAction.CONTEXT_READ:WordAction.CONTEXT_ROW_READ,WordAction.DECLARATION_READ:WordAction.DECLARATION_ROW_READ}[reading]
-        query=builder.gate('and',[flags[reading]+flags[row_read],one-stage[0]],f'{bank}-load0')+(flags[storing]if storing is not None else Expr())
-        width=cells.bit_length()-1
-        for page in range(max(1,cells//128)):
-            writing=builder.gate('and',[enable]+matches(kind,bank_id)+matches(address[7:width],page)+([boot]if bank=='constants'else[]),f'{bank}-write/{page}')
-            q={r:select_form(matches(a[:min(7,width)],r)+matches(a[7:width],page)+[run,query])for r in range(min(128,cells))}
-            k={r:select_form(matches(address[:min(7,width)],r))for r in range(min(128,cells))}
-            data={0:A_REF*one,1:A_REF*one};data.update({i+2:A_BIT*payload[i]for i in range(words*16)})
-            layer=module_start+start_layer+page
-            g.head(f'arena.{bank}.{page}',q,k,data,0,{i+2:K*one for i in range(words*16)},[(i+2,128.)for i in range(words*16)],beta=writing,min_level=2*layer,into=D[:words*16])
-            bank_metadata.append(dict(bank=bank,page=page,layer=g.nodes[-1].level//2,words=words))
+    if grouped_memory:grouped_arenas(builder,a,address,payload,enable,kind,boot,run,stage,flags,D,module_start+3,bank_metadata,WordAction)
+    else:
+        bank_specs=[('heap',512,4,1,WordAction.HEAP_READ,WordAction.HEAP_WRITE,12),('stack',32,6,2,WordAction.FRAME_READ,WordAction.FRAME_WRITE,16),('constants',4,6,4,WordAction.DECLARATION_READ,None,17),('context',8,1,3,WordAction.CONTEXT_READ,WordAction.CONTEXT_WRITE,18)]
+        for bank,cells,words,bank_id,reading,storing,start_layer in bank_specs:
+            row_read={WordAction.HEAP_READ:WordAction.HEAP_ROW_READ,WordAction.FRAME_READ:WordAction.FRAME_ROW_READ,WordAction.CONTEXT_READ:WordAction.CONTEXT_ROW_READ,WordAction.DECLARATION_READ:WordAction.DECLARATION_ROW_READ}[reading]
+            query=builder.gate('and',[flags[reading]+flags[row_read],one-stage[0]],f'{bank}-load0')+(flags[storing]if storing is not None else Expr())
+            width=cells.bit_length()-1
+            for page in range(max(1,cells//128)):
+                writing=builder.gate('and',[enable]+matches(kind,bank_id)+matches(address[7:width],page)+([boot]if bank=='constants'else[]),f'{bank}-write/{page}')
+                q={r:select_form(matches(a[:min(7,width)],r)+matches(a[7:width],page)+[run,query])for r in range(min(128,cells))}
+                k={r:select_form(matches(address[:min(7,width)],r))for r in range(min(128,cells))}
+                data={0:A_REF*one,1:A_REF*one};data.update({i+2:A_BIT*payload[i]for i in range(words*16)})
+                layer=module_start+start_layer+page
+                g.head(f'arena.{bank}.{page}',q,k,data,0,{i+2:K*one for i in range(words*16)},[(i+2,128.)for i in range(words*16)],beta=writing,min_level=2*layer,into=D[:words*16])
+                bank_metadata.append(dict(bank=bank,page=page,layer=g.nodes[-1].level//2,words=words))
     submode=op_any(WordAction.SUB,WordAction.EQ_BRANCH,WordAction.LT_BRANCH,WordAction.SWITCH4,WordAction.SWITCH8)+guard
     if parallel_carry:
         # Full16bit word arithmetic, with all input values retained. Prefix
@@ -456,10 +467,11 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         layers=body+math.ceil(len(clear)/intermediate)+1
     active_layers={node.level//2 for node in g.nodes if isinstance(node,Head)}
     layer_types=['linear_attention'if not compact_attention or i in active_layers else'full_attention'for i in range(layers)]
-    expected=sum(3*hidden*intermediate+(644*hidden+1666 if kind=='linear_attention'else 12*hidden+4)for kind in layer_types)+129*hidden
+    value_heads=4 if grouped_memory else 1
+    expected=sum(3*hidden*intermediate+((258+386*value_heads)*hidden+1152+514*value_heads if kind=='linear_attention'else 12*hidden+4)for kind in layer_types)+129*hidden
     if expected>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
-    if plan_only:return dict(logical_dense_parameters=expected,hidden=hidden,intermediate=intermediate,layers=layers,graph_layers=g.n_layers(),rom_records=len(records),rom_layers=rom_layers,allocated_channels=high,active_gdn_layers=len(active_layers),guard_bundles=bundled,parallel_carry=parallel_carry,planning_only=True)
-    config=Qwen3_5TextConfig(hidden_size=hidden,intermediate_size=intermediate,num_hidden_layers=layers,layer_types=layer_types,vocab_size=64,linear_key_head_dim=128,linear_value_head_dim=128,linear_num_key_heads=1,linear_num_value_heads=1,linear_conv_kernel_dim=4,num_attention_heads=1,num_key_value_heads=1,head_dim=2,hidden_act='silu',tie_word_embeddings=False,rope_parameters=dict(rope_type='default',rope_theta=10000000,partial_rotary_factor=1.,mrope_section=[1,0,0],mrope_interleaved=True))
+    if plan_only:return dict(logical_dense_parameters=expected,hidden=hidden,intermediate=intermediate,layers=layers,graph_layers=g.n_layers(),rom_records=len(records),rom_layers=rom_layers,allocated_channels=high,active_gdn_layers=len(active_layers),guard_bundles=bundled,parallel_carry=parallel_carry,grouped_memory=grouped_memory,gdn_value_heads=value_heads,planning_only=True)
+    config=Qwen3_5TextConfig(hidden_size=hidden,intermediate_size=intermediate,num_hidden_layers=layers,layer_types=layer_types,vocab_size=64,linear_key_head_dim=128,linear_value_head_dim=128,linear_num_key_heads=1,linear_num_value_heads=value_heads,linear_conv_kernel_dim=4,num_attention_heads=1,num_key_value_heads=1,head_dim=2,hidden_act='silu',tie_word_embeddings=False,rope_parameters=dict(rope_type='default',rope_theta=10000000,partial_rotary_factor=1.,mrope_section=[1,0,0],mrope_interleaved=True))
     prior=torch.get_default_dtype()
     try:
         torch.set_default_dtype(torch.bfloat16)
@@ -534,6 +546,6 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     if compact_attention:model.set_attn_implementation('eager')
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
-    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
+    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=3 if grouped_memory else 12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
+    report.update(grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
     return StockDatapath(model,fixed,layout,report)

@@ -12,11 +12,11 @@ from leanputer.kernel.traversal_machine import MachineConfig
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--steps',type=int,default=128);p.add_argument('--report',type=Path,required=True);p.add_argument('--compile-stock',action='store_true');p.add_argument('--all-gdn',action='store_true');p.add_argument('--check-native-pcs',action='store_true');p.add_argument('--profile-kernels',type=Path);p.add_argument('--bundled-controls',action='store_true');p.add_argument('--save-prefix',type=Path);p.add_argument('--compare-prefix',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--steps',type=int,default=128);p.add_argument('--report',type=Path,required=True);p.add_argument('--compile-stock',action='store_true');p.add_argument('--all-gdn',action='store_true');p.add_argument('--check-native-pcs',action='store_true');p.add_argument('--profile-kernels',type=Path);p.add_argument('--bundled-controls',action='store_true');p.add_argument('--grouped-memory',action='store_true');p.add_argument('--save-prefix',type=Path);p.add_argument('--compare-prefix',type=Path);a=p.parse_args()
     if not 1<=a.steps<=512:raise ValueError('diagnostic prefix is bounded to512forwards')
     cfg=MachineConfig(**json.loads(Path('benchmarks/kernel-full-source-stock/config.json').read_text()));c,addresses=capture(cfg);program=NativeControl(ControlStore(c,role_dispatch=True,mode_dispatch=a.bundled_controls),addresses,bundle_guards=a.bundled_controls)
     print(json.dumps(dict(event='compiled',control=program.report)),flush=True)
-    chip=build(program.records,rom_layout='byte_pages',compact_attention=not a.all_gdn,hidden=960 if a.bundled_controls else 768,datapath_layers=45 if a.bundled_controls else 35,parallel_carry=a.bundled_controls);chip.model.cuda();docs=[json.loads(line)for line in Path('benchmarks/kernel-full-source-stock/source.jsonl').read_text().splitlines()]
+    chip=build(program.records,rom_layout='byte_pages',compact_attention=not a.all_gdn,hidden=1024 if a.bundled_controls and a.grouped_memory else 960 if a.bundled_controls else 768,datapath_layers=45 if a.bundled_controls else 35,parallel_carry=a.bundled_controls,grouped_memory=a.grouped_memory);chip.model.cuda();docs=[json.loads(line)for line in Path('benchmarks/kernel-full-source-stock/source.jsonl').read_text().splitlines()]
     print(json.dumps(dict(event='model-built',model=chip.report)),flush=True)
     packets=syntax_packets(chip,cfg,docs);cache=chip.new_cache();masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(2,1,dtype=torch.long,device='cuda')
     with torch.inference_mode():

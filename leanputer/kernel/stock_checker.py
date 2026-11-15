@@ -31,10 +31,10 @@ def syntax_packets(chip,config,documents):
     return torch.stack(packets,dim=1)
 
 
-def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True):
+def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True,grouped_memory=False):
     if not program.report['pc16_encoding_met']:raise ValueError('whole native program exceeds16bit control ROM; no emission')
     bundled=bool(program.report.get('guard_bundling'))
-    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True,hidden=960 if bundled else 768,datapath_layers=45 if bundled else 35,parallel_carry=bundled)
+    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True,hidden=1024 if bundled and grouped_memory else 960 if bundled else 768,datapath_layers=45 if bundled else 35,parallel_carry=bundled,grouped_memory=grouped_memory)
     chip.model.to(device);chip.report['full_current_rule_control_mapped']=True;chip.report['checker_commit_layout']['reserved_arena_buffers_implemented']=True
     built=time.perf_counter();batch=len(documents)
     packets=syntax_packets(chip,program.store.compiler.cfg,documents);cache=chip.new_cache()
@@ -86,19 +86,19 @@ def read_main_and_banks(chip,cache,batch_index):
     from .traversal_machine import RegisterLayout,StateLayout,MachineConfig
     from ..native_vendor.qwenputer.ir import A_BIT
     layout=RegisterLayout(StateLayout(MachineConfig(heap=512,stack=32,context=8,constants=4,word_bits=16)))
-    locations={(h['port'],h['page']):h['layer']for h in chip.report['rf_heads']}
+    locations={(h['port'],h['page']):h for h in chip.report['rf_heads']}
     def word(bits):
         if any(value not in(0,1)for value in bits):raise AssertionError('nonbinary stock cache payload')
         return sum(int(value)<<i for i,value in enumerate(bits))
     regs={}
     for index,(name,width)in enumerate(layout.fields):
-        address=main_address(index);row,slot=address>>3,address&7;layer=locations[0,row//128]
-        data=cache.layers[layer].recurrent_states[0][batch_index,0,row%128,2+16*slot:18+16*slot]/A_BIT
+        address=main_address(index);row,slot=address>>3,address&7;head=locations[0,row//128]
+        data=cache.layers[head['layer']].recurrent_states[0][batch_index,head.get('value_head',0),row%128,2+16*slot:18+16*slot]/A_BIT
         regs[name]=word(data.cpu().float().tolist())
     banks={}
     for h in chip.report['arena_heads']:
         cells={'heap':512,'stack':32,'context':8,'constants':4}[h['bank']]
         if h['bank']not in banks:banks[h['bank']]=[[0]*h['words']for _ in range(cells)]
-        data=(cache.layers[h['layer']].recurrent_states[0][batch_index,0,:min(128,cells),2:2+16*h['words']]/A_BIT).cpu().float().tolist()
+        data=(cache.layers[h['layer']].recurrent_states[0][batch_index,h.get('value_head',0),h.get('row_offset',0):h.get('row_offset',0)+min(128,cells),2:2+16*h['words']]/A_BIT).cpu().float().tolist()
         for row,values in enumerate(data):banks[h['bank']][128*h['page']+row]=[word(values[i:i+16])for i in range(0,len(values),16)]
     return dict(regs=regs,**banks)
