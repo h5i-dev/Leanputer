@@ -31,7 +31,7 @@ def syntax_packets(chip,config,documents):
     return torch.stack(packets,dim=1)
 
 
-def run(program,documents,device='cuda',max_forwards=2000000,progress=None,prefill_chunk=32):
+def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True):
     if not program.report['pc16_encoding_met']:raise ValueError('whole native program exceeds16bit control ROM; no emission')
     started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages')
     chip.model.to(device);chip.report['full_current_rule_control_mapped']=True;chip.report['checker_commit_layout']['reserved_arena_buffers_implemented']=True
@@ -44,21 +44,30 @@ def run(program,documents,device='cuda',max_forwards=2000000,progress=None,prefi
         for first in range(0,packets.shape[1],prefill_chunk):
             out=forward(chip.embeddings(packets[:,first:first+prefill_chunk]));cache=out.past_key_values
         loaded=time.perf_counter();state=chip.embeddings(torch.zeros(batch,1,chip.slots.next-13))
-        if progress:progress(dict(event='loaded',build_seconds=built-started,prefill_seconds=loaded-built,model=chip.report,control=program.report))
+        executor=None
+        if execution=='cuda_graph':
+            from .stock_execution import StockCudaGraph
+            model=torch.compile(chip.model,fullgraph=True,dynamic=False,options={'emulate_precision_casts':True})if compile_stock else chip.model
+            executor=StockCudaGraph(model,cache,state)
+        elif execution!='eager':raise ValueError('unknown stock execution schedule')
+        decoding_started=time.perf_counter()
+        if progress:progress(dict(event='loaded',build_seconds=built-started,prefill_seconds=loaded-built,capture_seconds=executor.setup_seconds if executor else 0,compiled_stock_operations=bool(executor and compile_stock),model=chip.report,control=program.report))
         completed=False
         for step in range(1,max_forwards+1):
-            out=forward(state,output_hidden_states=True);cache=out.past_key_values;state=out.hidden_states[-2]
+            if executor:executor.replay()
+            else:
+                out=forward(state,output_hidden_states=True);cache=out.past_key_values;state=out.hidden_states[-2]
             # Completion observation only. Every instruction and semantic
             # action is selected inside the same stock forward/cache.
             if step%32==0 or step==max_forwards:
-                logits=out.logits[:,0].float();powers=2.**torch.arange(16,device=device)
+                logits=(executor.logits if executor else out.logits)[:,0].float();powers=2.**torch.arange(16,device=device)
                 if not bool(((logits==0)|(logits==1)).all()):raise RuntimeError('stock checker emitted nonbinary diagnostic bits')
                 output=logits.reshape(batch,4,16).matmul(powers).to(torch.int64).cpu().tolist()
                 completed=all(row[1]for row in output)
-                if progress and(step%256==0 or completed or step==max_forwards):progress(dict(event='progress',forwards=step,seconds=time.perf_counter()-loaded,outputs=output,completed=completed))
+                if progress and(step%256==0 or completed or step==max_forwards):progress(dict(event='progress',forwards=step,seconds=time.perf_counter()-decoding_started,outputs=output,completed=completed))
                 if completed:break
-        elapsed=time.perf_counter()-loaded
-    return dict(chip=chip,cache=cache,state=state,outputs=output,completed=completed,forwards=step,inference_seconds=elapsed,build_seconds=built-started,prefill_seconds=loaded-built)
+        elapsed=time.perf_counter()-decoding_started
+    return dict(chip=chip,cache=cache,state=state,outputs=output,completed=completed,forwards=step,inference_seconds=elapsed,build_seconds=built-started,prefill_seconds=loaded-built,execution=execution,compiled_stock_operations=bool(executor and compile_stock),capture_seconds=executor.setup_seconds if executor else 0)
 
 
 def read_main_and_banks(chip,cache,batch_index):

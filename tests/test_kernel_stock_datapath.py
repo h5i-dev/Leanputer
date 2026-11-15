@@ -13,7 +13,7 @@ class SharedDatapathTest(unittest.TestCase):
     def test_publication_preserves_gap_reason_and_result(self):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
-        chip=build([CoreRecord(O.PUBLISH_RESULT,dest=rf(6),a=rf(1),b=rf(2),auxiliary=6)],rom_layout='byte_pages')
+        chip=build([CoreRecord(O.CALL_HANDLER,yes=2,no=1),CoreRecord(O.PUBLISH_RESULT,dest=rf(6),a=rf(1),b=rf(2),auxiliary=6),CoreRecord(O.MOVE,dest=rf(3),immediate=0xabcd,literal_a=True,yes=3),CoreRecord(O.RETURN_HANDLER)],rom_layout='byte_pages')
         packets=[]
         for status,reason,result in((1,0,65535),(4,11,0x1234)):
             words=[0,status,reason,0,0,0,result];bits=[word>>i&1 for word in words for i in range(16)]+[0]*14
@@ -22,7 +22,9 @@ class SharedDatapathTest(unittest.TestCase):
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
             state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
-            out=chip.model(inputs_embeds=state,past_key_values=out.past_key_values,use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
+            for _ in range(4):
+                out=chip.model(inputs_embeds=state,past_key_values=out.past_key_values,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
+                state=out.hidden_states[-2]
         word=lambda bits:sum(int(v)<<i for i,v in enumerate(bits))
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])

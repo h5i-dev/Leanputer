@@ -18,6 +18,7 @@ class WordAction(IntEnum):
     MOVE=0; ADD=1; SUB=2; EQ_BRANCH=3; LT_BRANCH=4; STOP_OK=5; STOP_INVALID=6; JUMP=7
     AND=8; OR=9; XOR=10; SHR=11; SHL=12; NONZERO_BRANCH=13
     SHR_LOOP=14; SHL_LOOP=15; MERGE_FIELDS3=16; COMMIT_FIELDS=48; PUBLISH_RESULT=49
+    CALL_HANDLER=50; RETURN_HANDLER=51
     HEAP_READ=40; HEAP_WRITE=41; FRAME_READ=42; FRAME_WRITE=43
     CONTEXT_READ=44; CONTEXT_WRITE=45; DECLARATION_READ=46
 
@@ -118,7 +119,12 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         slots=fixed.add(name,width);values=[builder.feature(f'{name}/{i}')for i in range(width)]
         for value,slot in zip(values,slots):physical[next(iter(value.terms))]=slot
         features[name]=values;return values
-    pc=feature('pc',16);status=feature('status',16);reason=feature('reason',16);result=feature('result',16);stage=feature('stage',4);boot=feature('boot',1)[0]
+    # Only the finite kernel outcome/reason enums are narrowed. All semantic
+    # RF words and the64bit diagnostic interface remain unchanged.
+    from .traversal_machine import Outcome,Reason
+    if max(Outcome)>=8 or max(Reason)>=64:raise ValueError('kernel outcome/reason enum exceeds native diagnostic latches')
+    pc=feature('pc',16);status=feature('status',3);reason=feature('reason',6);result=feature('result',16);stage=feature('stage',4);boot=feature('boot',1)[0]
+    handler_return=feature('handler_return',16)
     raw_code=feature('record',112);code=list(raw_code);valid=feature('record_valid',1)[0]
     A=feature('A',16);B=feature('B',16);D=feature('row',126)
     payload=feature('pending_payload',126);address=feature('pending_row',9);enable=feature('pending_enable',1)[0];kind=feature('pending_kind',3)
@@ -278,15 +284,16 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         pending.append(value)
     zero=builder.gate('not',[builder.gate('or',a,'operand-nonzero')],'operand-zero')
     failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false'),builder.gate('and',[flags[WordAction.NONZERO_BRANCH],zero],'zero-branch')],'branch-false')
-    following=[g.ffn([(1,code[58+i],one-failed_branch),(1,code[74+i],failed_branch)],name='next-pc')for i in range(16)]
+    returning=flags[WordAction.RETURN_HANDLER]
+    following=[g.ffn([(1,code[58+i],one-failed_branch-returning),(1,code[74+i],failed_branch),(1,handler_return[i],returning)],name='next-pc')for i in range(16)]
     following=select(merging,code[95:111],following,'next-field-pc')
     known=builder.gate('or',list(flags.values()),'known-opcode')
     internal_fault=builder.gate('and',[run,builder.gate('or',[one-valid,one-known],'bad-control')],'internal-fault')
     ok=builder.gate('and',[run,valid,flags[WordAction.STOP_OK]],'stop-ok');bad=builder.gate('or',[internal_fault,builder.gate('and',[run,valid,flags[WordAction.STOP_INVALID]],'stop-invalid')],'stop-bad')
     stopping=builder.gate('or',[ok,bad,publish],'stopping')
     next_status=[ok,bad]+[Expr()]*14
-    status_values=[g.ffn([(1,next_status[i],stopping),(1,A[i],publish),(1,status[i],one-stopping)],name='status-next')for i in range(16)]
-    reason_values=[g.ffn([(1,bad if i==0 else Expr(),stopping),(1,B[i],publish),(1,reason[i],one-stopping)],name='reason-next')for i in range(16)]
+    status_values=[g.ffn([(1,next_status[i],stopping),(1,A[i],publish),(1,status[i],one-stopping)],name='status-next')for i in range(len(status))]
+    reason_values=[g.ffn([(1,bad if i==0 else Expr(),stopping),(1,B[i],publish),(1,reason[i],one-stopping)],name='reason-next')for i in range(len(reason))]
     last_field=builder.gate('and',[builder.gate('not',[builder.gate('or',[builder.gate('and',[stage[1+i],one-code[93+i]],'field-index-diff-a'),builder.gate('and',[one-stage[1+i],code[93+i]],'field-index-diff-b')],'field-index-diff')],'field-index-equal')for i in range(2)],'last-field')
     field_finished=builder.gate('or',[active_append,builder.gate('and',[active_merge,old_dirty],'existing-shadow')],'field-finished')
     next_field=builder.gate('and',[field_finished,one-last_field],'next-field')
@@ -331,6 +338,9 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         d=next(iter(target.terms))
         if (set(value.terms)&target_dims)-{d}:raise ValueError('prototype cross-column commit needs snapshot')
         g.ffn([(1,one,value),(-1,one,target)],name='bit-commit',into=target,min_level=max(last[d],2*module_start))
+    for bit,target in enumerate(handler_return):
+        d=next(iter(target.terms))
+        g.ffn([(1,code[74+bit],flags[WordAction.CALL_HANDLER]),(-1,target,flags[WordAction.CALL_HANDLER])],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
     allocation=allocate(g,None,set(physical),intermediate)
     scratch=fixed.next;feature_count=len(physical)
     mapping={d:slot-13 for d,slot in physical.items()}
@@ -404,15 +414,16 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                     for slot,unit in zip(low_slots,units[28:]):
                         row(one,layout,mlp.gate_proj.weight[unit],128.)
                         mlp.up_proj.weight[unit,slot]=1/(128*layout.scale);mlp.down_proj.weight[slot,unit]=-1.
-        persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count')),[]))
+        persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')),[]))
         clear=[slot for slot in range(12,hidden)if slot not in persistent]
         for index,slot in enumerate(clear):
             layer=body+index//intermediate;unit=index%intermediate;mlp=model.model.layers[layer].mlp
             row(one,layout,mlp.gate_proj.weight[unit],128.)
             mlp.up_proj.weight[unit,slot]=1/(128*layout.scale);mlp.down_proj.weight[slot,unit]=-1.
         model.model.norm.weight.fill_(-1.)
-        for i,slot in enumerate(sum((fixed.groups[n]for n in('pc','status','reason','result')),[])):
-            model.model.norm.weight[slot]=1/layout.scale;model.lm_head.weight[i,slot]=1.
+        output_slots=sum((fixed.groups[n]+[None]*(16-len(fixed.groups[n]))for n in('pc','status','reason','result')),[])
+        for i,slot in enumerate(output_slots):
+            if slot is not None:model.model.norm.weight[slot]=1/layout.scale;model.lm_head.weight[i,slot]=1.
     model.requires_grad_(False);model.eval()
     params=sum(p.numel()for p in model.parameters());expected=layers*(3*hidden*intermediate+644*hidden+1666)+129*hidden
     if params!=expected:raise ValueError('stock dense parameter accounting changed')

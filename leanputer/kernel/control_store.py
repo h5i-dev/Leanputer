@@ -31,12 +31,14 @@ class Record:
     forwards: int = 1
     effects: tuple = ()
     items: tuple = ()
+    callee: object = None
+    region: str = 'body'
 
 
 class Block:
-    def __init__(self,label):self.label=label;self.records=[]
+    def __init__(self,label,region='body'):self.label=label;self.records=[];self.region=region
     def emit(self,op,**kwargs):
-        row=Record(op,**kwargs);self.records.append(row);return row
+        row=Record(op,region=self.region,**kwargs);self.records.append(row);return row
 
 
 class WordCode:
@@ -64,6 +66,26 @@ class WordCode:
             no.emit('MOVE_WORD',dest=out,a=Operand('literal',0,1),yes=join.label,width=1)
             self.block=join
         elif op=='choose':
+            # A chain testing one word against constants is one dispatch, not
+            # eager computation of every alternative at every use.
+            chain=[];cursor=index;variable=None
+            while self.store.nodes[cursor].op=='choose':
+                selected=self.store.nodes[cursor];test=self.store.nodes[selected.args[0]]
+                if test.op!='eq':break
+                pair=None
+                for a,b in(test.args,test.args[::-1]):
+                    if self.store.nodes[b].op=='const':pair=(a,self.store.nodes[b].data);break
+                if pair is None or(variable is not None and variable!=pair[0]):break
+                variable=pair[0];chain.append((pair[1],selected.args[1]));cursor=selected.args[2]
+            if len(chain)>=3 and self.store.nodes[variable].op=='input':
+                out=self.temp(n.width);join=s.block();cases={}
+                for value,alternative in chain+[(None,cursor)]:
+                    if value in cases:continue
+                    block=s.block();branch=WordCode(s,block,self.memo,self.next_temp);operand=branch.get(alternative)
+                    branch.block.emit('MOVE_WORD',dest=out,a=operand,yes=join.label,width=n.width,forwards=(n.width+15)//16)
+                    cases[value]=block.label
+                self.block.emit('JUMP',yes=s.switch(variable,sorted((v,target)for v,target in cases.items()if v is not None),cases[None]))
+                self.block=join;self.memo[index]=out;return out
             # Pure word operands dominate the branch. Computing their common
             # DAG once avoids exponentially duplicating nested decimal/select
             # expressions into both control continuations.
@@ -99,17 +121,19 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False):
+        family_dispatch=family_dispatch or role_dispatch
+        self.role_dispatch=role_dispatch
         self.capture_statistics=compiler.g.statistics()
-        self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch
-        if phase_dispatch or contract_dispatch:
+        self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
+        if phase_dispatch or contract_dispatch or family_dispatch:
             from .control_phases import PhasePartition
-            plan=PhasePartition(compiler,contract_only=contract_dispatch)
-            if contract_dispatch:self.contract_plan=plan
+            plan=PhasePartition(compiler,contract_only=contract_dispatch or family_dispatch)
+            if contract_dispatch or family_dispatch:self.contract_plan=plan
             else:self.phase_plan=plan
         self.compiler=compiler;self.nodes=compiler.g.nodes;self.blocks=[];self.peak_temporaries=17
         uses=Counter(i for n in self.nodes for i in n.args)
-        chosen=sorted(set(i for i in compiler.active_nodes if i<=compiler.preflight_active))if phase_dispatch or contract_dispatch else sorted(sorted((i for i,n in enumerate(self.nodes)if n.op in('all','any','not')and uses[i]>=4),key=lambda i:-uses[i])[:32])
+        chosen=sorted(set(i for i in compiler.active_nodes if i<=compiler.preflight_active))if phase_dispatch or contract_dispatch or family_dispatch else sorted(sorted((i for i,n in enumerate(self.nodes)if n.op in('all','any','not')and uses[i]>=4),key=lambda i:-uses[i])[:32])
         if contract_dispatch:
             # Cache shared residual source guards too. The checked contract is
             # removed only from the body, so its large ownership/continuation
@@ -126,6 +150,21 @@ class ControlStore:
             extra=sorted((i for i in reachable if i not in chosen and self.nodes[i].op in('all','any','not')and body_uses[i]>=4),key=lambda i:(-body_uses[i],i))[:32-len(chosen)]
             chosen=sorted(chosen+extra)
         self.frozen={i:Operand('temporary',17+j,1)for j,i in enumerate(chosen)}
+        # The source's validity chain is A' = A AND NOT bad. Once A' is
+        # cached, its rejection A AND bad is exactly A AND NOT A'. Reusing
+        # that result avoids evaluating the whole node/tag policy twice.
+        self.rejected_guards={}
+        from .control_ir import Bit
+        for index in self.frozen:
+            n=self.nodes[index]
+            if n.op!='all':continue
+            for arg in n.args:
+                child=self.nodes[arg]
+                if child.op!='not':continue
+                base=[Bit(i,0)for i in n.args if i!=arg]
+                rejected=compiler.g.AND(*base,Bit(child.args[0],0)).word
+                replacement=compiler.g.AND(*base,compiler.g.NOT(Bit(index,0))).word
+                self.rejected_guards[rejected]=replacement
         self.temporary_base=17+len(chosen)
         self.condition_entries={}
         self.preflight_entries={}
@@ -138,18 +177,40 @@ class ControlStore:
         if port!=17:raise ValueError('kernel read-port word ABI')
         self.covered=set();self.constant_dead=set()
         self.terminal=self.block();self.terminal.emit('COMMIT_STEP')
+        self.handler_return=self.block();self.handler_return.emit('RETURN_HANDLER')
         if self.contract_plan:
-            body=self.effect_set(self.contract_plan.body,self.terminal.label)
-            entry=self.condition(compiler.preflight_active,body,self.terminal.label)
-            self.entry=self.effect_set(self.contract_plan.prefix+self.contract_plan.fallback,entry)
+            if family_dispatch:
+                # Independent source modules merge into the same shadow state.
+                # Factor their control separately instead of taking the
+                # Cartesian product of unrelated private continuation states.
+                if role_dispatch:
+                    from .traversal_machine import Mode
+                    mode=next(i for i,name in self.contract_plan.variables.items()if name=='mode')
+                    minimum,maximum=self.contract_plan.contract_domains[mode];parts=[]
+                    for low,high,order,owner in((minimum,int(Mode.RETURN)-1,'task_first','task'),(int(Mode.RETURN),int(Mode.RETURN),'caller_first','read/frame/task'),(int(Mode.RETURN)+1,maximum,'task_first','task')):
+                        if low>high:continue
+                        self.contract_plan.control_order=order
+                        effects=self.specialized_effects(self.contract_plan.body,mode,low,high)
+                        variable=next(i for i,name in self.contract_plan.variables.items()if name==owner)
+                        parts.append((low,high,self.route_effects(effects,variable,self.terminal.label)))
+                    body=self.control_cases(mode,parts)
+                else:body=self.family_effects(self.contract_plan.body,self.terminal.label)
+                for region,aliases in self.contract_plan.region_aliases.items():
+                    if any(node==region for node,following in self.phase_entries):self.covered.update(aliases)
+            else:body=self.effect_set(self.contract_plan.body,self.terminal.label)
+            self.region='preflight';entry=self.condition(compiler.preflight_active,body,self.terminal.label)
+            from dataclasses import replace
+            prefix=tuple((i,replace(e,guard=self.rejected_guards.get(e.guard,e.guard)))for i,e in self.contract_plan.prefix)
+            self.entry=self.effect_set(prefix+self.contract_plan.fallback,entry)
         elif self.phase_plan:
             body=self.phase(self.phase_plan.root)
             entry=self.condition(compiler.preflight_active,body,self.terminal.label)
             self.entry=self.effect_set(self.phase_plan.prefix+self.phase_plan.fallback,entry)
             for region,aliases in self.phase_plan.region_aliases.items():
-                if region in self.phase_entries:self.covered.update(aliases)
+                if any(node==region for node,following in self.phase_entries):self.covered.update(aliases)
             self.constant_dead.update(self.phase_plan.report()['source_effects_control_dead'])
         else:self.entry=self.effect_set(tuple(enumerate(compiler.effects)),self.terminal.label)
+        self.region='guard-initialization'
         for predicate in reversed(chosen):
             dest=self.frozen.pop(predicate);yes,no=self.block(),self.block()
             self.condition_entries={}
@@ -159,6 +220,52 @@ class ControlStore:
             self.frozen[predicate]=dest
         self.records,self.entry_pc=self.flatten()
         if self.covered|self.constant_dead!=set(range(len(compiler.effects))):raise ValueError('missing kernel effects in control store')
+
+    def specialized_effects(self,effects,variable,low,high):
+        from dataclasses import replace
+        plan=self.contract_plan;result=[]
+        for index,e in effects:
+            guard=plan.cofactor(e.guard,variable,low,high)
+            if self.nodes[guard].op=='const'and not self.nodes[guard].data:continue
+            values=tuple((name,plan.cofactor(w,variable,low,high))for name,w in e.values)if e.kind=='merge_fields'else tuple(plan.cofactor(w,variable,low,high)for w in e.values)
+            address=plan.cofactor(e.address,variable,low,high)if e.address>=0 else-1
+            result.append((index,replace(e,guard=guard,values=values,address=address)))
+        return tuple(result)
+
+    def family_effects(self,effects,following):
+        groups={}
+        for index,effect in effects:groups.setdefault(effect.family,[]).append((index,effect))
+        for group in reversed(list(groups.values())):
+            root=self.contract_plan.partition(tuple(group));entry=self.phase(root,self.handler_return.label)
+            if entry!=self.handler_return.label:
+                caller=self.block();caller.emit('CALL_HANDLER',callee=entry,yes=following);following=caller.label
+        return following
+
+    def route_effects(self,effects,variable,following):
+        # Resolve the internal owner once; common effects share a continuation.
+        # Main state is immutable until commit, so OR-shadow writes commute.
+        common=[];private=[];values=set();plan=self.contract_plan
+        for item in effects:
+            tests=plan.tests(item[1].guard).get(variable)
+            if tests:private.append(item);values.update(tests)
+            else:common.append(item)
+        tail=self.family_effects(common,following)
+        if not private:return tail
+        minimum,maximum=plan.contract_domains[variable];breaks={minimum,maximum+1}
+        for value in values:
+            if minimum<=value<=maximum:breaks.update((value,value+1))
+        breaks=sorted(breaks);parts=[]
+        for low,end in zip(breaks,breaks[1:]):
+            body=self.family_effects(self.specialized_effects(private,variable,low,end-1),tail)
+            if parts and parts[-1][2]==body:parts[-1]=(parts[-1][0],end-1,body)
+            else:parts.append((low,end-1,body))
+        return self.control_cases(variable,parts)
+
+    def control_cases(self,variable,parts):
+        if len(parts)==1:return parts[0][2]
+        split=len(parts)//2;left=self.control_cases(variable,parts[:split]);right=self.control_cases(variable,parts[split:])
+        block=self.block();block.emit('TEST_WORD_LT',a=self.inputs[self.contract_plan.variables[variable]],b=Operand('literal',parts[split][0],self.nodes[variable].width),yes=left,no=right,width=self.nodes[variable].width)
+        return block.label
 
     def effect_set(self,effects,following):
         previous=self.effect_lookup;self.effect_lookup=dict(effects)
@@ -176,17 +283,20 @@ class ControlStore:
             here['effects'].extend(ids)
         result=self.trie(trie,following);self.effect_lookup=previous;return result
 
-    def phase(self,node):
-        if node in self.phase_entries:return self.phase_entries[node]
+    def phase(self,node,following=None):
+        if following is None:following=self.terminal.label
+        key=node,following
+        if key in self.phase_entries:return self.phase_entries[key]
+        plan=self.contract_plan if self.family_dispatch else self.phase_plan
         kind,index=node
         if kind=='leaf':
-            leaf=self.phase_plan.leaves[index]
-            entry=self.effect_set(leaf['effects'],self.terminal.label)
+            leaf=plan.leaves[index]
+            entry=self.effect_set(leaf['effects'],following)
             self.covered.update(leaf['aliases'])
         else:
-            case=self.phase_plan.dispatch[index];ranges=[]
+            case=plan.dispatch[index];ranges=[]
             for low,high,child in case['cases']:
-                target=self.phase(child)
+                target=self.phase(child,following)
                 if ranges and ranges[-1][2]==target:ranges[-1]=(ranges[-1][0],high,target)
                 else:ranges.append((low,high,target))
             def select(parts):
@@ -196,12 +306,12 @@ class ControlStore:
                 code.block.emit('TEST_WORD_LT',a=a,b=Operand('literal',parts[split][0],a.width),yes=left,no=right,width=a.width)
                 return block.label
             entry=select(ranges)
-        self.phase_entries[node]=entry;return entry
+        self.phase_entries[key]=entry;return entry
 
     def block(self):
         if len(self.blocks)>=200000:
             raise ValueError('typed control store exceeds200000 compiler blocks; no model emission authorized')
-        block=Block(len(self.blocks));self.blocks.append(block);return block
+        block=Block(len(self.blocks),getattr(self,'region','body'));self.blocks.append(block);return block
 
     def guard_literals(self,index):
         n=self.nodes[index]
@@ -241,6 +351,31 @@ class ControlStore:
         if n.op=='const':return yes if n.data else no
         if n.op=='not':return self.condition(n.args[0],no,yes,memo,start)
         if n.op in('all','any'):
+            # Source enum/tag membership is a word dispatch, not a linear
+            # scan of every equality. This applies to any fixed comparison
+            # set; runtime words and all unknown16bit values remain data.
+            candidates=defaultdict(list);ordinary=[]
+            def flatten(i):
+                child=self.nodes[i]
+                return tuple(j for a in child.args for j in flatten(a))if child.op==n.op else(i,)
+            for arg in tuple(i for a in n.args for i in flatten(a)):
+                child=self.nodes[arg];positive=arg
+                if n.op=='all':
+                    if child.op!='not':ordinary.append(arg);continue
+                    positive=child.args[0]
+                equality=self.equality(positive)
+                if equality:candidates[equality[0]].append((equality[1],arg))
+                else:ordinary.append(arg)
+            groups=[]
+            for word,items in candidates.items():
+                if len(items)>=3:groups.append((word,sorted(set(v for v,a in items))))
+                else:ordinary.extend(a for v,a in items)
+            if groups:
+                following=yes if n.op=='all'else no
+                for arg in reversed(ordinary):following=self.condition(arg,following,no,memo,start)if n.op=='all'else self.condition(arg,yes,following,memo,start)
+                for word,values in reversed(groups):
+                    following=self.switch(word,[(value,no if n.op=='all'else yes)for value in values],following,memo,start)
+                return following
             following=yes if n.op=='all'else no
             for arg in reversed(n.args):following=self.condition(arg,following,no,memo,start)if n.op=='all'else self.condition(arg,yes,following,memo,start)
             return following
@@ -260,10 +395,11 @@ class ControlStore:
         replaces a long source expression of nested task overrides, preserving
         invalid task/mode paths and all tag/pointer checks verbatim.
         """
-        key=index,yes,no,tuple(sorted((memo or {}).items())),start
+        opaque=frozenset(self.frozen)
+        key=index,yes,no,tuple(sorted((memo or {}).items())),start,opaque
         if key in self.preflight_entries:return self.preflight_entries[key]
         plan=self.contract_plan
-        tests={v:values for v,values in plan.tests(index).items()if plan.variables[v]in('task','mode')}
+        tests={v:values for v,values in plan.tests(index,opaque).items()if plan.variables[v]in('task','mode')}
         if not tests:
             # Avoid re-entering this transform if no control test remains.
             saved=self.contract_plan;self.contract_plan=None
@@ -276,7 +412,7 @@ class ControlStore:
                 if 0<=value<limit:breaks.update((value,value+1))
             breaks=sorted(breaks);parts=[]
             for low,end in zip(breaks,breaks[1:]):
-                cofactored=plan.cofactor(index,variable,low,end-1)
+                cofactored=plan.cofactor(index,variable,low,end-1,opaque)
                 if cofactored==index:raise ValueError('preflight control partition did not remove a test')
                 target=self.preflight_condition(cofactored,yes,no,memo,start)
                 if parts and parts[-1][2]==target:parts[-1]=(parts[-1][0],end,target)
@@ -319,11 +455,11 @@ class ControlStore:
         for i in ids:self.source_action_regions.setdefault(i,set()).add(block.label)
         return block.label
 
-    def switch(self,word,cases,following):
+    def switch(self,word,cases,following,memo=None,start=None):
         if not cases:return following
         mid=len(cases)//2;value,entry=cases[mid]
-        left=self.switch(word,cases[:mid],following);right=self.switch(word,cases[mid+1:],following)
-        comparison=self.block();code=WordCode(self,comparison);a=code.get(word)
+        left=self.switch(word,cases[:mid],following,memo,start);right=self.switch(word,cases[mid+1:],following,memo,start)
+        comparison=self.block();code=WordCode(self,comparison,memo,start);a=code.get(word)
         less=self.block();less.emit('TEST_WORD_LT',a=a,b=Operand('literal',value,a.width),yes=left,no=right,width=a.width)
         code.block.emit('TEST_WORD_EQ',a=a,b=Operand('literal',value,a.width),yes=entry,no=less.label,width=a.width)
         return comparison.label
@@ -362,7 +498,7 @@ class ControlStore:
         result=[]
         for row in rows:
             item=asdict(row)
-            for k in('yes','no'):
+            for k in('yes','no','callee'):
                 if item[k]is not None:item[k]=starts[item[k]]
             result.append(item)
         # Remove compiler blocks that no branch of this FIXED checker can
@@ -373,16 +509,17 @@ class ControlStore:
             pc=pending.pop()
             if pc in reachable:continue
             reachable.add(pc);record=result[pc]
-            if record['op']=='COMMIT_STEP':continue
+            if record['op']in('COMMIT_STEP','RETURN_HANDLER'):continue
             following=record['yes']if record['yes']is not None else pc+1
             pending.append(following)
             if record['no']is not None:pending.append(record['no'])
+            if record['callee']is not None:pending.append(record['callee'])
         order=sorted(reachable);positions={old:new for new,old in enumerate(order)}
         self.unreachable_records=len(result)-len(order)
         compact=[]
         for old in order:
             row=result[old]
-            for field in('yes','no'):
+            for field in('yes','no','callee'):
                 if row[field]is not None:row[field]=positions[row[field]]
             compact.append(row)
         return compact,positions[entry]
@@ -404,6 +541,8 @@ class ControlStore:
             native_unmapped_actions=sorted(opcounts),
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
+            source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
+            source_control_role_dispatch=self.role_dispatch,
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):

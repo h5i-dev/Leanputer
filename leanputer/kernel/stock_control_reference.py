@@ -4,6 +4,7 @@ This reference evaluates compiler records to find lowering bugs before model
 allocation. It does not produce inference inputs, cache values or answers.
 """
 from copy import deepcopy
+from collections import Counter
 from .stock_control import main_address
 from .stock_datapath import FieldRecord,WordAction as O
 
@@ -14,6 +15,9 @@ class NativeControlReference:
         self.rf=[[0]*7 for _ in range(512)];self.dirty=[[False]*7 for _ in range(136)]
         self.banks={name:deepcopy(state[name])for name in('heap','stack','context','constants')}
         self.queue=[];self.pc=0;self.status=self.reason=self.result=0;self.records=self.forwards=self.semantic_steps=0
+        self.forward_costs=Counter()
+        self.region_forward_costs=Counter()
+        self.return_pc=None
         for i,name in enumerate(self.names):self.write(main_address(i),int(state['regs'][name]))
 
     def read(self,address):return self.rf[address>>3][address&7]if address&7<7 else 0
@@ -53,6 +57,12 @@ class NativeControlReference:
             elif op==O.LT_BRANCH:following=r.yes if a<b else r.no
             elif op==O.NONZERO_BRANCH:following=r.yes if a else r.no
             elif op==O.JUMP:pass
+            elif op==O.CALL_HANDLER:
+                if self.return_pc is not None:raise AssertionError('nested native handler call')
+                self.return_pc=r.no
+            elif op==O.RETURN_HANDLER:
+                if self.return_pc is None:raise AssertionError('unpaired native handler return')
+                following=self.return_pc;self.return_pc=None
             elif op==O.COMMIT_FIELDS:
                 forwards=2*len(self.queue)+1
                 for dest in self.queue:
@@ -69,5 +79,7 @@ class NativeControlReference:
                 if op in(O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE):row[field]=b
                 else:self.write(r.dest,row[field]);forwards=2
             else:raise ValueError('unmapped native compiler reference '+op.name)
+        self.region_forward_costs[self.program.record_regions[self.pc]]+=forwards
         self.pc=following;self.forwards+=forwards
+        self.forward_costs['MERGE_FIELDS3'if isinstance(r,FieldRecord)else r.action.name]+=forwards
         return committed

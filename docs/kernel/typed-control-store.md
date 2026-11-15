@@ -1,3 +1,26 @@
+# Current speed checkpoint (2026-11-15)
+
+The37hour full run was terminated by the parent; preserve its partial logs and
+claim no completed source result. Current implementation details/evidence are in
+[the control-speed checkpoint](../../benchmarks/kernel-control-speed/README.md).
+All73families/6454effects now map to41107fixed native records. Same-source OFFLINE
+all-state matches use369708/377631forwards. Actual short stock timing with standard
+PyTorch compilation and CUDA graph replay reaches235.55forwards/s, with exact
+hidden/logit/ALL stock cache tensors against eager. The actual current full-rule
+model is71,780,484DENSE parameters/H768/I256/L66,761/768channels allocated. At that
+prefix rate the longer case projects to~27minutes plus80s setup; this is still
+being improved, NOT a completed source result or a delivery claim. No long run
+is scheduled before the latency projection is reasonable.
+
+The source command now defaults to512forwards and uses the role/owner layout,
+compiled unchanged stock operations with eager precision casts, and CUDA graph
+identity feedback. --execution eager and --no-compile-stock are scheduling options.
+Kernel algorithms, physical semantic bounds, original symbolic inputs and explicit
+GAPs remain preserved. Handler call depth one is proved from fixed control CFG;
+finite output latches are3/6bits while semantic words remain16bits and diagnostics
+retain the64bit interface. The notes below record the earlier a9dbbd9 checkpoint
+and are historical where they differ from this section.
+
 # Typed kernel control store and shared stock checker
 
 Current implementation now maps the complete current general source controller

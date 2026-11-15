@@ -12,7 +12,7 @@ class NativeControlTest(unittest.TestCase):
         from leanputer.kernel.stock_control_reference import NativeControlReference
         from leanputer.kernel import source_transition as source,traversal_machine as spec
         cfg=spec.MachineConfig(**json.loads(Path('benchmarks/kernel-full-source-stock/config.json').read_text()))
-        compiler,addresses=capture(cfg);store=ControlStore(compiler,contract_dispatch=True);program=NativeControl(store,addresses)
+        compiler,addresses=capture(cfg);store=ControlStore(compiler,role_dispatch=True);program=NativeControl(store,addresses)
         self.assertEqual(program.report['rule_families'],73)
         self.assertEqual(program.report['source_effects'],program.report['source_effects_mapped'])
         self.assertTrue(program.report['pc16_encoding_met'])

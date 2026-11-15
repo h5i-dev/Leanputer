@@ -81,21 +81,24 @@ class PhasePartition:
             self.dep_cache[index]=mask
         return self.dep_cache[index]
 
-    def tests(self,index):
-        if index in self.test_cache:return self.test_cache[index]
+    def tests(self,index,opaque=frozenset()):
+        if index in opaque:return {}
+        key=(index,opaque)
+        if key in self.test_cache:return self.test_cache[key]
         n=self.nodes[index];result={}
         if n.op in('eq','ult'):
             for a,b in(n.args,n.args[::-1]):
                 if a in self.variables and self.nodes[b].op=='const':result[a]={self.nodes[b].data}
         for arg in n.args:
-            for key,values in self.tests(arg).items():result.setdefault(key,set()).update(values)
-        self.test_cache[index]={k:frozenset(v)for k,v in result.items()};return self.test_cache[index]
+            for variable,values in self.tests(arg,opaque).items():result.setdefault(variable,set()).update(values)
+        self.test_cache[key]={k:frozenset(v)for k,v in result.items()};return self.test_cache[key]
 
-    def cofactor(self,index,variable,low,high):
+    def cofactor(self,index,variable,low,high,opaque=frozenset()):
+        if index in opaque:return index
         if not self.dependencies(index)&(1<<self.indices[variable]):return index
-        key=index,variable,low,high
+        key=index,variable,low,high,opaque
         if key in self.cofactors:return self.cofactors[key]
-        n=self.nodes[index];args=tuple(self.cofactor(i,variable,low,high)for i in n.args)
+        n=self.nodes[index];args=tuple(self.cofactor(i,variable,low,high,opaque)for i in n.args)
         def bounds(i):
             child=self.nodes[i]
             if i==variable:return low,high
@@ -143,6 +146,10 @@ class PhasePartition:
         # current task. Mode is always resolved first, then task/private PC.
         def priority(variable):
             name=self.variables[variable]
+            if getattr(self,'control_order',None)=='task_first':
+                return (0 if name=='task'else 1 if name=='mode'else 2 if name=='read/frame/task'else 3 if name=='read/frame/phase'else 4,-len(tests[variable]),name)
+            if getattr(self,'control_order',None)=='caller_first':
+                return (0 if name=='read/frame/task'else 1 if name=='read/frame/phase'else 2 if name=='task'else 3 if name=='mode'else 4,-len(tests[variable]),name)
             return (0 if name=='mode'else 1 if name=='read/frame/task'else 2 if name=='task'else 3 if name=='read/frame/phase'else 4,-len(tests[variable]),name)
         variable=min(tests,key=priority);minimum,limit=self.contract_domains[variable]
         breaks={minimum,limit+1}

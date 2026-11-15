@@ -1,0 +1,199 @@
+{
+  "format": "leanputer.stock-prefix-launch-timing.v1",
+  "prefix_forwards": 128,
+  "batch": 2,
+  "whole_source_completed": false,
+  "model": {
+    "format": "leanputer.stock-shared-module.v1",
+    "logical_dense_parameters": 82641304,
+    "hidden": 768,
+    "intermediate": 256,
+    "layers": 76,
+    "rom_records": 62588,
+    "rom_layers": 29,
+    "rom_layout": "byte_pages",
+    "rom_decode_layers": 7,
+    "active_rf_heads": 12,
+    "rf_heads": [
+      {
+        "port": 0,
+        "page": 0,
+        "layer": 43
+      },
+      {
+        "port": 0,
+        "page": 1,
+        "layer": 44
+      },
+      {
+        "port": 0,
+        "page": 2,
+        "layer": 45
+      },
+      {
+        "port": 0,
+        "page": 3,
+        "layer": 46
+      },
+      {
+        "port": 1,
+        "page": 0,
+        "layer": 47
+      },
+      {
+        "port": 1,
+        "page": 1,
+        "layer": 48
+      },
+      {
+        "port": 1,
+        "page": 2,
+        "layer": 49
+      },
+      {
+        "port": 1,
+        "page": 3,
+        "layer": 50
+      },
+      {
+        "port": 2,
+        "page": 0,
+        "layer": 51
+      },
+      {
+        "port": 2,
+        "page": 1,
+        "layer": 52
+      },
+      {
+        "port": 2,
+        "page": 2,
+        "layer": 53
+      },
+      {
+        "port": 2,
+        "page": 3,
+        "layer": 54
+      }
+    ],
+    "arena_heads": [
+      {
+        "bank": "heap",
+        "page": 0,
+        "layer": 55,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 1,
+        "layer": 56,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 2,
+        "layer": 57,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 3,
+        "layer": 58,
+        "words": 4
+      },
+      {
+        "bank": "stack",
+        "page": 0,
+        "layer": 59,
+        "words": 6
+      },
+      {
+        "bank": "constants",
+        "page": 0,
+        "layer": 60,
+        "words": 6
+      },
+      {
+        "bank": "context",
+        "page": 0,
+        "layer": 61,
+        "words": 1
+      }
+    ],
+    "rf_ports": 3,
+    "rf_rows_per_copy": 512,
+    "rf_payload_bits": 126,
+    "allocated_channels": 768,
+    "features": 511,
+    "operator_scratch_channels": 244,
+    "graph_layers": 69,
+    "module_layer_budget": 35,
+    "parameter_storage": "dense",
+    "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+    "full_source_checker": false,
+    "native_actions": [
+      "MOVE",
+      "ADD",
+      "SUB",
+      "EQ_BRANCH",
+      "LT_BRANCH",
+      "STOP_OK",
+      "STOP_INVALID",
+      "JUMP",
+      "AND",
+      "OR",
+      "XOR",
+      "SHR",
+      "SHL",
+      "NONZERO_BRANCH",
+      "SHR_LOOP",
+      "SHL_LOOP",
+      "MERGE_FIELDS3",
+      "COMMIT_FIELDS",
+      "PUBLISH_RESULT",
+      "HEAP_READ",
+      "HEAP_WRITE",
+      "FRAME_READ",
+      "FRAME_WRITE",
+      "CONTEXT_READ",
+      "CONTEXT_WRITE",
+      "DECLARATION_READ"
+    ],
+    "checker_commit_layout": {
+      "main_rows": 136,
+      "shadow_rows": 136,
+      "main_shadow_interleaved": true,
+      "dirty_queue_rows": 136,
+      "queue_first_row": 272,
+      "queue_entries_per_row": 7,
+      "max_dirty_fields": 951,
+      "temporary_first_row": 408,
+      "temporary_last_row": 508,
+      "temporary_words": 707,
+      "reserved_arena_buffer_rows": [
+        509,
+        510,
+        511
+      ],
+      "reserved_arena_buffers_implemented": false,
+      "merge_new_field_forwards": 2,
+      "merge_existing_field_forwards": 1,
+      "commit_forwards_per_dirty_field": 2,
+      "commit_exit_forwards": 1
+    }
+  },
+  "eager_seconds": 13.846436283987714,
+  "cuda_graph_seconds": 1.638905011001043,
+  "capture_seconds": 0.7457559839822352,
+  "eager_forwards_per_second": 9.244255877450696,
+  "cuda_graph_forwards_per_second": 78.1009266191807,
+  "exact_all_hidden_state": true,
+  "exact_all_stock_cache_tensors": true,
+  "exact_logits": true,
+  "baseline_control_forwards": [
+    1185877,
+    1218203
+  ],
+  "projected_baseline_longer_seconds": 15597.804696222684,
+  "execution": "torch.cuda.CUDAGraph of unchanged stock Qwen3_5ForCausalLM.forward/cache plus identity feedback"
+}

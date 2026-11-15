@@ -27,11 +27,17 @@ class StoreReference:
             elif operand['space']=='current':value=int(state['regs'][self.names[operand['index']]])
             else:value=temporary[operand['index']]
             return value&((1<<(operand.get('source_width')or operand['width']))-1)
-        pc=self.store.entry_pc;fields={};banks={};count=forwards=0
+        pc=self.store.entry_pc;fields={};banks={};count=forwards=0;return_pc=None
         for _ in range(len(self.store.records)+1):
             r=self.store.records[pc];op=r['op'];count+=1;forwards+=r['forwards'];following=r['yes']if r['yes']is not None else pc+1
             if op=='COMMIT_STEP':break
             elif op=='JUMP':pass
+            elif op=='CALL_HANDLER':
+                if return_pc is not None:raise AssertionError('checker handler calls must have depth one')
+                return_pc=following;following=r['callee']
+            elif op=='RETURN_HANDLER':
+                if return_pc is None:raise AssertionError('checker handler return without a call')
+                following=return_pc;return_pc=None
             elif op=='TEST_WORD_EQ':following=r['yes']if get(r['a'])==get(r['b'])else r['no']
             elif op=='TEST_WORD_LT':following=r['yes']if get(r['a'])<get(r['b'])else r['no']
             elif op=='TEST_WORD_NONZERO':following=r['yes']if get(r['a'])else r['no']

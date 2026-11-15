@@ -29,14 +29,17 @@ class Value:
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
     def __init__(self,store,addresses):
-        self.store=store;self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0
+        self.store=store;self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0;self.pending_regions=[];self.region='bootstrap'
         cfg=store.compiler.cfg
         if (cfg.word_bits,cfg.heap,cfg.stack,cfg.context,cfg.constants)!=(16,512,32,8,4):raise ValueError('native shared layout currently requires word16/heap512/stack32/context8/constants4')
         if store.peak_temporaries>=200:raise ValueError('native compiler needs address scratch above typed temporaries')
         self.emit(O.JUMP,yes=('source',))
         for pc,record in enumerate(store.records):
+            self.region=record.get('region','body')
             self.mark(('typed',pc));self.lower(record,('typed',record['yes']if record['yes']is not None else pc+1),('typed',record['no'])if record['no']is not None else None)
+        self.region='source-prologue'
         self.source_prologue(addresses)
+        self.region='commit-tail'
         self.commit_tail()
         self.records=[]
         for record,yes,no in self.pending:
@@ -53,9 +56,10 @@ class NativeControl:
         compact=[]
         for pc in keep:
             r=self.records[pc];fields=dict(yes=positions[follow(r.yes)])
-            if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH)else 0
+            if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0
             compact.append(replace(r,**fields))
         self.records=compact
+        self.record_regions=[self.pending_regions[pc]for pc in keep]
         tails_removed=before-len(compact)
         # Hash-cons equal state updates with equal continuations. This is
         # whole-program compiler sharing, with both data branches retained.
@@ -69,17 +73,33 @@ class NativeControl:
             for pc,r in enumerate(self.records):
                 if pc in alias:continue
                 fields=dict(yes=canonical(r.yes))
-                if isinstance(r,CoreRecord):fields['no']=canonical(r.no)if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH)else 0
+                if isinstance(r,CoreRecord):fields['no']=canonical(r.no)if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0
                 key=replace(r,**fields)
                 if key in seen and pc:
                     alias[pc]=seen[key];removed+=1;changed=True
                 else:seen[key]=pc
         keep=[pc for pc in range(len(self.records))if pc not in alias];positions={pc:i for i,pc in enumerate(keep)}
-        self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
+        self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
+        self.record_regions=[self.record_regions[pc]for pc in keep]
+        checked=set();visiting=set()
+        def handler(pc):
+            if pc in checked:return
+            if pc in visiting:raise ValueError('checker handler has an unbounded control cycle')
+            visiting.add(pc);r=self.records[pc]
+            if isinstance(r,CoreRecord):
+                if r.action==O.CALL_HANDLER:raise ValueError('checker handler calls must have depth one')
+                if r.action in(O.COMMIT_FIELDS,O.PUBLISH_RESULT,O.STOP_OK,O.STOP_INVALID):raise ValueError('checker handler exits without returning')
+                if r.action==O.RETURN_HANDLER:visiting.remove(pc);checked.add(pc);return
+            handler(r.yes)
+            if isinstance(r,CoreRecord)and r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH):handler(r.no)
+            visiting.remove(pc);checked.add(pc)
+        for r in self.records:
+            if isinstance(r,CoreRecord)and r.action==O.CALL_HANDLER:handler(r.yes)
         self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
             compiler_tail_transfers_removed=tails_removed,
             compiler_duplicate_records_removed=removed,
+            handler_call_depth_bound=1,handler_control_records_checked=len(checked),
             actions=dict(Counter(r.action.name if isinstance(r,CoreRecord)else'MERGE_FIELDS3'for r in self.records)),
             rule_families=len(store.compiler.families),source_effects=len(store.compiler.effects),
             source_effects_mapped=len(store.covered),temporary_words_available=707,
@@ -103,6 +123,7 @@ class NativeControl:
             literal_a=a.literal,literal_b=b.literal,immediate=a.value if a.literal else b.value if b.literal else 0,auxiliary=auxiliary)
         following=self.label()if yes is None else yes
         self.pending.append((record,following,no))
+        self.pending_regions.append(self.region)
         if yes is None:self.mark(following)
 
     def value(self,operand,limb=0):
@@ -200,6 +221,8 @@ class NativeControl:
     def lower(self,r,yes,no,commit=('commit',)):
         op=r['op'];width=r['width']
         if op=='COMMIT_STEP':self.emit(O.JUMP,yes=commit);return
+        if op=='CALL_HANDLER':self.emit(O.CALL_HANDLER,yes=('typed',r['callee']),no=yes);return
+        if op=='RETURN_HANDLER':self.emit(O.RETURN_HANDLER,yes=('source',));return
         if op=='JUMP':self.emit(O.JUMP,yes=yes);return
         if op.startswith('TEST_WORD_'):self.comparison(r,yes,no);return
         if op in('WORD_ADD','WORD_SUB'):self.arithmetic(r)
@@ -227,7 +250,7 @@ class NativeControl:
                 self.emit(O.OR,dest=dest,a=self.value(r['b'],limb),b=Value(work));self.mask(dest,min(16,width-16*limb))
         elif op=='MERGE_CHECKER_FIELDS3':
             items=tuple((main_address(dest['index']),value.value,value.literal)for dest,operand in r['items']for value in(self.value(operand),))
-            self.pending.append((FieldRecord(items,0),yes,None));return
+            self.pending.append((FieldRecord(items,0),yes,None));self.pending_regions.append(self.region);return
         elif op=='MERGE_ARENA_FIELDS3':
             bank,first=divmod(r['immediate'],16);base=(510,509,511)[bank]*7
             addr=temporary_address(680)
@@ -242,24 +265,40 @@ class NativeControl:
         else:raise ValueError('unmapped native typed action '+op)
         self.emit(O.JUMP,yes=yes)
 
-    def address_records(self,graph,output,namespace,continuation):
+    def address_records(self,graph,output,namespace,continuation,outputs=None):
+        self.region='source-prologue'
         mini=object.__new__(ControlStore);mini.nodes=graph.nodes;mini.inputs=self.store.inputs;mini.blocks=[]
         mini.temporary_base=200;mini.peak_temporaries=200;mini.frozen={};mini.condition_entries={};mini.contract_plan=None
         block=mini.block();mini.entry=block.label;terminal=mini.block();terminal.emit('COMMIT_STEP')
-        code=WordCode(mini,block);value=code.get(output.node)
-        code.block.emit('MOVE_WORD',dest=Operand('temporary',670,len(output)),a=value,width=len(output),yes=terminal.label)
+        code=WordCode(mini,block)
+        for index,word in enumerate(outputs or [output]):
+            value=code.get(word.node)
+            code.block.emit('MOVE_WORD',dest=Operand('temporary',670+index,len(word)),a=value,width=len(word))
+        code.block.emit('JUMP',yes=terminal.label)
         rows,entry=mini.flatten();self.emit(O.JUMP,yes=(namespace,entry))
         for pc,r in enumerate(rows):
             self.mark((namespace,pc));self.lower(r,(namespace,r['yes']if r['yes']is not None else pc+1),(namespace,r['no'])if r['no']is not None else None,commit=continuation)
         if mini.peak_temporaries>=670:raise ValueError('address expression scratch collides with compiler operands')
 
     def source_prologue(self,addresses):
-        self.mark(('source',));self.address_records(*addresses[0],'addresses1',('load-first',))
-        self.mark(('load-first',));offset=0;port=0;packed=dict(space='temporary',index=670,width=16)
-        for action,cells,words in((O.HEAP_READ,512,4),(O.FRAME_READ,32,6),(O.DECLARATION_READ,4,6)):
-            width=cells.bit_length()-1;self.extract(temporary_address(671),packed,offset,width);offset+=width
+        # Retain independent typed address words instead of serializing them
+        # to one packed word and then shifting them apart at every source step.
+        from .control_ir import Bit
+        graph,output=addresses[0]
+        def source_bit(index,bit):
+            n=graph.nodes[index]
+            if n.op=='splice':return source_bit(n.args[bit],n.data[bit])
+            if n.op=='slice':return source_bit(n.args[0],n.data+bit)
+            if n.op=='extend':return source_bit(n.args[0],bit)if bit<graph.nodes[n.args[0]].width else next(iter(graph.const(0,1)))
+            return Bit(index,bit)
+        chunks=[];offset=0
+        for width in(9,5,2):
+            chunks.append(graph.word(tuple(source_bit(output.node,offset+bit)for bit in range(width))));offset+=width
+        self.mark(('source',));self.address_records(graph,output,'addresses1',('load-first',),outputs=chunks)
+        self.mark(('load-first',));port=0
+        for index,(action,cells,words)in enumerate(((O.HEAP_READ,512,4),(O.FRAME_READ,32,6),(O.DECLARATION_READ,4,6))):
             for field in range(words):
-                self.emit(action,dest=temporary_address(port),a=Value(temporary_address(671)),auxiliary=field);port+=1
+                self.emit(action,dest=temporary_address(port),a=Value(temporary_address(670+index)),auxiliary=field);port+=1
         self.address_records(*addresses[1],'addresses2',('load-context',))
         self.mark(('load-context',));self.emit(O.CONTEXT_READ,dest=temporary_address(16),a=Value(temporary_address(670)))
         self.emit(O.JUMP,yes=('typed',self.store.entry_pc))
