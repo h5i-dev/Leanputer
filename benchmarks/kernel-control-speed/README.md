@@ -9,7 +9,12 @@ The fix forwards the new encoded return PC on that same operation. The stock
 module now asserts the PC at each of the first three forwards for both branch
 edges and repeated calls; it passes. The prefix diagnostic also has an optional
 AFTER-inference native PC boundary comparison, which never supplies inference
-inputs/cache/control/answers. Its current 512-forward check is pending.
+inputs/cache/control/answers. The corrected 512-forward check passes: ALL hidden/cache tensors/logits match
+eager/replay, and 370 native instruction PC boundaries match per input. The
+reference runs after inference and supplies no model data/control. Replay is
+288.61forwards/s; setup49.44s on the cached compiled path. The whole dense
+shape remains48,290,654parameters/L65/755channels. A same-pair full retry is
+now capped at1200s total; no completed source result yet.
 Earlier short prefix eager/replay equality remains scheduling evidence only;
 complete small-stock source correctness remains pending the corrected full run.
 The earlier cold-production hook-installation error was fixed by a restored eager
