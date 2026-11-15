@@ -144,6 +144,7 @@ class NativeControl:
             indexed_dispatch_tables=len(tables),indexed_dispatch_entries=sum(size for size,entries in tables),indexed_dispatch_padding_records=padding,native_body_records=body_count,
             actions=dict(Counter(r.action.name if isinstance(r,CoreRecord)else'MERGE_FIELDS3'for r in self.records)),
             rule_families=len(store.compiler.families),source_effects=len(store.compiler.effects),
+            semantic_bounds=dict(word_bits=cfg.word_bits,heap=cfg.heap,stack=cfg.stack,context=cfg.context,constants=cfg.constants,fuel=cfg.fuel),
             source_effects_mapped=len(store.covered),temporary_words_available=696,source_port_padding_words=11,
             typed_temporary_peak=store.peak_temporaries,compiler_scratch_first=200,compiler_scratch_last=695,
             original_source_stock_admission=False,native_reference_verified=False,

@@ -44,6 +44,9 @@ def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_c
         for first in range(0,packets.shape[1],prefill_chunk):
             out=forward(chip.embeddings(packets[:,first:first+prefill_chunk]));cache=out.past_key_values
         loaded=time.perf_counter();state=chip.embeddings(torch.zeros(batch,1,chip.slots.next-13))
+        from .stock_execution import cache_tensors
+        native_cache=cache_tensors(cache)
+        chip.report.update(weight_tensor_bytes=sum(p.numel()*p.element_size()for p in chip.model.parameters()),native_cache_tensor_bytes_for_batch=sum(t.numel()*t.element_size()for t in native_cache),native_cache_tensor_count=len(native_cache),batch_items=batch,syntax_boot_packets_per_item=packets.shape[1])
         executor=None
         if execution=='cuda_graph':
             from .stock_execution import StockCudaGraph,snapshot,restore

@@ -1,3 +1,51 @@
+# Current emitted whole-rule budget (2026-11-15)
+
+The proposed <=100M logical dense gate is met by the current fixed program at
+**48,290,654 parameters**, H768 / I256 / L65, 755 allocated residual channels.
+This is within the intended 10–50M working range for the current bounded domain;
+it does not establish larger-domain coverage or close semantic gaps. Weight
+parameters occupy 96,581,308 bytes in BF16, before model buffers and native caches.
+
+All 73 rule families / 6,454 effects map into 46,608 fixed 112-bit records:
+39,210 body records, 7,200 indexed entries and 198 alignment records. PC width is
+16 bits. The source/namespace/shape/count data are not compiler selection keys.
+The model has 22 byte-page ROM stages, 7 byte decoder stages, 19 active GDN memory
+layers, the shared operator/commit computation, scratch clearing and one inert
+final feedback boundary. Active memory heads may share layers with FFN work;
+these counts are not additive. The remaining 46 layers use tiny stock attention
+with zero outputs. All stock FFN operations remain present.
+
+With H=768 and I=256, the exact logical count is
+19*(3HI+644H+1666) + 46*(3HI+12H+4) + 129H.
+The global term includes both 64-token embedding/output matrices and final norm.
+This counts every dense parameter, including zeros, without CSR discounts.
+
+The semantic domain remains word16 / heap512 four-word rows / stack32 six-word
+rows / context8 / constants4 six-word rows / fuel8192. It is the same domain as
+the matched original-source baseline, not a reduced proof-specific domain.
+The RF has 512 rows per read copy, 126 binary payload bits per row and 3 coherent
+copies (12 GDN heads). Seven arena heads serve heap/frame/context/declarations.
+Main and shadow use 136 rows each, 136 rows hold the unique-field dirty queue,
+101 rows hold compiler/source temporaries and three rows hold arena write buffers.
+There are 707 physical temporary words, with 11 source-port padding words and
+696 usable indexed words. Field merges take one forward for an already dirty
+field or two for a new field; commit takes two forwards per dirty field plus exit.
+The dirty-row commit alternative was tested and preserved but is not selected:
+its ~1.8% forward saving did not justify the additional protocol complexity.
+
+The two original source cases have exact OFFLINE all-state counts of
+225,506 / 230,425 native forwards (1,316 / 1,355 semantic steps). A 128-forward
+actual stock prefix exactly matches eager hidden/cache tensors/logits and runs at
+288.39 forwards/s, with 138.91s setup. The longer current projection is ~799s of
+decoding plus setup/build/prefill. This is conditional, not whole-source evidence.
+A cold production-run hook-installation compilation error was found before any
+decoding and fixed with a restored eager stock warmup; its cold-prefix check is
+pending. Whole small-stock source acceptance/rejection remains unvalidated here.
+The inference runner reports actual parameter/cache tensor bytes and boot packet
+counts from the instantiated stock model, separately from these analytical counts.
+
+Earlier design assessment follows and is historical where it differs.
+
 # Compact checker datapath: current result and original assessment
 
 Superseding implementation evidence: [typed-control-store.md](typed-control-store.md).
