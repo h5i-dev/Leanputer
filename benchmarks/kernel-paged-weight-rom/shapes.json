@@ -1,0 +1,79 @@
+{
+  "rows": [
+    {
+      "records": 135,
+      "record_bits": 112,
+      "low_row_values": 128,
+      "bytes_per_record": 14,
+      "units_per_page": 15,
+      "rom_layers": 1,
+      "decode_layers": 7,
+      "other_layers": 30,
+      "layers": 38,
+      "logical_dense_parameters": 41370188,
+      "bf16_parameter_bytes": 82740376,
+      "recurrent_fp32_cache_bytes": 2490368,
+      "evidence": "Stock meta shape only; complete native kernel action/scratch/encoding not proved"
+    },
+    {
+      "records": 4096,
+      "record_bits": 112,
+      "low_row_values": 128,
+      "bytes_per_record": 14,
+      "units_per_page": 15,
+      "rom_layers": 2,
+      "decode_layers": 7,
+      "other_layers": 30,
+      "layers": 39,
+      "logical_dense_parameters": 42456270,
+      "bf16_parameter_bytes": 84912540,
+      "recurrent_fp32_cache_bytes": 2555904,
+      "evidence": "Stock meta shape only; complete native kernel action/scratch/encoding not proved"
+    },
+    {
+      "records": 16384,
+      "record_bits": 112,
+      "low_row_values": 128,
+      "bytes_per_record": 14,
+      "units_per_page": 15,
+      "rom_layers": 8,
+      "decode_layers": 7,
+      "other_layers": 30,
+      "layers": 45,
+      "logical_dense_parameters": 48972762,
+      "bf16_parameter_bytes": 97945524,
+      "recurrent_fp32_cache_bytes": 2949120,
+      "evidence": "Stock meta shape only; complete native kernel action/scratch/encoding not proved"
+    },
+    {
+      "records": 46245,
+      "record_bits": 112,
+      "low_row_values": 128,
+      "bytes_per_record": 14,
+      "units_per_page": 15,
+      "rom_layers": 22,
+      "decode_layers": 7,
+      "other_layers": 30,
+      "layers": 59,
+      "logical_dense_parameters": 64177910,
+      "bf16_parameter_bytes": 128355820,
+      "recurrent_fp32_cache_bytes": 3866624,
+      "evidence": "Stock meta shape only; complete native kernel action/scratch/encoding not proved"
+    },
+    {
+      "records": 65536,
+      "record_bits": 112,
+      "low_row_values": 128,
+      "bytes_per_record": 14,
+      "units_per_page": 15,
+      "rom_layers": 30,
+      "decode_layers": 7,
+      "other_layers": 30,
+      "layers": 67,
+      "logical_dense_parameters": 72866566,
+      "bf16_parameter_bytes": 145733132,
+      "recurrent_fp32_cache_bytes": 4390912,
+      "evidence": "Stock meta shape only; complete native kernel action/scratch/encoding not proved"
+    }
+  ]
+}

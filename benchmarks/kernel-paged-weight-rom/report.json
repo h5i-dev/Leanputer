@@ -1,0 +1,73 @@
+{
+  "results": [
+    {
+      "format": "leanputer.stock-shared-module.v1",
+      "logical_dense_parameters": 38111942,
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 35,
+      "rom_records": 135,
+      "rom_layers": 1,
+      "rom_layout": "byte_pages",
+      "rom_decode_layers": 7,
+      "active_rf_heads": 9,
+      "rf_ports": 3,
+      "rf_rows_per_copy": 384,
+      "rf_payload_bits": 126,
+      "allocated_channels": 606,
+      "features": 476,
+      "operator_scratch_channels": 117,
+      "graph_layers": 28,
+      "module_layer_budget": 22,
+      "parameter_storage": "dense",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "full_source_checker": false,
+      "native_actions": [
+        "MOVE",
+        "ADD",
+        "SUB",
+        "EQ_BRANCH",
+        "LT_BRANCH",
+        "STOP_OK",
+        "STOP_INVALID",
+        "JUMP"
+      ],
+      "evidence": "Actual dense CPU stock forward/cache; two-item claim mutation, all RF replicas exact; byte_pages crosses127/128 through model-owned JUMP."
+    },
+    {
+      "format": "leanputer.stock-shared-module.v1",
+      "logical_dense_parameters": 30509368,
+      "hidden": 768,
+      "intermediate": 256,
+      "layers": 28,
+      "rom_records": 8,
+      "rom_layers": 1,
+      "rom_layout": "flat",
+      "rom_decode_layers": 0,
+      "active_rf_heads": 9,
+      "rf_ports": 3,
+      "rf_rows_per_copy": 384,
+      "rf_payload_bits": 126,
+      "allocated_channels": 606,
+      "features": 476,
+      "operator_scratch_channels": 117,
+      "graph_layers": 21,
+      "module_layer_budget": 22,
+      "parameter_storage": "dense",
+      "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+      "full_source_checker": false,
+      "native_actions": [
+        "MOVE",
+        "ADD",
+        "SUB",
+        "EQ_BRANCH",
+        "LT_BRANCH",
+        "STOP_OK",
+        "STOP_INVALID",
+        "JUMP"
+      ],
+      "evidence": "Actual dense CPU stock forward/cache; two-item claim mutation, all RF replicas exact; byte_pages crosses127/128 through model-owned JUMP."
+    }
+  ],
+  "full_source_checker": false
+}
