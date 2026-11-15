@@ -1,3 +1,16 @@
+# Latest integrated dispatch/layout evidence
+
+The complete current-rule stock model now has 46,493,522 dense parameters and 62
+layers. Fixed handler call/return fusion preserves all rules and reduces matched
+OFFLINE native counts to 250,596 / 255,937. A 128-forward actual stock prefix passes
+exact hidden/cache-tensor/logit checks at 296.77 forwards/s; setup 124.76s. The
+longer case projects to ~14.4minutes plus setup, so full-source rerun is deferred
+while dirty-row commit is integrated. Full small-stock original-source admission
+and existing semantic/larger-domain gaps remain open. Details and artifacts are in
+[the speed checkpoint](../../benchmarks/kernel-control-speed/README.md).
+
+Earlier checkpoints follow.
+
 # Active latency integration
 
 Bulk source ports, width proofs and indexed fixed-control pages now preserve all

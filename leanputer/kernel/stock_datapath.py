@@ -38,9 +38,12 @@ class CoreRecord:
     literal_a: bool = False
     literal_b: bool = False
     auxiliary: int = 0
+    capture_return: bool = False
+    return_yes: bool = False
+    return_no: bool = False
 
     def bits(self):
-        fields=[(int(self.action),6),(self.dest,12),(self.a,12),(self.b,12),(self.immediate,16),(self.yes,16),(self.no,16),(int(self.literal_a)|2*int(self.literal_b),6),(self.auxiliary,16)]
+        fields=[(int(self.action),6),(self.dest,12),(self.a,12),(self.b,12),(self.immediate,16),(self.yes,16),(self.no,16),(int(self.literal_a)|2*int(self.literal_b)|4*int(self.capture_return)|8*int(self.return_yes)|16*int(self.return_no),6),(self.auxiliary,16)]
         result=[]
         for value,width in fields:
             if not 0<=value<1<<width:raise ValueError('core record field overflow')
@@ -307,7 +310,12 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         pending.append(value)
     zero=builder.gate('not',[builder.gate('or',a,'operand-nonzero')],'operand-zero')
     failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false'),builder.gate('and',[flags[WordAction.NONZERO_BRANCH],zero],'zero-branch')],'branch-false')
-    returning=flags[WordAction.RETURN_HANDLER]
+    inline_yes=builder.gate('and',[one-merging,code[93],one-failed_branch],'inline-yes-return')
+    inline_no=builder.gate('and',[one-merging,code[94],failed_branch],'inline-no-return')
+    returning=flags[WordAction.RETURN_HANDLER]+inline_yes+inline_no
+    failed_branch=failed_branch-inline_no
+    capture_return=builder.gate('and',[one-merging,code[92]],'capture-inline-return')
+    setting_return=flags[WordAction.CALL_HANDLER]+capture_return
     switch4=builder.gate('and',[flags[WordAction.SWITCH4],one-builder.gate('or',sum_bits[4:],'switch4-outside-page')],'switch4-in-page')
     switch8=builder.gate('and',[flags[WordAction.SWITCH8],one-builder.gate('or',sum_bits[8:],'switch8-outside-page')],'switch8-in-page')
     following=[g.ffn([(1,code[58+i],one-failed_branch-returning-switch4-switch8),(1,code[74+i],failed_branch),(1,handler_return[i],returning),(1,sum_bits[i]if i<4 else code[96+i],switch4),(1,sum_bits[i]if i<8 else code[96+i],switch8)],name='next-pc')for i in range(16)]
@@ -366,7 +374,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         g.ffn([(1,one-active_clear if d in clear_tails else one,value),(-1,one,target)],name='bit-commit',into=target,min_level=max(last[d],2*module_start))
     for bit,target in enumerate(handler_return):
         d=next(iter(target.terms))
-        g.ffn([(1,code[74+bit],flags[WordAction.CALL_HANDLER]),(-1,target,flags[WordAction.CALL_HANDLER])],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
+        g.ffn([(1,code[74+bit],flags[WordAction.CALL_HANDLER]),(1,code[96+bit],capture_return),(-1,target,setting_return)],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
     allocation=allocate(g,None,set(physical),intermediate)
     scratch=fixed.next;feature_count=len(physical)
     mapping={d:slot-13 for d,slot in physical.items()}
@@ -377,6 +385,15 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     allocation.slots=mapping;layout=Layout(hidden=hidden,m=12,slots=mapping)
     body=module_start+datapath_layers
     if g.n_layers()>body:raise ValueError(f'datapath exceeds{datapath_layers} layers: graph{g.n_layers()} body{body}')
+    budgeted_layers=layers
+    persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')),[]))
+    clear=[slot for slot in range(12,hidden)if slot not in persistent]
+    if compact_attention:
+        # Remove only the input-independent gap between the last scheduled
+        # checker operation and scratch clearing. Keep a final inert layer:
+        # hidden_states[-2] is the identity-feedback boundary before it.
+        body=g.n_layers()
+        layers=body+math.ceil(len(clear)/intermediate)+1
     active_layers={node.level//2 for node in g.nodes if isinstance(node,Head)}
     layer_types=['linear_attention'if not compact_attention or i in active_layers else'full_attention'for i in range(layers)]
     expected=sum(3*hidden*intermediate+(644*hidden+1666 if kind=='linear_attention'else 12*hidden+4)for kind in layer_types)+129*hidden
@@ -444,8 +461,6 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                     for slot,unit in zip(low_slots,units[28:]):
                         row(one,layout,mlp.gate_proj.weight[unit],128.)
                         mlp.up_proj.weight[unit,slot]=1/(128*layout.scale);mlp.down_proj.weight[slot,unit]=-1.
-        persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')),[]))
-        clear=[slot for slot in range(12,hidden)if slot not in persistent]
         for index,slot in enumerate(clear):
             layer=body+index//intermediate;unit=index%intermediate;mlp=model.model.layers[layer].mlp
             row(one,layout,mlp.gate_proj.weight[unit],128.)
@@ -459,5 +474,5 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
     report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-13,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None)
+    report.update(compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
     return StockDatapath(model,fixed,layout,report)

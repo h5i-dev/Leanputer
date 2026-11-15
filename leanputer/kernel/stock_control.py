@@ -118,9 +118,26 @@ class NativeControl:
             visiting.remove(pc);checked.add(pc)
         for r in self.records:
             if isinstance(r,CoreRecord)and r.action==O.CALL_HANDLER:handler(r.yes)
+        # Thread static depth-one handler calls through the first useful
+        # operation. Spare CoreRecord flags capture the return PC, or return
+        # along a selected edge; neither consumes a separate model forward.
+        returns={pc for pc,r in enumerate(self.records)if isinstance(r,CoreRecord)and r.action==O.RETURN_HANDLER}
+        branches={O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH}
+        direct={O.MOVE,O.ADD,O.SUB,O.AND,O.OR,O.XOR,O.SHR,O.SHL,O.CLEAR_RF_ROW}|branches
+        calls_folded=return_edges=0;threaded=[]
+        for r in self.records:
+            if isinstance(r,CoreRecord)and r.action==O.CALL_HANDLER:
+                first=self.records[r.yes]
+                if isinstance(first,CoreRecord)and first.action in direct:
+                    r=replace(first,capture_return=True,auxiliary=r.no);calls_folded+=1
+            if isinstance(r,CoreRecord)and r.action in direct:
+                ry=r.yes in returns;rn=r.action in branches and r.no in returns
+                r=replace(r,return_yes=ry,return_no=rn);return_edges+=int(ry)+int(rn)
+            threaded.append(r)
+        self.records=threaded
         self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
-            compiler_tail_transfers_removed=tails_removed,
+            compiler_tail_transfers_removed=tails_removed,handler_call_first_operations_folded=calls_folded,handler_return_edges_folded=return_edges,
             compiler_duplicate_records_removed=removed,
             handler_call_depth_bound=1,handler_control_records_checked=len(checked),
             canonical_temporary_words_proven=len(self.canonical_widths),narrow_read_masks_elided=self.read_masks_elided,narrow_write_masks_elided=self.write_masks_elided,

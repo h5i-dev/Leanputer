@@ -1,3 +1,31 @@
+# Threaded dispatch and trimmed stock layout (2026-11-15 06:50 UTC)
+
+The full fixed program retains 41,472 records, all 73 rule families / 6,454 effects
+and the same semantic bounds. After proving handler depth one, the compiler folds
+2,106 calls into their first useful operation and 1,661 return edges into the
+operation/branch selecting them. Spare record flags capture the return PC in the
+model and return on either branch; no host dispatch or dynamic source pruning.
+Both complete source cases still match every SPEC state OFFLINE, now using
+**250,596 / 255,937 forwards**, down from 286,472 / 291,870.
+
+Four unused budgeted stages are removed, preserving all scheduled operations,
+scratch clearing and an inert final layer at the identity-feedback boundary.
+The actual emitted/loaded stock model is **46,493,522 logical dense parameters**,
+H768 / I256 / L62, 19 active GDN memories and 43 tiny stock attention blocks,
+754 allocated channels. Formula: 19*(3HI+644H+1666) + 43*(3HI+12H+4) + 129H.
+The actual stock capture/both-return-edges module passes.
+
+The integrated **128-forward** eager/compiled-CUDA-graph prefix passes exact ALL
+hidden-state/cache-tensor/logit checks: eager 14.02298s, replay 0.431312s,
+**296.7687 forwards/s**, setup 124.7583s. This is a short stock prefix, not full
+source termination. The current longer-case projection is 862.41s (~14.4minutes)
+plus setup/build/prefill, conditional on the prefix rate. No long full run is
+started at this checkpoint. Next is dirty-row commit to reduce repeated queue
+and memory work while preserving simultaneous OR updates and atomic publication.
+All semantic GAPs and larger native-domain limits remain explicit.
+
+Earlier checkpoints follow.
+
 # Pending urgent latency integration (2026-11-15 06:34 UTC)
 
 The current implementation preserves all 73 rule families / 6,454 effects and

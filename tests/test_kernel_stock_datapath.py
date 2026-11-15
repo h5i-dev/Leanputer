@@ -29,6 +29,33 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_threaded_calls_capture_and_return_on_both_branch_edges(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        program=[CoreRecord(O.EQ_BRANCH,a=rf(0),literal_b=True,immediate=1,yes=5,no=1,capture_return=True,auxiliary=2,return_yes=True),
+                 CoreRecord(O.MOVE,dest=rf(2),literal_a=True,immediate=77,yes=5,return_yes=True),
+                 CoreRecord(O.LT_BRANCH,a=rf(0),literal_b=True,immediate=2,yes=3,no=5,capture_return=True,auxiliary=4,return_no=True),
+                 CoreRecord(O.MOVE,dest=rf(3),literal_a=True,immediate=88,yes=5,return_yes=True),
+                 CoreRecord(O.STOP_OK,yes=4),CoreRecord(O.RETURN_HANDLER,yes=0)]
+        chip=build(program,rom_layout='byte_pages',compact_attention=True)
+        inputs=(0,1,2,65535);packets=[]
+        for value in inputs:
+            packets.append(chip.packet(boot=[1],pending_row=[0]*9,pending_enable=[1],pending_payload=[value>>i&1 for i in range(16)]+[0]*110))
+        masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(4,1,dtype=torch.long)
+        with torch.no_grad():
+            out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),past_key_values=chip.new_cache(),use_cache=True,position_ids=positions,attention_mask=masks)
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-13))
+            for _ in range(7):
+                out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks)
+                state=out.hidden_states[-2]
+        from leanputer.native_vendor.qwenputer.ir import A_BIT
+        word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
+        self.assertEqual([word(v[16:32])for v in out.logits[:,0].float().tolist()],[1]*4)
+        for head in chip.report['rf_heads']:
+            if head['page']:continue
+            values=cache.layers[head['layer']].recurrent_states[0][:,0,0,2:128]/A_BIT
+            self.assertEqual([[word(v[32:48]),word(v[48:64])]for v in values.float().tolist()],[[77 if v!=1 else 0,88 if v<2 else 0]for v in inputs])
+
     def test_indexed_control_pages_preserve_all_word_default_values(self):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf

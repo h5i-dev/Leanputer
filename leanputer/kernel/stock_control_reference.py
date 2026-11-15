@@ -6,7 +6,7 @@ allocation. It does not produce inference inputs, cache values or answers.
 from copy import deepcopy
 from collections import Counter
 from .stock_control import main_address
-from .stock_datapath import FieldRecord,WordAction as O
+from .stock_datapath import CoreRecord,FieldRecord,WordAction as O
 
 
 class NativeControlReference:
@@ -41,6 +41,9 @@ class NativeControlReference:
                     self.write(((272+row)<<3)|qs,field);self.queue.append(dest);forwards+=2
         else:
             a=r.immediate if r.literal_a else self.read(r.a);b=r.immediate if r.literal_b else self.read(r.b);op=r.action
+            if r.capture_return:
+                if self.return_pc is not None:raise AssertionError('nested fused native handler call')
+                self.return_pc=r.auxiliary
             if op==O.MOVE:self.write(r.dest,a)
             elif op==O.ADD:self.write(r.dest,a+b)
             elif op==O.SUB:self.write(r.dest,a-b)
@@ -91,6 +94,11 @@ class NativeControlReference:
                 if op in(O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE):row[field]=b
                 else:self.write(r.dest,row[field]);forwards=2
             else:raise ValueError('unmapped native compiler reference '+op.name)
+        if isinstance(r,CoreRecord)and(r.return_yes or r.return_no):
+            false=(op==O.EQ_BRANCH and a!=b)or(op==O.LT_BRANCH and a>=b)or(op==O.NONZERO_BRANCH and not a)
+            if r.return_no if false else r.return_yes:
+                if self.return_pc is None:raise AssertionError('fused handler edge without call')
+                following=self.return_pc;self.return_pc=None
         self.region_forward_costs[self.program.record_regions[self.pc]]+=forwards
         self.pc=following;self.forwards+=forwards
         self.forward_costs['MERGE_FIELDS3'if isinstance(r,FieldRecord)else r.action.name]+=forwards
