@@ -21,7 +21,7 @@ class WordAction(IntEnum):
     CALL_HANDLER=50; RETURN_HANDLER=51
     GUARD3=17
     CLEAR_RF_ROW=52
-    SWITCH4=53; SWITCH8=54
+    SWITCH4=53; SWITCH8=54; INVALID_BRANCH=55
     HEAP_ROW_READ=56; FRAME_ROW_READ=57; CONTEXT_ROW_READ=58; DECLARATION_ROW_READ=59
     HEAP_READ=40; HEAP_WRITE=41; FRAME_READ=42; FRAME_WRITE=43
     CONTEXT_READ=44; CONTEXT_WRITE=45; DECLARATION_READ=46
@@ -119,12 +119,14 @@ class StockDatapath:
         return StaticCache(config=config,max_cache_len=1)
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False):
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False,bounds_schema=()):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
     bundled=any(getattr(r,'action',None)==WordAction.GUARD3 for r in records)
-    if hidden not in(768,896,960,1024)or intermediate!=256:raise ValueError('physical domain H768/896/960/1024/I256')
+    incremental=any(getattr(r,'action',None)==WordAction.INVALID_BRANCH for r in records)
+    if incremental!=bool(bounds_schema):raise ValueError('native invalid branch requires original predicate schema')
+    if hidden not in(768,896,960,1024)or intermediate not in(256,512,1024):raise ValueError('physical domain H768/896/960/1024 and I256/512/1024')
     if not records or len(records)>65536:raise ValueError('16bit control PC domain')
     if rom_layout not in('flat','byte_pages'):raise ValueError('unknown weight-ROM layout')
     encoded=[r.bits()for r in records];pages=math.ceil(len(records)/128)
@@ -168,7 +170,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         carry=[builder.gate('and',bits[4:i],f'queue-address-carry/{i}')for i in range(5,9)]
         return bits[:4]+[one-bits[4]]+[bits[i]+carry[i-5]-2*builder.gate('and',[bits[i],carry[i-5]],f'queue-address-xor/{i}')for i in range(5,8)]+[one-carry[3]]
     queue_write_address=queue_address(queue_row);queue_read_address=queue_address(read_row)
-    flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction if bundled or op!=WordAction.GUARD3}
+    flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction if (bundled or op!=WordAction.GUARD3)and(incremental or op!=WordAction.INVALID_BRANCH)}
     # Opcode flags are mutually exclusive for every binary6bit ROM code.
     # Their union is a free linear sum, not another Boolean circuit.
     def op_any(*ops):return sum((flags[op]for op in ops),Expr())
@@ -276,6 +278,10 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                 layer=module_start+start_layer+page
                 g.head(f'arena.{bank}.{page}',q,k,data,0,{i+2:K*one for i in range(words*16)},[(i+2,128.)for i in range(words*16)],beta=writing,min_level=2*layer,into=D[:words*16])
                 bank_metadata.append(dict(bank=bank,page=page,layer=g.nodes[-1].level//2,words=words))
+    invalid_latch=None
+    if incremental:
+        from .stock_bounds import emit_invalid_latch
+        invalid_latch=emit_invalid_latch(builder,bounds_schema,address,payload,enable,kind,module_start+5 if grouped_memory else module_start+19)
     submode=op_any(WordAction.SUB,WordAction.EQ_BRANCH,WordAction.LT_BRANCH,WordAction.SWITCH4,WordAction.SWITCH8)+guard
     if parallel_carry:
         # Full16bit word arithmetic, with all input values retained. Prefix
@@ -382,6 +388,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     inline_no=builder.gate('and',[one-merging,no_return,failed_branch],'inline-no-return')
     returning=flags[WordAction.RETURN_HANDLER]+inline_yes+inline_no
     failed_branch=failed_branch-inline_no
+    if incremental:failed_branch=failed_branch+builder.gate('and',[flags[WordAction.INVALID_BRANCH],one-invalid_latch],'bounds-valid-branch')
     capture_return=builder.gate('and',[one-merging,one-guard,code[92]],'capture-inline-return')
     setting_return=flags[WordAction.CALL_HANDLER]+capture_return
     capture_returning=builder.gate('and',[returning,capture_return],'inline-capture-returning')
@@ -547,5 +554,5 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
     report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=3 if grouped_memory else 12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
+    report.update(incremental_bounds=incremental,bounds_fields=len(bounds_schema),grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
     return StockDatapath(model,fixed,layout,report)

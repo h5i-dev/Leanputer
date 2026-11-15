@@ -71,6 +71,10 @@ class NativeControlReference:
             elif op in(O.SWITCH4,O.SWITCH8):
                 size=16 if op==O.SWITCH4 else 256;offset=(a-b)&65535
                 following=r.auxiliary+offset if offset<size else r.yes
+            elif op==O.INVALID_BRANCH:
+                from .stock_bounds import evaluate
+                invalid=any(evaluate(tree,self.read(main_address(index)))for index,tree in self.program.bounds_schema)
+                following=r.yes if invalid else r.no
             elif op==O.JUMP:pass
             elif op==O.CLEAR_RF_ROW:
                 row=r.dest>>3;self.rf[row]=[0]*7

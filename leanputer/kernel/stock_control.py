@@ -33,8 +33,12 @@ class Value:
 
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
-    def __init__(self,store,addresses,bundle_guards=False):
-        self.store=store;self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0;self.pending_regions=[];self.region='bootstrap'
+    def __init__(self,store,addresses,bundle_guards=False,compact_rom=False):
+        self.store=store;self.bounds_schema=()
+        if store.incremental_bounds:
+            from .stock_bounds import schema_from_compiler
+            self.bounds_schema=schema_from_compiler(store.compiler)
+        self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0;self.pending_regions=[];self.region='bootstrap'
         self.tables=[]
         self.canonical_widths={i:16 for i in range(17)};self.read_masks_elided=0;self.write_masks_elided=0
         self.record_widths(store.records)
@@ -64,7 +68,7 @@ class NativeControl:
         compact=[]
         for pc in keep:
             r=self.records[pc];fields=dict(yes=positions[follow(r.yes)])
-            if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0
+            if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0
             compact.append(replace(r,**fields))
         tables=[(size,[positions[follow(self.labels[target])]for target in entries])for size,entries in self.tables]
         self.records=compact
@@ -82,13 +86,13 @@ class NativeControl:
             for pc,r in enumerate(self.records):
                 if pc in alias:continue
                 fields=dict(yes=canonical(r.yes))
-                if isinstance(r,CoreRecord):fields['no']=canonical(r.no)if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0
+                if isinstance(r,CoreRecord):fields['no']=canonical(r.no)if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0
                 key=replace(r,**fields)
                 if key in seen and pc:
                     alias[pc]=seen[key];removed+=1;changed=True
                 else:seen[key]=pc
         keep=[pc for pc in range(len(self.records))if pc not in alias];positions={pc:i for i,pc in enumerate(keep)}
-        self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
+        self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
         self.record_regions=[self.record_regions[pc]for pc in keep]
         tables=[(size,[positions[canonical(target)]for target in entries])for size,entries in tables]
         bases=[];padding=0;body_count=len(self.records)
@@ -112,7 +116,7 @@ class NativeControl:
                 if r.action in(O.COMMIT_FIELDS,O.PUBLISH_RESULT,O.STOP_OK,O.STOP_INVALID):raise ValueError('checker handler exits without returning')
                 if r.action==O.RETURN_HANDLER:visiting.remove(pc);checked.add(pc);return
             handler(r.yes)
-            if isinstance(r,CoreRecord)and r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH):handler(r.no)
+            if isinstance(r,CoreRecord)and r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH):handler(r.no)
             if isinstance(r,CoreRecord)and r.action in(O.SWITCH4,O.SWITCH8):
                 for target in range(r.auxiliary,r.auxiliary+(16 if r.action==O.SWITCH4 else 256)):handler(target)
             visiting.remove(pc);checked.add(pc)
@@ -144,7 +148,11 @@ class NativeControl:
                     r=replace(r,return_yes=ry,return_no=rn);return_edges+=int(ry)+int(rn)
             threaded.append(r)
         self.records=threaded
-        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,
+        layout_report={}
+        if compact_rom:
+            from .stock_control_layout import compact_control
+            self.records,self.record_regions,layout_report=compact_control(self.records,self.record_regions)
+        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,incremental_bounds=bool(self.bounds_schema),bounds_fields=len(self.bounds_schema),control_layout=layout_report,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
             compiler_tail_transfers_removed=tails_removed,handler_call_first_operations_folded=calls_folded,handler_return_edges_folded=return_edges,
             compiler_duplicate_records_removed=removed,
@@ -286,6 +294,7 @@ class NativeControl:
 
     def lower(self,r,yes,no,commit=('commit',),namespace='typed'):
         op=r['op'];width=r['width']
+        if op=='TEST_INVALID_LATCH':self.emit(O.INVALID_BRANCH,yes=yes,no=no);return
         if op=='COMMIT_STEP':self.emit(O.JUMP,yes=commit);return
         if op=='CALL_HANDLER':self.emit(O.CALL_HANDLER,yes=('typed',r['callee']),no=yes);return
         if op=='RETURN_HANDLER':self.emit(O.RETURN_HANDLER,yes=('source',));return

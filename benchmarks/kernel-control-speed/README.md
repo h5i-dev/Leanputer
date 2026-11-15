@@ -249,3 +249,29 @@ Optional indexed private-phase dispatch preserves every matched source state
 offline but yields 173,182/177,684 forwards versus 175,953/180,686 for bundled
 controls, with 60,432 records. This minor reduction is not selected for GPU
 validation or practical delivery (`indexed-phase-costs.txt`).
+
+Write-time bounds and ROM layout checkpoint (2026-11-15): the compiler extracts
+24 field predicates from the original invalid-syntax expression. Stock weights
+check final whole main-row writes, including boot, and retain a sticky invalid
+bit in a stock GDN cache. Original preflight stop ordering remains. Shadow,
+scratch and arena writes do not affect it; no host computes the bit. An invalid
+main boundary cannot be repaired before the original preflight stops. Targeted
+STOCK boot/committed-invalid/sticky/ignored-shadow/scratch test passes. Both
+matched sources preserve every state offline at 164,109/168,491 forwards.
+
+Input-independent reachability after fusion retains both branches, all table
+slots and every handler return continuation; aligned ROM falls from 50,960 to
+48,912 records. H960/I512 plans AND actually emits 80,299,412 dense parameters,
+47 layers, six active GDN layers, all73 families/6454 effects. The 64-forward
+standard `aot_eager` CUDA-graph probe exactly matches ALL eager/captured hidden
+states, cache tensors and logits, plus59 native-PC boundaries per item.
+126.6011 forwards/s projects1330.9s for the longer case: SLOWER than the validated
+baseline, not selected for full execution and not practical delivery.
+
+The grouped H1024/I256 Inductor probe stopped at its300s cap in cold compilation.
+Raw CUDA capture of stock sliding cache failed at `cache_utils.py:569`,
+`torch.tensor([-1], device=...)`, with `operation not permitted when stream is
+capturing`. Standard `aot_eager` resolves capture and gives bounded correctness
+evidence, but its4574 kernels/forward are costly. No forward/cache patch or
+custom circuit executor was introduced. Full-source and semantic/larger-domain
+gaps remain separate from this prefix. No13minute source repeat was launched.

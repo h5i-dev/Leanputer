@@ -29,6 +29,43 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_native_bounds_latch_checks_boot_and_main_writes_only(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        # These schemas are instruction DATA; the integrated compiler derives
+        # them from the original invalid-syntax predicate, never source names.
+        schema=((0,('any',('eq',('word',),('const',0,16)),('ult',('const',512,16),('word',)))),
+                (1,('ult',('const',1,16),('word',))))
+        program=[CoreRecord(O.INVALID_BRANCH,yes=9,no=1),
+                 CoreRecord(O.MOVE,dest=rf(7),literal_a=True,immediate=600,yes=2),
+                 CoreRecord(O.MOVE,dest=rf(408*7),literal_a=True,immediate=600,yes=3),
+                 CoreRecord(O.INVALID_BRANCH,yes=9,no=4),
+                 CoreRecord(O.MOVE,dest=rf(0),literal_a=True,immediate=600,yes=5),
+                 CoreRecord(O.INVALID_BRANCH,yes=6,no=9),
+                 CoreRecord(O.MOVE,dest=rf(0),literal_a=True,immediate=1,yes=7),
+                 CoreRecord(O.INVALID_BRANCH,yes=8,no=9),
+                 CoreRecord(O.STOP_OK,yes=8),CoreRecord(O.STOP_INVALID,yes=9)]
+        chip=build(program,rom_layout='byte_pages',compact_attention=True,grouped_memory=True,hidden=896,bounds_schema=schema)
+        masks={'full_attention':None,'linear_attention':None}
+        packets=[]
+        for value,boolean in((1,0),(0,0),(65535,0),(1,2)):
+            words=[value,boolean,0,0,0,0,0]
+            payload=[v>>bit&1 for v in words for bit in range(16)]+[0]*14
+            packets.append(chip.packet(boot=[1],pending_enable=[1],pending_payload=payload))
+        with torch.no_grad():
+            initial=chip.embeddings(torch.stack(packets)[:,None])
+            out=chip.model(inputs_embeds=initial,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(4,1,dtype=torch.long),attention_mask=masks)
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-chip.slots.prefix))
+            pcs=[]
+            for _ in range(11):
+                out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(4,1,dtype=torch.long),attention_mask=masks)
+                cache=out.past_key_values;state=out.hidden_states[-2]
+                pcs.append([sum(int(v)<<bit for bit,v in enumerate(row[:16]))for row in out.logits[:,0].float().tolist()])
+        self.assertEqual([row[0]for row in pcs[:8]],[1,2,3,4,5,6,7,8])
+        status=[sum(int(v)<<i for i,v in enumerate(row[16:32]))for row in out.logits[:,0].float().tolist()]
+        self.assertEqual(status,[1,2,2,2])
+        self.assertTrue(chip.report['incremental_bounds'])
+
     def test_grouped_value_head_memory_preserves_word_rf_pages(self):
         self.check_core('byte_pages',grouped_memory=True)
 

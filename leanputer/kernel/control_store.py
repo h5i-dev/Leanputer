@@ -137,11 +137,12 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False,incremental_bounds=False):
         role_dispatch=role_dispatch or mode_dispatch
         family_dispatch=family_dispatch or role_dispatch
         self.mode_dispatch=mode_dispatch
         self.indexed_phases=indexed_phases
+        self.incremental_bounds=incremental_bounds
         self.role_dispatch=role_dispatch
         self.capture_statistics=compiler.g.statistics()
         self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
@@ -384,6 +385,9 @@ class ControlStore:
         return self.condition_entries[key]
 
     def condition_body(self,index,yes,no,memo,start):
+        if getattr(self,'incremental_bounds',False) and index==self.compiler.g.pred(self.compiler.invalid_syntax):
+            block=self.block();block.emit('TEST_INVALID_LATCH',yes=yes,no=no,width=1)
+            return block.label
         if index in self.frozen:
             block=self.block();block.emit('TEST_WORD_NONZERO',a=self.frozen[index],yes=yes,no=no,width=1)
             return block.label
@@ -589,7 +593,7 @@ class ControlStore:
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
             source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
-            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,
+            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,incremental_bounds=self.incremental_bounds,
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):
