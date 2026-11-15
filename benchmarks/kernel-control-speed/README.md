@@ -317,3 +317,27 @@ result. H896 fails at903channels. Experimental actual-producer birth allocation
 only saved2channels and failed a ROM-unit collision test; its code/logs remain
 in scratch and it is not selected. No repeated full source run; practical
 seconds-scale latency and the existing semantic/larger-domain gaps remain open.
+
+Source-derived fixed preflight (2026-11-15): the original5 prefix effects,
+their conditional write masks and their body-active predicate are lowered
+directly into neural weights. All16bit task/mode values are retained. Three
+bounded gathers place9 raw words in three compiler-proved unused RF rows;
+the stock RF reads two triplets as exact3bit lanes and the third as binary
+columns. The fixed circuit emits3 values,3 masks and the original active bit.
+Existing shadow/queue/commit operations apply those updates before body entry.
+No host evaluator or new Boolean instruction interpreter participates.
+
+Active/rejection sharing uses the exact source identity
+`active = prior AND NOT bad; rejected = prior AND NOT active`. The body only
+uses implied true/false conditions under that checked source predicate.
+Every951registers/allbanks match at every original-source reference boundary,
+99934/102619 forwards, all73families/6454effects/44032ROM records. These are
+OFFLINE counts, NOTstock timing or admission evidence.
+
+The complete model plans at80,638,068DENSE/H1024/I256/L87/998channels/6GDN,
+below100M before allocation. The ten-boundary circuit test matches original
+prefix values/masks/active (2.48s). A six-case STOCK CPU module passes allRF
+replicas (11.54s), including fuel-before-syntax ordering, invalid bound/tag,
+17bit context-window overflow and stopped status. Whole-source STOCK prefix
+and speed are pending. Practical seconds-scale latency and existing semantic/
+larger-source gaps remain open; no long/full source retry was launched.

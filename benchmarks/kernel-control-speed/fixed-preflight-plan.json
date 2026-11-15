@@ -1,0 +1,70 @@
+{
+  "logical_dense_parameters": 80638068,
+  "hidden": 1024,
+  "intermediate": 256,
+  "layers": 87,
+  "graph_layers": 82,
+  "rom_records": 44032,
+  "rom_layers": 21,
+  "allocated_channels": 998,
+  "active_gdn_layers": 6,
+  "guard_bundles": true,
+  "parallel_carry": true,
+  "grouped_memory": true,
+  "gdn_value_heads": 4,
+  "reuse_transient_features": true,
+  "pinned_features": 233,
+  "fixed_preflight": {
+    "source": {
+      "source_defined": true,
+      "original_prefix_effects": 5,
+      "input_words": [
+        "arg_base",
+        "count",
+        "free",
+        "fuel",
+        "mode",
+        "read/node/tag",
+        "status",
+        "task",
+        "x"
+      ],
+      "updated_fields": [
+        "status",
+        "reason",
+        "fuel"
+      ],
+      "typed_nodes": 1077,
+      "typed_operations": {
+        "input": 9,
+        "all": 298,
+        "any": 112,
+        "not": 128,
+        "const": 223,
+        "eq": 297,
+        "ult": 6,
+        "sub": 1,
+        "extend": 2,
+        "add": 1
+      },
+      "control_choice_nodes": 47,
+      "control_intervals": 866,
+      "data_predicates": 70,
+      "all_control_values_covered": true,
+      "cache_rows": [
+        422,
+        423,
+        424
+      ],
+      "prefix_effects_lowered": true,
+      "body_requires_original_active_predicate": true,
+      "gather_forwards": 3,
+      "check_forwards": 1
+    },
+    "neural_nodes": 321,
+    "control_selectors": 268,
+    "first_layer": 57,
+    "last_layer": 81
+  },
+  "planning_only": true
+}

@@ -147,5 +147,5 @@ def emit_source_program(native,addresses):
             if not remaining:break
             native.mark(following);accumulated=True
     native.mark(('load-context',));native.emit(O.CONTEXT_ROW_READ,dest=temporary_address(16),a=type(operand)(temporary_address(670)))
-    native.emit(O.JUMP,yes=('typed',native.store.entry_pc))
+    native.emit(O.JUMP,yes=native.source_continuation)
     return dict(derived_from_original_addresses=True,all_selector_values_covered=True,selector_cases=len(cases),distinct_affine_schemes=len(schemes),max_affine_forwards=max(max(1,(len(terms)+1)//2)for terms,constant in schemes),source_bank_read_forwards=8)

@@ -35,7 +35,12 @@ class Value:
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
     def __init__(self,store,addresses,bundle_guards=False,compact_rom=False,source_operations=False):
-        self.store=store;self.bounds_schema=()
+        self.store=store;self.preflight_plan=None
+        if store.direct_preflight:
+            from .stock_preflight import PreflightPlan
+            self.preflight_plan=PreflightPlan(store.compiler,store.contract_plan)
+        self.source_continuation=('native-preflight',)if self.preflight_plan else('typed',store.entry_pc)
+        self.bounds_schema=()
         if store.incremental_bounds:
             from .stock_bounds import schema_from_compiler
             self.bounds_schema=schema_from_compiler(store.compiler)
@@ -58,6 +63,9 @@ class NativeControl:
         else:self.source_prologue(addresses)
         self.region='commit-tail'
         self.commit_tail()
+        if self.preflight_plan:
+            from .stock_preflight import emit_preflight_controller
+            emit_preflight_controller(self)
         self.records=[]
         for record,yes,no in self.pending:
             record=map_cases(record,self.labels.__getitem__)
@@ -160,7 +168,7 @@ class NativeControl:
         if compact_rom:
             from .stock_control_layout import compact_control
             self.records,self.record_regions,layout_report=compact_control(self.records,self.record_regions)
-        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,incremental_bounds=bool(self.bounds_schema),bounds_fields=len(self.bounds_schema),control_layout=layout_report,source_operations=self.source_operations,
+        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,incremental_bounds=bool(self.bounds_schema),bounds_fields=len(self.bounds_schema),control_layout=layout_report,source_operations=self.source_operations,preflight=self.preflight_plan.report if self.preflight_plan else None,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
             compiler_tail_transfers_removed=tails_removed,handler_call_first_operations_folded=calls_folded,handler_return_edges_folded=return_edges,
             compiler_duplicate_records_removed=removed,
@@ -192,7 +200,7 @@ class NativeControl:
         self.labels[label]=len(self.pending)
 
     def emit(self,op,dest=0,a=Value(0,True),b=Value(0,True),yes=None,no=None,auxiliary=0):
-        if op not in(O.ADD,O.SUB,O.EQ_BRANCH,O.LT_BRANCH,O.AND,O.OR,O.XOR,O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE,O.PUBLISH_RESULT,O.SWITCH4,O.SWITCH8):b=Value(0)
+        if op not in(O.ADD,O.SUB,O.EQ_BRANCH,O.LT_BRANCH,O.AND,O.OR,O.XOR,O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE,O.PUBLISH_RESULT,O.SWITCH4,O.SWITCH8,O.PREFLIGHT_GATHER,O.PREFLIGHT_CHECK):b=Value(0)
         if a.literal and b.literal and a.value!=b.value:
             # One literal lane per core record. Compiler scratch is a real RF
             # word written by the preceding model step, never a host value.
@@ -395,7 +403,7 @@ class NativeControl:
             self.emit(action,dest=temporary_address(port),a=Value(temporary_address(670+index)));port+=words
         self.address_records(*addresses[1],'addresses2',('load-context',))
         self.mark(('load-context',));self.emit(O.CONTEXT_ROW_READ,dest=temporary_address(16),a=Value(temporary_address(670)))
-        self.emit(O.JUMP,yes=('typed',self.store.entry_pc))
+        self.emit(O.JUMP,yes=self.source_continuation)
 
     def commit_tail(self):
         self.mark(('commit',))

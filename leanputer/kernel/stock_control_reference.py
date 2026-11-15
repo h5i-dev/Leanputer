@@ -57,7 +57,24 @@ class NativeControlReference:
             if r.capture_return:
                 if self.return_pc is not None:raise AssertionError('nested fused native handler call')
                 self.return_pc=r.auxiliary
-            if op==O.MOVE:self.write(r.dest,a)
+            if op==O.PREFLIGHT_GATHER:
+                for slot,value in enumerate((a,b,self.read(r.dest))):self.write((r.auxiliary<<3)|slot,value)
+                for slot in range(3,7):self.write((r.auxiliary<<3)|slot,0)
+            elif op==O.PREFLIGHT_CHECK:
+                from .control_reference import evaluate
+                from .stock_control import temporary_address
+                plan=self.program.preflight_plan
+                inputs={name:self.read(main_address(i))for i,name in enumerate(self.names)}
+                for name,operand in self.program.store.inputs.items():
+                    if name.startswith('read/'):inputs[name]=self.read(temporary_address(operand.index))
+                for index,name in enumerate(plan.inputs):inputs[name]=self.read((plan.cache_rows[index//3]<<3)|(index%3))
+                get=evaluate(plan.graph,None,inputs);values={};masks=set()
+                for effect in plan.effects:
+                    if get(effect.guard):
+                        for name,node in effect.values:values[name]=values.get(name,0)|get(node);masks.add(name)
+                output=[values.get(name,0)for name in plan.field_names]+[int(name in masks)for name in plan.field_names]+[get(plan.compiler.preflight_active)]
+                for slot,value in enumerate(output):self.write((r.auxiliary<<3)|slot,value)
+            elif op==O.MOVE:self.write(r.dest,a)
             elif op==O.ADD:self.write(r.dest,a+b)
             elif op==O.SUB:self.write(r.dest,a-b)
             elif op==O.AND:self.write(r.dest,a&b)

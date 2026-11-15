@@ -10,12 +10,20 @@ from .control_ir import Bit
 
 
 class PhasePartition:
-    def __init__(self,compiler,max_states=50000,contract_only=False):
+    def __init__(self,compiler,max_states=50000,contract_only=False,implied_contract=False):
         self.compiler=compiler;self.g=compiler.g;self.nodes=self.g.nodes
         self.variables={i:n.data for i,n in enumerate(self.nodes)if n.op=='input'and(n.data in('mode','task','read/frame/task','read/frame/phase')or n.data.endswith('_pc'))}
         self.indices={i:j for j,i in enumerate(self.variables)}
         self.dep_cache={};self.test_cache={};self.cofactors={};self.memo={};self.leaves=[];self.dispatch=[];self.max_states=max_states;self.visited=0;self.region_aliases={}
-        self.contract=compiler.preflight_active;self.contract_cache={}
+        self.contract=compiler.preflight_active;self.contract_cache={};self.implied_true={self.contract};self.implied_false=set()
+        if implied_contract:
+            pending=[(self.contract,True)];seen=set()
+            while pending:
+                index,truth=pending.pop()
+                if(index,truth)in seen:continue
+                seen.add((index,truth));(self.implied_true if truth else self.implied_false).add(index);node=self.nodes[index]
+                if node.op=='not':pending.append((node.args[0],not truth))
+                elif(node.op=='all'and truth)or(node.op=='any'and not truth):pending.extend((i,truth)for i in node.args)
         self.contract_domains={i:(0,(1<<self.nodes[i].width)-1)for i in self.variables}
         def require(index,truth):
             n=self.nodes[index]
@@ -62,7 +70,8 @@ class PhasePartition:
         self.root=None if contract_only else self.partition(self.body)
 
     def under_contract(self,index):
-        if index==self.contract:return self.g.one.word
+        if index in self.implied_true:return self.g.one.word
+        if index in self.implied_false:return self.g.zero.word
         if index not in self.contract_cache:
             n=self.nodes[index];args=tuple(self.under_contract(i)for i in n.args)
             if n.op=='all':result=self.g.AND(*(Bit(i,0)for i in args)).word

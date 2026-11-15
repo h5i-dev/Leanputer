@@ -33,8 +33,9 @@ def syntax_packets(chip,config,documents):
 
 def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True,grouped_memory=False,model_hidden=None,intermediate=256,reuse_transient_features=False):
     if not program.report['pc16_encoding_met']:raise ValueError('whole native program exceeds16bit control ROM; no emission')
-    bundled=bool(program.report.get('guard_bundling'))
-    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True,hidden=model_hidden or(1024 if bundled and grouped_memory else 960 if bundled else 768),intermediate=intermediate,datapath_layers=45 if bundled else 35,parallel_carry=bundled,grouped_memory=grouped_memory,bounds_schema=program.bounds_schema,reuse_transient_features=reuse_transient_features)
+    bundled=bool(program.report.get('guard_bundling'));direct=program.preflight_plan is not None
+    grouped_memory=grouped_memory or direct;reuse_transient_features=reuse_transient_features or direct
+    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True,hidden=model_hidden or(1024 if direct or(bundled and grouped_memory)else 960 if bundled else 768),intermediate=intermediate,datapath_layers=90 if direct else 45 if bundled else 35,parallel_carry=bundled,grouped_memory=grouped_memory,bounds_schema=program.bounds_schema,reuse_transient_features=reuse_transient_features,preflight_plan=program.preflight_plan)
     chip.model.to(device);chip.report['full_current_rule_control_mapped']=True;chip.report['checker_commit_layout']['reserved_arena_buffers_implemented']=True
     built=time.perf_counter();batch=len(documents)
     packets=syntax_packets(chip,program.store.compiler.cfg,documents);cache=chip.new_cache()

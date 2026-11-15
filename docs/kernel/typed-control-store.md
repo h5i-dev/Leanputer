@@ -149,3 +149,14 @@ and [actual stock module](../../benchmarks/kernel-shared-datapath/README.md).
 These are coherent integration checkpoints, not task completion. Next is compact
 phase dispatch, complete native action/encoding coverage, then the SAME original
 source accept/reject through the small fixed stock model with full state checks.
+
+### Fixed source preflight checkpoint
+
+The optional direct preflight path compiles the original predicate and5prefix
+effects into fixed stock circuits, gathers9data words, and retains conditional
+field masks and the original body guard. It preserves all73current families and
+6454effects. Both source traces match every reference state at99934/102619native
+forwards; these counts are not stock speed. The complete planned80.64Mdense
+architecture meets the100M size gate; stock module evidence and original-source
+stock evidence are separate in the control-speed benchmark. No semantic or
+larger-domain gap is closed by this scheduling change.

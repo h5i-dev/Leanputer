@@ -7,7 +7,7 @@ from ..native_vendor.qwenputer.expr import Expr
 from ..native_vendor.qwenputer.ir import K,A_REF,A_BIT
 
 
-def grouped_rf(builder,port,query,outputs,write_flags,address,payload,run,literal,suppress,layer,metadata):
+def grouped_rf(builder,port,query,outputs,write_flags,address,payload,run,literal,suppress,layer,metadata,packed=None):
     g=builder.graph;one=g.one
     def matches(bits,value):return[b if value>>i&1 else one-b for i,b in enumerate(bits)]
     def form(values):return K*(2*(sum(values,Expr())-(len(values)-1)*one)-one)
@@ -19,9 +19,14 @@ def grouped_rf(builder,port,query,outputs,write_flags,address,payload,run,litera
         z={};outs=[];into=[]
         if port<2:
             for slot in range(7):
-                gate=K*(sum(matches(query[:3],slot)+matches(query[10:12],page),Expr())-4*one)
+                if packed is None:
+                    gate=K*(sum(matches(query[:3],slot)+matches(query[10:12],page),Expr())-4*one);weight=128.
+                else:
+                    normal=builder.gate('and',matches(query[:3],slot)+matches(query[10:12],page)+[one-packed],'rf-word-read')
+                    vector=builder.gate('and',matches(query[10:12],page)+[packed],'rf-triplet-read')if slot<3 else Expr()
+                    gate=(K*64//2**slot)*normal+(K*64)*vector;weight=2.**(slot+1)
                 for bit in range(16):
-                    column=2+16*slot+bit;z[column]=gate;outs.append((column,128.));into.append(outputs[bit])
+                    column=2+16*slot+bit;z[column]=gate;outs.append((column,weight));into.append(outputs[bit])
         else:
             gate=K*(sum(matches(query[10:12],page),Expr())-one)
             z={i+2:gate for i in range(126)};outs=[(i+2,128.)for i in range(126)];into=list(outputs)

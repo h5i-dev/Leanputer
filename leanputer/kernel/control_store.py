@@ -137,10 +137,12 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False,incremental_bounds=False,fast_default_dispatch=False,continuation_dispatch=False,dispatch_table_budget=None):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False,incremental_bounds=False,fast_default_dispatch=False,continuation_dispatch=False,dispatch_table_budget=None,direct_preflight=False):
         role_dispatch=role_dispatch or mode_dispatch
         family_dispatch=family_dispatch or role_dispatch
         self.mode_dispatch=mode_dispatch
+        self.direct_preflight=direct_preflight
+        if direct_preflight and not(incremental_bounds and role_dispatch):raise ValueError('direct source preflight requires checked role dispatch and invalid latch')
         self.indexed_phases=indexed_phases
         self.incremental_bounds=incremental_bounds
         self.fast_default_dispatch=fast_default_dispatch
@@ -153,7 +155,7 @@ class ControlStore:
         self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
         if phase_dispatch or contract_dispatch or family_dispatch:
             from .control_phases import PhasePartition
-            plan=PhasePartition(compiler,contract_only=contract_dispatch or family_dispatch)
+            plan=PhasePartition(compiler,contract_only=contract_dispatch or family_dispatch,implied_contract=direct_preflight)
             if contract_dispatch or family_dispatch:self.contract_plan=plan
             else:self.phase_plan=plan
         self.compiler=compiler;self.nodes=compiler.g.nodes;self.blocks=[];self.peak_temporaries=17
@@ -174,6 +176,7 @@ class ControlStore:
                 if effect.address>=0:visit(effect.address)
             extra=sorted((i for i in reachable if i not in chosen and self.nodes[i].op in('all','any','not')and body_uses[i]>=4),key=lambda i:(-body_uses[i],i))[:32-len(chosen)]
             chosen=sorted(chosen+extra)
+        if direct_preflight:chosen=[]
         self.frozen={i:Operand('temporary',17+j,1)for j,i in enumerate(chosen)}
         # The source's validity chain is A' = A AND NOT bad. Once A' is
         # cached, its rejection A AND bad is exactly A AND NOT A'. Reusing
@@ -240,10 +243,14 @@ class ControlStore:
                 for region,aliases in self.contract_plan.region_aliases.items():
                     if any(node==region for node,following in self.phase_entries):self.covered.update(aliases)
             else:body=self.effect_set(self.contract_plan.body,self.terminal.label)
-            self.region='preflight';entry=self.condition(compiler.preflight_active,body,self.terminal.label)
-            from dataclasses import replace
-            prefix=tuple((i,replace(e,guard=self.rejected_guards.get(e.guard,e.guard)))for i,e in self.contract_plan.prefix)
-            self.entry=self.effect_set(prefix+self.contract_plan.fallback,entry)
+            if direct_preflight:
+                if self.contract_plan.fallback:raise ValueError('preflight macro cannot omit non-dominated fallback effects')
+                self.entry=body;self.covered.update(i for i,e in self.contract_plan.prefix)
+            else:
+                self.region='preflight';entry=self.condition(compiler.preflight_active,body,self.terminal.label)
+                from dataclasses import replace
+                prefix=tuple((i,replace(e,guard=self.rejected_guards.get(e.guard,e.guard)))for i,e in self.contract_plan.prefix)
+                self.entry=self.effect_set(prefix+self.contract_plan.fallback,entry)
         elif self.phase_plan:
             body=self.phase(self.phase_plan.root)
             entry=self.condition(compiler.preflight_active,body,self.terminal.label)
@@ -617,7 +624,7 @@ class ControlStore:
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
             source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
-            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,incremental_bounds=self.incremental_bounds,fast_default_dispatch=self.fast_default_dispatch,global_continuation_dispatch=self.continuation_dispatch,dispatch_table_budget=self.dispatch_table_budget,dispatch_entries_allocated=self.dispatch_entries_allocated,dispatch_entries_by_region=dict(self.dispatch_entries_by_region),
+            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,incremental_bounds=self.incremental_bounds,fast_default_dispatch=self.fast_default_dispatch,direct_source_preflight=self.direct_preflight,global_continuation_dispatch=self.continuation_dispatch,dispatch_table_budget=self.dispatch_table_budget,dispatch_entries_allocated=self.dispatch_entries_allocated,dispatch_entries_by_region=dict(self.dispatch_entries_by_region),
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):

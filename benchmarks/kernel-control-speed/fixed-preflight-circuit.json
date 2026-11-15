@@ -1,0 +1,45 @@
+{
+  "source": {
+    "source_defined": true,
+    "original_prefix_effects": 5,
+    "input_words": [
+      "arg_base",
+      "count",
+      "free",
+      "fuel",
+      "mode",
+      "read/node/tag",
+      "status",
+      "task",
+      "x"
+    ],
+    "updated_fields": [
+      "status",
+      "reason",
+      "fuel"
+    ],
+    "typed_nodes": 1077,
+    "typed_operations": {
+      "input": 9,
+      "all": 298,
+      "any": 112,
+      "not": 128,
+      "const": 223,
+      "eq": 297,
+      "ult": 6,
+      "sub": 1,
+      "extend": 2,
+      "add": 1
+    },
+    "control_choice_nodes": 47,
+    "control_intervals": 866,
+    "data_predicates": 70,
+    "all_control_values_covered": true
+  },
+  "circuit_layers": 13,
+  "ffn_units": 2214,
+  "allocated_slots": 613,
+  "selectors": 268,
+  "data_nodes": 321,
+  "output_words": 7
+}
