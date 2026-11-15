@@ -1,0 +1,10 @@
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `fused_recurrent_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
+{'format': 'leanputer.stock-shared-module.v1', 'logical_dense_parameters': 30509368, 'hidden': 768, 'intermediate': 256, 'layers': 28, 'rom_records': 8, 'rom_layers': 1, 'active_rf_heads': 9, 'rf_ports': 3, 'rf_rows_per_copy': 384, 'rf_payload_bits': 126, 'allocated_channels': 606, 'features': 476, 'operator_scratch_channels': 117, 'graph_layers': 21, 'module_layer_budget': 22, 'parameter_storage': 'dense', 'stock_class': 'transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM', 'full_source_checker': False, 'native_actions': ['MOVE', 'ADD', 'SUB', 'EQ_BRANCH', 'LT_BRANCH', 'STOP_OK', 'STOP_INVALID']}
+...
+----------------------------------------------------------------------
+Ran 3 tests in 32.931s
+
+OK

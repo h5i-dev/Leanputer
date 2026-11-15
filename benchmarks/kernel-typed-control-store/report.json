@@ -1,0 +1,575 @@
+{
+  "format": "leanputer.typed-kernel-control-store.v1",
+  "input_independent": true,
+  "rule_families": [
+    {
+      "module": "level_constructor_rules",
+      "source": "level_constructor_rules.py",
+      "sha256": "80420dda15403078f1e935f3237d55416068c04818d8e0500ade16e1c4a7f393",
+      "effects": 68
+    },
+    {
+      "module": "level_order_rules",
+      "source": "level_order_rules.py",
+      "sha256": "317541fd52a334d0caa491dd41602b2c7d82c39fb4934954ca456d34beb74d1a",
+      "effects": 27
+    },
+    {
+      "module": "level_normalize_rules",
+      "source": "level_normalize_rules.py",
+      "sha256": "5c1842c0040e2147ee7bf0d3426aa56ae13dc4dfcd8c297232b437367f6220d2",
+      "effects": 42
+    },
+    {
+      "module": "level_geq_rules",
+      "source": "level_geq_rules.py",
+      "sha256": "905f94e334c9a3909ff01257bad847ee429234835799abee62043495be800637",
+      "effects": 52
+    },
+    {
+      "module": "expression_equal_rules",
+      "source": "expression_equal_rules.py",
+      "sha256": "626344a8d06cfce54f7de2b211d2e6037a9cd530cca77d79ca1999e78cc17937",
+      "effects": 37
+    },
+    {
+      "module": "inference_rules",
+      "source": "inference_rules.py",
+      "sha256": "4843bb62067d0c62571b48534fb112d13ef780570d8ffc0e1a0da14e5ff46a36",
+      "effects": 97
+    },
+    {
+      "module": "environment_rules",
+      "source": "environment_rules.py",
+      "sha256": "85b4d502e4d38cc9d4e1d7b0399e90ff74ee6a8df7672b4b8909b8ea50b8c565",
+      "effects": 8
+    },
+    {
+      "module": "constant_rules",
+      "source": "constant_rules.py",
+      "sha256": "0716d2ba707aca87ee7bcdef38ee2e921b2ea485fb564c235f63912cbb06e22c",
+      "effects": 44
+    },
+    {
+      "module": "parameter_rules",
+      "source": "parameter_rules.py",
+      "sha256": "b547d22d2c76dbae1278579044dcdda2aec29d32882d090b52711f170420fa74",
+      "effects": 13
+    },
+    {
+      "module": "name_rules",
+      "source": "name_rules.py",
+      "sha256": "7ee946da6f2e7f96e2d3aeb46e8423cc3f2fc7f73ac3153de10a94945823c180",
+      "effects": 25
+    },
+    {
+      "module": "source_rules",
+      "source": "source_rules.py",
+      "sha256": "cd2da89c431ff98c8d323439f1c564578ba42a58ff884153a88a527a85fb86dc",
+      "effects": 87
+    },
+    {
+      "module": "telescope_rules",
+      "source": "telescope_rules.py",
+      "sha256": "eb8fc69876fd33718b5d93c1095b67a56193247fef6b106729d7348d0e1951f8",
+      "effects": 49
+    },
+    {
+      "module": "occurrence_rules",
+      "source": "occurrence_rules.py",
+      "sha256": "8fb4b39d32caa05d702552b50842cc4a440450d208878d6db0d4a4ee989655d0",
+      "effects": 6
+    },
+    {
+      "module": "header_rules",
+      "source": "header_rules.py",
+      "sha256": "3dc211d31e5302275ee1b83d7053041e1380697128037b91cfacf4a72fc0461d",
+      "effects": 58
+    },
+    {
+      "module": "family_occurrence_rules",
+      "source": "family_occurrence_rules.py",
+      "sha256": "8a1ea6c5c18077debd4bacac5450223f1a29008d243058aa7236d97dc8528f04",
+      "effects": 20
+    },
+    {
+      "module": "formal_levels_rules",
+      "source": "formal_levels_rules.py",
+      "sha256": "27ef8b526538c34005a1f7a67959bec0311e74ed8d945c6070b4c3f429692407",
+      "effects": 13
+    },
+    {
+      "module": "family_application_rules",
+      "source": "family_application_rules.py",
+      "sha256": "1489b08a9735c76ba12cca84680439ab494b4902ec7da7b9624cc7ca5b9bf0fb",
+      "effects": 46
+    },
+    {
+      "module": "positivity_rules",
+      "source": "positivity_rules.py",
+      "sha256": "582c8250880178864e8c4d00acc6f2fc53f3a4e2a8dab5a7424dd8c0c3dc39af",
+      "effects": 20
+    },
+    {
+      "module": "abstract_scope_rules",
+      "source": "abstract_scope_rules.py",
+      "sha256": "0e1ca5a2797d87988318b4a61ebc73a917d5cfb68f286a7a6635f0b5ca17ca57",
+      "effects": 15
+    },
+    {
+      "module": "reverse_list_rules",
+      "source": "reverse_list_rules.py",
+      "sha256": "02c0002da92a86fbd82d48dbdc3338aad1d1a7336f5ae23665b2280f596ac94b",
+      "effects": 9
+    },
+    {
+      "module": "recursive_argument_rules",
+      "source": "recursive_argument_rules.py",
+      "sha256": "fb3e85f5bd58cf861062ac0803fbd84ad821ade115c81140bbdf818a3e29826c",
+      "effects": 50
+    },
+    {
+      "module": "constructor_rules",
+      "source": "constructor_rules.py",
+      "sha256": "b08736b27dfae2f683c1f366bf68a64c93593fedf13c7b0c784ab078d6d16bc2",
+      "effects": 92
+    },
+    {
+      "module": "recursor_name_rules",
+      "source": "recursor_name_rules.py",
+      "sha256": "d37883d7f8e3ed11c6d1879b0e8a689d2f37b877cd590f3a166a26c385396313",
+      "effects": 40
+    },
+    {
+      "module": "core_names_rules",
+      "source": "core_names_rules.py",
+      "sha256": "137302d56a8bd7dadca0e644654573ddb572751119b930ec2bf3d7eed8630140",
+      "effects": 29
+    },
+    {
+      "module": "declare_constructors_rules",
+      "source": "declare_constructors_rules.py",
+      "sha256": "b8a22d0decb3417192bd0e985dc7db29de3f17beba0da95bd47f1852450e41aa",
+      "effects": 45
+    },
+    {
+      "module": "elimination_rules",
+      "source": "elimination_rules.py",
+      "sha256": "47ed05cf26b2c60b2d2ffa1f41297dcc847867d6fdaba271f91537fa12f1add7",
+      "effects": 63
+    },
+    {
+      "module": "binder_ops_rules",
+      "source": "binder_ops_rules.py",
+      "sha256": "ba7aeb15443c87fd0c2c64863277f972ba5730932b2147178d206576a75db4a5",
+      "effects": 30
+    },
+    {
+      "module": "motive_rules",
+      "source": "motive_rules.py",
+      "sha256": "d277eee5678a488aca9550d59bbac451c7f5a4951d3688c7f7492ad854aa2a87",
+      "effects": 47
+    },
+    {
+      "module": "block_flags_rules",
+      "source": "block_flags_rules.py",
+      "sha256": "10736f9d5f5771992e5f46acf815fb9c89ff4d134257995317fcd27750051bac",
+      "effects": 24
+    },
+    {
+      "module": "open_prefix_rules",
+      "source": "open_prefix_rules.py",
+      "sha256": "2466634ee2a8546b9dc869cac0b65b365bcab148a5b4cf7e1d432f56e6ae7dee",
+      "effects": 40
+    },
+    {
+      "module": "generation_ops_rules",
+      "source": "generation_ops_rules.py",
+      "sha256": "c53b74e13a78ea520b0ac9897d7767518465615e8b0207f2bb5432fd082bc2ad",
+      "effects": 21
+    },
+    {
+      "module": "minor_rules",
+      "source": "minor_rules.py",
+      "sha256": "6247772f18f739ebe6573a8390f507ae944c9183ad0bcbca6641f243bb5242c2",
+      "effects": 81
+    },
+    {
+      "module": "recursor_type_rules",
+      "source": "recursor_type_rules.py",
+      "sha256": "ac0ee74272d29cc2e7ce33dcfe4caaed6bd41cba2a4132996f94aedc780a31c0",
+      "effects": 34
+    },
+    {
+      "module": "restore_scope_rules",
+      "source": "restore_scope_rules.py",
+      "sha256": "a981ce2dc5313eb87c85c237c2fbe3912fa80b213e1033f1fc9f1d4185edb4ff",
+      "effects": 12
+    },
+    {
+      "module": "recursor_rule_rules",
+      "source": "recursor_rule_rules.py",
+      "sha256": "b4b42d1b29cedc9a05186235fbfd58370ac2c9026dfc3e0aff9b3ebecb511ec1",
+      "effects": 88
+    },
+    {
+      "module": "assemble_recursors_rules",
+      "source": "assemble_recursors_rules.py",
+      "sha256": "c742d5ab8bb212a9f3ad97792a17f99d00b5e8bdc294ac6903945dc9c6850ced",
+      "effects": 69
+    },
+    {
+      "module": "claim_lookup_rules",
+      "source": "claim_lookup_rules.py",
+      "sha256": "3f4c6231c31eabc0035bfc4c61c5d4799ea138ac8095f61fa2727b8341901efc",
+      "effects": 13
+    },
+    {
+      "module": "recursor_claim_rules",
+      "source": "recursor_claim_rules.py",
+      "sha256": "6e8fc6e60bb3da6af9123a4cf6a893f1712cb617a10d9cd0df94fb2e6c91142a",
+      "effects": 49
+    },
+    {
+      "module": "application_ops_rules",
+      "source": "application_ops_rules.py",
+      "sha256": "aa02307f3e166d9e966c3c758f2989a21eb60bdedbf25a01fc7a4aa7e31d2e93",
+      "effects": 28
+    },
+    {
+      "module": "recursor_apply_rules",
+      "source": "recursor_apply_rules.py",
+      "sha256": "563f9ce0a00d1f0274ab7fec1e83bafc3f63f4b5df09df716c111c2bab9a01ac",
+      "effects": 52
+    },
+    {
+      "module": "major_rules",
+      "source": "major_rules.py",
+      "sha256": "5c2864998d9f813333dd2d48621fb6cd2093d5e24133506d4d9cbb31bd0bbc5c",
+      "effects": 97
+    },
+    {
+      "module": "recursor_reduce_rules",
+      "source": "recursor_reduce_rules.py",
+      "sha256": "0403741afe9868d4ffeba8386b97c4dd1dcdc8a3ffc440d44c3a8c07a30f0f73",
+      "effects": 58
+    },
+    {
+      "module": "prior_block_rules",
+      "source": "prior_block_rules.py",
+      "sha256": "3e79c11e91e46507c8ab078b1424801a6bd352854ae2063894c256b2e39e7a4e",
+      "effects": 11
+    },
+    {
+      "module": "name_path_rules",
+      "source": "name_path_rules.py",
+      "sha256": "304f149a8a868a9fa7549cbb8120a5c624555e0fb5982da77ca306d8f231fb93",
+      "effects": 22
+    },
+    {
+      "module": "name_intern_rules",
+      "source": "name_intern_rules.py",
+      "sha256": "886839bc4528645eacf98fbc43f1890538b4de04c369967281f7a58fcc9da4a1",
+      "effects": 28
+    },
+    {
+      "module": "vector_splice_rules",
+      "source": "vector_splice_rules.py",
+      "sha256": "f2d752aaf0951d5b9edaad9812ed760c8085dc0d0a24148287ded8e78d7c7cdd",
+      "effects": 27
+    },
+    {
+      "module": "decimal_rules",
+      "source": "decimal_rules.py",
+      "sha256": "8ab237999a181e8eba0b8a4e7fcea1031f0fe525547748d935edc4d7d2561f8d",
+      "effects": 9
+    },
+    {
+      "module": "name_prefix_rules",
+      "source": "name_prefix_rules.py",
+      "sha256": "c9f4cd064f5130ff90dffd2257fa4c77801b8b930ab44f3cb794945914cecdac",
+      "effects": 21
+    },
+    {
+      "module": "make_rec_name_rules",
+      "source": "make_rec_name_rules.py",
+      "sha256": "6d0b6ec48a2f94e78a892855321d37fb6b6b532d3fa6d2b9f342530b5f16d821",
+      "effects": 38
+    },
+    {
+      "module": "raw_prefix_rules",
+      "source": "raw_prefix_rules.py",
+      "sha256": "4a5172132d87345eceda8edbce2a0cb1d51c4eb3e5396c00422565a6ddd2a968",
+      "effects": 14
+    },
+    {
+      "module": "nested_application_rules",
+      "source": "nested_application_rules.py",
+      "sha256": "731c0d956968dd541a4dfc870a3c366018b8dbeee0827163f93ad50c5f6783be",
+      "effects": 48
+    },
+    {
+      "module": "pi_parameters_rules",
+      "source": "pi_parameters_rules.py",
+      "sha256": "9b57809af5f22ce3a5a40c21a68db4a7a001cbcb06a168d7e141e0172d8e46df",
+      "effects": 20
+    },
+    {
+      "module": "nested_stage_rules",
+      "source": "nested_stage_rules.py",
+      "sha256": "ccb0dea67e6af79fe8e8dafdce1666a7ea97e75bc57294769f907960c871c609",
+      "effects": 120
+    },
+    {
+      "module": "nested_copy_rules",
+      "source": "nested_copy_rules.py",
+      "sha256": "24d9d19781fd7fcce08e41bd3bd749a278defc00a7e3b23eb7e9bda7fa70dc39",
+      "effects": 185
+    },
+    {
+      "module": "nested_rewrite_rules",
+      "source": "nested_rewrite_rules.py",
+      "sha256": "0c46bb3ddf0177e75575a93f20627816c2e6f389c202265af7a36dc4259818c9",
+      "effects": 22
+    },
+    {
+      "module": "nested_restore_rules",
+      "source": "nested_restore_rules.py",
+      "sha256": "9879d728ec3068df367158570f7506df44b1b1144987e99bdb795c45f4921549",
+      "effects": 78
+    },
+    {
+      "module": "nested_transaction_rules",
+      "source": "nested_transaction_rules.py",
+      "sha256": "cbfc9a056025f194e5a2222ba8c1b2ed79e149a0e2c10869fa2cb3a213ce369d",
+      "effects": 275
+    },
+    {
+      "module": "projection_rules",
+      "source": "projection_rules.py",
+      "sha256": "2ffb71ba7ef0b2ead5816d67732b2198080a2da23d24cf7ab07e6c2a4031160e",
+      "effects": 230
+    },
+    {
+      "module": "conversion_rules",
+      "source": "conversion_rules.py",
+      "sha256": "bd5ee95dce4d7a9fb856ba2322dc9a8ec50039a3d8dca20aa53e67a569cf289a",
+      "effects": 417
+    },
+    {
+      "module": "structure_info_rules",
+      "source": "structure_info_rules.py",
+      "sha256": "dfeba5cf08b13962f3f89681c22740b2b4ae92ef7d7225f93c9cd833b8589431",
+      "effects": 63
+    },
+    {
+      "module": "quotient_rules",
+      "source": "quotient_rules.py",
+      "sha256": "6858bdb09504171e6d73beca3b845d33671962825b867a1d92279ce5e282a9eb",
+      "effects": 796
+    },
+    {
+      "module": "quotient_reduce_rules",
+      "source": "quotient_reduce_rules.py",
+      "sha256": "7740c18e88fd5f087a7bd8b0959d8e6b11285ca82354775f6956493a6c3b5b23",
+      "effects": 45
+    },
+    {
+      "module": "nat_literal_rules",
+      "source": "nat_literal_rules.py",
+      "sha256": "3f2282802380a9ef1ed9d702c7be55f5d6150b679ac54a66255a2075717272d4",
+      "effects": 316
+    },
+    {
+      "module": "nat_bits_rules",
+      "source": "nat_bits_rules.py",
+      "sha256": "d7803f2cc8beafc46d4e1900abc1e737502d7e6979625a394b4b32efe8a6ad32",
+      "effects": 132
+    },
+    {
+      "module": "nat_high_rules",
+      "source": "nat_high_rules.py",
+      "sha256": "69c0abc55662653e242f52dc2c90fa5a437d14245bd0c1e93af9f11582408bcb",
+      "effects": 182
+    },
+    {
+      "module": "nat_name_rules",
+      "source": "nat_name_rules.py",
+      "sha256": "ec9f83fe5df3050d26d437847bc8a3ddd1e6ac8f5bc287191d95d6ea4d4a9271",
+      "effects": 137
+    },
+    {
+      "module": "nat_bridge_rules",
+      "source": "nat_bridge_rules.py",
+      "sha256": "e717115d5f44e340ab265b2cf0ed39618bbaf1b6adbc5a4cdd229e33fbd077d0",
+      "effects": 14
+    },
+    {
+      "module": "nat_reduce_rules",
+      "source": "nat_reduce_rules.py",
+      "sha256": "22404aaf59288cb86c0f647656d88f31ef9e4019a940f13fbbdaaed497af6816",
+      "effects": 170
+    },
+    {
+      "module": "bool_binding_rules",
+      "source": "bool_binding_rules.py",
+      "sha256": "3f11b4740578c6ef430c564b572441d9833e4a4a400a0e034c1f7e07abb33ade",
+      "effects": 214
+    },
+    {
+      "module": "nat_offset_rules",
+      "source": "nat_offset_rules.py",
+      "sha256": "1ffcd5b7b624f2a972e83909db6dfdff4d13d32627d09e745bfb0820f40ea6b1",
+      "effects": 43
+    },
+    {
+      "module": "string_rules",
+      "source": "string_rules.py",
+      "sha256": "40a4f2629a6b77235c92dfa99ad24399a9c6f229bb90ef6154e1292bc893756b",
+      "effects": 694
+    },
+    {
+      "module": "string_bridge_rules",
+      "source": "string_bridge_rules.py",
+      "sha256": "4da2cea000e186310ce459205fff4e4909d6116e67aa1591fdfd7ddc88d69c84",
+      "effects": 38
+    },
+    {
+      "module": "published_recursor_rules",
+      "source": "published_recursor_rules.py",
+      "sha256": "3ddef168b19f474b9455800fabee8547b7aa549f173d8e135c0bd1f12d00ba0a",
+      "effects": 42
+    }
+  ],
+  "rule_family_count": 73,
+  "captured_effects": 6454,
+  "mapped_effects": 6454,
+  "constant_dead_effects": 0,
+  "unmapped_effects": [],
+  "typed_nodes": {
+    "nodes": 14084,
+    "operators": {
+      "input": 968,
+      "const": 540,
+      "eq": 2635,
+      "not": 850,
+      "all": 7652,
+      "sub": 132,
+      "ult": 331,
+      "any": 256,
+      "extend": 45,
+      "add": 345,
+      "choose": 258,
+      "slice": 48,
+      "splice": 24
+    }
+  },
+  "control_records": 46264,
+  "entry_pc": 46263,
+  "operations": {
+    "COMMIT_STEP": 1,
+    "MERGE_CHECKER_FIELDS3": 6005,
+    "TEST_WORD_EQ": 24935,
+    "TEST_WORD_LT": 7134,
+    "JUMP": 601,
+    "MOVE_WORD": 1562,
+    "WORD_SUB": 858,
+    "WORD_ADD": 1685,
+    "MERGE_ARENA_FIELDS3": 2807,
+    "EXTRACT_WORD": 42,
+    "TEST_WORD_NONZERO": 553,
+    "MERGE_WORD_SLICE": 81
+  },
+  "temporary_words_including_ports": 118,
+  "proposed_available_temporary_words": 175,
+  "record_budget": 16384,
+  "record_budget_met": false,
+  "scratch_budget_met": true,
+  "pc16_encoding_met": true,
+  "frozen_guard_words": 32,
+  "commit_accounting": {
+    "algorithm": "model-owned dirty-field queue; OR shadow merges and queued commit",
+    "max_unique_fields": 951,
+    "queue_address_bits": 11,
+    "queue_entries_per_row": 11,
+    "queue_rows": 87,
+    "current_rows": 136,
+    "shadow_rows": 136,
+    "temporary_rows": 25,
+    "rf_rows_total": 384,
+    "rf_read_ports": 3,
+    "rf_heads_total": 9,
+    "field_merge_max_forwards": 2,
+    "commit_steady_forwards_per_dirty_field": 2
+  },
+  "full_rule_capture": true,
+  "native_lowering_complete": false,
+  "original_source_stock_admission": false,
+  "native_unmapped_actions": [
+    "COMMIT_STEP",
+    "EXTRACT_WORD",
+    "JUMP",
+    "MERGE_ARENA_FIELDS3",
+    "MERGE_CHECKER_FIELDS3",
+    "MERGE_WORD_SLICE",
+    "MOVE_WORD",
+    "TEST_WORD_EQ",
+    "TEST_WORD_LT",
+    "TEST_WORD_NONZERO",
+    "WORD_ADD",
+    "WORD_SUB"
+  ],
+  "note": "All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.",
+  "compile_seconds": 1.7414610739797354,
+  "address_programs": [
+    {
+      "nodes": 957,
+      "operators": {
+        "input": 951,
+        "const": 3,
+        "sub": 1,
+        "ult": 1,
+        "splice": 1
+      }
+    },
+    {
+      "nodes": 1024,
+      "operators": {
+        "input": 967,
+        "const": 18,
+        "add": 3,
+        "sub": 3,
+        "ult": 3,
+        "eq": 15,
+        "any": 2,
+        "choose": 12,
+        "slice": 1
+      }
+    }
+  ],
+  "offline_examples": [
+    {
+      "name": "current-general-source-empty-claim-id",
+      "semantic_steps": 1316,
+      "status": "DONE",
+      "reason": "NONE",
+      "typed_records_executed": 1771411,
+      "estimated_model_forwards": 1804818,
+      "forward_max_per_semantic_step": 2692,
+      "exact_all_registers_and_banks": true,
+      "evidence": "OFFLINE compiled typed control reference, not stock inference"
+    },
+    {
+      "name": "current-source-invalid-target",
+      "semantic_steps": 1355,
+      "status": "INVALID",
+      "reason": "TYPE_MISMATCH",
+      "typed_records_executed": 1815488,
+      "estimated_model_forwards": 1849723,
+      "forward_max_per_semantic_step": 2692,
+      "exact_all_registers_and_banks": true,
+      "evidence": "OFFLINE compiled typed control reference, not stock inference"
+    }
+  ],
+  "total_seconds": 9.58961599797476
+}

@@ -1,0 +1,32 @@
+{
+  "format": "leanputer.stock-shared-module.v1",
+  "logical_dense_parameters": 30509368,
+  "hidden": 768,
+  "intermediate": 256,
+  "layers": 28,
+  "rom_records": 8,
+  "rom_layers": 1,
+  "active_rf_heads": 9,
+  "rf_ports": 3,
+  "rf_rows_per_copy": 384,
+  "rf_payload_bits": 126,
+  "allocated_channels": 606,
+  "features": 476,
+  "operator_scratch_channels": 117,
+  "graph_layers": 21,
+  "module_layer_budget": 22,
+  "parameter_storage": "dense",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "full_source_checker": false,
+  "native_actions": [
+    "MOVE",
+    "ADD",
+    "SUB",
+    "EQ_BRANCH",
+    "LT_BRANCH",
+    "STOP_OK",
+    "STOP_INVALID"
+  ],
+  "evidence": "Actual dense CPU stock forward/cache; eight fixed ROM records, two-item data mutation, MOVE/ADD/SUB/EQ/LT and stop; three RF replicas exactly equal on all pages after identity feedback.",
+  "original_source_admission": false
+}
