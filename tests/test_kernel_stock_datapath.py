@@ -29,6 +29,44 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_source_address_ops_keep_full_word_selectors_and_modular_indices(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        from leanputer.kernel.stock_source_ops import SparseSwitchRecord,AffineAddressRecord
+        program=[SparseSwitchRecord(rf(0),((0,1),(500,1),(65535,1)),4),
+                 AffineAddressRecord(rf(7),((rf(1),1),(rf(2),-1),(rf(7),-1)),7,2),
+                 CoreRecord(O.CONTEXT_READ,dest=rf(8),a=rf(7),yes=3),
+                 CoreRecord(O.EQ_BRANCH,a=rf(8),b=rf(3),yes=5,no=4),CoreRecord(O.STOP_INVALID,yes=4),
+                 CoreRecord(O.FRAME_ROW_READ,dest=rf(14),a=rf(4),auxiliary=32768,yes=6),
+                 CoreRecord(O.EQ_BRANCH,a=rf(14),b=rf(5),yes=7,no=4),CoreRecord(O.STOP_OK,yes=7)]
+        chip=build(program,rom_layout='byte_pages',hidden=1024,intermediate=512,compact_attention=True,grouped_memory=True,parallel_carry=True,datapath_layers=45)
+        claims=[(0,65535,65534,0,0,101,77),(500,0,1,65535,33,108,55),(65535,0,1,65535,33,108,55),(501,65535,65534,0,0,101,77)]
+        packets=[]
+        for kind,row in((0,0),(0,1),(0,2),(3,0),(3,7),(2,0),(2,31)):
+            batch=[]
+            for mode,a,b,c,sp,ctx_claim,frame_claim in claims:
+                if kind==0:words={0:[mode,a,b,ctx_claim,sp,frame_claim,1234],1:[c,0,111,222,333,444,555],2:[0]*7}[row]
+                elif kind==3:words=[101 if row==0 else 108]
+                else:words=[55 if row==0 else 77,11,22,33,44,55]
+                payload=[value>>bit&1 for value in words for bit in range(16)];payload+=[0]*(126-len(payload))
+                batch.append(chip.packet(boot=[1],pending_enable=[1],pending_kind=[kind>>i&1 for i in range(3)],pending_row=[row>>i&1 for i in range(9)],pending_payload=payload))
+            packets.append(torch.stack(batch))
+        masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(4,1,dtype=torch.long)
+        with torch.no_grad():
+            boot=chip.embeddings(torch.stack(packets,dim=1));out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(4,len(packets),dtype=torch.long),attention_mask=masks)
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-chip.slots.prefix))
+            history=[]
+            for _ in range(13):
+                out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks);state=out.hidden_states[-2]
+                history.append(out.logits[:,0].float().tolist())
+        word=lambda bits:sum(int(value)<<i for i,value in enumerate(bits))
+        self.assertEqual([word(row[:16])for row in history[0]],[1,1,1,4])
+        self.assertEqual([word(row[16:32])for row in history[-1]],[1,1,1,2])
+        from leanputer.native_vendor.qwenputer.ir import A_BIT
+        head=next(h for h in chip.report['rf_heads']if h['port']==0 and h['page']==0)
+        values=(cache.layers[head['layer']].recurrent_states[0][:,head['value_head'],1,2:114]/A_BIT).float().tolist()
+        self.assertEqual([[word(row[i:i+16])for i in range(0,112,16)]for row in values[:3]],[[0,101,111,222,333,444,555],[7,108,111,222,333,444,555],[7,108,111,222,333,444,555]])
+
     def test_native_bounds_latch_checks_boot_and_main_writes_only(self):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf

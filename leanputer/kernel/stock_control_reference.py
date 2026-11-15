@@ -8,6 +8,7 @@ from collections import Counter
 from .stock_control import main_address
 from .stock_datapath import CoreRecord,FieldRecord,WordAction as O
 from .stock_guard import GuardRecord
+from .stock_source_ops import AffineAddressRecord,SparseSwitchRecord
 
 
 class NativeControlReference:
@@ -31,7 +32,10 @@ class NativeControlReference:
 
     def step(self):
         r=self.program.records[self.pc];self.records+=1;following=r.yes;forwards=1;committed=False
-        if isinstance(r,GuardRecord):
+        if isinstance(r,AffineAddressRecord):
+            self.write(r.dest,(sum(self.read(address)*coefficient for address,coefficient in r.sources)+r.constant)&7)
+        elif isinstance(r,SparseSwitchRecord):following=dict(r.cases).get(self.read(r.a),r.yes)
+        elif isinstance(r,GuardRecord):
             values=[]
             for address,value,op in r.items:
                 word=self.read(address);values.append((word==value,word!=value,word<value,word>=value)[op])
@@ -83,7 +87,7 @@ class NativeControlReference:
                 if r.dest&7:raise AssertionError('source row load must have aligned destination')
                 bank={O.HEAP_ROW_READ:'heap',O.FRAME_ROW_READ:'stack',O.CONTEXT_ROW_READ:'context',O.DECLARATION_ROW_READ:'constants'}[op]
                 rows=self.banks[bank]
-                for field,value in enumerate(rows[a&(len(rows)-1)]):self.write(r.dest+field,value)
+                for field,value in enumerate(rows[(a-int(bool(r.auxiliary&32768)))&(len(rows)-1)]):self.write(r.dest+field,value)
                 forwards=2
             elif op==O.CALL_HANDLER:
                 if self.return_pc is not None:raise AssertionError('nested native handler call')

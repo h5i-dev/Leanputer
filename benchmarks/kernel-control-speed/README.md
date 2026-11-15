@@ -275,3 +275,25 @@ capturing`. Standard `aot_eager` resolves capture and gives bounded correctness
 evidence, but its4574 kernels/forward are costly. No forward/cache patch or
 custom circuit executor was introduced. Full-source and semantic/larger-domain
 gaps remain separate from this prefix. No13minute source repeat was launched.
+
+Integrated original source-address operations (2026-11-15): the compiler derives
+all addresses from the original `compile_addresses` DAG. Whole bank reads use
+the register address directly, with a model-owned modular predecrement flag.
+Finite controller choices distribute through nested address arithmetic;15
+selector keys plus the complete16bit fallback select11 modular affine schemes.
+A shared three-word modulo8 operator computes each scheme in at most2 forwards.
+This is source-controller arithmetic, not declaration/name/shape specialization.
+
+Targeted STOCK test covers full16bit sparse keys including500/65535 and unknown
+501, high-word operands, negative modular sums, frame0→31 wrap, full row loads,
+and untouched RF fields. PASS9.08s. Both original-source cases preserve every
+register and bank at every SPEC boundary OFFLINE, at134040/137515 forwards.
+The longer source prologue falls45855→14879 forwards. All73families/6454effects
+and the semantic domain are retained.
+
+Actual complete model88,821,724DENSE/H1024/I512/L49/48912records/6activeGDN.
+The bounded64-forward Inductor+CUDAgraph STOCK prefix passes exactALL hidden/
+cacheTENSORS/logits and55nativePC boundaries/item;382.3301FW/s,107.45s capture.
+Current longer-case projection359.68s remains minutes; practical seconds-scale
+latency NOT delivered. No full-source rerun. Body57414, validation39058 and
+commit26163 native forwards now dominate. Semantic/larger-domain gaps remain.

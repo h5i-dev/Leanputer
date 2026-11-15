@@ -7,6 +7,7 @@ from dataclasses import dataclass,replace
 from collections import Counter
 from .stock_datapath import CoreRecord,FieldRecord,WordAction as O,rf_address
 from .control_store import Operand,ControlStore,WordCode
+from .stock_source_ops import SparseSwitchRecord,map_cases
 
 
 def main_address(index):
@@ -33,7 +34,7 @@ class Value:
 
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
-    def __init__(self,store,addresses,bundle_guards=False,compact_rom=False):
+    def __init__(self,store,addresses,bundle_guards=False,compact_rom=False,source_operations=False):
         self.store=store;self.bounds_schema=()
         if store.incremental_bounds:
             from .stock_bounds import schema_from_compiler
@@ -50,11 +51,16 @@ class NativeControl:
             self.region=record.get('region','body')
             self.mark(('typed',pc));self.lower(record,('typed',record['yes']if record['yes']is not None else pc+1),('typed',record['no'])if record['no']is not None else None)
         self.region='source-prologue'
-        self.source_prologue(addresses)
+        self.source_operations={}
+        if source_operations:
+            from .stock_source_ops import emit_source_program
+            self.source_operations=emit_source_program(self,addresses)
+        else:self.source_prologue(addresses)
         self.region='commit-tail'
         self.commit_tail()
         self.records=[]
         for record,yes,no in self.pending:
+            record=map_cases(record,self.labels.__getitem__)
             self.records.append(replace(record,yes=self.labels[yes],**({'no':self.labels[no]}if isinstance(record,CoreRecord)and no is not None else{})))
         before=len(self.records)
         def follow(pc):
@@ -69,7 +75,7 @@ class NativeControl:
         for pc in keep:
             r=self.records[pc];fields=dict(yes=positions[follow(r.yes)])
             if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0
-            compact.append(replace(r,**fields))
+            compact.append(replace(map_cases(r,lambda target:positions[follow(target)]),**fields))
         tables=[(size,[positions[follow(self.labels[target])]for target in entries])for size,entries in self.tables]
         self.records=compact
         self.record_regions=[self.pending_regions[pc]for pc in keep]
@@ -87,12 +93,12 @@ class NativeControl:
                 if pc in alias:continue
                 fields=dict(yes=canonical(r.yes))
                 if isinstance(r,CoreRecord):fields['no']=canonical(r.no)if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0
-                key=replace(r,**fields)
+                key=replace(map_cases(r,canonical),**fields)
                 if key in seen and pc:
                     alias[pc]=seen[key];removed+=1;changed=True
                 else:seen[key]=pc
         keep=[pc for pc in range(len(self.records))if pc not in alias];positions={pc:i for i,pc in enumerate(keep)}
-        self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
+        self.records=[replace(map_cases(self.records[pc],lambda target:positions[canonical(target)]),yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
         self.record_regions=[self.record_regions[pc]for pc in keep]
         tables=[(size,[positions[canonical(target)]for target in entries])for size,entries in tables]
         bases=[];padding=0;body_count=len(self.records)
@@ -116,6 +122,8 @@ class NativeControl:
                 if r.action in(O.COMMIT_FIELDS,O.PUBLISH_RESULT,O.STOP_OK,O.STOP_INVALID):raise ValueError('checker handler exits without returning')
                 if r.action==O.RETURN_HANDLER:visiting.remove(pc);checked.add(pc);return
             handler(r.yes)
+            if isinstance(r,SparseSwitchRecord):
+                for value,target in r.cases:handler(target)
             if isinstance(r,CoreRecord)and r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.INVALID_BRANCH):handler(r.no)
             if isinstance(r,CoreRecord)and r.action in(O.SWITCH4,O.SWITCH8):
                 for target in range(r.auxiliary,r.auxiliary+(16 if r.action==O.SWITCH4 else 256)):handler(target)
@@ -152,7 +160,7 @@ class NativeControl:
         if compact_rom:
             from .stock_control_layout import compact_control
             self.records,self.record_regions,layout_report=compact_control(self.records,self.record_regions)
-        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,incremental_bounds=bool(self.bounds_schema),bounds_fields=len(self.bounds_schema),control_layout=layout_report,
+        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,incremental_bounds=bool(self.bounds_schema),bounds_fields=len(self.bounds_schema),control_layout=layout_report,source_operations=self.source_operations,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
             compiler_tail_transfers_removed=tails_removed,handler_call_first_operations_folded=calls_folded,handler_return_edges_folded=return_edges,
             compiler_duplicate_records_removed=removed,

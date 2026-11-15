@@ -6,6 +6,7 @@ instructions selected by a particular source/proof. No evaluator is involved.
 """
 from dataclasses import replace
 from .stock_datapath import CoreRecord,WordAction as O
+from .stock_source_ops import SparseSwitchRecord,map_cases
 
 
 def compact_control(records,regions):
@@ -17,6 +18,7 @@ def compact_control(records,regions):
     live=set();pending=[0];used_tables=set()
     def successors(r):
         core=isinstance(r,CoreRecord)
+        if isinstance(r,SparseSwitchRecord):yield from(pc for value,pc in r.cases)
         if core and r.capture_return:yield r.auxiliary
         if core and r.action in switches:
             used_tables.add(r.auxiliary)
@@ -56,6 +58,6 @@ def compact_control(records,regions):
             if r.action in switches:fields['auxiliary']=new_bases[r.auxiliary]
             elif r.capture_return:fields['auxiliary']=edge(r.auxiliary)
         elif hasattr(r,'no'):fields['no']=edge(r.no,not r.return_no)
-        output.append(replace(r,**fields));new_regions.append(regions[pc])
+        output.append(replace(map_cases(r,edge),**fields));new_regions.append(regions[pc])
     report=dict(input_independent=True,both_data_branches_retained=True,records_before=len(records),reachable_instructions=len(live),records_after=len(output),removed_records=len(records)-len(output),aligned_tables=len(used_tables),aligned_table_entries=sum(tables[b]for b in used_tables),new_padding_records=padding)
     return output,new_regions,report
