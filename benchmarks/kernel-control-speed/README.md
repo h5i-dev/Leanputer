@@ -1,3 +1,46 @@
+# Pending urgent latency integration (2026-11-15 06:34 UTC)
+
+The current implementation preserves all 73 rule families / 6,454 effects and
+word16 / heap512 / stack32 / context8 / constants4 / fuel8192. Bulk source-row
+loads, bulk buffer clears, conservative canonical temporary-width analysis and
+five indexed internal-control pages reduce the matched complete-source OFFLINE
+native counts to **286,472 / 291,870 forwards**. All 951 registers and all arena
+banks match at every 1,316 / 1,355 source step. There are 41,472 immutable records,
+including 560 indexed entries and 249 alignment records; all fit the 16-bit PC.
+Tables cover fixed checker controls, with explicit defaults for all other words.
+They do not specialize source names, declarations or proof shapes.
+
+The complete rule model now uses 19 active stock GDN layers and 47 stock tiny
+full-attention layers whose attention outputs are zero. All active memories and
+FFN computations remain. This yields **48,889,698 logical dense parameters**,
+H768 / I256 / L66. It is a dense architecture count, not CSR storage. The official
+StaticCache gives only the zero-output attention blocks a one-token window;
+active GDN caches are unchanged. No custom cache/forward or host dispatch is used.
+The parameter formula is 19*(3HI+644H+1666) + 47*(3HI+12H+4) + 129H.
+
+A prior integrated 41,076-record variant of this same shape passed a 32-forward
+GPU prefix: 278.94 forwards/s, 136.27s capture/setup; hidden state, logits and ALL
+stock cache tensors exactly match eager. This does **not** validate whole-source
+termination. The new indexed variant has passed a targeted actual stock module
+check for 16/256-entry pages, including 0/15/16/255/256/65535 and all RF replicas;
+its bounded GPU prefix hit the 240s wall cap in cold stock compilation after
+prefill/eager execution (exit124), before replay timing. No indexed GPU speed
+claim is made. The exact canonical-width variant before the
+indexed pages used 292,064 / 297,686 forwards in the complete offline checks.
+
+Standard torch.compile (eager BF16 precision casts) and CUDA graph capture include
+unmodified stock forward/cache plus identity feedback. Warmup restores both native
+tensors and stock sliding-cache scalar metadata. Optional fla-core 0.3.2 uses the
+stock Transformers provider mechanism; a separate 64-forward all-GDN check matched
+every Torch-native cache tensor/logit/hidden value. fla-core 0.6.0 failed import on
+installed Triton 3.4 (missing gluon.language.extra); it is not used. Dependencies
+are scratch overlays, with no Torch/Transformers replacement.
+
+**No completed small-stock source admission is claimed.** No hours-long run has
+been restarted. Short-prefix projections remain conditional; current larger-domain
+native coverage and semantic GAPs in target.md are unchanged. The historical
+430e26c checkpoint follows below.
+
 # Whole-rule control and stock scheduling checkpoint
 
 This is performance implementation evidence, NOT completed stock source admission.

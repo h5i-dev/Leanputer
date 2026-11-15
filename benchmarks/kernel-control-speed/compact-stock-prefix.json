@@ -1,0 +1,261 @@
+{
+  "format": "leanputer.stock-prefix-launch-timing.v1",
+  "prefix_forwards": 32,
+  "batch": 2,
+  "whole_source_completed": false,
+  "model": {
+    "format": "leanputer.stock-shared-module.v1",
+    "logical_dense_parameters": 48889698,
+    "hidden": 768,
+    "intermediate": 256,
+    "layers": 66,
+    "rom_records": 41076,
+    "rom_layers": 19,
+    "rom_layout": "byte_pages",
+    "rom_decode_layers": 7,
+    "active_rf_heads": 12,
+    "rf_heads": [
+      {
+        "port": 0,
+        "page": 0,
+        "layer": 32
+      },
+      {
+        "port": 0,
+        "page": 1,
+        "layer": 33
+      },
+      {
+        "port": 0,
+        "page": 2,
+        "layer": 34
+      },
+      {
+        "port": 0,
+        "page": 3,
+        "layer": 35
+      },
+      {
+        "port": 1,
+        "page": 0,
+        "layer": 36
+      },
+      {
+        "port": 1,
+        "page": 1,
+        "layer": 37
+      },
+      {
+        "port": 1,
+        "page": 2,
+        "layer": 38
+      },
+      {
+        "port": 1,
+        "page": 3,
+        "layer": 39
+      },
+      {
+        "port": 2,
+        "page": 0,
+        "layer": 40
+      },
+      {
+        "port": 2,
+        "page": 1,
+        "layer": 41
+      },
+      {
+        "port": 2,
+        "page": 2,
+        "layer": 42
+      },
+      {
+        "port": 2,
+        "page": 3,
+        "layer": 43
+      }
+    ],
+    "arena_heads": [
+      {
+        "bank": "heap",
+        "page": 0,
+        "layer": 44,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 1,
+        "layer": 45,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 2,
+        "layer": 46,
+        "words": 4
+      },
+      {
+        "bank": "heap",
+        "page": 3,
+        "layer": 47,
+        "words": 4
+      },
+      {
+        "bank": "stack",
+        "page": 0,
+        "layer": 48,
+        "words": 6
+      },
+      {
+        "bank": "constants",
+        "page": 0,
+        "layer": 49,
+        "words": 6
+      },
+      {
+        "bank": "context",
+        "page": 0,
+        "layer": 50,
+        "words": 1
+      }
+    ],
+    "rf_ports": 3,
+    "rf_rows_per_copy": 512,
+    "rf_payload_bits": 126,
+    "allocated_channels": 752,
+    "features": 504,
+    "operator_scratch_channels": 235,
+    "graph_layers": 58,
+    "module_layer_budget": 35,
+    "parameter_storage": "dense",
+    "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+    "full_source_checker": false,
+    "native_actions": [
+      "MOVE",
+      "ADD",
+      "SUB",
+      "EQ_BRANCH",
+      "LT_BRANCH",
+      "STOP_OK",
+      "STOP_INVALID",
+      "JUMP",
+      "AND",
+      "OR",
+      "XOR",
+      "SHR",
+      "SHL",
+      "NONZERO_BRANCH",
+      "SHR_LOOP",
+      "SHL_LOOP",
+      "MERGE_FIELDS3",
+      "COMMIT_FIELDS",
+      "PUBLISH_RESULT",
+      "CALL_HANDLER",
+      "RETURN_HANDLER",
+      "CLEAR_RF_ROW",
+      "HEAP_ROW_READ",
+      "FRAME_ROW_READ",
+      "CONTEXT_ROW_READ",
+      "DECLARATION_ROW_READ",
+      "HEAP_READ",
+      "HEAP_WRITE",
+      "FRAME_READ",
+      "FRAME_WRITE",
+      "CONTEXT_READ",
+      "CONTEXT_WRITE",
+      "DECLARATION_READ"
+    ],
+    "checker_commit_layout": {
+      "main_rows": 136,
+      "shadow_rows": 136,
+      "main_shadow_interleaved": true,
+      "dirty_queue_rows": 136,
+      "queue_first_row": 272,
+      "queue_entries_per_row": 7,
+      "max_dirty_fields": 951,
+      "temporary_first_row": 408,
+      "temporary_last_row": 508,
+      "temporary_words": 707,
+      "reserved_arena_buffer_rows": [
+        509,
+        510,
+        511
+      ],
+      "reserved_arena_buffers_implemented": false,
+      "merge_new_field_forwards": 2,
+      "merge_existing_field_forwards": 1,
+      "commit_forwards_per_dirty_field": 2,
+      "commit_exit_forwards": 1
+    },
+    "compact_inactive_attention": true,
+    "active_gdn_layers": 19,
+    "inactive_attention_layers": 47,
+    "inactive_attention_head_dim": 2,
+    "inactive_kv_window": 1
+  },
+  "control": {
+    "format": "leanputer.native-checker-control.v1",
+    "input_independent": true,
+    "typed_records": 29830,
+    "native_records": 41076,
+    "pc16_encoding_met": true,
+    "compiler_tail_transfers_removed": 8279,
+    "compiler_duplicate_records_removed": 2846,
+    "handler_call_depth_bound": 1,
+    "handler_control_records_checked": 38156,
+    "actions": {
+      "JUMP": 1,
+      "RETURN_HANDLER": 1,
+      "AND": 3587,
+      "OR": 9858,
+      "MOVE": 4818,
+      "ADD": 1898,
+      "MERGE_FIELDS3": 4330,
+      "EQ_BRANCH": 6290,
+      "LT_BRANCH": 7658,
+      "NONZERO_BRANCH": 108,
+      "CALL_HANDLER": 1608,
+      "SUB": 847,
+      "SHR_LOOP": 18,
+      "SHL_LOOP": 34,
+      "HEAP_ROW_READ": 1,
+      "FRAME_ROW_READ": 1,
+      "DECLARATION_ROW_READ": 1,
+      "CONTEXT_ROW_READ": 1,
+      "HEAP_WRITE": 4,
+      "FRAME_WRITE": 6,
+      "CONTEXT_WRITE": 1,
+      "CLEAR_RF_ROW": 3,
+      "COMMIT_FIELDS": 1,
+      "PUBLISH_RESULT": 1
+    },
+    "rule_families": 73,
+    "source_effects": 6454,
+    "source_effects_mapped": 6454,
+    "temporary_words_available": 696,
+    "source_port_padding_words": 11,
+    "typed_temporary_peak": 90,
+    "compiler_scratch_first": 200,
+    "compiler_scratch_last": 695,
+    "original_source_stock_admission": false,
+    "native_reference_verified": false,
+    "note": "Complete fixed encoding count; native execution correspondence and stock source admission are separate obligations."
+  },
+  "eager_seconds": 3.864209234016016,
+  "cuda_graph_seconds": 0.1147212719952222,
+  "capture_seconds": 136.26689657499082,
+  "eager_forwards_per_second": 8.281125079436464,
+  "cuda_graph_forwards_per_second": 278.93693509023075,
+  "exact_all_hidden_state": true,
+  "exact_all_stock_cache_tensors": true,
+  "exact_logits": true,
+  "baseline_control_forwards": [
+    1185877,
+    1218203
+  ],
+  "projected_baseline_longer_seconds": 4367.3061783873645,
+  "compiled_stock_operations": true,
+  "exact_external_native_prefix": null,
+  "execution": "torch.cuda.CUDAGraph of stock Qwen3_5ForCausalLM.forward/cache plus identity feedback; optional standard torch.compile with eager precision casts"
+}

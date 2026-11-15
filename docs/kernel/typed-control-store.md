@@ -1,3 +1,20 @@
+# Active latency integration
+
+Bulk source ports, width proofs and indexed fixed-control pages now preserve all
+73 rule families / 6,454 effects in 41,472 native records. OFFLINE complete-source
+counts are 286,472 / 291,870 forwards, with every source state exactly matching.
+The whole current-rule dense stock shape is 48,889,698 parameters, H768/I256/L66;
+19 active GDN memories remain, and inert attention blocks use stock tiny attention.
+The latest completed 32-forward timing of the preceding 41,076-record variant is
+278.94 forwards/s with exact eager/replay hidden/logit/cache-tensor agreement.
+The new indexed variant hit its 240s cold-compilation cap before replay timing. These are prefix and
+reference results, **not completed small-stock source acceptance/rejection**.
+See [the detailed current evidence](../../benchmarks/kernel-control-speed/README.md).
+Existing semantic GAPs and larger native-domain limits remain explicit. No long
+source rerun is scheduled while latency work continues.
+
+The following sections preserve earlier checkpoint history.
+
 # Current speed checkpoint (2026-11-15)
 
 The37hour full run was terminated by the parent; preserve its partial logs and

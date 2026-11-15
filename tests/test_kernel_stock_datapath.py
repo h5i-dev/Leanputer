@@ -29,6 +29,37 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_indexed_control_pages_preserve_all_word_default_values(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        program=[CoreRecord(O.JUMP,yes=4)for _ in range(512)]
+        program[0]=CoreRecord(O.SWITCH4,a=rf(0),literal_b=True,yes=2,auxiliary=16)
+        program[1]=CoreRecord(O.SWITCH8,a=rf(1),literal_b=True,yes=3,auxiliary=256)
+        program[2]=CoreRecord(O.MOVE,dest=rf(2),literal_a=True,immediate=65535,yes=1)
+        program[3]=CoreRecord(O.MOVE,dest=rf(3),literal_a=True,immediate=65535,yes=4)
+        program[4]=CoreRecord(O.STOP_OK,yes=4)
+        for i in range(16):program[16+i]=CoreRecord(O.MOVE,dest=rf(2),literal_a=True,immediate=i,yes=1)
+        for i in range(256):program[256+i]=CoreRecord(O.MOVE,dest=rf(3),literal_a=True,immediate=i,yes=4)
+        chip=build(program,rom_layout='byte_pages',compact_attention=True)
+        inputs=(0,15,16,255,256,65535);packets=[]
+        for value in inputs:
+            payload=[value>>i&1 for _ in range(2)for i in range(16)]+[0]*94
+            packets.append(chip.packet(boot=[1],pending_row=[0]*9,pending_enable=[1],pending_payload=payload))
+        masks={'full_attention':None,'linear_attention':None}
+        positions=torch.zeros(len(inputs),1,dtype=torch.long)
+        with torch.no_grad():
+            out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),past_key_values=chip.new_cache(),use_cache=True,position_ids=positions,attention_mask=masks)
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(len(inputs),1,chip.slots.next-13))
+            for _ in range(7):
+                out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks)
+                state=out.hidden_states[-2]
+        from leanputer.native_vendor.qwenputer.ir import A_BIT
+        word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
+        for head in chip.report['rf_heads']:
+            if head['page']:continue
+            values=cache.layers[head['layer']].recurrent_states[0][:,0,0,2:128]/A_BIT
+            self.assertEqual([[word(row[32:48]),word(row[48:64])]for row in values.float().tolist()],[[v if v<16 else 65535,v if v<256 else 65535]for v in inputs])
+
     def test_shared_bitwise_and_shift_word_lanes(self):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
@@ -79,7 +110,7 @@ class SharedDatapathTest(unittest.TestCase):
         masks={'full_attention':None,'linear_attention':None};counts=[]
         with torch.no_grad():
             boot=chip.embeddings(torch.stack(packets,dim=1))
-            out=chip.model(inputs_embeds=boot,use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
+            out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
             cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
             for _ in range(46):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
@@ -112,22 +143,28 @@ class SharedDatapathTest(unittest.TestCase):
                  CoreRecord(O.EQ_BRANCH,a=rf(13),b=rf(8),yes=8,no=10),
                  CoreRecord(O.EQ_BRANCH,a=rf(12),b=rf(6),yes=9,no=10),
                  CoreRecord(O.STOP_OK,yes=9),CoreRecord(O.STOP_INVALID,yes=10)]
-        chip=build(program,rom_layout='byte_pages')
+        from dataclasses import replace
+        program=[replace(r,yes=r.yes+5*int(r.yes>=7),no=r.no+5*int(r.no>=7))for r in program]
+        program[7:7]=[CoreRecord(O.HEAP_ROW_READ,dest=rf(504*7),a=rf(1),yes=8),CoreRecord(O.FRAME_ROW_READ,dest=rf(505*7),a=rf(3),yes=9),CoreRecord(O.CONTEXT_ROW_READ,dest=rf(506*7),a=rf(4),yes=10),CoreRecord(O.DECLARATION_ROW_READ,dest=rf(507*7),a=rf(5),yes=11),CoreRecord(O.CLEAR_RF_ROW,dest=rf(510*7),yes=12)]
+        program[6]=replace(program[6],yes=7)
+        chip=build(program,rom_layout='byte_pages',compact_attention=True)
         packets=[]
-        for kind,address in((0,0),(0,1),(1,273),(2,19),(3,5),(4,1)):
+        for kind,address in((0,0),(0,1),(0,504),(0,505),(0,506),(0,507),(0,510),(1,273),(2,19),(3,5),(4,1)):
             batch=[]
             for claim in(65535,65534):
                 words={1:273,2:65535,3:19,4:5,5:1,6:claim,8:0x1234}
                 values=[words.get(address*7+slot,0)for slot in range(7)]if kind==0 else ([11,22,33,44,0x1234,66]if kind==4 else [11,22,33,44,55,66])
-                payload=[(value>>bit)&1 for value in values for bit in range(16)];payload += [0]*(126-len(payload))
+                if kind==0 and address==510:values=[11,22,33,44,55,66,77]
+                if kind==0 and 504<=address<=507:values=[100*(address-503)+i+1 for i in range(7)]
+                payload=[(value>>bit)&1 for value in values for bit in range(16)];payload += [1 if kind==0 and (address==510 or 504<=address<=507)else 0]*(126-len(payload))
                 batch.append(chip.packet(boot=[1],pending_kind=[kind>>bit&1 for bit in range(3)],pending_row=[address>>bit&1 for bit in range(9)],pending_enable=[1],pending_payload=payload))
             packets.append(torch.stack(batch))
         masks={'full_attention':None,'linear_attention':None}
         with torch.no_grad():
             boot=chip.embeddings(torch.stack(packets,dim=1))
-            out=chip.model(inputs_embeds=boot,use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
+            out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
             cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
-            for _ in range(18):
+            for _ in range(30):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 cache=out.past_key_values;state=out.hidden_states[-2]
         word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
@@ -139,6 +176,14 @@ class SharedDatapathTest(unittest.TestCase):
             head=next(h for h in chip.report['arena_heads']if h['bank']==bank and h['page']==page)
             stored=cache.layers[head['layer']].recurrent_states[0][:,0,row,2:2+16*len(expected)]/A_BIT
             self.assertEqual([[word(values[i:i+16])for i in range(0,len(values),16)]for values in stored.float().tolist()],[expected,expected])
+        for head in chip.report['rf_heads']:
+            if head['page']!=3:continue
+            memory=cache.layers[head['layer']].recurrent_states[0][:,0]
+            self.assertEqual(memory[:,126,2:].sum().item(),0)
+            for row,expected in ((504,[11,65535,33,44,105,106,107]),(505,[11,22,65535,44,55,66,207]),(506,[65535,302,303,304,305,306,307]),(507,[11,22,33,44,0x1234,66,407])):
+                values=(memory[:,row-384,2:128]/A_BIT).float().tolist()
+                self.assertEqual([[word(v[i:i+16])for i in range(0,112,16)]for v in values],[expected,expected])
+                self.assertTrue(all(v==1 for values_row in values for v in values_row[112:]))
         print(chip.report,flush=True)
 
     def check_core(self,rom_layout):

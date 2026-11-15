@@ -56,7 +56,19 @@ class NativeControlReference:
             elif op==O.EQ_BRANCH:following=r.yes if a==b else r.no
             elif op==O.LT_BRANCH:following=r.yes if a<b else r.no
             elif op==O.NONZERO_BRANCH:following=r.yes if a else r.no
+            elif op in(O.SWITCH4,O.SWITCH8):
+                size=16 if op==O.SWITCH4 else 256;offset=(a-b)&65535
+                following=r.auxiliary+offset if offset<size else r.yes
             elif op==O.JUMP:pass
+            elif op==O.CLEAR_RF_ROW:
+                row=r.dest>>3;self.rf[row]=[0]*7
+                if row<272 and row&1:self.dirty[row>>1]=[False]*7
+            elif op in(O.HEAP_ROW_READ,O.FRAME_ROW_READ,O.CONTEXT_ROW_READ,O.DECLARATION_ROW_READ):
+                if r.dest&7:raise AssertionError('source row load must have aligned destination')
+                bank={O.HEAP_ROW_READ:'heap',O.FRAME_ROW_READ:'stack',O.CONTEXT_ROW_READ:'context',O.DECLARATION_ROW_READ:'constants'}[op]
+                rows=self.banks[bank]
+                for field,value in enumerate(rows[a&(len(rows)-1)]):self.write(r.dest+field,value)
+                forwards=2
             elif op==O.CALL_HANDLER:
                 if self.return_pc is not None:raise AssertionError('nested native handler call')
                 self.return_pc=r.no

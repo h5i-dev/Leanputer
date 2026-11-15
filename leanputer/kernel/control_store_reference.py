@@ -38,6 +38,10 @@ class StoreReference:
             elif op=='RETURN_HANDLER':
                 if return_pc is None:raise AssertionError('checker handler return without a call')
                 following=return_pc;return_pc=None
+            elif op=='SWITCH_WORD':
+                value=get(r['a'])
+                for low,high,target in r['cases']:
+                    if low<=value<=high:following=target;break
             elif op=='TEST_WORD_EQ':following=r['yes']if get(r['a'])==get(r['b'])else r['no']
             elif op=='TEST_WORD_LT':following=r['yes']if get(r['a'])<get(r['b'])else r['no']
             elif op=='TEST_WORD_NONZERO':following=r['yes']if get(r['a'])else r['no']

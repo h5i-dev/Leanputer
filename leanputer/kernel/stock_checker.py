@@ -33,10 +33,10 @@ def syntax_packets(chip,config,documents):
 
 def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True):
     if not program.report['pc16_encoding_met']:raise ValueError('whole native program exceeds16bit control ROM; no emission')
-    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages')
+    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True)
     chip.model.to(device);chip.report['full_current_rule_control_mapped']=True;chip.report['checker_commit_layout']['reserved_arena_buffers_implemented']=True
     built=time.perf_counter();batch=len(documents)
-    packets=syntax_packets(chip,program.store.compiler.cfg,documents);cache=None
+    packets=syntax_packets(chip,program.store.compiler.cfg,documents);cache=chip.new_cache()
     masks={'full_attention':None,'linear_attention':None}
     def forward(embeddings,**extra):
         return chip.model(inputs_embeds=embeddings,past_key_values=cache,use_cache=True,position_ids=torch.zeros((batch,embeddings.shape[1]),dtype=torch.long,device=device),attention_mask=masks,**extra)

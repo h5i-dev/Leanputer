@@ -16,20 +16,28 @@ def main_address(index):
 
 
 def temporary_address(index):
-    if not 0<=index<707:raise ValueError('checker temporary word bound')
-    return rf_address(408*7+index)
+    if not 0<=index<696:raise ValueError('checker temporary word bound after source-row alignment')
+    if index<4:return rf_address(408*7+index)
+    if index<10:return rf_address(409*7+index-4)
+    if index<16:return rf_address(410*7+index-10)
+    if index==16:return rf_address(411*7)
+    return rf_address(408*7+index+11)
 
 
 @dataclass(frozen=True)
 class Value:
     value: int
     literal: bool = False
+    bits: int = 16
 
 
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
     def __init__(self,store,addresses):
         self.store=store;self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0;self.pending_regions=[];self.region='bootstrap'
+        self.tables=[]
+        self.canonical_widths={i:16 for i in range(17)};self.read_masks_elided=0;self.write_masks_elided=0
+        self.record_widths(store.records)
         cfg=store.compiler.cfg
         if (cfg.word_bits,cfg.heap,cfg.stack,cfg.context,cfg.constants)!=(16,512,32,8,4):raise ValueError('native shared layout currently requires word16/heap512/stack32/context8/constants4')
         if store.peak_temporaries>=200:raise ValueError('native compiler needs address scratch above typed temporaries')
@@ -58,6 +66,7 @@ class NativeControl:
             r=self.records[pc];fields=dict(yes=positions[follow(r.yes)])
             if isinstance(r,CoreRecord):fields['no']=positions[follow(r.no)]if r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0
             compact.append(replace(r,**fields))
+        tables=[(size,[positions[follow(self.labels[target])]for target in entries])for size,entries in self.tables]
         self.records=compact
         self.record_regions=[self.pending_regions[pc]for pc in keep]
         tails_removed=before-len(compact)
@@ -81,6 +90,18 @@ class NativeControl:
         keep=[pc for pc in range(len(self.records))if pc not in alias];positions={pc:i for i,pc in enumerate(keep)}
         self.records=[replace(self.records[pc],yes=positions[canonical(self.records[pc].yes)],**({'no':positions[canonical(self.records[pc].no)]if self.records[pc].action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH,O.CALL_HANDLER)else 0}if isinstance(self.records[pc],CoreRecord)else{}))for pc in keep]
         self.record_regions=[self.record_regions[pc]for pc in keep]
+        tables=[(size,[positions[canonical(target)]for target in entries])for size,entries in tables]
+        bases=[];padding=0;body_count=len(self.records)
+        for size,entries in tables:
+            while len(self.records)%size:
+                self.records.append(CoreRecord(O.JUMP,yes=0));self.record_regions.append('table-padding');padding+=1
+            bases.append(len(self.records))
+            # Clone the first fixed instruction at each target. An indexed
+            # dispatch executes useful work on its second forward rather than
+            # fetching a separate unconditional jump record.
+            for target in entries:
+                self.records.append(self.records[target]);self.record_regions.append(self.record_regions[target])
+        self.records=[replace(r,auxiliary=bases[r.auxiliary])if isinstance(r,CoreRecord)and r.action in(O.SWITCH4,O.SWITCH8)else r for r in self.records]
         checked=set();visiting=set()
         def handler(pc):
             if pc in checked:return
@@ -92,6 +113,8 @@ class NativeControl:
                 if r.action==O.RETURN_HANDLER:visiting.remove(pc);checked.add(pc);return
             handler(r.yes)
             if isinstance(r,CoreRecord)and r.action in(O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH):handler(r.no)
+            if isinstance(r,CoreRecord)and r.action in(O.SWITCH4,O.SWITCH8):
+                for target in range(r.auxiliary,r.auxiliary+(16 if r.action==O.SWITCH4 else 256)):handler(target)
             visiting.remove(pc);checked.add(pc)
         for r in self.records:
             if isinstance(r,CoreRecord)and r.action==O.CALL_HANDLER:handler(r.yes)
@@ -100,20 +123,33 @@ class NativeControl:
             compiler_tail_transfers_removed=tails_removed,
             compiler_duplicate_records_removed=removed,
             handler_call_depth_bound=1,handler_control_records_checked=len(checked),
+            canonical_temporary_words_proven=len(self.canonical_widths),narrow_read_masks_elided=self.read_masks_elided,narrow_write_masks_elided=self.write_masks_elided,
+            indexed_dispatch_tables=len(tables),indexed_dispatch_entries=sum(size for size,entries in tables),indexed_dispatch_padding_records=padding,native_body_records=body_count,
             actions=dict(Counter(r.action.name if isinstance(r,CoreRecord)else'MERGE_FIELDS3'for r in self.records)),
             rule_families=len(store.compiler.families),source_effects=len(store.compiler.effects),
-            source_effects_mapped=len(store.covered),temporary_words_available=707,
+            source_effects_mapped=len(store.covered),temporary_words_available=696,source_port_padding_words=11,
             typed_temporary_peak=store.peak_temporaries,compiler_scratch_first=200,compiler_scratch_last=695,
             original_source_stock_admission=False,native_reference_verified=False,
             note='Complete fixed encoding count; native execution correspondence and stock source admission are separate obligations.')
 
     def label(self):self.serial+=1;return('local',self.serial)
+
+    def record_widths(self,records):
+        # Every typed producer canonicalizes its declared result width. Taking
+        # the maximum over ALL writers to a reused cell is conservative across
+        # branches, source phases and loop iterations. Initial private RF is0.
+        for record in records:
+            dest=record.get('dest')
+            if not dest or dest['space']!='temporary':continue
+            for limb in range((record['width']+15)//16):
+                index=dest['index']+limb;bits=min(16,record['width']-16*limb)
+                self.canonical_widths[index]=max(self.canonical_widths.get(index,0),bits)
     def mark(self,label):
         if label in self.labels:raise ValueError('duplicate compiler label')
         self.labels[label]=len(self.pending)
 
     def emit(self,op,dest=0,a=Value(0,True),b=Value(0,True),yes=None,no=None,auxiliary=0):
-        if op not in(O.ADD,O.SUB,O.EQ_BRANCH,O.LT_BRANCH,O.AND,O.OR,O.XOR,O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE,O.PUBLISH_RESULT):b=Value(0)
+        if op not in(O.ADD,O.SUB,O.EQ_BRANCH,O.LT_BRANCH,O.AND,O.OR,O.XOR,O.HEAP_WRITE,O.FRAME_WRITE,O.CONTEXT_WRITE,O.PUBLISH_RESULT,O.SWITCH4,O.SWITCH8):b=Value(0)
         if a.literal and b.literal and a.value!=b.value:
             # One literal lane per core record. Compiler scratch is a real RF
             # word written by the preceding model step, never a host value.
@@ -132,15 +168,16 @@ class NativeControl:
         if 16*limb>=width:return Value(0,True)
         bits=min(16,width-16*limb)
         space,index=operand['space'],operand['index']
-        if space=='literal':return Value((index>>(16*limb))&((1<<bits)-1),True)
+        if space=='literal':return Value((index>>(16*limb))&((1<<bits)-1),True,bits)
         if space=='current':
             if limb:raise ValueError('public checker fields must fit16bits')
             result=Value(main_address(index))
-        elif space=='temporary':result=Value(temporary_address(index+limb))
+        elif space=='temporary':result=Value(temporary_address(index+limb),bits=self.canonical_widths.get(index+limb,16))
         else:raise ValueError('unmapped native operand space '+space)
-        if bits<16:
+        if bits<16 and result.bits>bits:
             scratch=temporary_address(681+self.mask_cursor%8);self.mask_cursor+=1
-            self.emit(O.AND,dest=scratch,a=result,b=Value((1<<bits)-1,True));result=Value(scratch)
+            self.emit(O.AND,dest=scratch,a=result,b=Value((1<<bits)-1,True));result=Value(scratch,bits=bits)
+        elif bits<16:self.read_masks_elided+=1
         return result
 
     def target(self,operand,limb=0):
@@ -152,8 +189,10 @@ class NativeControl:
 
     def move(self,dest,a,width):
         if a.literal:self.emit(O.MOVE,dest=dest,a=Value(a.value&((1<<width)-1),True));return
-        if a.value==dest and width==16:return
-        self.emit(O.MOVE,dest=dest,a=a);self.mask(dest,width)
+        if a.value==dest and a.bits<=width:return
+        self.emit(O.MOVE,dest=dest,a=a)
+        if a.bits>width:self.mask(dest,width)
+        elif width<16:self.write_masks_elided+=1
 
     def shifted(self,dest,a,count,left=False):
         if a.literal:self.emit(O.MOVE,dest=dest,a=Value(((a.value<<count)if left else(a.value>>count))&65535,True))
@@ -218,11 +257,22 @@ class NativeControl:
                 self.mark(unequal);self.emit(O.LT_BRANCH,a=ah,b=bh,yes=yes,no=no);self.mark(lower)
         self.emit({'TEST_WORD_EQ':O.EQ_BRANCH,'TEST_WORD_LT':O.LT_BRANCH,'TEST_WORD_NONZERO':O.NONZERO_BRANCH}[op],a=a,b=b,yes=yes,no=no)
 
-    def lower(self,r,yes,no,commit=('commit',)):
+    def lower(self,r,yes,no,commit=('commit',),namespace='typed'):
         op=r['op'];width=r['width']
         if op=='COMMIT_STEP':self.emit(O.JUMP,yes=commit);return
         if op=='CALL_HANDLER':self.emit(O.CALL_HANDLER,yes=('typed',r['callee']),no=yes);return
         if op=='RETURN_HANDLER':self.emit(O.RETURN_HANDLER,yes=('source',));return
+        if op=='SWITCH_WORD':
+            a=self.value(r['a']);size=r['immediate']
+            if size not in(16,256):raise ValueError('native dispatch table width')
+            entries=[]
+            for value in range(size):
+                target=yes
+                for low,high,pc in r['cases']:
+                    if low<=value<=high:target=(namespace,pc);break
+                entries.append(target)
+            index=len(self.tables);self.tables.append((size,entries))
+            self.emit(O.SWITCH4 if size==16 else O.SWITCH8,a=a,b=Value(0,True),yes=yes,auxiliary=index);return
         if op=='JUMP':self.emit(O.JUMP,yes=yes);return
         if op.startswith('TEST_WORD_'):self.comparison(r,yes,no);return
         if op in('WORD_ADD','WORD_SUB'):self.arithmetic(r)
@@ -276,8 +326,9 @@ class NativeControl:
             code.block.emit('MOVE_WORD',dest=Operand('temporary',670+index,len(word)),a=value,width=len(word))
         code.block.emit('JUMP',yes=terminal.label)
         rows,entry=mini.flatten();self.emit(O.JUMP,yes=(namespace,entry))
+        self.record_widths(rows)
         for pc,r in enumerate(rows):
-            self.mark((namespace,pc));self.lower(r,(namespace,r['yes']if r['yes']is not None else pc+1),(namespace,r['no'])if r['no']is not None else None,commit=continuation)
+            self.mark((namespace,pc));self.lower(r,(namespace,r['yes']if r['yes']is not None else pc+1),(namespace,r['no'])if r['no']is not None else None,commit=continuation,namespace=namespace)
         if mini.peak_temporaries>=670:raise ValueError('address expression scratch collides with compiler operands')
 
     def source_prologue(self,addresses):
@@ -296,11 +347,10 @@ class NativeControl:
             chunks.append(graph.word(tuple(source_bit(output.node,offset+bit)for bit in range(width))));offset+=width
         self.mark(('source',));self.address_records(graph,output,'addresses1',('load-first',),outputs=chunks)
         self.mark(('load-first',));port=0
-        for index,(action,cells,words)in enumerate(((O.HEAP_READ,512,4),(O.FRAME_READ,32,6),(O.DECLARATION_READ,4,6))):
-            for field in range(words):
-                self.emit(action,dest=temporary_address(port),a=Value(temporary_address(670+index)),auxiliary=field);port+=1
+        for index,(action,cells,words)in enumerate(((O.HEAP_ROW_READ,512,4),(O.FRAME_ROW_READ,32,6),(O.DECLARATION_ROW_READ,4,6))):
+            self.emit(action,dest=temporary_address(port),a=Value(temporary_address(670+index)));port+=words
         self.address_records(*addresses[1],'addresses2',('load-context',))
-        self.mark(('load-context',));self.emit(O.CONTEXT_READ,dest=temporary_address(16),a=Value(temporary_address(670)))
+        self.mark(('load-context',));self.emit(O.CONTEXT_ROW_READ,dest=temporary_address(16),a=Value(temporary_address(670)))
         self.emit(O.JUMP,yes=('typed',self.store.entry_pc))
 
     def commit_tail(self):
@@ -311,7 +361,7 @@ class NativeControl:
             for field in range(words):self.emit(action,a=Value(rf_address(base*7)),b=Value(rf_address(base*7+1+field)),auxiliary=field)
             self.mark(skip)
         for row in(509,510,511):
-            for slot in range(7):self.emit(O.MOVE,dest=rf_address(row*7+slot),a=Value(0,True))
+            self.emit(O.CLEAR_RF_ROW,dest=rf_address(row*7))
         self.emit(O.COMMIT_FIELDS)
         names=[name for name,width in self.store.compiler.layout.fields]
         status,reason,result=(main_address(names.index(name))for name in('status','reason','r'))

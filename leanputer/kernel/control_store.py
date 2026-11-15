@@ -33,6 +33,7 @@ class Record:
     items: tuple = ()
     callee: object = None
     region: str = 'body'
+    cases: tuple = ()
 
 
 class Block:
@@ -263,6 +264,15 @@ class ControlStore:
 
     def control_cases(self,variable,parts):
         if len(parts)==1:return parts[0][2]
+        if len(parts)>=8:
+            default=parts[-1][2]
+            interesting=[(low,high,target)for low,high,target in parts if target!=default]
+            if interesting:
+                high=max(end for low,end,target in interesting)
+                size=16 if high<16 else 256 if high<256 else None
+                if size and size<=4*len(parts):
+                    block=self.block();block.emit('SWITCH_WORD',a=self.inputs[self.contract_plan.variables[variable]],yes=default,cases=tuple(interesting),immediate=size,forwards=2)
+                    return block.label
         split=len(parts)//2;left=self.control_cases(variable,parts[:split]);right=self.control_cases(variable,parts[split:])
         block=self.block();block.emit('TEST_WORD_LT',a=self.inputs[self.contract_plan.variables[variable]],b=Operand('literal',parts[split][0],self.nodes[variable].width),yes=left,no=right,width=self.nodes[variable].width)
         return block.label
@@ -457,6 +467,13 @@ class ControlStore:
 
     def switch(self,word,cases,following,memo=None,start=None):
         if not cases:return following
+        if len(cases)>=8:
+            maximum=max(value for value,target in cases);minimum=min(value for value,target in cases)
+            size=16 if maximum<16 else 256 if maximum<256 else None
+            if minimum>=0 and size and size<=4*len(cases):
+                block=self.block();code=WordCode(self,block,memo,start);a=code.get(word)
+                code.block.emit('SWITCH_WORD',a=a,yes=following,cases=tuple((value,value,target)for value,target in cases),immediate=size,width=a.width,forwards=2)
+                return block.label
         mid=len(cases)//2;value,entry=cases[mid]
         left=self.switch(word,cases[:mid],following,memo,start);right=self.switch(word,cases[mid+1:],following,memo,start)
         comparison=self.block();code=WordCode(self,comparison,memo,start);a=code.get(word)
@@ -500,6 +517,7 @@ class ControlStore:
             item=asdict(row)
             for k in('yes','no','callee'):
                 if item[k]is not None:item[k]=starts[item[k]]
+            item['cases']=[(low,high,starts[target])for low,high,target in item['cases']]
             result.append(item)
         # Remove compiler blocks that no branch of this FIXED checker can
         # reach. Both outcomes of every data comparison remain traversed; no
@@ -514,6 +532,7 @@ class ControlStore:
             pending.append(following)
             if record['no']is not None:pending.append(record['no'])
             if record['callee']is not None:pending.append(record['callee'])
+            pending.extend(target for low,high,target in record['cases'])
         order=sorted(reachable);positions={old:new for new,old in enumerate(order)}
         self.unreachable_records=len(result)-len(order)
         compact=[]
@@ -521,6 +540,7 @@ class ControlStore:
             row=result[old]
             for field in('yes','no','callee'):
                 if row[field]is not None:row[field]=positions[row[field]]
+            row['cases']=[(low,high,positions[target])for low,high,target in row['cases']]
             compact.append(row)
         return compact,positions[entry]
 
