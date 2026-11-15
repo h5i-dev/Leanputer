@@ -1,3 +1,36 @@
+# Full finite control dispatch (2026-11-15 07:14 UTC)
+
+Fixed enum-selection lowering now recognizes unions of equality cases, preserves
+first-match priority for overlaps, shares identical alternatives, and evaluates
+only the selected source-address mux branch. Smaller case groups and preflight
+selection use the existing bounded native page dispatch. Unknown 16-bit values
+retain explicit default paths. These are compiler transforms over the fixed
+checker; no input declaration/proof/name is inspected.
+
+All 73 rule families / 6,454 effects map to **46,608 immutable records**, including
+135 indexed tables / 7,200 entries / 198 alignment records, within the 16-bit PC.
+Complete matched source OFFLINE checks are exact at every state, now using
+**225,506 / 230,425 native forwards**. The whole emitted/loaded stock model is
+**48,290,654 logical dense parameters**, H768/I256/L65, 19 active GDN layers and
+46 tiny stock attention layers, 755 allocated channels. Formula:
+19*(3HI+644H+1666) + 46*(3HI+12H+4) + 129H. All semantic bounds are unchanged.
+
+The actual 128-forward stock prefix passes exact ALL hidden/cache-tensor/logit
+checks against eager: replay 0.443845s, **288.38885 forwards/s**, setup 138.906s.
+This sample enables the installed PyTorch immutable-weight freezing option via
+TORCHINDUCTOR_FREEZING=1. This is stock framework compilation, not a custom
+executor; weights remain immutable. The different preceding model's rate cannot
+establish a freezing speedup. The longer current case projects to 799.0s (~13.3min)
+of decoding plus setup/build/prefill. One same-pair full-source check is planned
+with a 20-minute total cap, not an hours-long retry or broad campaign. No completed
+small-stock source result is claimed before that check terminates and is audited.
+
+The dirty-row commit experiment passed module/correspondence checks but saved
+only ~1.8% of forwards and is not selected; patch/logs remain in scratch.
+Existing semantic GAPs and larger native-domain coverage remain open.
+
+Earlier checkpoints follow.
+
 # Threaded dispatch and trimmed stock layout (2026-11-15 06:50 UTC)
 
 The full fixed program retains 41,472 records, all 73 rule families / 6,454 effects

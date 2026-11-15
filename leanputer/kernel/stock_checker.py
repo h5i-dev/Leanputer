@@ -67,7 +67,7 @@ def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_c
                 if progress and(step%256==0 or completed or step==max_forwards):progress(dict(event='progress',forwards=step,seconds=time.perf_counter()-decoding_started,outputs=output,completed=completed))
                 if completed:break
         elapsed=time.perf_counter()-decoding_started
-    return dict(chip=chip,cache=cache,state=state,outputs=output,completed=completed,forwards=step,inference_seconds=elapsed,build_seconds=built-started,prefill_seconds=loaded-built,execution=execution,compiled_stock_operations=bool(executor and compile_stock),capture_seconds=executor.setup_seconds if executor else 0)
+    return dict(chip=chip,cache=cache,state=state,outputs=output,completed=completed,forwards=step,inference_seconds=elapsed,build_seconds=built-started,prefill_seconds=loaded-built,execution=execution,compiled_stock_operations=bool(executor and compile_stock),immutable_weight_freezing=bool(executor and compile_stock and torch._inductor.config.freezing),capture_seconds=executor.setup_seconds if executor else 0)
 
 
 def read_main_and_banks(chip,cache,batch_index):

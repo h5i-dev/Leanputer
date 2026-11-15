@@ -48,7 +48,7 @@ def main():
         eager_forwards_per_second=a.steps/eager_seconds,cuda_graph_forwards_per_second=a.steps/graph_seconds,
         exact_all_hidden_state=equal_state,exact_all_stock_cache_tensors=equal_cache,exact_logits=equal_logits,
         baseline_control_forwards=[1185877,1218203],projected_baseline_longer_seconds=1218203*graph_seconds/a.steps,
-        compiled_stock_operations=a.compile_stock,
+        compiled_stock_operations=a.compile_stock,immutable_weight_freezing=bool(torch._inductor.config.freezing)if a.compile_stock else False,
         exact_external_native_prefix=reference_match,
         execution='torch.cuda.CUDAGraph of stock Qwen3_5ForCausalLM.forward/cache plus identity feedback; optional standard torch.compile with eager precision casts')
     a.report.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k!='model'}),flush=True)

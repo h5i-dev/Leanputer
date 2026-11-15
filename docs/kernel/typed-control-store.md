@@ -1,3 +1,16 @@
+# Current finite-dispatch integration
+
+The complete current-rule model is 48,290,654 dense parameters, H768/I256/L65,
+with all 73 rule families / 6,454 effects retained. Fixed finite mux dispatch and
+selected-branch address lowering give exact matched OFFLINE source counts of
+225,506 / 230,425 forwards. Actual 128-forward stock parity passes at 288.39
+forwards/s with 138.91s setup. The current longer-case projection is ~13.3minutes
+of decoding plus setup; one same-source pair check has a 20-minute total cap.
+It is not completed source evidence yet. See [current evidence and history](../../benchmarks/kernel-control-speed/README.md).
+Semantic and larger native-domain gaps remain explicit.
+
+Earlier checkpoints follow.
+
 # Latest integrated dispatch/layout evidence
 
 The complete current-rule stock model now has 46,493,522 dense parameters and 62

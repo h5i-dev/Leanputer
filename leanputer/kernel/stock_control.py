@@ -335,7 +335,7 @@ class NativeControl:
     def address_records(self,graph,output,namespace,continuation,outputs=None):
         self.region='source-prologue'
         mini=object.__new__(ControlStore);mini.nodes=graph.nodes;mini.inputs=self.store.inputs;mini.blocks=[]
-        mini.temporary_base=200;mini.peak_temporaries=200;mini.frozen={};mini.condition_entries={};mini.contract_plan=None
+        mini.temporary_base=200;mini.peak_temporaries=200;mini.lazy_choices=True;mini.frozen={};mini.condition_entries={};mini.contract_plan=None
         block=mini.block();mini.entry=block.label;terminal=mini.block();terminal.emit('COMMIT_STEP')
         code=WordCode(mini,block)
         for index,word in enumerate(outputs or [output]):

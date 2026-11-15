@@ -69,23 +69,38 @@ class WordCode:
         elif op=='choose':
             # A chain testing one word against constants is one dispatch, not
             # eager computation of every alternative at every use.
+            def finite_test(index):
+                test=s.nodes[index]
+                if test.op=='eq':
+                    for a,b in(test.args,test.args[::-1]):
+                        if s.nodes[b].op=='const':return a,(s.nodes[b].data,)
+                if test.op=='any':
+                    pieces=[finite_test(i)for i in test.args]
+                    if pieces and all(p and p[0]==pieces[0][0]for p in pieces):return pieces[0][0],tuple(sorted({v for p in pieces for v in p[1]}))
+                return None
             chain=[];cursor=index;variable=None
             while self.store.nodes[cursor].op=='choose':
-                selected=self.store.nodes[cursor];test=self.store.nodes[selected.args[0]]
-                if test.op!='eq':break
-                pair=None
-                for a,b in(test.args,test.args[::-1]):
-                    if self.store.nodes[b].op=='const':pair=(a,self.store.nodes[b].data);break
+                selected=self.store.nodes[cursor];pair=finite_test(selected.args[0])
                 if pair is None or(variable is not None and variable!=pair[0]):break
-                variable=pair[0];chain.append((pair[1],selected.args[1]));cursor=selected.args[2]
+                variable=pair[0];chain.extend((v,selected.args[1])for v in pair[1]);cursor=selected.args[2]
             if len(chain)>=3 and self.store.nodes[variable].op=='input':
-                out=self.temp(n.width);join=s.block();cases={}
+                out=self.temp(n.width);join=s.block();cases={};alternatives={}
                 for value,alternative in chain+[(None,cursor)]:
                     if value in cases:continue
-                    block=s.block();branch=WordCode(s,block,self.memo,self.next_temp);operand=branch.get(alternative)
-                    branch.block.emit('MOVE_WORD',dest=out,a=operand,yes=join.label,width=n.width,forwards=(n.width+15)//16)
-                    cases[value]=block.label
+                    if alternative not in alternatives:
+                        block=s.block();branch=WordCode(s,block,self.memo,self.next_temp);operand=branch.get(alternative)
+                        branch.block.emit('MOVE_WORD',dest=out,a=operand,yes=join.label,width=n.width,forwards=(n.width+15)//16)
+                        alternatives[alternative]=block.label
+                    cases[value]=alternatives[alternative]
                 self.block.emit('JUMP',yes=s.switch(variable,sorted((v,target)for v,target in cases.items()if v is not None),cases[None]))
+                self.block=join;self.memo[index]=out;return out
+            if getattr(s,'lazy_choices',False):
+                out=self.temp(n.width);yes,no,join=s.block(),s.block(),s.block()
+                entry=s.condition(n.args[0],yes.label,no.label,self.memo,self.next_temp)
+                self.block.emit('JUMP',yes=entry)
+                for block,alternative in zip((yes,no),n.args[1:]):
+                    branch=WordCode(s,block,self.memo,self.next_temp);operand=branch.get(alternative)
+                    branch.block.emit('MOVE_WORD',dest=out,a=operand,yes=join.label,width=n.width,forwards=(n.width+15)//16)
                 self.block=join;self.memo[index]=out;return out
             # Pure word operands dominate the branch. Computing their common
             # DAG once avoids exponentially duplicating nested decimal/select
@@ -264,13 +279,13 @@ class ControlStore:
 
     def control_cases(self,variable,parts):
         if len(parts)==1:return parts[0][2]
-        if len(parts)>=8:
+        if len(parts)>=4:
             default=parts[-1][2]
             interesting=[(low,high,target)for low,high,target in parts if target!=default]
             if interesting:
                 high=max(end for low,end,target in interesting)
                 size=16 if high<16 else 256 if high<256 else None
-                if size and size<=4*len(parts):
+                if size and size<=16*len(parts):
                     block=self.block();block.emit('SWITCH_WORD',a=self.inputs[self.contract_plan.variables[variable]],yes=default,cases=tuple(interesting),immediate=size,forwards=2)
                     return block.label
         split=len(parts)//2;left=self.control_cases(variable,parts[:split]);right=self.control_cases(variable,parts[split:])
@@ -427,12 +442,7 @@ class ControlStore:
                 target=self.preflight_condition(cofactored,yes,no,memo,start)
                 if parts and parts[-1][2]==target:parts[-1]=(parts[-1][0],end,target)
                 else:parts.append((low,end,target))
-            def select(cases):
-                if len(cases)==1:return cases[0][2]
-                split=len(cases)//2;left=select(cases[:split]);right=select(cases[split:])
-                block=self.block();block.emit('TEST_WORD_LT',a=self.inputs[plan.variables[variable]],b=Operand('literal',cases[split][0],self.nodes[variable].width),yes=left,no=right,width=self.nodes[variable].width)
-                return block.label
-            entry=select(parts)
+            entry=self.control_cases(variable,[(low,end-1,target)for low,end,target in parts])
         self.preflight_entries[key]=entry;return entry
 
     def actions(self,ids,following):
@@ -467,10 +477,10 @@ class ControlStore:
 
     def switch(self,word,cases,following,memo=None,start=None):
         if not cases:return following
-        if len(cases)>=8:
+        if len(cases)>=4:
             maximum=max(value for value,target in cases);minimum=min(value for value,target in cases)
             size=16 if maximum<16 else 256 if maximum<256 else None
-            if minimum>=0 and size and size<=4*len(cases):
+            if minimum>=0 and size and size<=16*len(cases):
                 block=self.block();code=WordCode(self,block,memo,start);a=code.get(word)
                 code.block.emit('SWITCH_WORD',a=a,yes=following,cases=tuple((value,value,target)for value,target in cases),immediate=size,width=a.width,forwards=2)
                 return block.label
