@@ -45,9 +45,12 @@ class SharedDatapathTest(unittest.TestCase):
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),past_key_values=chip.new_cache(),use_cache=True,position_ids=positions,attention_mask=masks)
             cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-13))
+            history=[]
             for _ in range(7):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks)
                 state=out.hidden_states[-2]
+                history.append([sum(int(v)<<i for i,v in enumerate(row[:16]))for row in out.logits[:,0].float().tolist()])
+        self.assertEqual(history[:3],[[1,2,1,1],[2,3,2,2],[3,4,4,4]])
         from leanputer.native_vendor.qwenputer.ir import A_BIT
         word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
         self.assertEqual([word(v[16:32])for v in out.logits[:,0].float().tolist()],[1]*4)

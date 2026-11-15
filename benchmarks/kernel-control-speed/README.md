@@ -1,3 +1,22 @@
+# Return-address forwarding correction (2026-11-15)
+
+A static timing audit found a real bug in fused call/immediate-return: the first
+handler operation could select the previous model return latch while storing its
+new return PC. The late-result module test allowed a retry and missed the extra
+forward. The current full source attempt was stopped around 70K forwards; its
+partial execution is not admission or native-reference correspondence evidence.
+The fix forwards the new encoded return PC on that same operation. The stock
+module now asserts the PC at each of the first three forwards for both branch
+edges and repeated calls; it passes. The prefix diagnostic also has an optional
+AFTER-inference native PC boundary comparison, which never supplies inference
+inputs/cache/control/answers. Its current 512-forward check is pending.
+Earlier short prefix eager/replay equality remains scheduling evidence only;
+complete small-stock source correctness remains pending the corrected full run.
+The earlier cold-production hook-installation error was fixed by a restored eager
+stock forward before Dynamo tracing; cold production then ran 512 forwards.
+
+Earlier checkpoints follow.
+
 # Full finite control dispatch (2026-11-15 07:14 UTC)
 
 Fixed enum-selection lowering now recognizes unions of equality cases, preserves

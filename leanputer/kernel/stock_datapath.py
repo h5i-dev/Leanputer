@@ -316,9 +316,10 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     failed_branch=failed_branch-inline_no
     capture_return=builder.gate('and',[one-merging,code[92]],'capture-inline-return')
     setting_return=flags[WordAction.CALL_HANDLER]+capture_return
+    capture_returning=builder.gate('and',[returning,capture_return],'inline-capture-returning')
     switch4=builder.gate('and',[flags[WordAction.SWITCH4],one-builder.gate('or',sum_bits[4:],'switch4-outside-page')],'switch4-in-page')
     switch8=builder.gate('and',[flags[WordAction.SWITCH8],one-builder.gate('or',sum_bits[8:],'switch8-outside-page')],'switch8-in-page')
-    following=[g.ffn([(1,code[58+i],one-failed_branch-returning-switch4-switch8),(1,code[74+i],failed_branch),(1,handler_return[i],returning),(1,sum_bits[i]if i<4 else code[96+i],switch4),(1,sum_bits[i]if i<8 else code[96+i],switch8)],name='next-pc')for i in range(16)]
+    following=[g.ffn([(1,code[58+i],one-failed_branch-returning-switch4-switch8),(1,code[74+i],failed_branch),(1,handler_return[i],returning-capture_returning),(1,code[96+i],capture_returning),(1,sum_bits[i]if i<4 else code[96+i],switch4),(1,sum_bits[i]if i<8 else code[96+i],switch8)],name='next-pc')for i in range(16)]
     following=select(merging,code[95:111],following,'next-field-pc')
     known=sum(flags.values(),Expr())
     internal_fault=builder.gate('and',[run,builder.gate('or',[one-valid,one-known],'bad-control')],'internal-fault')
