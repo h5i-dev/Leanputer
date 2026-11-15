@@ -33,7 +33,8 @@ def syntax_packets(chip,config,documents):
 
 def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_chunk=32,execution='cuda_graph',compile_stock=True):
     if not program.report['pc16_encoding_met']:raise ValueError('whole native program exceeds16bit control ROM; no emission')
-    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True)
+    bundled=bool(program.report.get('guard_bundling'))
+    started=time.perf_counter();chip=build(program.records,device='cpu',rom_layout='byte_pages',compact_attention=True,hidden=960 if bundled else 768,datapath_layers=45 if bundled else 35,parallel_carry=bundled)
     chip.model.to(device);chip.report['full_current_rule_control_mapped']=True;chip.report['checker_commit_layout']['reserved_arena_buffers_implemented']=True
     built=time.perf_counter();batch=len(documents)
     packets=syntax_packets(chip,program.store.compiler.cfg,documents);cache=chip.new_cache()
@@ -43,7 +44,7 @@ def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_c
     with torch.inference_mode():
         for first in range(0,packets.shape[1],prefill_chunk):
             out=forward(chip.embeddings(packets[:,first:first+prefill_chunk]));cache=out.past_key_values
-        loaded=time.perf_counter();state=chip.embeddings(torch.zeros(batch,1,chip.slots.next-13))
+        loaded=time.perf_counter();state=chip.embeddings(torch.zeros(batch,1,chip.slots.next-chip.slots.prefix))
         from .stock_execution import cache_tensors
         native_cache=cache_tensors(cache)
         chip.report.update(weight_tensor_bytes=sum(p.numel()*p.element_size()for p in chip.model.parameters()),native_cache_tensor_bytes_for_batch=sum(t.numel()*t.element_size()for t in native_cache),native_cache_tensor_count=len(native_cache),batch_items=batch,syntax_boot_packets_per_item=packets.shape[1])

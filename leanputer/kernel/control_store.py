@@ -137,8 +137,10 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False):
+        role_dispatch=role_dispatch or mode_dispatch
         family_dispatch=family_dispatch or role_dispatch
+        self.mode_dispatch=mode_dispatch
         self.role_dispatch=role_dispatch
         self.capture_statistics=compiler.g.statistics()
         self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
@@ -203,12 +205,26 @@ class ControlStore:
                     from .traversal_machine import Mode
                     mode=next(i for i,name in self.contract_plan.variables.items()if name=='mode')
                     minimum,maximum=self.contract_plan.contract_domains[mode];parts=[]
-                    for low,high,order,owner in((minimum,int(Mode.RETURN)-1,'task_first','task'),(int(Mode.RETURN),int(Mode.RETURN),'caller_first','read/frame/task'),(int(Mode.RETURN)+1,maximum,'task_first','task')):
+                    intervals=[(minimum,int(Mode.RETURN)-1),(int(Mode.RETURN),int(Mode.RETURN)),(int(Mode.RETURN)+1,maximum)]
+                    if mode_dispatch:
+                        # One global partition of INTERNAL mode, before owner
+                        # and family handlers. Every guard interval is retained;
+                        # declarations/proof inputs are not partition keys.
+                        values=set()
+                        for _,effect in self.contract_plan.body:values.update(self.contract_plan.tests(effect.guard).get(mode,()))
+                        breaks={minimum,maximum+1,int(Mode.RETURN),int(Mode.RETURN)+1}
+                        for value in values:
+                            if minimum<=value<=maximum:breaks.update((value,value+1))
+                        breaks=sorted(breaks);intervals=[(a,b-1)for a,b in zip(breaks,breaks[1:])]
+                    for low,high in intervals:
+                        order,owner=('caller_first','read/frame/task')if low==high==int(Mode.RETURN)else('task_first','task')
                         if low>high:continue
                         self.contract_plan.control_order=order
                         effects=self.specialized_effects(self.contract_plan.body,mode,low,high)
                         variable=next(i for i,name in self.contract_plan.variables.items()if name==owner)
-                        parts.append((low,high,self.route_effects(effects,variable,self.terminal.label)))
+                        target=self.route_effects(effects,variable,self.terminal.label)
+                        if mode_dispatch and parts and parts[-1][2]==target:parts[-1]=(parts[-1][0],high,target)
+                        else:parts.append((low,high,target))
                     body=self.control_cases(mode,parts)
                 else:body=self.family_effects(self.contract_plan.body,self.terminal.label)
                 for region,aliases in self.contract_plan.region_aliases.items():
@@ -572,7 +588,7 @@ class ControlStore:
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
             source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
-            source_control_role_dispatch=self.role_dispatch,
+            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):

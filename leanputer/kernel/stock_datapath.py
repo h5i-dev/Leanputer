@@ -19,6 +19,7 @@ class WordAction(IntEnum):
     AND=8; OR=9; XOR=10; SHR=11; SHL=12; NONZERO_BRANCH=13
     SHR_LOOP=14; SHL_LOOP=15; MERGE_FIELDS3=16; COMMIT_FIELDS=48; PUBLISH_RESULT=49
     CALL_HANDLER=50; RETURN_HANDLER=51
+    GUARD3=17
     CLEAR_RF_ROW=52
     SWITCH4=53; SWITCH8=54
     HEAP_ROW_READ=56; FRAME_ROW_READ=57; CONTEXT_ROW_READ=58; DECLARATION_ROW_READ=59
@@ -80,7 +81,7 @@ def rf_address(word):
 
 
 class FixedSlots:
-    def __init__(self):self.next=13;self.groups={}
+    def __init__(self,prefix=13):self.prefix=prefix;self.next=prefix;self.groups={}
     def add(self,name,width):
         value=list(range(self.next,self.next+width));self.groups[name]=value;self.next+=width;return value
 
@@ -95,15 +96,15 @@ class StockDatapath:
     def embeddings(self,packets):
         """Fixed syntax/data transport only. No micro-op is decoded here."""
         parameter=next(self.model.parameters());out=torch.zeros((*packets.shape[:-1],self.layout.hidden),dtype=parameter.dtype,device=parameter.device)
-        out[...,:self.layout.m]=self.layout.ballast;out[...,13:self.slots.next]=packets.to(out.device,out.dtype)
+        out[...,:self.layout.m]=self.layout.ballast;out[...,self.slots.prefix:self.slots.next]=packets.to(out.device,out.dtype)
         return out
 
     def packet(self,**groups):
-        result=torch.zeros(self.slots.next-13)
+        result=torch.zeros(self.slots.next-self.slots.prefix)
         for name,values in groups.items():
             indices=self.slots.groups[name]
             if len(values)!=len(indices):raise ValueError('syntax packet group width')
-            result[[i-13 for i in indices]]=torch.tensor(values,dtype=result.dtype)
+            result[[i-self.slots.prefix for i in indices]]=torch.tensor(values,dtype=result.dtype)
         return result
 
     def new_cache(self):
@@ -118,11 +119,12 @@ class StockDatapath:
         return StaticCache(config=config,max_cache_len=1)
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False):
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
-    if hidden!=768 or intermediate!=256:raise ValueError('prototype physical domain H768/I256')
+    bundled=any(getattr(r,'action',None)==WordAction.GUARD3 for r in records)
+    if hidden not in(768,896,960,1024)or intermediate!=256:raise ValueError('physical domain H768/896/960/1024/I256')
     if not records or len(records)>65536:raise ValueError('16bit control PC domain')
     if rom_layout not in('flat','byte_pages'):raise ValueError('unknown weight-ROM layout')
     encoded=[r.bits()for r in records];pages=math.ceil(len(records)/128)
@@ -130,8 +132,8 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     decode_layers=7 if rom_layout=='byte_pages'else 0
     module_start=1+rom_layers+decode_layers;layers=rom_layers+decode_layers+datapath_layers+5
     logical_count=layers*(3*hidden*intermediate+644*hidden+1666)+129*hidden
-    if logical_count>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
-    builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;fixed=FixedSlots();features={};physical={}
+    if not compact_attention and logical_count>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
+    builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;fixed=FixedSlots(hidden//64+1);features={};physical={}
     def feature(name,width):
         slots=fixed.add(name,width);values=[builder.feature(f'{name}/{i}')for i in range(width)]
         for value,slot in zip(values,slots):physical[next(iter(value.terms))]=slot
@@ -166,10 +168,11 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         carry=[builder.gate('and',bits[4:i],f'queue-address-carry/{i}')for i in range(5,9)]
         return bits[:4]+[one-bits[4]]+[bits[i]+carry[i-5]-2*builder.gate('and',[bits[i],carry[i-5]],f'queue-address-xor/{i}')for i in range(5,8)]+[one-carry[3]]
     queue_write_address=queue_address(queue_row);queue_read_address=queue_address(read_row)
-    flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction}
+    flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction if bundled or op!=WordAction.GUARD3}
     # Opcode flags are mutually exclusive for every binary6bit ROM code.
     # Their union is a free linear sum, not another Boolean circuit.
     def op_any(*ops):return sum((flags[op]for op in ops),Expr())
+    guard=flags.get(WordAction.GUARD3,Expr())
     shifting=op_any(WordAction.SHR_LOOP,WordAction.SHL_LOOP)
     shift_resume=builder.gate('and',[shifting,builder.gate('or',stage,'shift-resume-stage')],'shift-resume')
     publish=builder.gate('and',[run,valid,flags[WordAction.PUBLISH_RESULT]],'publish-result')
@@ -183,9 +186,14 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     descriptor=[]
     for bit in range(29):descriptor.append(g.ffn([(1,code[6+29*i+bit],descriptor_select[i])for i in range(3)],name='field-descriptor'))
     field_dest=descriptor[:12];field_source=descriptor[12:28];field_literal=descriptor[28]
-    normal_a=select(merging,field_source[:12],select(shift_resume,code[6:18],code[18:30],'shift-source-address'),'source-A-address')
-    query_a=select(committing,read_slot+queue_read_address,normal_a,'query-A-address')
-    literal_a=g.ffn([(1,field_literal,merging),(1,code[90],one-merging-committing)],name='source-A-literal')
+    if bundled:
+        controls=merging+shift_resume+committing+guard
+        queue_source=read_slot+queue_read_address
+        query_a=[g.ffn([(1,field_source[i],merging),(1,code[6+i],shift_resume),(1,queue_source[i],committing),(1,code[6+i],guard),(1,code[18+i],one-controls)],name='flat-query-A')for i in range(12)]
+    else:
+        normal_a=select(merging,field_source[:12],select(shift_resume,code[6:18],code[18:30],'shift-source-address'),'source-A-address')
+        query_a=select(committing,read_slot+queue_read_address,normal_a,'query-A-address')
+    literal_a=g.ffn([(1,field_literal,merging),(1,code[90],one-merging-committing-guard)],name='source-A-literal')
     immediate_a=select(merging,field_source,code[42:58],'source-A-immediate')
     rowing=op_any(WordAction.HEAP_ROW_READ,WordAction.FRAME_ROW_READ,WordAction.CONTEXT_ROW_READ,WordAction.DECLARATION_ROW_READ)
     load=rowing+op_any(WordAction.HEAP_READ,WordAction.FRAME_READ,WordAction.CONTEXT_READ,WordAction.DECLARATION_READ)
@@ -219,15 +227,28 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     for page in range(4):head(0,page,query_a,A,literal_a)
     queued_main=A[:3]+[Expr()]+A[3:11];queued_shadow=A[:3]+[one]+A[3:11]
     shadow_dest=field_dest[:3]+[one]+field_dest[4:]
-    query_b=select(committing,queued_shadow,select(merging,shadow_dest,code[30:42],'source-B-field'),'query-B-address')
-    for page in range(4):head(1,page,query_b,B,code[91]-g.ffn([(1,code[91],merging+committing)],name='source-B-literal-mask'))
-    merge_dest=select(stage[0],[Expr()]*3+queue_write_address,shadow_dest,'merge-destination')
-    commit_dest=select(stage[0],queued_shadow,queued_main,'commit-destination')
-    query_d=select(committing,commit_dest,select(merging,merge_dest,code[6:18],'destination-field'),'query-D-address')
+    if bundled:
+        query_b=[g.ffn([(1,queued_shadow[i],committing),(1,shadow_dest[i],merging),(1,code[28+i],guard),(1,code[30+i],one-committing-merging-guard)],name='flat-query-B')for i in range(12)]
+    else:query_b=select(committing,queued_shadow,select(merging,shadow_dest,code[30:42],'source-B-field'),'query-B-address')
+    for page in range(4):head(1,page,query_b,B,code[91]-g.ffn([(1,code[91],merging+committing+guard)],name='source-B-literal-mask'))
+    if bundled:
+        queue_target=[Expr()]*3+queue_write_address
+        query_d=[g.ffn([(1,queued_shadow[i],commit_clear),(1,queued_main[i],commit_main),(1,shadow_dest[i],merge_value),(1,queue_target[i],merge_append),(1,code[50+i],guard),(1,code[6+i],one-committing-merging-guard)],name='flat-query-D')for i in range(12)]
+    else:
+        merge_dest=select(stage[0],[Expr()]*3+queue_write_address,shadow_dest,'merge-destination')
+        commit_dest=select(stage[0],queued_shadow,queued_main,'commit-destination')
+        query_d=select(committing,commit_dest,select(merging,merge_dest,code[6:18],'destination-field'),'query-D-address')
     for page in range(4):head(2,page,query_d,D)
+    guard_third=None
+    if bundled:
+        # Capture the RF row before arena heads reuse the same residual lanes.
+        # This is compiler scheduling; stock heads/cache remain unchanged.
+        guard_slots=[builder.gate('and',matches(code[50:53],slot),'guard-third-slot')for slot in range(7)]
+        guard_third=[g.ffn([(1,D[16*slot+i],guard_slots[slot])for slot in range(7)],name='guard-third-word')for i in range(16)]
     # Literal and register operands use the SAME word lanes.
     a=[A[i]+builder.gate('and',[literal_a,immediate_a[i]],f'literal-A/{i}')for i in range(16)]
-    b=[B[i]+builder.gate('and',[code[91],code[42+i]],f'literal-B/{i}')for i in range(16)]
+    b=[B[i]+builder.gate('and',[code[91],one-guard,code[42+i]],f'literal-B/{i}')for i in range(16)]
+    if bundled:b=select(guard,code[18:26]+[Expr()]*8,b,'guard-first-bound')
     bank_metadata=[]
     # The same pending packet writes ONE bank per forward. RF copies consume
     # it first; arena banks consume it later, before any new packet is committed.
@@ -244,20 +265,36 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
             layer=module_start+start_layer+page
             g.head(f'arena.{bank}.{page}',q,k,data,0,{i+2:K*one for i in range(words*16)},[(i+2,128.)for i in range(words*16)],beta=writing,min_level=2*layer,into=D[:words*16])
             bank_metadata.append(dict(bank=bank,page=page,layer=g.nodes[-1].level//2,words=words))
-    submode=op_any(WordAction.SUB,WordAction.EQ_BRANCH,WordAction.LT_BRANCH,WordAction.SWITCH4,WordAction.SWITCH8)
-    # One shared nibble adder handles add, subtract and order comparison.
-    carry=submode;sum_bits=[]
-    for offset in range(0,16,4):
-        av=sum(((1<<i)*a[offset+i]for i in range(4)),Expr());parts=[]
-        for i in range(4):
-            both=g.ffn([(1,b[offset+i],submode)],name='invert-product')
-            parts.append(b[offset+i]+submode-2*both)
-        bv=sum(((1<<i)*parts[i]for i in range(4)),Expr());total=av+bv+carry
-        carry=g.ffn([(1,one,total-15*one),(-1,one,total-16*one)],name='word-carry')
-        digit=total-16*carry
-        from ..control_packing import PackedBit
-        memo={};sum_bits.extend(PackedBit(digit,i,4).realize(builder,memo)for i in range(4))
-    less=one-carry;equal=builder.gate('not',[builder.gate('or',sum_bits,'difference-nonzero')],'word-equal')
+    submode=op_any(WordAction.SUB,WordAction.EQ_BRANCH,WordAction.LT_BRANCH,WordAction.SWITCH4,WordAction.SWITCH8)+guard
+    if parallel_carry:
+        # Full16bit word arithmetic, with all input values retained. Prefix
+        # carry terms are disjoint: a later generate forces propagate=0,
+        # excluding every earlier generate. Their union is an exact free sum.
+        inverted=[b[i]+submode-2*builder.gate('and',[b[i],submode],'parallel-invert')for i in range(16)]
+        generates=[builder.gate('and',[a[i],inverted[i]],'parallel-generate')for i in range(16)]
+        propagates=[a[i]+inverted[i]-2*generates[i]for i in range(16)]
+        carries=[submode]
+        for end_bit in range(1,17):
+            terms=[builder.gate('and',[submode]+propagates[:end_bit],'parallel-initial-carry')]
+            terms.extend(builder.gate('and',[generates[j]]+propagates[j+1:end_bit],'parallel-carry')for j in range(end_bit))
+            carries.append(g.ffn([(1,one,sum(terms,Expr()))],name='parallel-carry-bit'))
+        sum_bits=[propagates[i]+carries[i]-2*builder.gate('and',[propagates[i],carries[i]],'parallel-sum')for i in range(16)]
+        less=one-carries[16]
+        equal=builder.gate('and',[one-a[i]-b[i]+2*builder.gate('and',[a[i],b[i]],'parallel-equal-bit')for i in range(16)],'parallel-equal')
+    else:
+        # One shared nibble adder handles add, subtract and order comparison.
+        carry=submode;sum_bits=[]
+        for offset in range(0,16,4):
+            av=sum(((1<<i)*a[offset+i]for i in range(4)),Expr());parts=[]
+            for i in range(4):
+                both=g.ffn([(1,b[offset+i],submode)],name='invert-product')
+                parts.append(b[offset+i]+submode-2*both)
+            bv=sum(((1<<i)*parts[i]for i in range(4)),Expr());total=av+bv+carry
+            carry=g.ffn([(1,one,total-15*one),(-1,one,total-16*one)],name='word-carry')
+            digit=total-16*carry
+            from ..control_packing import PackedBit
+            memo={};sum_bits.extend(PackedBit(digit,i,4).realize(builder,memo)for i in range(4))
+        less=one-carry;equal=builder.gate('not',[builder.gate('or',sum_bits,'difference-nonzero')],'word-equal')
     writing=op_any(WordAction.MOVE,WordAction.ADD,WordAction.SUB,WordAction.AND,WordAction.OR,WordAction.XOR,WordAction.SHR,WordAction.SHL,WordAction.SHR_LOOP,WordAction.SHL_LOOP)
     arithmetic=op_any(WordAction.ADD,WordAction.SUB)
     shift_right=op_any(WordAction.SHR,WordAction.SHR_LOOP)
@@ -279,7 +316,8 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     active_commit_clear=builder.gate('and',[run,valid,commit_clear],'active-commit-clear')
     active_clear=builder.gate('and',[run,valid,flags[WordAction.CLEAR_RF_ROW]],'active-row-clear')
     active_write=builder.gate('or',[active_core,active_load1,active_store,active_merge,active_append,active_commit_main,active_commit_clear,active_clear],'active-write')
-    field_flags=[builder.gate('and',matches(code[96:99],field),f'arena-field/{field}')for field in range(7)]
+    field_index=code[96:99]
+    field_flags=[builder.gate('and',matches(field_index,field),f'arena-field/{field}')for field in range(7)]
     loaded=[g.ffn([(1,D[16*field+i],field_flags[field])for field in range(7)],name='arena-word')for i in range(16)]
     result_from_row=builder.gate('or',[active_load0,publish],'result-from-row')
     next_result=[g.ffn([(1,selected[i],active_core),(1,loaded[i],result_from_row),(1,result[i],one-active_core-result_from_row)],name=f'result/{i}')for i in range(16)]
@@ -309,17 +347,38 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         else:value=old
         pending.append(value)
     zero=builder.gate('not',[builder.gate('or',a,'operand-nonzero')],'operand-zero')
-    failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false'),builder.gate('and',[flags[WordAction.NONZERO_BRANCH],zero],'zero-branch')],'branch-false')
-    inline_yes=builder.gate('and',[one-merging,code[93],one-failed_branch],'inline-yes-return')
-    inline_no=builder.gate('and',[one-merging,code[94],failed_branch],'inline-no-return')
+    guard_pass=Expr()
+    if bundled:
+        def byte_compare(word,bound,name):
+            high=builder.gate('or',word[8:],name+'-high')
+            same=[one-word[i]-bound[i]+2*builder.gate('and',[word[i],bound[i]],name+'-both')for i in range(8)]
+            smaller=sum((builder.gate('and',[one-word[i],bound[i]]+same[i+1:],name+'-smaller')for i in range(8)),Expr())
+            return builder.gate('and',[one-high]+same,name+'-equal'),builder.gate('and',[one-high,smaller],name+'-less')
+        comparisons=[(equal,less),byte_compare(B,code[40:48],'guard-second'),byte_compare(guard_third,code[62:70],'guard-third')]
+        answers=[]
+        for (eq,lt),offset in zip(comparisons,(26,48,70)):
+            base=g.ffn([(1,eq,one-code[offset+1]),(1,lt,code[offset+1])],name='guard-comparison')
+            answers.append(base+code[offset]-2*builder.gate('and',[base,code[offset]],'guard-invert'))
+        third_all=one-builder.gate('and',[code[105],one-answers[2]],'guard-third-all')
+        third_any=builder.gate('and',[code[105],answers[2]],'guard-third-any')
+        all_of=builder.gate('and',answers[:2]+[third_all],'guard-all')
+        any_of=builder.gate('or',answers[:2]+[third_any],'guard-any')
+        guard_pass=g.ffn([(1,all_of,one-code[106]),(1,any_of,code[106])],name='guard-result')
+    failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false'),builder.gate('and',[flags[WordAction.NONZERO_BRANCH],zero],'zero-branch')]+([builder.gate('and',[guard,one-guard_pass],'guard-false')]if bundled else[]),'branch-false')
+    yes_return=g.ffn([(1,code[107],guard),(1,code[93],one-guard)],name='guard-yes-return')if bundled else code[93]
+    no_return=g.ffn([(1,code[108],guard),(1,code[94],one-guard)],name='guard-no-return')if bundled else code[94]
+    inline_yes=builder.gate('and',[one-merging,yes_return,one-failed_branch],'inline-yes-return')
+    inline_no=builder.gate('and',[one-merging,no_return,failed_branch],'inline-no-return')
     returning=flags[WordAction.RETURN_HANDLER]+inline_yes+inline_no
     failed_branch=failed_branch-inline_no
-    capture_return=builder.gate('and',[one-merging,code[92]],'capture-inline-return')
+    capture_return=builder.gate('and',[one-merging,one-guard,code[92]],'capture-inline-return')
     setting_return=flags[WordAction.CALL_HANDLER]+capture_return
     capture_returning=builder.gate('and',[returning,capture_return],'inline-capture-returning')
     switch4=builder.gate('and',[flags[WordAction.SWITCH4],one-builder.gate('or',sum_bits[4:],'switch4-outside-page')],'switch4-in-page')
     switch8=builder.gate('and',[flags[WordAction.SWITCH8],one-builder.gate('or',sum_bits[8:],'switch8-outside-page')],'switch8-in-page')
-    following=[g.ffn([(1,code[58+i],one-failed_branch-returning-switch4-switch8),(1,code[74+i],failed_branch),(1,handler_return[i],returning-capture_returning),(1,code[96+i],capture_returning),(1,sum_bits[i]if i<4 else code[96+i],switch4),(1,sum_bits[i]if i<8 else code[96+i],switch8)],name='next-pc')for i in range(16)]
+    encoded_yes=select(guard,code[72:88],code[58:74],'guard-yes-pc')if bundled else code[58:74]
+    encoded_no=select(guard,code[88:104],code[74:90],'guard-no-pc')if bundled else code[74:90]
+    following=[g.ffn([(1,encoded_yes[i],one-failed_branch-returning-switch4-switch8),(1,encoded_no[i],failed_branch),(1,handler_return[i],returning-capture_returning),(1,code[96+i],capture_returning),(1,sum_bits[i]if i<4 else code[96+i],switch4),(1,sum_bits[i]if i<8 else code[96+i],switch8)],name='next-pc')for i in range(16)]
     following=select(merging,code[95:111],following,'next-field-pc')
     known=sum(flags.values(),Expr())
     internal_fault=builder.gate('and',[run,builder.gate('or',[one-valid,one-known],'bad-control')],'internal-fault')
@@ -378,17 +437,17 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         g.ffn([(1,code[74+bit],flags[WordAction.CALL_HANDLER]),(1,code[96+bit],capture_return),(-1,target,setting_return)],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
     allocation=allocate(g,None,set(physical),intermediate)
     scratch=fixed.next;feature_count=len(physical)
-    mapping={d:slot-13 for d,slot in physical.items()}
+    mapping={d:slot-fixed.prefix for d,slot in physical.items()}
     for d,slot in allocation.slots.items():
-        if d not in mapping:mapping[d]=scratch+slot-feature_count-13
-    high=max(mapping.values(),default=0)+14
-    if high>hidden:raise ValueError(f'compact module exceeds H768: needs{high} channels')
-    allocation.slots=mapping;layout=Layout(hidden=hidden,m=12,slots=mapping)
+        if d not in mapping:mapping[d]=scratch+slot-feature_count-fixed.prefix
+    high=max(mapping.values(),default=0)+fixed.prefix+1
+    if high>hidden:raise ValueError(f'compact module exceeds H{hidden}: needs{high} channels')
+    allocation.slots=mapping;layout=Layout(hidden=hidden,m=hidden//64,slots=mapping)
     body=module_start+datapath_layers
     if g.n_layers()>body:raise ValueError(f'datapath exceeds{datapath_layers} layers: graph{g.n_layers()} body{body}')
     budgeted_layers=layers
     persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')),[]))
-    clear=[slot for slot in range(12,hidden)if slot not in persistent]
+    clear=[slot for slot in range(layout.m,hidden)if slot not in persistent]
     if compact_attention:
         # Remove only the input-independent gap between the last scheduled
         # checker operation and scratch clearing. Keep a final inert layer:
@@ -399,6 +458,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     layer_types=['linear_attention'if not compact_attention or i in active_layers else'full_attention'for i in range(layers)]
     expected=sum(3*hidden*intermediate+(644*hidden+1666 if kind=='linear_attention'else 12*hidden+4)for kind in layer_types)+129*hidden
     if expected>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
+    if plan_only:return dict(logical_dense_parameters=expected,hidden=hidden,intermediate=intermediate,layers=layers,graph_layers=g.n_layers(),rom_records=len(records),rom_layers=rom_layers,allocated_channels=high,active_gdn_layers=len(active_layers),guard_bundles=bundled,parallel_carry=parallel_carry,planning_only=True)
     config=Qwen3_5TextConfig(hidden_size=hidden,intermediate_size=intermediate,num_hidden_layers=layers,layer_types=layer_types,vocab_size=64,linear_key_head_dim=128,linear_value_head_dim=128,linear_num_key_heads=1,linear_num_value_heads=1,linear_conv_kernel_dim=4,num_attention_heads=1,num_key_value_heads=1,head_dim=2,hidden_act='silu',tie_word_embeddings=False,rope_parameters=dict(rope_type='default',rope_theta=10000000,partial_rotary_factor=1.,mrope_section=[1,0,0],mrope_interleaved=True))
     prior=torch.get_default_dtype()
     try:
@@ -474,6 +534,6 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     if compact_attention:model.set_attn_implementation('eager')
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
-    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-13,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
+    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
+    report.update(parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
     return StockDatapath(model,fixed,layout,report)

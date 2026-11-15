@@ -12,17 +12,17 @@ from leanputer.kernel.traversal_machine import MachineConfig
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--steps',type=int,default=128);p.add_argument('--report',type=Path,required=True);p.add_argument('--compile-stock',action='store_true');p.add_argument('--all-gdn',action='store_true');p.add_argument('--check-native-pcs',action='store_true');p.add_argument('--save-prefix',type=Path);p.add_argument('--compare-prefix',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--steps',type=int,default=128);p.add_argument('--report',type=Path,required=True);p.add_argument('--compile-stock',action='store_true');p.add_argument('--all-gdn',action='store_true');p.add_argument('--check-native-pcs',action='store_true');p.add_argument('--profile-kernels',type=Path);p.add_argument('--bundled-controls',action='store_true');p.add_argument('--save-prefix',type=Path);p.add_argument('--compare-prefix',type=Path);a=p.parse_args()
     if not 1<=a.steps<=512:raise ValueError('diagnostic prefix is bounded to512forwards')
-    cfg=MachineConfig(**json.loads(Path('benchmarks/kernel-full-source-stock/config.json').read_text()));c,addresses=capture(cfg);program=NativeControl(ControlStore(c,role_dispatch=True),addresses)
+    cfg=MachineConfig(**json.loads(Path('benchmarks/kernel-full-source-stock/config.json').read_text()));c,addresses=capture(cfg);program=NativeControl(ControlStore(c,role_dispatch=True,mode_dispatch=a.bundled_controls),addresses,bundle_guards=a.bundled_controls)
     print(json.dumps(dict(event='compiled',control=program.report)),flush=True)
-    chip=build(program.records,rom_layout='byte_pages',compact_attention=not a.all_gdn);chip.model.cuda();docs=[json.loads(line)for line in Path('benchmarks/kernel-full-source-stock/source.jsonl').read_text().splitlines()]
+    chip=build(program.records,rom_layout='byte_pages',compact_attention=not a.all_gdn,hidden=960 if a.bundled_controls else 768,datapath_layers=45 if a.bundled_controls else 35,parallel_carry=a.bundled_controls);chip.model.cuda();docs=[json.loads(line)for line in Path('benchmarks/kernel-full-source-stock/source.jsonl').read_text().splitlines()]
     print(json.dumps(dict(event='model-built',model=chip.report)),flush=True)
     packets=syntax_packets(chip,cfg,docs);cache=chip.new_cache();masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(2,1,dtype=torch.long,device='cuda')
     with torch.inference_mode():
         for first in range(0,packets.shape[1],32):
             embeddings=chip.embeddings(packets[:,first:first+32]);out=chip.model(inputs_embeds=embeddings,past_key_values=cache,use_cache=True,position_ids=torch.zeros(embeddings.shape[:2],dtype=torch.long,device='cuda'),attention_mask=masks);cache=out.past_key_values
-        state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13));initial=snapshot(cache,state)
+        state=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix));initial=snapshot(cache,state)
         print(json.dumps(dict(event='prefilled')),flush=True)
         torch.cuda.synchronize();started=time.perf_counter();pc_history=[]
         for _ in range(a.steps):
@@ -68,6 +68,19 @@ def main():
         compiled_stock_operations=a.compile_stock,immutable_weight_freezing=bool(torch._inductor.config.freezing)if a.compile_stock else False,
         exact_external_native_prefix=reference_match,exact_native_pc_boundaries=native_pc_boundaries,
         execution='torch.cuda.CUDAGraph of stock Qwen3_5ForCausalLM.forward/cache plus identity feedback; optional standard torch.compile with eager precision casts')
+    if a.profile_kernels:
+        # Bounded standard stock replay only; excludes compile/setup/prefill.
+        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,torch.profiler.ProfilerActivity.CUDA])as prof:
+            for _ in range(8):executor.replay()
+            torch.cuda.synchronize()
+        prof.export_chrome_trace(str(a.profile_kernels))
+        trace=json.loads(a.profile_kernels.read_text())
+        from collections import Counter
+        durations=Counter();counts=Counter()
+        for event in trace['traceEvents']:
+            if event.get('cat')=='kernel'and event.get('ph')=='X':
+                durations[event['name']]+=event['dur'];counts[event['name']]+=1
+        report['post_prefix_kernel_profile']=dict(forwards=8,kernels=sum(counts.values()),summed_kernel_us=sum(durations.values()),top=[dict(name=name,total_us=value,count=counts[name])for name,value in durations.most_common(20)],trace=str(a.profile_kernels),excluded_from_prefix_timing=True)
     a.report.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items()if k!='model'}),flush=True)
 
 

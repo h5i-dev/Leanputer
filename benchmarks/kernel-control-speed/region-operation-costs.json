@@ -1,0 +1,1786 @@
+[
+  {
+    "name": "current-general-source-empty-claim-id",
+    "semantic_steps": 1316,
+    "forwards": 225506,
+    "region_operations": {
+      "bootstrap": {
+        "JUMP": 1
+      },
+      "source-prologue": {
+        "AND": 5264,
+        "MOVE": 7878,
+        "SUB": 2612,
+        "HEAP_ROW_READ": 2632,
+        "FRAME_ROW_READ": 2632,
+        "DECLARATION_ROW_READ": 2632,
+        "EQ_BRANCH": 7837,
+        "LT_BRANCH": 7810,
+        "ADD": 2589,
+        "CONTEXT_ROW_READ": 2632
+      },
+      "guard-initialization": {
+        "EQ_BRANCH": 11524,
+        "MOVE": 5438,
+        "NONZERO_BRANCH": 3948,
+        "LT_BRANCH": 35024,
+        "SWITCH8": 2153,
+        "ADD": 522,
+        "AND": 348,
+        "SWITCH4": 231
+      },
+      "preflight": {
+        "EQ_BRANCH": 1316,
+        "NONZERO_BRANCH": 10528,
+        "SUB": 1316,
+        "MERGE_FIELDS3": 2632
+      },
+      "body": {
+        "LT_BRANCH": 55422,
+        "SWITCH8": 1316,
+        "EQ_BRANCH": 4956,
+        "SUB": 376,
+        "AND": 1200,
+        "OR": 3422,
+        "MOVE": 2104,
+        "ADD": 755,
+        "MERGE_FIELDS3": 9780,
+        "SWITCH4": 438,
+        "RETURN_HANDLER": 698,
+        "CALL_HANDLER": 77,
+        "NONZERO_BRANCH": 41
+      },
+      "commit-tail": {
+        "NONZERO_BRANCH": 5264,
+        "HEAP_WRITE": 616,
+        "CLEAR_RF_ROW": 3948,
+        "COMMIT_FIELDS": 13728,
+        "FRAME_WRITE": 1848,
+        "CONTEXT_WRITE": 17,
+        "PUBLISH_RESULT": 1
+      }
+    },
+    "hot": [
+      {
+        "pc": 39207,
+        "forwards": 13728,
+        "region": "commit-tail",
+        "action": "COMMIT_FIELDS",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39138,
+        "forwards": 2632,
+        "region": "source-prologue",
+        "action": "HEAP_ROW_READ",
+        "a": {
+          "physical_word": 4042
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39139,
+        "forwards": 2632,
+        "region": "source-prologue",
+        "action": "FRAME_ROW_READ",
+        "a": {
+          "physical_word": 4043
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39140,
+        "forwards": 2632,
+        "region": "source-prologue",
+        "action": "DECLARATION_ROW_READ",
+        "a": {
+          "physical_word": 4044
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39189,
+        "forwards": 2632,
+        "region": "source-prologue",
+        "action": "CONTEXT_ROW_READ",
+        "a": {
+          "physical_word": 4042
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39131,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "main": "x"
+        },
+        "b": {
+          "literal": 511
+        }
+      },
+      {
+        "pc": 39132,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4056
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39133,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "SUB",
+        "a": {
+          "main": "sp"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 39134,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "physical_word": 3505
+        },
+        "b": {
+          "literal": 31
+        }
+      },
+      {
+        "pc": 39135,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4057
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39136,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "main": "raw_index"
+        },
+        "b": {
+          "literal": 3
+        }
+      },
+      {
+        "pc": 39137,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4058
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39187,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 116
+        }
+      },
+      {
+        "pc": 39188,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 116
+        }
+      },
+      {
+        "pc": 39141,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "physical_word": 3505
+        },
+        "b": {
+          "literal": 7
+        }
+      },
+      {
+        "pc": 39142,
+        "forwards": 1316,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4059
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39130,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39129,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "fuel"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39127,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39126,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39125,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "free"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39124,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 512
+        },
+        "b": {
+          "main": "free"
+        }
+      },
+      {
+        "pc": 39123,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 32
+        },
+        "b": {
+          "main": "sp"
+        }
+      },
+      {
+        "pc": 39122,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "count"
+        }
+      },
+      {
+        "pc": 39121,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "ctx"
+        }
+      },
+      {
+        "pc": 39120,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 254
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39119,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 120
+        },
+        "b": {
+          "main": "task"
+        }
+      },
+      {
+        "pc": 39118,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "bounded"
+        }
+      },
+      {
+        "pc": 39117,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_open"
+        }
+      },
+      {
+        "pc": 39116,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_fold"
+        }
+      },
+      {
+        "pc": 39115,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "typing_active"
+        }
+      },
+      {
+        "pc": 39114,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "core_operation"
+        }
+      },
+      {
+        "pc": 39113,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "occurrence_internal"
+        }
+      },
+      {
+        "pc": 39112,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "occurrence_found"
+        }
+      },
+      {
+        "pc": 39111,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_reuse"
+        }
+      },
+      {
+        "pc": 39110,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "reuse_whnf"
+        }
+      },
+      {
+        "pc": 39109,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_scope"
+        }
+      },
+      {
+        "pc": 39108,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "env_ready"
+        }
+      },
+      {
+        "pc": 39107,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_infer"
+        }
+      },
+      {
+        "pc": 39106,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "local_base"
+        }
+      },
+      {
+        "pc": 39105,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "vec_changed"
+        }
+      },
+      {
+        "pc": 39104,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 2
+        },
+        "b": {
+          "main": "pending_compare"
+        }
+      },
+      {
+        "pc": 39103,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "order_same_base"
+        }
+      },
+      {
+        "pc": 39102,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "open_tag"
+        },
+        "b": {
+          "literal": 6
+        }
+      },
+      {
+        "pc": 39100,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "fold_tag"
+        },
+        "b": {
+          "literal": 6
+        }
+      },
+      {
+        "pc": 39097,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39096,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39094,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 13
+        }
+      },
+      {
+        "pc": 39095,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 13
+        }
+      },
+      {
+        "pc": 39069,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "SWITCH8",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 38677,
+        "forwards": 1316,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38675,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 38674,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38672,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3298
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38671,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3299
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38669,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38668,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3298
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38666,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38664,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "SUB",
+        "a": {
+          "main": "fuel"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 38663,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38661,
+        "forwards": 1316,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3299
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38660,
+        "forwards": 1316,
+        "region": "body",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 39190,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4085
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39195,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4086
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39202,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4090
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39204,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39205,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39206,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39208,
+        "forwards": 1316,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "main": "mode"
+        }
+      }
+    ]
+  },
+  {
+    "name": "current-source-invalid-target",
+    "semantic_steps": 1355,
+    "forwards": 230425,
+    "region_operations": {
+      "bootstrap": {
+        "JUMP": 1
+      },
+      "source-prologue": {
+        "AND": 5420,
+        "MOVE": 8113,
+        "SUB": 2691,
+        "HEAP_ROW_READ": 2710,
+        "FRAME_ROW_READ": 2710,
+        "DECLARATION_ROW_READ": 2710,
+        "EQ_BRANCH": 8074,
+        "LT_BRANCH": 8048,
+        "ADD": 2669,
+        "CONTEXT_ROW_READ": 2710
+      },
+      "guard-initialization": {
+        "EQ_BRANCH": 11761,
+        "MOVE": 5590,
+        "NONZERO_BRANCH": 4065,
+        "LT_BRANCH": 36039,
+        "SWITCH8": 2182,
+        "ADD": 510,
+        "AND": 340,
+        "SWITCH4": 224
+      },
+      "preflight": {
+        "EQ_BRANCH": 1355,
+        "NONZERO_BRANCH": 10840,
+        "SUB": 1355,
+        "MERGE_FIELDS3": 2710
+      },
+      "body": {
+        "LT_BRANCH": 55728,
+        "SWITCH8": 1355,
+        "EQ_BRANCH": 4955,
+        "SUB": 381,
+        "AND": 1242,
+        "OR": 3600,
+        "MOVE": 2128,
+        "ADD": 753,
+        "MERGE_FIELDS3": 10006,
+        "SWITCH4": 424,
+        "RETURN_HANDLER": 745,
+        "CALL_HANDLER": 79,
+        "NONZERO_BRANCH": 39
+      },
+      "commit-tail": {
+        "NONZERO_BRANCH": 5420,
+        "HEAP_WRITE": 688,
+        "CLEAR_RF_ROW": 4065,
+        "COMMIT_FIELDS": 14071,
+        "FRAME_WRITE": 1902,
+        "CONTEXT_WRITE": 16,
+        "PUBLISH_RESULT": 1
+      }
+    },
+    "hot": [
+      {
+        "pc": 39207,
+        "forwards": 14071,
+        "region": "commit-tail",
+        "action": "COMMIT_FIELDS",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39138,
+        "forwards": 2710,
+        "region": "source-prologue",
+        "action": "HEAP_ROW_READ",
+        "a": {
+          "physical_word": 4042
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39139,
+        "forwards": 2710,
+        "region": "source-prologue",
+        "action": "FRAME_ROW_READ",
+        "a": {
+          "physical_word": 4043
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39140,
+        "forwards": 2710,
+        "region": "source-prologue",
+        "action": "DECLARATION_ROW_READ",
+        "a": {
+          "physical_word": 4044
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39189,
+        "forwards": 2710,
+        "region": "source-prologue",
+        "action": "CONTEXT_ROW_READ",
+        "a": {
+          "physical_word": 4042
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39131,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "main": "x"
+        },
+        "b": {
+          "literal": 511
+        }
+      },
+      {
+        "pc": 39132,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4056
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39133,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "SUB",
+        "a": {
+          "main": "sp"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 39134,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "physical_word": 3505
+        },
+        "b": {
+          "literal": 31
+        }
+      },
+      {
+        "pc": 39135,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4057
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39136,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "main": "raw_index"
+        },
+        "b": {
+          "literal": 3
+        }
+      },
+      {
+        "pc": 39137,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4058
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39187,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 116
+        }
+      },
+      {
+        "pc": 39188,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 116
+        }
+      },
+      {
+        "pc": 39141,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "AND",
+        "a": {
+          "physical_word": 3505
+        },
+        "b": {
+          "literal": 7
+        }
+      },
+      {
+        "pc": 39142,
+        "forwards": 1355,
+        "region": "source-prologue",
+        "action": "MOVE",
+        "a": {
+          "physical_word": 4059
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39130,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39129,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "fuel"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39127,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39126,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39125,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "free"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 39124,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 512
+        },
+        "b": {
+          "main": "free"
+        }
+      },
+      {
+        "pc": 39123,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 32
+        },
+        "b": {
+          "main": "sp"
+        }
+      },
+      {
+        "pc": 39122,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "count"
+        }
+      },
+      {
+        "pc": 39121,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "ctx"
+        }
+      },
+      {
+        "pc": 39120,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 254
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39119,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 120
+        },
+        "b": {
+          "main": "task"
+        }
+      },
+      {
+        "pc": 39118,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "bounded"
+        }
+      },
+      {
+        "pc": 39117,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_open"
+        }
+      },
+      {
+        "pc": 39116,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_fold"
+        }
+      },
+      {
+        "pc": 39115,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "typing_active"
+        }
+      },
+      {
+        "pc": 39114,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "core_operation"
+        }
+      },
+      {
+        "pc": 39113,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "occurrence_internal"
+        }
+      },
+      {
+        "pc": 39112,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "occurrence_found"
+        }
+      },
+      {
+        "pc": 39111,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_reuse"
+        }
+      },
+      {
+        "pc": 39110,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "reuse_whnf"
+        }
+      },
+      {
+        "pc": 39109,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_scope"
+        }
+      },
+      {
+        "pc": 39108,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "env_ready"
+        }
+      },
+      {
+        "pc": 39107,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "pending_infer"
+        }
+      },
+      {
+        "pc": 39106,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 8
+        },
+        "b": {
+          "main": "local_base"
+        }
+      },
+      {
+        "pc": 39105,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "vec_changed"
+        }
+      },
+      {
+        "pc": 39104,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 2
+        },
+        "b": {
+          "main": "pending_compare"
+        }
+      },
+      {
+        "pc": 39103,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "order_same_base"
+        }
+      },
+      {
+        "pc": 39102,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "open_tag"
+        },
+        "b": {
+          "literal": 6
+        }
+      },
+      {
+        "pc": 39100,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "fold_tag"
+        },
+        "b": {
+          "literal": 6
+        }
+      },
+      {
+        "pc": 39097,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39096,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39094,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 13
+        }
+      },
+      {
+        "pc": 39095,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 13
+        }
+      },
+      {
+        "pc": 39069,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "SWITCH8",
+        "a": {
+          "main": "task"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 38677,
+        "forwards": 1355,
+        "region": "guard-initialization",
+        "action": "MOVE",
+        "a": {
+          "literal": 1
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38675,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "EQ_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "literal": 0
+        }
+      },
+      {
+        "pc": 38674,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38672,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3298
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38671,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3299
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38669,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38668,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3298
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38666,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3296
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38664,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "SUB",
+        "a": {
+          "main": "fuel"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 38663,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3297
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38661,
+        "forwards": 1355,
+        "region": "preflight",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 3299
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 38660,
+        "forwards": 1355,
+        "region": "body",
+        "action": "LT_BRANCH",
+        "a": {
+          "main": "mode"
+        },
+        "b": {
+          "literal": 1
+        }
+      },
+      {
+        "pc": 39190,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4085
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39195,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4086
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39202,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "physical_word": 4090
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39204,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39205,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39206,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "CLEAR_RF_ROW",
+        "a": {
+          "literal": 0
+        },
+        "b": {
+          "main": "mode"
+        }
+      },
+      {
+        "pc": 39208,
+        "forwards": 1355,
+        "region": "commit-tail",
+        "action": "NONZERO_BRANCH",
+        "a": {
+          "main": "status"
+        },
+        "b": {
+          "main": "mode"
+        }
+      }
+    ]
+  }
+]

@@ -8,8 +8,8 @@ from leanputer.kernel.traversal_machine import MachineConfig
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--config',type=Path,required=True);p.add_argument('--source',type=Path,required=True);p.add_argument('--report',type=Path,required=True);p.add_argument('--device',default='cuda');p.add_argument('--max-forwards',type=int,default=512);p.add_argument('--execution',choices=['eager','cuda_graph'],default='cuda_graph');p.add_argument('--offline-check',action='store_true');p.add_argument('--no-compile-stock',action='store_true');a=p.parse_args()
-    cfg=MachineConfig(**json.loads(a.config.read_text()));compiler,addresses=capture(cfg);store=ControlStore(compiler,role_dispatch=True);program=NativeControl(store,addresses)
+    p=argparse.ArgumentParser();p.add_argument('--config',type=Path,required=True);p.add_argument('--source',type=Path,required=True);p.add_argument('--report',type=Path,required=True);p.add_argument('--device',default='cuda');p.add_argument('--max-forwards',type=int,default=512);p.add_argument('--execution',choices=['eager','cuda_graph'],default='cuda_graph');p.add_argument('--offline-check',action='store_true');p.add_argument('--no-compile-stock',action='store_true');p.add_argument('--bundled-controls',action='store_true');a=p.parse_args()
+    cfg=MachineConfig(**json.loads(a.config.read_text()));compiler,addresses=capture(cfg);store=ControlStore(compiler,role_dispatch=True,mode_dispatch=a.bundled_controls);program=NativeControl(store,addresses,bundle_guards=a.bundled_controls)
     def progress(event):print(json.dumps(event),flush=True)
     progress(dict(event='compiled',control=program.report))
     # Source is parsed only AFTER the immutable full control has been compiled.

@@ -33,7 +33,7 @@ class Value:
 
 class NativeControl:
     """Bounded two-limb lowering, arena shadowing and fixed source controller."""
-    def __init__(self,store,addresses):
+    def __init__(self,store,addresses,bundle_guards=False):
         self.store=store;self.pending=[];self.labels={};self.serial=0;self.mask_cursor=0;self.pending_regions=[];self.region='bootstrap'
         self.tables=[]
         self.canonical_widths={i:16 for i in range(17)};self.read_masks_elided=0;self.write_masks_elided=0
@@ -121,6 +121,10 @@ class NativeControl:
         # Thread static depth-one handler calls through the first useful
         # operation. Spare CoreRecord flags capture the return PC, or return
         # along a selected edge; neither consumes a separate model forward.
+        guard_report={}
+        if bundle_guards:
+            from .stock_guard import bundle_conditions
+            self.records,guard_report=bundle_conditions(self.records)
         returns={pc for pc,r in enumerate(self.records)if isinstance(r,CoreRecord)and r.action==O.RETURN_HANDLER}
         branches={O.EQ_BRANCH,O.LT_BRANCH,O.NONZERO_BRANCH}
         direct={O.MOVE,O.ADD,O.SUB,O.AND,O.OR,O.XOR,O.SHR,O.SHL,O.CLEAR_RF_ROW}|branches
@@ -133,16 +137,21 @@ class NativeControl:
             if isinstance(r,CoreRecord)and r.action in direct:
                 ry=r.yes in returns;rn=r.action in branches and r.no in returns
                 r=replace(r,return_yes=ry,return_no=rn);return_edges+=int(ry)+int(rn)
+            if bundle_guards:
+                from .stock_guard import GuardRecord
+                if isinstance(r,GuardRecord):
+                    ry=r.yes in returns;rn=r.no in returns
+                    r=replace(r,return_yes=ry,return_no=rn);return_edges+=int(ry)+int(rn)
             threaded.append(r)
         self.records=threaded
-        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,
+        self.report=dict(format='leanputer.native-checker-control.v1',input_independent=True,guard_bundling=guard_report,
             typed_records=len(store.records),native_records=len(self.records),pc16_encoding_met=len(self.records)<=65536,
             compiler_tail_transfers_removed=tails_removed,handler_call_first_operations_folded=calls_folded,handler_return_edges_folded=return_edges,
             compiler_duplicate_records_removed=removed,
             handler_call_depth_bound=1,handler_control_records_checked=len(checked),
             canonical_temporary_words_proven=len(self.canonical_widths),narrow_read_masks_elided=self.read_masks_elided,narrow_write_masks_elided=self.write_masks_elided,
             indexed_dispatch_tables=len(tables),indexed_dispatch_entries=sum(size for size,entries in tables),indexed_dispatch_padding_records=padding,native_body_records=body_count,
-            actions=dict(Counter(r.action.name if isinstance(r,CoreRecord)else'MERGE_FIELDS3'for r in self.records)),
+            actions=dict(Counter(r.action.name if hasattr(r,'action')else'MERGE_FIELDS3'for r in self.records)),
             rule_families=len(store.compiler.families),source_effects=len(store.compiler.effects),
             semantic_bounds=dict(word_bits=cfg.word_bits,heap=cfg.heap,stack=cfg.stack,context=cfg.context,constants=cfg.constants,fuel=cfg.fuel),
             source_effects_mapped=len(store.covered),temporary_words_available=696,source_port_padding_words=11,

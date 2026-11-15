@@ -7,6 +7,7 @@ from copy import deepcopy
 from collections import Counter
 from .stock_control import main_address
 from .stock_datapath import CoreRecord,FieldRecord,WordAction as O
+from .stock_guard import GuardRecord
 
 
 class NativeControlReference:
@@ -30,7 +31,15 @@ class NativeControlReference:
 
     def step(self):
         r=self.program.records[self.pc];self.records+=1;following=r.yes;forwards=1;committed=False
-        if isinstance(r,FieldRecord):
+        if isinstance(r,GuardRecord):
+            values=[]
+            for address,value,op in r.items:
+                word=self.read(address);values.append((word==value,word!=value,word<value,word>=value)[op])
+            passed=any(values)if r.any_of else all(values);following=r.yes if passed else r.no
+            if r.return_yes if passed else r.return_no:
+                if self.return_pc is None:raise AssertionError('bundled guard return without handler call')
+                following=self.return_pc;self.return_pc=None
+        elif isinstance(r,FieldRecord):
             forwards=0
             for dest,value,literal in r.items:
                 value=value if literal else self.read(value);logical=dest>>4;slot=dest&7;shadow=dest|8

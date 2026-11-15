@@ -1,3 +1,38 @@
+# Latency diagnosis and experimental bundles (not selected)
+
+The completed48.29M/800.13s baseline remains the validated source result below.
+No full source run was repeated. A bounded32forward stock sample plus8profile
+replays measured11096CUDA kernels (~1387perforward); GEMM/split-K reductions,
+attention/cache and pointwise launches dominate. The native negative case spends
+55728forwards on body LT dispatch and36039on validation LT checks. Detailed
+region/operation counts and the standard PyTorch kernel profile are preserved.
+
+An input-independent global mode partition, followed by bundles of2or3pure
+word comparisons, maps all73families/6454effects and matches every source state
+OFFLINE at175953/180686forwards (50960records). Full16bit operand values and both
+continuations remain; byte-immediate encoding limits fall back to the original
+word comparisons. Declaration names/shapes/counts are not specialization keys.
+
+The stock bundle has three RF read ports, AND/OR groups, conditional returns,
+parallel full-word carry, and RF reads scheduled before arena lanes reuse them.
+Wider stock configs retain exact RMS ballast ratio m/H=1/64; logical parameters
+include all dense zeros. The complete experimental model actually emits/loads
+**64,099,378dense parameters**, H960/I256/L70,905allocatedchannels. Its256forward
+original-source prefix passes ALL eager/replay hidden/cache-tensor/logit checks
+and146native-PC boundaries per item after inference. Rate253.52forwards/s,
+setup126.19s. The longer reference count projects to~713s of decoding: **insufficient
+for the seconds-scale requirement, so this is opt-in, not the selected backend**.
+There is no full stock source acceptance claim for this candidate.
+
+The native source driver exposes --bundled-controls for bounded development; its
+default retains the validated48.29M layout. Plan-only emission counts the actual
+whole graph/ROM/bounds before weight allocation. Standard Torch Triton GEMM
+autotuning hit its240s cap before producing timing and is not selected/extended.
+This is not a performance delivery claim. Further coarsening of source/validation
+operations is required; minor gains and repeated13minute checks do not meet the goal.
+
+Earlier evidence follows.
+
 # Completed small-model source check; latency NOT delivered
 
 The corrected run at **d3250a907f19948f46f414887ea2374e2dfc3b71** completed with

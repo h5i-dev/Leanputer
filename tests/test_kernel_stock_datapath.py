@@ -21,13 +21,47 @@ class SharedDatapathTest(unittest.TestCase):
         masks={'full_attention':None,'linear_attention':None}
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
-            state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+            state=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix))
             for _ in range(4):
                 out=chip.model(inputs_embeds=state,past_key_values=out.past_key_values,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 state=out.hidden_states[-2]
         word=lambda bits:sum(int(v)<<i for i,v in enumerate(bits))
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
+
+    def test_parallel_word_carry_wrap_borrow_and_rf_coherence(self):
+        self.check_core('byte_pages',parallel_carry=True,hidden=896)
+
+    def test_bundled_guards_read_three_ports_and_preserve_full_word_bounds(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        from leanputer.kernel.stock_guard import GuardRecord
+        program=[CoreRecord(O.JUMP,yes=124)for _ in range(128)]
+        program[0]=GuardRecord(((rf(0),255,2),(rf(900),2,3),(rf(1800),1,1)),121,122)
+        program[121]=CoreRecord(O.MOVE,dest=rf(3400),literal_a=True,immediate=1,yes=123)
+        program[122]=CoreRecord(O.MOVE,dest=rf(3400),literal_a=True,immediate=0,yes=123)
+        program[123]=GuardRecord(((rf(0),255,3),(rf(1800),1,0)),124,125,any_of=True)
+        program[124]=CoreRecord(O.STOP_OK,yes=124)
+        program[125]=CoreRecord(O.STOP_INVALID,yes=125)
+        chip=build(program,hidden=960,rom_layout='byte_pages',compact_attention=True,parallel_carry=True,datapath_layers=45)
+        inputs=((0,2,0),(255,2,0),(256,2,0),(65535,2,0),(1,1,0),(1,2,1));packets=[]
+        for row,index in((0,0),(900//7,1),(1800//7,2)):
+            batch=[]
+            for values in inputs:
+                words=[0]*7;words[(0,900,1800)[index]%7]=values[index]
+                batch.append(chip.packet(boot=[1],pending_row=[row>>i&1 for i in range(9)],pending_enable=[1],pending_payload=[v>>i&1 for v in words for i in range(16)]+[0]*14))
+            packets.append(torch.stack(batch))
+        masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(len(inputs),1,dtype=torch.long)
+        with torch.no_grad():
+            boot=chip.embeddings(torch.stack(packets,dim=1));out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(boot.shape[:2],dtype=torch.long),attention_mask=masks)
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(len(inputs),1,chip.slots.next-chip.slots.prefix));history=[]
+            for _ in range(4):
+                out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks);state=out.hidden_states[-2]
+                history.append(out.logits[:,0].float().tolist())
+        word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
+        self.assertEqual([word(v[:16])for v in history[0]],[121,122,122,122,122,122])
+        self.assertEqual([word(v[:16])for v in history[2]],[125,124,124,124,125,124])
+        self.assertEqual([word(v[16:32])for v in history[3]],[2,1,1,1,2,1])
 
     def test_threaded_calls_capture_and_return_on_both_branch_edges(self):
         import torch
@@ -44,7 +78,7 @@ class SharedDatapathTest(unittest.TestCase):
         masks={'full_attention':None,'linear_attention':None};positions=torch.zeros(4,1,dtype=torch.long)
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),past_key_values=chip.new_cache(),use_cache=True,position_ids=positions,attention_mask=masks)
-            cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-13))
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(4,1,chip.slots.next-chip.slots.prefix))
             history=[]
             for _ in range(7):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks)
@@ -79,7 +113,7 @@ class SharedDatapathTest(unittest.TestCase):
         positions=torch.zeros(len(inputs),1,dtype=torch.long)
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),past_key_values=chip.new_cache(),use_cache=True,position_ids=positions,attention_mask=masks)
-            cache=out.past_key_values;state=chip.embeddings(torch.zeros(len(inputs),1,chip.slots.next-13))
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(len(inputs),1,chip.slots.next-chip.slots.prefix))
             for _ in range(7):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=positions,attention_mask=masks)
                 state=out.hidden_states[-2]
@@ -107,7 +141,7 @@ class SharedDatapathTest(unittest.TestCase):
         masks={'full_attention':None,'linear_attention':None}
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(payloads)[:,None]),use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
-            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix))
             for _ in range(20):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 cache=out.past_key_values;state=out.hidden_states[-2]
@@ -141,7 +175,7 @@ class SharedDatapathTest(unittest.TestCase):
         with torch.no_grad():
             boot=chip.embeddings(torch.stack(packets,dim=1))
             out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
-            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix))
             for _ in range(46):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 cache=out.past_key_values;state=out.hidden_states[-2]
@@ -193,7 +227,7 @@ class SharedDatapathTest(unittest.TestCase):
         with torch.no_grad():
             boot=chip.embeddings(torch.stack(packets,dim=1))
             out=chip.model(inputs_embeds=boot,past_key_values=chip.new_cache(),use_cache=True,position_ids=torch.zeros(2,len(packets),dtype=torch.long),attention_mask=masks)
-            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+            cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix))
             for _ in range(30):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 cache=out.past_key_values;state=out.hidden_states[-2]
@@ -216,14 +250,14 @@ class SharedDatapathTest(unittest.TestCase):
                 self.assertTrue(all(v==1 for values_row in values for v in values_row[112:]))
         print(chip.report,flush=True)
 
-    def check_core(self,rom_layout):
+    def check_core(self,rom_layout,**options):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address
         program=[CoreRecord(O.MOVE,dest=rf_address(2603),a=rf_address(1),yes=1),CoreRecord(O.ADD,dest=rf_address(2604),a=rf_address(2603),b=rf_address(900),yes=2),CoreRecord(O.EQ_BRANCH,a=rf_address(2604),b=rf_address(600),yes=3,no=7),CoreRecord(O.SUB,dest=rf_address(2605),a=rf_address(2604),b=rf_address(900),yes=4),CoreRecord(O.EQ_BRANCH,a=rf_address(2605),b=rf_address(1),yes=5,no=7),CoreRecord(O.LT_BRANCH,a=rf_address(900),b=rf_address(1),yes=6,no=7),CoreRecord(O.STOP_OK,yes=6),CoreRecord(O.STOP_INVALID,yes=7)]
         if rom_layout=='byte_pages':
             from dataclasses import replace
             program=[CoreRecord(O.JUMP,yes=127)]+[CoreRecord(O.STOP_INVALID,yes=i)for i in range(1,127)]+[replace(r,yes=r.yes+127,no=r.no+127)for r in program]
-        chip=build(program,rom_layout=rom_layout);self.assertLessEqual(chip.report['logical_dense_parameters'],100000000)
+        chip=build(program,rom_layout=rom_layout,**options);self.assertLessEqual(chip.report['logical_dense_parameters'],100000000)
         packets=[]
         for row in(0,128,85):
             batch=[]
@@ -233,7 +267,7 @@ class SharedDatapathTest(unittest.TestCase):
                 data += [0]*14
                 batch.append(chip.packet(boot=[1],pending_row=[(row>>bit)&1 for bit in range(9)],pending_enable=[1],pending_payload=data))
             packets.append(torch.stack(batch))
-        initial=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+        initial=chip.embeddings(torch.zeros(2,1,chip.slots.next-chip.slots.prefix))
         with torch.no_grad():
             boot=chip.embeddings(torch.stack(packets,dim=1))
             # All-GDN stock models need explicit position/mask metadata because
