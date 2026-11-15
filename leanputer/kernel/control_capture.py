@@ -20,10 +20,18 @@ class Effect:
 
 class TypedRuleCompiler(RuleCompiler):
     def __init__(self,layout):
-        self.effects=[];self.families=[];self.family='traversal_transition'
+        self.effects=[];self.families=[];self.family='traversal_transition';self.active_nodes=[]
         super().__init__(layout,builder_factory=TypedBuilder)
         self.preflight_effect_count=len(self.effects)
         self.preflight_active=self.g.pred(self.active)
+
+    @property
+    def active(self):return self._active
+
+    @active.setter
+    def active(self,value):
+        self._active=value
+        if hasattr(self,'g'):self.active_nodes.append(self.g.pred(value))
 
     def origin(self):
         frame=inspect.currentframe().f_back;fallback=None

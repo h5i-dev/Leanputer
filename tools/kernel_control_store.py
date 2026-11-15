@@ -7,9 +7,9 @@ from leanputer.kernel.traversal_machine import MachineConfig
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--config',type=Path,required=True);p.add_argument('--report',type=Path,required=True);p.add_argument('--store',type=Path);p.add_argument('--offline-verify',type=Path);a=p.parse_args();start=time.perf_counter()
+    p=argparse.ArgumentParser();p.add_argument('--config',type=Path,required=True);p.add_argument('--report',type=Path,required=True);p.add_argument('--store',type=Path);p.add_argument('--offline-verify',type=Path);p.add_argument('--phase-dispatch',action='store_true');p.add_argument('--contract-dispatch',action='store_true');a=p.parse_args();start=time.perf_counter()
     compiler,addresses=capture(MachineConfig(**json.loads(a.config.read_text())))
-    store=ControlStore(compiler);report=store.report();report['compile_seconds']=time.perf_counter()-start
+    store=ControlStore(compiler,phase_dispatch=a.phase_dispatch,contract_dispatch=a.contract_dispatch);report=store.report();report['compile_seconds']=time.perf_counter()-start
     report['address_programs']=[b.statistics()for b,w in addresses]
     a.report.write_text(json.dumps(report,indent=2)+'\n')
     if a.store:a.store.write_text(json.dumps(store.serializable(),separators=(',',':'))+'\n')

@@ -1,61 +1,64 @@
-# Typed kernel control store and shared stock datapath
+# Typed kernel control store and shared stock checker
 
-Implementation is continuing from7831b13. The all-phase Boolean backend remains
-reference evidence. The current implementation adds an input-independent typed
-front end by injecting a word builder into the existing general RuleCompiler;
-all73 included rule families execute their existing generators. No kernel rule,
-name/shape condition, universe scheme or16bit data domain is pruned by a proof.
+Current implementation now maps the complete current general source controller
+into64192 fixed112bit native records, all73 source families/6454 grouped effects.
+Control generation happens before source input is read. Names, expression tags,
+schemes, declaration shapes/counts and literal contents remain runtime data.
+`stock_control.py` lowers17/18bit operations through bounded two-limb word
+algorithms, bitfield extraction, shared shifts, source address programs, arena
+OR-shadow buffers, model-owned field queue/commit and final outcome publication.
+`stock_checker.py` transports raw syntax and repeats unmodified stock forward/cache
+with identity feedback. No evaluator, host opcode dispatch or semantic cache setup
+is used. The compiler retains all explicit semantic GAP/RESOURCE/profile outcomes.
 
-`control_ir.py` retains words, zero extension, checked-width arithmetic,
-selections, slices/splices and structured guards. `control_capture.py` records
-register and arena effects with source provenance. `control_store.py` compiles
-short-circuit WORD branches, field-merge descriptors and arena chunks; it has no
-Boolean-gate or RV opcode. `control_reference.py` and
-`control_store_reference.py` are development-only correspondence tools, never
-inference callbacks. They are not imported by `stock_datapath.py`.
+The checked-preflight/control-first mapping is in `control_store.py` and
+`control_phases.py`. Global preflight remains checked. Only inside its true branch
+is its proven dominating predicate removed from body guards.32 shared guards are
+cached. Exact duplicate updates/continuations share records without inspecting
+input proofs. Exhaustive Cartesian phase partition exceeded200000compiler blocks;
+it is retained as an unsuccessful experiment, not the selected implementation.
 
-The complete current capture has6454 grouped effects. All are represented in
-control lowering; all73 source family hashes are recorded. Both original-source
-fixtures match every register and arena row through the full1316/1355-step
-SPEC runs. This is typed IR/reference evidence only. Current full semantic GAPs
-remain exactly that; capturing their explicit outcomes does not implement them.
+Both complete original-source cases match every register and bank in the OFFLINE
+native encoding reference at all1316/1355 transitions. Native counts are1,185,877
+and1,218,203 model forwards (including row/shift/commit microsteps). This validates
+lowering, NOT stock admission. Software references never supply inference data.
 
-The first complete store required110375records. Factoring common guards,
-short-circuit control and bounded three-assignment/three-row-word descriptors
-reduces it to46245records, with118 temporary RF words including17ports and32
-frozen guard values. The current queue layout provides175 temporary words:
-136 main rows +136 shadow rows +87 dirty-queue rows +25 temporary rows =384.
-Each queue row holds eleven11bit physical field references. Native queue/merge
-microstages and descriptor encoding still need implementation; they are not
-trusted host bookkeeping. Multi-item descriptors explicitly count their extra
-forwards rather than claiming a free batch of writes.
+The FULL fixed stock model actually emitted and loaded on A10G is83,727,386
+**dense logical parameters**, H768/I256/L77,30 paged-ROM layers,7 byte decoder
+layers and35 allocated data stages plus front/clear/output. Allocation occupies
+ALL768channels:511features+244operator scratch+13ballast/tau.512 RF rows/read copy,
+12RF heads and7arena heads implement the existing word16/heap512/stack32/context8/
+constants4/fuel8192 integration domain. The larger nested-source domain is not
+validated at these bounds. The control store includes all current general rules;
+this does not close semantic GAPs recorded in target.md.
 
-**Both size and latency FAIL.** The record budget is16384; current software
-control execution visits about1.77M/1.82M records for the two source fixtures,
-with estimated1.80M/1.85M model forwards after commit work. Walking all phases'
-guards is not a practical compact checker. The complete store is not emitted.
-Current work is exhaustive kernel-control dispatch/cofactoring over task, mode,
-continuation and private-PC fields, including invalid16bit control values.
-AST tags, declarations, names, counts and constructor shapes are DATA and are
-not specialization keys. The source programs remain input-independent.
+Actual standalone stock module checks cover arithmetic wrap/borrow, word bitwise
+and bounded shifts, ROM page boundary, binary arena reads/writes with untouched
+fields, OR merges, unique dirty queue crossing row boundaries, repeated commit,
+and publication preserving GAP/reason/result. The current matched full-source
+stock run is in progress; sampled model PCs match the independent offline native
+encoding at exact record boundaries through the observed prefix. No full-source
+compact stock acceptance/rejection result is claimed yet.
 
-The first actual shared hardware module is `stock_datapath.py`:30,509,368 dense
-stock parameters,H768/I256/L28, ROM in weights, nine active RF heads, one nibble
-adder shared by add/sub/order, equality, and weighted branch/writeback control.
-An eight-record fixed program with arbitrary operand/claim data executes in two
-items with unchanged stock forward/cache and identity feedback. Word wrap/borrow
-and all three RF replicas pass. It is an operator implementation, NOT native
-original-source checking or a complete Lean kernel. The real allocation is606
-channels (476 fixed features,117 operator scratch,13 ballast/tau);22 datapath
-layers suffice for this module. Additional native actions remain explicit.
+**Latency fails practical delivery.** First512forwards took55.6seconds (~9.2/s)
+under installed stock fallbacks. At that observed rate the longer reference count
+would take about37hours; this is a conditional extrapolation, not a completion
+promise.83.7M meets the proposed100M dense SIZE gate for the current bounded fixed
+program, not the desired10–50M range or the practical complete-tool goal.
 
-Two design details are now concrete. First, all-GDN stock calls require explicit
-constant shape-only position_ids and mask mappings; automatic cache sequence
-length inference otherwise raises. This uses supported stock arguments without
-patching modules/cache. Second, the previous RF write packet must remain separate
-from the destination read/modify/write row until every RF replica consumes it.
-The prototype includes a separate136-channel binary pending packet. A single
-shared buffer would overwrite writes partway through the read-port sequence.
+Run the same original source cases with:
+
+```bash
+PYTHONPATH=. /mnt/scratch/leanputer-native-venv/bin/python -m tools.kernel_compact_stock \
+  --config benchmarks/kernel-full-source-stock/config.json \
+  --source benchmarks/kernel-full-source-stock/source.jsonl \
+  --report /mnt/scratch/compact-stock.json --offline-check
+```
+
+The source/controller correspondence test is `tests.test_kernel_stock_control`;
+`tests.test_kernel_stock_datapath` checks the actual stock modules. The command
+reports incomplete max-forward runs without an admission claim. Existing earlier
+benchmark shapes/logs are historical checkpoints, not current full-tool evidence.
 
 The original budget table's listed data rows summed to562, not662. The model
 must count the separate136-channel pending packet and queue/control latches

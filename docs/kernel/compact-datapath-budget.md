@@ -1,3 +1,20 @@
+# Compact checker datapath: current result and original assessment
+
+Superseding implementation evidence: [typed-control-store.md](typed-control-store.md).
+The full current bounded controller now emits64192native records into an actual
+83,727,386 dense stock model (H768/I256/L77),768/768channels used. OFFLINE full
+native-record execution matches both complete original-source traces. Actual
+stock module checks pass; full-source stock run is ongoing, not validated yet.
+The proposed100M dense SIZE gate is met for this emitted current-domain artifact;
+practical LATENCY is not: observed~9.2forwards/s and1.22M required forwards imply
+~37hours if that rate persists. This is not delivery of the requested small,
+practical general tool. Semantic gaps and larger operating bounds remain explicit.
+
+The assessment below is HISTORICAL7831b13. Its flat-ROM16K ceiling,384row RF plan,
+static commit-list proposal and662channel subtotal were superseded by paged byte
+weight-ROM,512row RF, dynamic dirty queue, separate pending packet and measured
+lifetime allocation. Do not use that preliminary table as current accounting.
+
 # Compact checker datapath: architecture feasibility gate
 
 This is an analytical design, not an implemented small checker. Stop further

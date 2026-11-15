@@ -17,7 +17,7 @@ from ..native_vendor.qwenputer.emit import Layout,allocate,emit_layers,row,reads
 class WordAction(IntEnum):
     MOVE=0; ADD=1; SUB=2; EQ_BRANCH=3; LT_BRANCH=4; STOP_OK=5; STOP_INVALID=6; JUMP=7
     AND=8; OR=9; XOR=10; SHR=11; SHL=12; NONZERO_BRANCH=13
-    MERGE_FIELDS3=16; COMMIT_FIELDS=48
+    SHR_LOOP=14; SHL_LOOP=15; MERGE_FIELDS3=16; COMMIT_FIELDS=48; PUBLISH_RESULT=49
     HEAP_READ=40; HEAP_WRITE=41; FRAME_READ=42; FRAME_WRITE=43
     CONTEXT_READ=44; CONTEXT_WRITE=45; DECLARATION_READ=46
 
@@ -144,6 +144,9 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         return bits[:4]+[one-bits[4]]+[bits[i]+carry[i-5]-2*builder.gate('and',[bits[i],carry[i-5]],f'queue-address-xor/{i}')for i in range(5,8)]+[one-carry[3]]
     queue_write_address=queue_address(queue_row);queue_read_address=queue_address(read_row)
     flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction}
+    shifting=builder.gate('or',[flags[WordAction.SHR_LOOP],flags[WordAction.SHL_LOOP]],'loop-shift')
+    shift_resume=builder.gate('and',[shifting,builder.gate('or',stage,'shift-resume-stage')],'shift-resume')
+    publish=builder.gate('and',[run,valid,flags[WordAction.PUBLISH_RESULT]],'publish-result')
     merging=flags[WordAction.MERGE_FIELDS3];committing=flags[WordAction.COMMIT_FIELDS]
     merge_append=builder.gate('and',[merging,stage[0]],'merge-append')
     merge_value=builder.gate('and',[merging,one-stage[0]],'merge-value')
@@ -154,7 +157,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     descriptor=[]
     for bit in range(29):descriptor.append(g.ffn([(1,code[6+29*i+bit],descriptor_select[i])for i in range(3)],name='field-descriptor'))
     field_dest=descriptor[:12];field_source=descriptor[12:28];field_literal=descriptor[28]
-    normal_a=select(merging,field_source[:12],code[18:30],'source-A-address')
+    normal_a=select(merging,field_source[:12],select(shift_resume,code[6:18],code[18:30],'shift-source-address'),'source-A-address')
     query_a=select(committing,read_slot+queue_read_address,normal_a,'query-A-address')
     literal_a=g.ffn([(1,field_literal,merging),(1,code[90],one-merging-committing)],name='source-A-literal')
     immediate_a=select(merging,field_source,code[42:58],'source-A-immediate')
@@ -227,14 +230,16 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         from ..control_packing import PackedBit
         memo={};sum_bits.extend(PackedBit(digit,i,4).realize(builder,memo)for i in range(4))
     less=one-carry;equal=builder.gate('not',[builder.gate('or',sum_bits,'difference-nonzero')],'word-equal')
-    writing=builder.gate('or',[flags[o]for o in(WordAction.MOVE,WordAction.ADD,WordAction.SUB,WordAction.AND,WordAction.OR,WordAction.XOR,WordAction.SHR,WordAction.SHL)],'word-write')
+    writing=builder.gate('or',[flags[o]for o in(WordAction.MOVE,WordAction.ADD,WordAction.SUB,WordAction.AND,WordAction.OR,WordAction.XOR,WordAction.SHR,WordAction.SHL,WordAction.SHR_LOOP,WordAction.SHL_LOOP)],'word-write')
     arithmetic=builder.gate('or',[flags[WordAction.ADD],flags[WordAction.SUB]],'arithmetic')
+    shift_right=builder.gate('or',[flags[WordAction.SHR],flags[WordAction.SHR_LOOP]],'shift-right')
+    shift_left=builder.gate('or',[flags[WordAction.SHL],flags[WordAction.SHL_LOOP]],'shift-left')
     selected=[]
     for i in range(16):
         conjunction=g.ffn([(1,a[i],b[i])],name='word-conjunction')
         disjunction=a[i]+b[i]-conjunction
         exclusive=disjunction-conjunction
-        selected.append(g.ffn([(1,a[i],flags[WordAction.MOVE]),(1,sum_bits[i],arithmetic),(1,conjunction,flags[WordAction.AND]),(1,disjunction,flags[WordAction.OR]),(1,exclusive,flags[WordAction.XOR]),(1,a[i+1]if i<15 else Expr(),flags[WordAction.SHR]),(1,a[i-1]if i else Expr(),flags[WordAction.SHL])],name=f'word-value/{i}'))
+        selected.append(g.ffn([(1,a[i],flags[WordAction.MOVE]),(1,sum_bits[i],arithmetic),(1,conjunction,flags[WordAction.AND]),(1,disjunction,flags[WordAction.OR]),(1,exclusive,flags[WordAction.XOR]),(1,a[i+1]if i<15 else Expr(),shift_right),(1,a[i-1]if i else Expr(),shift_left)],name=f'word-value/{i}'))
     active_core=builder.gate('and',[run,valid,writing],'active-core-write')
     active_load0=builder.gate('and',[run,valid,load0],'active-load0');active_load1=builder.gate('and',[run,valid,load1],'active-load1')
     active_store=builder.gate('and',[run,valid,store],'active-store')
@@ -243,9 +248,10 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     active_commit_main=builder.gate('and',[run,valid,commit_main],'active-commit-main')
     active_commit_clear=builder.gate('and',[run,valid,commit_clear],'active-commit-clear')
     active_write=builder.gate('or',[active_core,active_load1,active_store,active_merge,active_append,active_commit_main,active_commit_clear],'active-write')
-    field_flags=[builder.gate('and',matches(code[96:99],field),f'arena-field/{field}')for field in range(6)]
-    loaded=[g.ffn([(1,D[16*field+i],field_flags[field])for field in range(6)],name='arena-word')for i in range(16)]
-    next_result=[g.ffn([(1,selected[i],active_core),(1,loaded[i],active_load0),(1,result[i],one-active_core-active_load0)],name=f'result/{i}')for i in range(16)]
+    field_flags=[builder.gate('and',matches(code[96:99],field),f'arena-field/{field}')for field in range(7)]
+    loaded=[g.ffn([(1,D[16*field+i],field_flags[field])for field in range(7)],name='arena-word')for i in range(16)]
+    result_from_row=builder.gate('or',[active_load0,publish],'result-from-row')
+    next_result=[g.ffn([(1,selected[i],active_core),(1,loaded[i],result_from_row),(1,result[i],one-active_core-result_from_row)],name=f'result/{i}')for i in range(16)]
     old_dirty=g.ffn([(1,D[112+slot],builder.gate('and',matches(field_dest[:3],slot),f'dirty-field/{slot}'))for slot in range(7)],name='old-dirty')
     needs_append=builder.gate('and',[active_merge,one-old_dirty],'needs-append')
     merged=[]
@@ -277,21 +283,25 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     known=builder.gate('or',list(flags.values()),'known-opcode')
     internal_fault=builder.gate('and',[run,builder.gate('or',[one-valid,one-known],'bad-control')],'internal-fault')
     ok=builder.gate('and',[run,valid,flags[WordAction.STOP_OK]],'stop-ok');bad=builder.gate('or',[internal_fault,builder.gate('and',[run,valid,flags[WordAction.STOP_INVALID]],'stop-invalid')],'stop-bad')
-    stopping=builder.gate('or',[ok,bad],'stopping')
+    stopping=builder.gate('or',[ok,bad,publish],'stopping')
     next_status=[ok,bad]+[Expr()]*14
-    status_values=[g.ffn([(1,next_status[i],stopping),(1,status[i],one-stopping)],name='status-next')for i in range(16)]
-    reason_values=[g.ffn([(1,bad,stopping),(1,reason[0],one-stopping)],name='reason-next')]+reason[1:]
+    status_values=[g.ffn([(1,next_status[i],stopping),(1,A[i],publish),(1,status[i],one-stopping)],name='status-next')for i in range(16)]
+    reason_values=[g.ffn([(1,bad if i==0 else Expr(),stopping),(1,B[i],publish),(1,reason[i],one-stopping)],name='reason-next')for i in range(16)]
     last_field=builder.gate('and',[builder.gate('not',[builder.gate('or',[builder.gate('and',[stage[1+i],one-code[93+i]],'field-index-diff-a'),builder.gate('and',[one-stage[1+i],code[93+i]],'field-index-diff-b')],'field-index-diff')],'field-index-equal')for i in range(2)],'last-field')
     field_finished=builder.gate('or',[active_append,builder.gate('and',[active_merge,old_dirty],'existing-shadow')],'field-finished')
     next_field=builder.gate('and',[field_finished,one-last_field],'next-field')
     merge_hold=builder.gate('or',[needs_append,next_field],'merge-hold')
-    advance=builder.gate('and',[run,one-load0,one-merge_hold,one-committing+builder.gate('and',[committing,one-has_dirty],'commit-finished')],'advance-pc')
+    shift_increment=increment(stage,'shift-stage-increment')
+    shift_difference=[shift_increment[i]+code[96+i]-2*g.ffn([(1,shift_increment[i],code[96+i])],name='shift-count-both')for i in range(4)]
+    shift_hold=builder.gate('and',[run,shifting,builder.gate('or',shift_difference,'shift-not-finished')],'shift-hold')
+    advance=builder.gate('and',[run,one-load0,one-merge_hold,one-shift_hold,one-committing+builder.gate('and',[committing,one-has_dirty],'commit-finished')],'advance-pc')
     next_pc=[g.ffn([(1,following[i],advance),(1,pc[i],one-advance)],name='pc-next')for i in range(16)]
     writing_rf=builder.gate('or',[rf_active,active_append,active_commit_clear],'writing-rf')
     next_address=[g.ffn([(1,query_d[3+i],writing_rf),(1,a[i],active_store)],name='write-address')for i in range(9)]
     next_kind=[builder.gate('or',[flags[op]for op in(WordAction.HEAP_WRITE,WordAction.CONTEXT_WRITE)if (1 if op==WordAction.HEAP_WRITE else 3)>>bit&1]+([flags[WordAction.FRAME_WRITE]]if 2>>bit&1 else[]),f'write-kind/{bit}')for bit in range(3)]
     index_increment=increment(stage[1:3],'field-index-increment')
     next_stage=[builder.gate('or',[active_load0,needs_append,active_commit_main],'next-substage')]+[g.ffn([(1,index_increment[i],next_field),(1,stage[1+i],needs_append)],name='next-field-index')for i in range(2)]+[Expr()]
+    next_stage=[g.ffn([(1,value,one-shifting),(1,shift_increment[i],shift_hold)],name='next-loop-stage')for i,value in enumerate(next_stage)]
     queue_wrap=builder.gate('and',matches(queue_slot,6),'queue-wrap')
     read_wrap=builder.gate('and',matches(read_slot,6),'queue-read-wrap')
     queue_insert_row=select(queue_wrap,increment(queue_row,'queue-row-increment'),queue_row,'next-queue-row')

@@ -10,12 +10,29 @@ class SharedDatapathTest(unittest.TestCase):
     def test_byte_page_weight_rom_reuses_rows_across_page_boundary(self):
         self.check_core('byte_pages')
 
+    def test_publication_preserves_gap_reason_and_result(self):
+        import torch
+        from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
+        chip=build([CoreRecord(O.PUBLISH_RESULT,dest=rf(6),a=rf(1),b=rf(2),auxiliary=6)],rom_layout='byte_pages')
+        packets=[]
+        for status,reason,result in((1,0,65535),(4,11,0x1234)):
+            words=[0,status,reason,0,0,0,result];bits=[word>>i&1 for word in words for i in range(16)]+[0]*14
+            packets.append(chip.packet(boot=[1],pending_enable=[1],pending_payload=bits))
+        masks={'full_attention':None,'linear_attention':None}
+        with torch.no_grad():
+            out=chip.model(inputs_embeds=chip.embeddings(torch.stack(packets)[:,None]),use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
+            state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
+            out=chip.model(inputs_embeds=state,past_key_values=out.past_key_values,use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
+        word=lambda bits:sum(int(v)<<i for i,v in enumerate(bits))
+        values=out.logits[:,0].float().tolist()
+        self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
+
     def test_shared_bitwise_and_shift_word_lanes(self):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
         target=rf(3400)
         program=[CoreRecord(O.MOVE,dest=target,immediate=0xabc1,literal_a=True,yes=1),
-                 CoreRecord(O.SHR,dest=target,a=target,yes=2),CoreRecord(O.SHL,dest=target,a=target,yes=3),
+                 CoreRecord(O.SHR_LOOP,dest=target,a=target,auxiliary=4,yes=2),CoreRecord(O.SHL_LOOP,dest=target,a=target,auxiliary=4,yes=3),
                  CoreRecord(O.OR,dest=target,a=target,immediate=15,literal_b=True,yes=4),
                  CoreRecord(O.AND,dest=target,a=target,immediate=0xfff,literal_b=True,yes=5),
                  CoreRecord(O.XOR,dest=target,a=target,immediate=0x3333,literal_b=True,yes=6),
@@ -28,7 +45,7 @@ class SharedDatapathTest(unittest.TestCase):
         with torch.no_grad():
             out=chip.model(inputs_embeds=chip.embeddings(torch.stack(payloads)[:,None]),use_cache=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
             cache=out.past_key_values;state=chip.embeddings(torch.zeros(2,1,chip.slots.next-13))
-            for _ in range(11):
+            for _ in range(20):
                 out=chip.model(inputs_embeds=state,past_key_values=cache,use_cache=True,output_hidden_states=True,position_ids=torch.zeros(2,1,dtype=torch.long),attention_mask=masks)
                 cache=out.past_key_values;state=out.hidden_states[-2]
         word=lambda b:sum(int(v)<<i for i,v in enumerate(b))
