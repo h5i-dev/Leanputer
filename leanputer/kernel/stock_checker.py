@@ -46,7 +46,14 @@ def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_c
         loaded=time.perf_counter();state=chip.embeddings(torch.zeros(batch,1,chip.slots.next-13))
         executor=None
         if execution=='cuda_graph':
-            from .stock_execution import StockCudaGraph
+            from .stock_execution import StockCudaGraph,snapshot,restore
+            if compile_stock:
+                # Stock Transformers lazily installs output-capture hooks.
+                # Install them with its own eager forward before Dynamo traces
+                # the model; restore every native tensor/counter afterwards.
+                saved=snapshot(cache,state)
+                forward(state,output_hidden_states=True)
+                restore(cache,state,saved)
             model=torch.compile(chip.model,fullgraph=True,dynamic=False,options={'emulate_precision_casts':True})if compile_stock else chip.model
             executor=StockCudaGraph(model,cache,state)
         elif execution!='eager':raise ValueError('unknown stock execution schedule')
