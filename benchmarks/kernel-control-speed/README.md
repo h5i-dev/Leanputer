@@ -1,3 +1,5 @@
+Current authoritative gate: <=48,290,654 logical dense parameters AND approximately <=2300 combined stock forwards for the same original-source pair. See [joint transition design](../../docs/kernel/joint-transition-architecture.md). All later80M/~100K diagnostic candidates FAIL this gate. The fixed-preflight source prefix FAILED at forward19 (stockPC37966/reference37965), before timing; it is disabled as a production source-checker option. The audited48.29M/230432FW full-source baseline remains valid; practical latency is NOT delivered.
+
 # Latency diagnosis and experimental bundles (not selected)
 
 The completed48.29M/800.13s baseline remains the validated source result below.

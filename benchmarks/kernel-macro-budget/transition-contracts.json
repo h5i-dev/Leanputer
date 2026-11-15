@@ -1,0 +1,51 @@
+{
+  "format": "leanputer.source-region-operand-contracts.v1",
+  "source_rule_families": 73,
+  "source_effects": 6454,
+  "source_effects_accounted": 6454,
+  "source_effects_missing": [],
+  "family_factored_regions": 2406,
+  "alpha_renamed_compile_time_templates": 2337,
+  "dispatch_nodes": 125,
+  "prefix_effects": 5,
+  "max_state_read_fields": 13,
+  "max_simultaneous_access_state_fields": 33,
+  "max_simultaneous_access_state_bits": 528,
+  "widest_region": {
+    "index": 33,
+    "source_effects": 4,
+    "families": [
+      "source_rules"
+    ],
+    "state_read_fields": 5,
+    "state_read_bits": 80,
+    "read_port_fields": 0,
+    "candidate_update_fields": 29,
+    "simultaneous_access_state_fields": 33,
+    "simultaneous_access_state_bits": 528,
+    "bank_writes": [
+      "heap"
+    ],
+    "dag_nodes": 29,
+    "operations": {
+      "add": 1,
+      "all": 3,
+      "any": 1,
+      "eq": 3,
+      "not": 4,
+      "sub": 1,
+      "ult": 3
+    },
+    "template_sha256": "5747829f4c9b90fbc20a93a004daf2af17a59a4117a60807b88cb63299821731"
+  },
+  "max_candidate_update_fields": 29,
+  "max_region_dag_nodes": 373,
+  "full_transition_descriptor_count": null,
+  "full_transition_composition_verified": false,
+  "cross_transition_liveness_verified": false,
+  "frame_ownership_verified": false,
+  "native_schedule_verified": false,
+  "stock_emitted": false,
+  "joint_delivery_gate": false,
+  "evidence_scope": "Static dependency unions, including alternative data guards; not liveness bounds or stock execution"
+}

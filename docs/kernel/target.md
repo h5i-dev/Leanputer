@@ -1,3 +1,5 @@
+The current performance delivery gate is <=48,290,654 logical dense parameters and approximately <=2300 combined forwards on the matched original-source batch. The earlier100M exploratory allowance is superseded. Neither the baseline230432forwards nor the larger diagnostic candidates meet this joint gate. The [new execution-granularity proposal](joint-transition-architecture.md) has conditional budgets, not a delivered checker or proven full-rule schedule.
+
 # Current bounded stock result and open delivery gate
 
 The corrected full current-rule model at d3250a9 has actual matched original-source

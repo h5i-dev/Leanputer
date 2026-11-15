@@ -1,0 +1,11 @@
+{
+  "format": "leanputer.fixed-preflight-prefix-failure.v1",
+  "code_commit": "ff4662a",
+  "original_source_stock_prefix_passed": false,
+  "full_source_stock_completed": false,
+  "stock_speed_measured": false,
+  "error": "AssertionError: ('stock/native prefix PC divergence', 'current-general-source-empty-claim-id', 19, 37966, 37965)",
+  "log": "/mnt/scratch/leanputer-runs/architecture-budget/fixed-preflight-source-prefix.log",
+  "log_sha256": "1219a3ad1c285503183460d342237de8eb7ea8d6979f99168a46bede94afc089",
+  "new_joint_gate_met": false
+}
