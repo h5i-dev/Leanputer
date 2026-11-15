@@ -16,6 +16,8 @@ from ..native_vendor.qwenputer.emit import Layout,allocate,emit_layers,row,reads
 
 class WordAction(IntEnum):
     MOVE=0; ADD=1; SUB=2; EQ_BRANCH=3; LT_BRANCH=4; STOP_OK=5; STOP_INVALID=6; JUMP=7
+    AND=8; OR=9; XOR=10; SHR=11; SHL=12; NONZERO_BRANCH=13
+    MERGE_FIELDS3=16; COMMIT_FIELDS=48
     HEAP_READ=40; HEAP_WRITE=41; FRAME_READ=42; FRAME_WRITE=43
     CONTEXT_READ=44; CONTEXT_WRITE=45; DECLARATION_READ=46
 
@@ -42,10 +44,31 @@ class CoreRecord:
         return result
 
 
+@dataclass(frozen=True)
+class FieldRecord:
+    """Up to three simultaneous checker shadow assignments, never host effects."""
+    items: tuple
+    yes: int
+
+    def bits(self):
+        if not 1<=len(self.items)<=3:raise ValueError('field descriptor needs1..3 assignments')
+        fields=[(int(WordAction.MERGE_FIELDS3),6)]
+        for index in range(3):
+            dest,value,literal=self.items[index]if index<len(self.items)else(0,0,False)
+            if dest&8 or (dest>>4)*7+(dest&7)>=951 or dest&7>=7:raise ValueError('field target must be a main checker row')
+            fields.extend(((dest,12),(value,16),(int(literal),1)))
+        fields.extend(((len(self.items)-1,2),(self.yes,16),(0,1)))
+        result=[]
+        for value,width in fields:
+            if not 0<=value<1<<width:raise ValueError('field descriptor overflow')
+            result.extend(value>>i&1 for i in range(width))
+        return result
+
+
 def rf_address(word):
     """Static compiler register placement, not an inference callback."""
     page_row,slot=divmod(word,7)
-    if not 0<=page_row<384:raise ValueError('RF word exceeds three128row pages')
+    if not 0<=page_row<512:raise ValueError('RF word exceeds four128row pages')
     return (page_row<<3)|slot
 
 
@@ -77,7 +100,7 @@ class StockDatapath:
         return result
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=25):
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
@@ -90,7 +113,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     module_start=1+rom_layers+decode_layers;layers=rom_layers+decode_layers+datapath_layers+5
     logical_count=layers*(3*hidden*intermediate+644*hidden+1666)+129*hidden
     if logical_count>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
-    builder=NativeBuilder(intermediate=intermediate,reset_layers=0);g=builder.graph;fixed=FixedSlots();features={};physical={}
+    builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;fixed=FixedSlots();features={};physical={}
     def feature(name,width):
         slots=fixed.add(name,width);values=[builder.feature(f'{name}/{i}')for i in range(width)]
         for value,slot in zip(values,slots):physical[next(iter(value.terms))]=slot
@@ -99,6 +122,8 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     raw_code=feature('record',112);code=list(raw_code);valid=feature('record_valid',1)[0]
     A=feature('A',16);B=feature('B',16);D=feature('row',126)
     payload=feature('pending_payload',126);address=feature('pending_row',9);enable=feature('pending_enable',1)[0];kind=feature('pending_kind',3)
+    queue_row=feature('queue_row',8);queue_slot=feature('queue_slot',3);dirty_count=feature('dirty_count',10)
+    read_row=feature('queue_read_row',8);read_slot=feature('queue_read_slot',3)
     for i,value in enumerate(raw_code):
         level=2*module_start
         if rom_layout=='byte_pages':level=2*(1+rom_layers+(8-i%8 if i%8 else 0))
@@ -109,23 +134,45 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         # remainder after the seven high bits have been decoded in weights.
         for byte in range(14):code[8*byte]=raw_code[8*byte]-sum(((1<<bit)*raw_code[8*byte+bit]for bit in range(1,8)),Expr())
     one=g.one;run=builder.gate('and',[one-boot]+[one-bit for bit in status],'run')
+    def matches(bits,value):return[b if value>>i&1 else one-b for i,b in enumerate(bits)]
+    def select(condition,x,y,name):return[g.ffn([(1,a,condition),(1,b,one-condition)],name=name)for a,b in zip(x,y)]
+    def increment(bits,name):
+        return[one-bits[0]]+[bits[i]+builder.gate('and',bits[:i],name+'-carry')-2*builder.gate('and',bits[:i+1],name+'-both')for i in range(1,len(bits))]
+    def queue_address(bits):
+        #272 + bounded queue row, exact Boolean carry; no rounded packed sum.
+        carry=[builder.gate('and',bits[4:i],f'queue-address-carry/{i}')for i in range(5,9)]
+        return bits[:4]+[one-bits[4]]+[bits[i]+carry[i-5]-2*builder.gate('and',[bits[i],carry[i-5]],f'queue-address-xor/{i}')for i in range(5,8)]+[one-carry[3]]
+    queue_write_address=queue_address(queue_row);queue_read_address=queue_address(read_row)
     flags={op:builder.gate('and',[bit if int(op)>>i&1 else one-bit for i,bit in enumerate(code[:6])],f'opcode/{op.name}')for op in WordAction}
+    merging=flags[WordAction.MERGE_FIELDS3];committing=flags[WordAction.COMMIT_FIELDS]
+    merge_append=builder.gate('and',[merging,stage[0]],'merge-append')
+    merge_value=builder.gate('and',[merging,one-stage[0]],'merge-value')
+    has_dirty=builder.gate('or',dirty_count,'has-dirty')
+    commit_main=builder.gate('and',[committing,has_dirty,one-stage[0]],'commit-main')
+    commit_clear=builder.gate('and',[committing,has_dirty,stage[0]],'commit-clear')
+    descriptor_select=[builder.gate('and',matches(stage[1:3],i),f'field-index/{i}')for i in range(3)]
+    descriptor=[]
+    for bit in range(29):descriptor.append(g.ffn([(1,code[6+29*i+bit],descriptor_select[i])for i in range(3)],name='field-descriptor'))
+    field_dest=descriptor[:12];field_source=descriptor[12:28];field_literal=descriptor[28]
+    normal_a=select(merging,field_source[:12],code[18:30],'source-A-address')
+    query_a=select(committing,read_slot+queue_read_address,normal_a,'query-A-address')
+    literal_a=g.ffn([(1,field_literal,merging),(1,code[90],one-merging-committing)],name='source-A-literal')
+    immediate_a=select(merging,field_source,code[42:58],'source-A-immediate')
     load=builder.gate('or',[flags[o]for o in(WordAction.HEAP_READ,WordAction.FRAME_READ,WordAction.CONTEXT_READ,WordAction.DECLARATION_READ)],'arena-load')
     store=builder.gate('or',[flags[o]for o in(WordAction.HEAP_WRITE,WordAction.FRAME_WRITE,WordAction.CONTEXT_WRITE)],'arena-store')
     load0=builder.gate('and',[load,one-stage[0]],'arena-load0');load1=builder.gate('and',[load,stage[0]],'arena-load1')
     suppress_dest=builder.gate('or',[store,load0],'suppress-rf-destination')
-    # Write enables depend only on the previous model packet. Put them in the
-    # front protocol layer, before ROM and all three coherent RF read copies.
-    write_flags=[builder.gate('and',[enable]+[one-b for b in kind]+[b if page>>i&1 else one-b for i,b in enumerate(address[7:])],f'rf-write/{page}')for page in range(3)]
-    def matches(bits,value):return[b if value>>i&1 else one-b for i,b in enumerate(bits)]
+    # Write enables depend only on the previous model packet. Graph logic
+    # follows reserved ROM stages and precedes all coherent RF copies.
+    write_flags=[builder.gate('and',[enable]+[one-b for b in kind]+matches(address[7:],page),f'rf-write/{page}')for page in range(4)]
     def select_form(literals):
         condition=sum(literals,Expr())-(len(literals)-1)*one
         return K*(2*condition-one)
-    def head(port,page,query,outputs):
-        layer=module_start+3*port+page
+    rf_metadata=[]
+    def head(port,page,query,outputs,literal=Expr()):
+        layer=module_start+4*port+page
         # The ROM operand encodes (row9,word-slot3). Literal operands do not
         # query a register. Only one page contributes to each read port.
-        literal=code[90+port]if port<2 else Expr()
         q={r:select_form(matches(query[3:10],r)+matches(query[10:12],page)+[run,one-literal]+([one-suppress_dest]if port==2 else[]))for r in range(128)}
         k={r:select_form(matches(address[:7],r))for r in range(128)}
         values={0:A_REF*one,1:A_REF*one};values.update({i+2:A_BIT*v for i,v in enumerate(payload)})
@@ -138,15 +185,23 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         else:
             z={i+2:K*one for i in range(126)};outs=[(i+2,128.)for i in range(126)];into=list(outputs)
         g.head(f'rf.{port}.{page}',q,k,values,0,z,outs,beta=write_flags[page],min_level=2*layer,into=into)
-    for port,(query,outputs)in enumerate(((code[18:30],A),(code[30:42],B),(code[6:18],D))):
-        for page in range(3):head(port,page,query,outputs)
+        rf_metadata.append(dict(port=port,page=page,layer=g.nodes[-1].level//2))
+    for page in range(4):head(0,page,query_a,A,literal_a)
+    queued_main=A[:3]+[Expr()]+A[3:11];queued_shadow=A[:3]+[one]+A[3:11]
+    shadow_dest=field_dest[:3]+[one]+field_dest[4:]
+    query_b=select(committing,queued_shadow,select(merging,shadow_dest,code[30:42],'source-B-field'),'query-B-address')
+    for page in range(4):head(1,page,query_b,B,code[91]-g.ffn([(1,code[91],merging+committing)],name='source-B-literal-mask'))
+    merge_dest=select(stage[0],[Expr()]*3+queue_write_address,shadow_dest,'merge-destination')
+    commit_dest=select(stage[0],queued_shadow,queued_main,'commit-destination')
+    query_d=select(committing,commit_dest,select(merging,merge_dest,code[6:18],'destination-field'),'query-D-address')
+    for page in range(4):head(2,page,query_d,D)
     # Literal and register operands use the SAME word lanes.
-    a=[A[i]+builder.gate('and',[code[90],code[42+i]],f'literal-A/{i}')for i in range(16)]
+    a=[A[i]+builder.gate('and',[literal_a,immediate_a[i]],f'literal-A/{i}')for i in range(16)]
     b=[B[i]+builder.gate('and',[code[91],code[42+i]],f'literal-B/{i}')for i in range(16)]
     bank_metadata=[]
     # The same pending packet writes ONE bank per forward. RF copies consume
     # it first; arena banks consume it later, before any new packet is committed.
-    bank_specs=[('heap',512,4,1,WordAction.HEAP_READ,WordAction.HEAP_WRITE,9),('stack',32,6,2,WordAction.FRAME_READ,WordAction.FRAME_WRITE,13),('constants',4,6,4,WordAction.DECLARATION_READ,None,14),('context',8,1,3,WordAction.CONTEXT_READ,WordAction.CONTEXT_WRITE,15)]
+    bank_specs=[('heap',512,4,1,WordAction.HEAP_READ,WordAction.HEAP_WRITE,12),('stack',32,6,2,WordAction.FRAME_READ,WordAction.FRAME_WRITE,16),('constants',4,6,4,WordAction.DECLARATION_READ,None,17),('context',8,1,3,WordAction.CONTEXT_READ,WordAction.CONTEXT_WRITE,18)]
     for bank,cells,words,bank_id,reading,storing,start_layer in bank_specs:
         query=builder.gate('or',[builder.gate('and',[flags[reading],one-stage[0]],f'{bank}-load0')]+([flags[storing]]if storing is not None else[]),bank+'-query')
         width=cells.bit_length()-1
@@ -157,7 +212,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
             data={0:A_REF*one,1:A_REF*one};data.update({i+2:A_BIT*payload[i]for i in range(words*16)})
             layer=module_start+start_layer+page
             g.head(f'arena.{bank}.{page}',q,k,data,0,{i+2:K*one for i in range(words*16)},[(i+2,128.)for i in range(words*16)],beta=writing,min_level=2*layer,into=D[:words*16])
-            bank_metadata.append(dict(bank=bank,page=page,layer=layer,words=words))
+            bank_metadata.append(dict(bank=bank,page=page,layer=g.nodes[-1].level//2,words=words))
     submode=builder.gate('or',[flags[WordAction.SUB],flags[WordAction.EQ_BRANCH],flags[WordAction.LT_BRANCH]],'subtract-mode')
     # One shared nibble adder handles add, subtract and order comparison.
     carry=submode;sum_bits=[]
@@ -172,29 +227,53 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         from ..control_packing import PackedBit
         memo={};sum_bits.extend(PackedBit(digit,i,4).realize(builder,memo)for i in range(4))
     less=one-carry;equal=builder.gate('not',[builder.gate('or',sum_bits,'difference-nonzero')],'word-equal')
-    writing=builder.gate('or',[flags[o]for o in(WordAction.MOVE,WordAction.ADD,WordAction.SUB)],'word-write')
+    writing=builder.gate('or',[flags[o]for o in(WordAction.MOVE,WordAction.ADD,WordAction.SUB,WordAction.AND,WordAction.OR,WordAction.XOR,WordAction.SHR,WordAction.SHL)],'word-write')
     arithmetic=builder.gate('or',[flags[WordAction.ADD],flags[WordAction.SUB]],'arithmetic')
-    selected=[g.ffn([(1,a[i],flags[WordAction.MOVE]),(1,sum_bits[i],arithmetic)],name=f'word-value/{i}')for i in range(16)]
+    selected=[]
+    for i in range(16):
+        conjunction=g.ffn([(1,a[i],b[i])],name='word-conjunction')
+        disjunction=a[i]+b[i]-conjunction
+        exclusive=disjunction-conjunction
+        selected.append(g.ffn([(1,a[i],flags[WordAction.MOVE]),(1,sum_bits[i],arithmetic),(1,conjunction,flags[WordAction.AND]),(1,disjunction,flags[WordAction.OR]),(1,exclusive,flags[WordAction.XOR]),(1,a[i+1]if i<15 else Expr(),flags[WordAction.SHR]),(1,a[i-1]if i else Expr(),flags[WordAction.SHL])],name=f'word-value/{i}'))
     active_core=builder.gate('and',[run,valid,writing],'active-core-write')
     active_load0=builder.gate('and',[run,valid,load0],'active-load0');active_load1=builder.gate('and',[run,valid,load1],'active-load1')
     active_store=builder.gate('and',[run,valid,store],'active-store')
-    active_write=builder.gate('or',[active_core,active_load1,active_store],'active-write')
+    active_merge=builder.gate('and',[run,valid,merge_value],'active-merge')
+    active_append=builder.gate('and',[run,valid,merge_append],'active-append')
+    active_commit_main=builder.gate('and',[run,valid,commit_main],'active-commit-main')
+    active_commit_clear=builder.gate('and',[run,valid,commit_clear],'active-commit-clear')
+    active_write=builder.gate('or',[active_core,active_load1,active_store,active_merge,active_append,active_commit_main,active_commit_clear],'active-write')
     field_flags=[builder.gate('and',matches(code[96:99],field),f'arena-field/{field}')for field in range(6)]
     loaded=[g.ffn([(1,D[16*field+i],field_flags[field])for field in range(6)],name='arena-word')for i in range(16)]
     next_result=[g.ffn([(1,selected[i],active_core),(1,loaded[i],active_load0),(1,result[i],one-active_core-active_load0)],name=f'result/{i}')for i in range(16)]
-    rf_active=builder.gate('or',[active_core,active_load1],'active-rf')
-    rf_value=[g.ffn([(1,selected[i],active_core),(1,result[i],active_load1)],name='rf-word')for i in range(16)]
-    slot_flags=[builder.gate('and',matches(code[6:9],slot)+[rf_active],f'destination-slot/{slot}')for slot in range(7)]
+    old_dirty=g.ffn([(1,D[112+slot],builder.gate('and',matches(field_dest[:3],slot),f'dirty-field/{slot}'))for slot in range(7)],name='old-dirty')
+    needs_append=builder.gate('and',[active_merge,one-old_dirty],'needs-append')
+    merged=[]
+    for i in range(16):
+        old=g.ffn([(1,B[i],old_dirty)],name='old-shadow-word')
+        merged.append(a[i]+old-g.ffn([(1,a[i],old)],name='shadow-or'))
+    field_reference=field_dest[:3]+field_dest[4:]+[Expr()]*5
+    rf_active=builder.gate('or',[active_core,active_load1,active_merge,active_commit_main],'active-rf')
+    rf_value=[g.ffn([(1,selected[i],active_core),(1,result[i],active_load1),(1,merged[i],active_merge),(1,B[i],active_commit_main)],name='rf-word')for i in range(16)]
+    slot_flags=[builder.gate('and',matches(query_d[:3],slot)+[rf_active],f'destination-slot/{slot}')for slot in range(7)]
+    append_slots=[builder.gate('and',matches(queue_slot,slot)+[active_append],f'queue-slot/{slot}')for slot in range(7)]
+    dirty_set=[builder.gate('and',matches(query_d[:3],slot)+[active_merge],f'dirty-set/{slot}')for slot in range(7)]
+    dirty_clear=[builder.gate('and',matches(query_d[:3],slot)+[active_commit_clear],f'dirty-clear/{slot}')for slot in range(7)]
     store_fields=[builder.gate('and',[field_flags[i],active_store],f'store-field/{i}')for i in range(6)]
     pending=[]
     for i,old in enumerate(D):
         if i<112:
             choose=slot_flags[i//16];memory=store_fields[i//16]if i<96 else Expr()
-            value=g.ffn([(1,rf_value[i%16],choose),(1,b[i%16],memory),(1,old,one-choose-memory)],name='patched-row')
+            append=append_slots[i//16]
+            value=g.ffn([(1,rf_value[i%16],choose),(1,b[i%16],memory),(1,field_reference[i%16],append),(1,old,one-choose-memory-append)],name='patched-row')
+        elif i<119:
+            value=g.ffn([(1,one,dirty_set[i-112]),(1,old,one-dirty_set[i-112]-dirty_clear[i-112])],name='patched-dirty')
         else:value=old
         pending.append(value)
-    failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false')],'branch-false')
+    zero=builder.gate('not',[builder.gate('or',a,'operand-nonzero')],'operand-zero')
+    failed_branch=builder.gate('or',[builder.gate('and',[flags[WordAction.EQ_BRANCH],one-equal],'eq-false'),builder.gate('and',[flags[WordAction.LT_BRANCH],one-less],'lt-false'),builder.gate('and',[flags[WordAction.NONZERO_BRANCH],zero],'zero-branch')],'branch-false')
     following=[g.ffn([(1,code[58+i],one-failed_branch),(1,code[74+i],failed_branch)],name='next-pc')for i in range(16)]
+    following=select(merging,code[95:111],following,'next-field-pc')
     known=builder.gate('or',list(flags.values()),'known-opcode')
     internal_fault=builder.gate('and',[run,builder.gate('or',[one-valid,one-known],'bad-control')],'internal-fault')
     ok=builder.gate('and',[run,valid,flags[WordAction.STOP_OK]],'stop-ok');bad=builder.gate('or',[internal_fault,builder.gate('and',[run,valid,flags[WordAction.STOP_INVALID]],'stop-invalid')],'stop-bad')
@@ -202,13 +281,35 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     next_status=[ok,bad]+[Expr()]*14
     status_values=[g.ffn([(1,next_status[i],stopping),(1,status[i],one-stopping)],name='status-next')for i in range(16)]
     reason_values=[g.ffn([(1,bad,stopping),(1,reason[0],one-stopping)],name='reason-next')]+reason[1:]
-    advance=builder.gate('and',[run,one-load0],'advance-pc')
+    last_field=builder.gate('and',[builder.gate('not',[builder.gate('or',[builder.gate('and',[stage[1+i],one-code[93+i]],'field-index-diff-a'),builder.gate('and',[one-stage[1+i],code[93+i]],'field-index-diff-b')],'field-index-diff')],'field-index-equal')for i in range(2)],'last-field')
+    field_finished=builder.gate('or',[active_append,builder.gate('and',[active_merge,old_dirty],'existing-shadow')],'field-finished')
+    next_field=builder.gate('and',[field_finished,one-last_field],'next-field')
+    merge_hold=builder.gate('or',[needs_append,next_field],'merge-hold')
+    advance=builder.gate('and',[run,one-load0,one-merge_hold,one-committing+builder.gate('and',[committing,one-has_dirty],'commit-finished')],'advance-pc')
     next_pc=[g.ffn([(1,following[i],advance),(1,pc[i],one-advance)],name='pc-next')for i in range(16)]
-    next_address=[g.ffn([(1,code[9+i],rf_active),(1,a[i],active_store)],name='write-address')for i in range(9)]
+    writing_rf=builder.gate('or',[rf_active,active_append,active_commit_clear],'writing-rf')
+    next_address=[g.ffn([(1,query_d[3+i],writing_rf),(1,a[i],active_store)],name='write-address')for i in range(9)]
     next_kind=[builder.gate('or',[flags[op]for op in(WordAction.HEAP_WRITE,WordAction.CONTEXT_WRITE)if (1 if op==WordAction.HEAP_WRITE else 3)>>bit&1]+([flags[WordAction.FRAME_WRITE]]if 2>>bit&1 else[]),f'write-kind/{bit}')for bit in range(3)]
-    next_stage=[active_load0]+[Expr()]*3
-    targets=result+pc+status+reason+payload+address+[enable]+kind+stage
-    values=next_result+next_pc+status_values+reason_values+pending+next_address+[active_write]+next_kind+next_stage
+    index_increment=increment(stage[1:3],'field-index-increment')
+    next_stage=[builder.gate('or',[active_load0,needs_append,active_commit_main],'next-substage')]+[g.ffn([(1,index_increment[i],next_field),(1,stage[1+i],needs_append)],name='next-field-index')for i in range(2)]+[Expr()]
+    queue_wrap=builder.gate('and',matches(queue_slot,6),'queue-wrap')
+    read_wrap=builder.gate('and',matches(read_slot,6),'queue-read-wrap')
+    queue_insert_row=select(queue_wrap,increment(queue_row,'queue-row-increment'),queue_row,'next-queue-row')
+    queue_insert_slot=[g.ffn([(1,value,one-queue_wrap)],name='next-queue-slot')for value in increment(queue_slot,'queue-slot-increment')]
+    queue_remove_row=select(read_wrap,increment(read_row,'read-row-increment'),read_row,'next-read-row')
+    queue_remove_slot=[g.ffn([(1,value,one-read_wrap)],name='next-read-slot')for value in increment(read_slot,'read-slot-increment')]
+    commit_done=builder.gate('and',[run,committing,one-has_dirty],'commit-done')
+    def cursor(old,new,condition,name):
+        return[g.ffn([(1,value,condition),(1,previous,one-condition-commit_done)],name=name)for previous,value in zip(old,new)]
+    next_queue_row=cursor(queue_row,queue_insert_row,active_append,'queue-row-next')
+    next_queue_slot=cursor(queue_slot,queue_insert_slot,active_append,'queue-slot-next')
+    next_read_row=cursor(read_row,queue_remove_row,active_commit_clear,'read-row-next')
+    next_read_slot=cursor(read_slot,queue_remove_slot,active_commit_clear,'read-slot-next')
+    count_up=increment(dirty_count,'dirty-increment')
+    count_down=[one-dirty_count[0]]+[dirty_count[i]+builder.gate('and',[one-v for v in dirty_count[:i]],'dirty-borrow')-2*builder.gate('and',[dirty_count[i]]+[one-v for v in dirty_count[:i]],'dirty-both')for i in range(1,10)]
+    next_dirty=[g.ffn([(1,count_up[i],active_append),(1,count_down[i],active_commit_clear),(1,dirty_count[i],one-active_append-active_commit_clear)],name='dirty-count-next')for i in range(10)]
+    targets=result+pc+status+reason+payload+address+[enable]+kind+stage+queue_row+queue_slot+read_row+read_slot+dirty_count
+    values=next_result+next_pc+status_values+reason_values+pending+next_address+[active_write]+next_kind+next_stage+next_queue_row+next_queue_slot+next_read_row+next_read_slot+next_dirty
     # Bit-only updates have exact [-1,1] deltas. Commit after ALL old reads of
     # that feature, allowing independent columns to finish at different layers.
     last={d:0 for d in physical}
@@ -293,7 +394,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                     for slot,unit in zip(low_slots,units[28:]):
                         row(one,layout,mlp.gate_proj.weight[unit],128.)
                         mlp.up_proj.weight[unit,slot]=1/(128*layout.scale);mlp.down_proj.weight[slot,unit]=-1.
-        persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind')),[]))
+        persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count')),[]))
         clear=[slot for slot in range(12,hidden)if slot not in persistent]
         for index,slot in enumerate(clear):
             layer=body+index//intermediate;unit=index%intermediate;mlp=model.model.layers[layer].mlp
@@ -305,5 +406,5 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     model.requires_grad_(False);model.eval()
     params=sum(p.numel()for p in model.parameters());expected=layers*(3*hidden*intermediate+644*hidden+1666)+129*hidden
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
-    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=9,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=384,rf_payload_bits=126,allocated_channels=high,features=fixed.next-13,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction])
+    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-13,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
     return StockDatapath(model,fixed,layout,report)

@@ -1,0 +1,154 @@
+{
+  "format": "leanputer.stock-shared-module.v1",
+  "logical_dense_parameters": 52231008,
+  "hidden": 768,
+  "intermediate": 256,
+  "layers": 48,
+  "rom_records": 9,
+  "rom_layers": 1,
+  "rom_layout": "byte_pages",
+  "rom_decode_layers": 7,
+  "active_rf_heads": 12,
+  "rf_heads": [
+    {
+      "port": 0,
+      "page": 0,
+      "layer": 13
+    },
+    {
+      "port": 0,
+      "page": 1,
+      "layer": 14
+    },
+    {
+      "port": 0,
+      "page": 2,
+      "layer": 15
+    },
+    {
+      "port": 0,
+      "page": 3,
+      "layer": 16
+    },
+    {
+      "port": 1,
+      "page": 0,
+      "layer": 17
+    },
+    {
+      "port": 1,
+      "page": 1,
+      "layer": 18
+    },
+    {
+      "port": 1,
+      "page": 2,
+      "layer": 19
+    },
+    {
+      "port": 1,
+      "page": 3,
+      "layer": 20
+    },
+    {
+      "port": 2,
+      "page": 0,
+      "layer": 21
+    },
+    {
+      "port": 2,
+      "page": 1,
+      "layer": 22
+    },
+    {
+      "port": 2,
+      "page": 2,
+      "layer": 23
+    },
+    {
+      "port": 2,
+      "page": 3,
+      "layer": 24
+    }
+  ],
+  "arena_heads": [
+    {
+      "bank": "heap",
+      "page": 0,
+      "layer": 25,
+      "words": 4
+    },
+    {
+      "bank": "heap",
+      "page": 1,
+      "layer": 26,
+      "words": 4
+    },
+    {
+      "bank": "heap",
+      "page": 2,
+      "layer": 27,
+      "words": 4
+    },
+    {
+      "bank": "heap",
+      "page": 3,
+      "layer": 28,
+      "words": 4
+    },
+    {
+      "bank": "stack",
+      "page": 0,
+      "layer": 29,
+      "words": 6
+    },
+    {
+      "bank": "constants",
+      "page": 0,
+      "layer": 30,
+      "words": 6
+    },
+    {
+      "bank": "context",
+      "page": 0,
+      "layer": 31,
+      "words": 1
+    }
+  ],
+  "rf_ports": 3,
+  "rf_rows_per_copy": 512,
+  "rf_payload_bits": 126,
+  "allocated_channels": 737,
+  "features": 511,
+  "operator_scratch_channels": 213,
+  "graph_layers": 39,
+  "module_layer_budget": 35,
+  "parameter_storage": "dense",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "full_source_checker": false,
+  "native_actions": [
+    "MOVE",
+    "ADD",
+    "SUB",
+    "EQ_BRANCH",
+    "LT_BRANCH",
+    "STOP_OK",
+    "STOP_INVALID",
+    "JUMP",
+    "AND",
+    "OR",
+    "XOR",
+    "SHR",
+    "SHL",
+    "NONZERO_BRANCH",
+    "MERGE_FIELDS3",
+    "COMMIT_FIELDS",
+    "HEAP_READ",
+    "HEAP_WRITE",
+    "FRAME_READ",
+    "FRAME_WRITE",
+    "CONTEXT_READ",
+    "CONTEXT_WRITE",
+    "DECLARATION_READ"
+  ]
+}
