@@ -1,3 +1,35 @@
+# Completed small-model source check; latency NOT delivered
+
+The corrected run at **d3250a907f19948f46f414887ea2374e2dfc3b71** completed with
+exit 0. The original Empty block, alpha-renamed recursor claim and identity target
+are accepted (DONE/NONE/result1); the matched invalid target is rejected
+(INVALID/TYPE_MISMATCH/result0). Both cases match **all 951 registers and all
+arena banks**, checked by SPEC only after stock inference terminates.
+
+Actual: **230,432 forwards / 800.131630s** decoding; build15.033756s,
+syntax prefill12.622695s, capture47.113022s. The completed artifact has
+**48,290,654 logical dense parameters**, H768/I256/L65, all73rule families /
+6454effects, 46608 fixed records. Weights96,581,308bytes; native cache tensor
+storage2,608,208bytes for2items. Domain: word16/heap512/stack32/context8/constants4/
+fuel8192. The observed count rounds up the longer native-reference count230425
+to the32forward completion-observation interval.
+
+**800seconds for this tiny pair is far too slow. Practical latency remains a
+blocking delivery gap.** There is no repeated full run scheduled. Current rate
+is ~288forwards/s and ~170native forwards per semantic step. At that rate even a
+10second decoding budget would allow only~2880forwards; this is a scale estimate,
+not an agreed deadline or promised result. Both scheduling overhead and forward
+count require substantial further reduction, preserving the entire rules/domain.
+
+[Result](completed-small-stock.json) and [input/code/runtime audit](completed-small-stock-audit.json)
+preserve exact outputs, resource details, launch command, dependency versions and
+SHA256s of original source/config/log/report. Both inputs are byte-for-byte equal
+to the pinned commit. The raw full log remains in scratch. This is bounded current
+source STOCK evidence; it is not complete Lean semantics, larger/nested-source
+coverage, or a practical generic tool. Existing target.md semantic GAPs remain.
+
+Earlier checkpoints follow.
+
 # Return-address forwarding correction (2026-11-15)
 
 A static timing audit found a real bug in fused call/immediate-return: the first

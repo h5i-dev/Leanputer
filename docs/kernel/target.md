@@ -1,3 +1,15 @@
+# Current bounded stock result and open delivery gate
+
+The corrected full current-rule model at d3250a9 has actual matched original-source
+accept/reject evidence: 48,290,654 dense parameters, 230432forwards/800.1316s, and
+all951registers/allbanks equal to SPEC checked after inference. Inputs/code/runtime
+are pinned in [the audited evidence](../../benchmarks/kernel-control-speed/README.md).
+The proposed100M dense size ceiling is met for word16/heap512/stack32/context8/
+constants4/fuel8192. **Practical latency is not delivered: 13.3minutes for this tiny
+pair is unacceptable.** No repeat without materially improved projected cost.
+General semantic GAPs and larger/nested-source native coverage remain open; the
+historical statements below are superseded only for this bounded stock result.
+
 # Target kernel algorithms and representation
 
 This is the implementation contract, not a claim that the target is implemented.
