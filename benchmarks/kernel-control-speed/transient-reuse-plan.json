@@ -1,0 +1,18 @@
+{
+  "logical_dense_parameters": 83271580,
+  "hidden": 960,
+  "intermediate": 512,
+  "layers": 49,
+  "graph_layers": 46,
+  "rom_records": 48912,
+  "rom_layers": 12,
+  "allocated_channels": 904,
+  "active_gdn_layers": 6,
+  "guard_bundles": true,
+  "parallel_carry": true,
+  "grouped_memory": true,
+  "gdn_value_heads": 4,
+  "reuse_transient_features": true,
+  "pinned_features": 233,
+  "planning_only": true
+}

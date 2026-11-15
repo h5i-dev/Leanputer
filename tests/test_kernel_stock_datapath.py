@@ -29,7 +29,13 @@ class SharedDatapathTest(unittest.TestCase):
         values=out.logits[:,0].float().tolist()
         self.assertEqual([[word(v[16:32]),word(v[32:48]),word(v[48:64])]for v in values],[[1,0,65535],[4,11,0x1234]])
 
+    def test_transient_lifetimes_preserve_source_rom_operands_and_row_updates(self):
+        self.check_source_addresses(reuse_transient_features=True)
+
     def test_source_address_ops_keep_full_word_selectors_and_modular_indices(self):
+        self.check_source_addresses()
+
+    def check_source_addresses(self,**options):
         import torch
         from leanputer.kernel.stock_datapath import build,CoreRecord,WordAction as O,rf_address as rf
         from leanputer.kernel.stock_source_ops import SparseSwitchRecord,AffineAddressRecord
@@ -39,7 +45,7 @@ class SharedDatapathTest(unittest.TestCase):
                  CoreRecord(O.EQ_BRANCH,a=rf(8),b=rf(3),yes=5,no=4),CoreRecord(O.STOP_INVALID,yes=4),
                  CoreRecord(O.FRAME_ROW_READ,dest=rf(14),a=rf(4),auxiliary=32768,yes=6),
                  CoreRecord(O.EQ_BRANCH,a=rf(14),b=rf(5),yes=7,no=4),CoreRecord(O.STOP_OK,yes=7)]
-        chip=build(program,rom_layout='byte_pages',hidden=1024,intermediate=512,compact_attention=True,grouped_memory=True,parallel_carry=True,datapath_layers=45)
+        chip=build(program,rom_layout='byte_pages',hidden=1024,intermediate=512,compact_attention=True,grouped_memory=True,parallel_carry=True,datapath_layers=45,**options)
         claims=[(0,65535,65534,0,0,101,77),(500,0,1,65535,33,108,55),(65535,0,1,65535,33,108,55),(501,65535,65534,0,0,101,77)]
         packets=[]
         for kind,row in((0,0),(0,1),(0,2),(3,0),(3,7),(2,0),(2,31)):

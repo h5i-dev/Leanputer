@@ -1,0 +1,1706 @@
+{
+  "forwards": 137515,
+  "region_body_branch_costs": [
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/frame.phase"
+      ],
+      "forwards": 17994
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/frame.phase",
+        "sp"
+      ],
+      "forwards": 6580
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.tag"
+      ],
+      "forwards": 1105
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "sp"
+      ],
+      "forwards": 811
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "task"
+      ],
+      "forwards": 746
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "sp"
+      ],
+      "forwards": 632
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "publish_pc"
+      ],
+      "forwards": 594
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/node.tag"
+      ],
+      "forwards": 563
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.a"
+      ],
+      "forwards": 342
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "convert_pc"
+      ],
+      "forwards": 332
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.b"
+      ],
+      "forwards": 301
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "task"
+      ],
+      "forwards": 273
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/21",
+        "temporary/22"
+      ],
+      "forwards": 259
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "restore_cb_pc"
+      ],
+      "forwards": 235
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.c"
+      ],
+      "forwards": 229
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.tag"
+      ],
+      "forwards": 201
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "x"
+      ],
+      "forwards": 196
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/frame.phase",
+        "temporary/21"
+      ],
+      "forwards": 189
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "stage_pc"
+      ],
+      "forwards": 158
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/frame.phase"
+      ],
+      "forwards": 144
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "x"
+      ],
+      "forwards": 141
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "r"
+      ],
+      "forwards": 119
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free"
+      ],
+      "forwards": 106
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "read/node.b"
+      ],
+      "forwards": 102
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "env_ready"
+      ],
+      "forwards": 88
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "read/node.a"
+      ],
+      "forwards": 74
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "peer"
+      ],
+      "forwards": 64
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "peer"
+      ],
+      "forwards": 64
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "bounded"
+      ],
+      "forwards": 63
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/frame.phase",
+        "temporary/21"
+      ],
+      "forwards": 55
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.tag",
+        "x"
+      ],
+      "forwards": 55
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "rewrite_pc"
+      ],
+      "forwards": 52
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "published_claim_pc"
+      ],
+      "forwards": 50
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "query_symbol",
+        "read/node.a"
+      ],
+      "forwards": 46
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctx",
+        "limit"
+      ],
+      "forwards": 44
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "read/node.c"
+      ],
+      "forwards": 42
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "name_table_left"
+      ],
+      "forwards": 38
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "env_ready",
+        "read/node.tag"
+      ],
+      "forwards": 34
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "count"
+      ],
+      "forwards": 33
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "temporary/21"
+      ],
+      "forwards": 33
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "name_table_left"
+      ],
+      "forwards": 32
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "lookup_head"
+      ],
+      "forwards": 32
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "depth",
+        "temporary/22"
+      ],
+      "forwards": 30
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "depth",
+        "temporary/24"
+      ],
+      "forwards": 30
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "left_tag",
+        "read/node.tag"
+      ],
+      "forwards": 29
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "env_ready"
+      ],
+      "forwards": 27
+    },
+    {
+      "action": "NONZERO_BRANCH",
+      "words": [
+        "mode",
+        "temporary/682"
+      ],
+      "forwards": 26
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/frame.first",
+        "read/node.a"
+      ],
+      "forwards": 26
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/frame.phase",
+        "read/frame.task"
+      ],
+      "forwards": 26
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "env_next"
+      ],
+      "forwards": 22
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "r",
+        "read/node.b"
+      ],
+      "forwards": 22
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/node.a"
+      ],
+      "forwards": 21
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "reverse_remaining"
+      ],
+      "forwards": 21
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.a",
+        "read/node.b"
+      ],
+      "forwards": 21
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "r"
+      ],
+      "forwards": 21
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "zip_remaining"
+      ],
+      "forwards": 20
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "count",
+        "read/node.tag"
+      ],
+      "forwards": 19
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "left_a",
+        "read/node.a"
+      ],
+      "forwards": 18
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "peer",
+        "x"
+      ],
+      "forwards": 18
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "open_tag",
+        "read/node.tag"
+      ],
+      "forwards": 16
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "depth",
+        "temporary/21"
+      ],
+      "forwards": 16
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "recname_byte_index"
+      ],
+      "forwards": 15
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx",
+        "fold_base"
+      ],
+      "forwards": 15
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "reverse_remaining"
+      ],
+      "forwards": 14
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "query_symbol",
+        "read/node.a"
+      ],
+      "forwards": 14
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "zip_remaining"
+      ],
+      "forwards": 14
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.a",
+        "zip_count"
+      ],
+      "forwards": 14
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "reverse_length"
+      ],
+      "forwards": 13
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "lookup_head"
+      ],
+      "forwards": 12
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "count"
+      ],
+      "forwards": 12
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "depth",
+        "read/node.a"
+      ],
+      "forwards": 12
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.a",
+        "temporary/22"
+      ],
+      "forwards": 11
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "temporary/21"
+      ],
+      "forwards": 10
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx"
+      ],
+      "forwards": 10
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "abstract_uid",
+        "read/node.a"
+      ],
+      "forwards": 9
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "restore_expr_pc"
+      ],
+      "forwards": 9
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "rewrite_restoring"
+      ],
+      "forwards": 9
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "typing_active"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "header_seen"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "left_b"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "env_next"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "restore_cb_lookup"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.b",
+        "temporary/21"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.c",
+        "temporary/21"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "substitution"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "substitution"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "depth"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "kernel_zero"
+      ],
+      "forwards": 8
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/declaration.kind"
+      ],
+      "forwards": 7
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx",
+        "temporary/21"
+      ],
+      "forwards": 7
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "r",
+        "read/node.a"
+      ],
+      "forwards": 7
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/node.c"
+      ],
+      "forwards": 7
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "offset_pc"
+      ],
+      "forwards": 7
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "core_operation"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "name_part"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.c",
+        "vector_expected_role"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "left_c",
+        "read/node.c"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "left_a"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "recname_byte_index"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "apply_base",
+        "local_base"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "apply_base",
+        "apply_end"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "apply_end",
+        "ctx"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctx",
+        "fold_base"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "header_parameter_end",
+        "temporary/21"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "core_ctor_declared",
+        "read/node.a"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "count",
+        "i"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.a",
+        "read/operand.value"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "publish_map_cursor"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "NONZERO_BRANCH",
+      "words": [
+        "mode",
+        "temporary/688"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/node.a",
+        "temporary/21"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "lookup_uid",
+        "read/node.a"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "level_map_head"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "active_kind"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "string_compare_pc"
+      ],
+      "forwards": 6
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/686"
+      ],
+      "forwards": 5
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "vector_remaining"
+      ],
+      "forwards": 5
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx",
+        "i"
+      ],
+      "forwards": 5
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/declaration.kind"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "raw_index",
+        "target_index"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "raw_prefix_remaining"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "abstract_base",
+        "local_base"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "abstract_base",
+        "abstract_end"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "abstract_end",
+        "ctx"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/21"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "stage_front_count"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/688"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "header_seen",
+        "typing_active"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "temporary/21",
+        "temporary/23"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctx",
+        "temporary/23"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "header_seen",
+        "read/node.a"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/operand.value"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "formal_remaining"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "restore_cb_rename"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "NONZERO_BRANCH",
+      "words": [
+        "mode",
+        "temporary/686"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "temporary/23"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx",
+        "local_base"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "kernel_zero"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "publish_check_kind"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/frame.first"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "r",
+        "read/frame.first"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/frame.second"
+      ],
+      "forwards": 4
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "decl_count",
+        "raw_index"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "NONZERO_BRANCH",
+      "words": [
+        "mode",
+        "temporary/684"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "stage_reserve_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "header_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/682"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "recname_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "elim_large"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "motive_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "apply_base",
+        "apply_end"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/683"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "rec_type_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "asm_names_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "asm_remaining"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "publish_check_cursor",
+        "publish_old_head"
+      ],
+      "forwards": 3
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "decl_count"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "target_index",
+        "temporary/21"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "stage_reserve_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "stage_front_count"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "stage_back_count"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.a",
+        "read/node.b",
+        "read/node.c"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "header_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "header_seen"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "name_part",
+        "read/node.a"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "recname_length"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "recname_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "vector_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "vector_expected_role"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_rec_names",
+        "header_seen",
+        "typing_active"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "decl_ctor_families"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "header_parameter_base",
+        "read/node.a"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "elim_cursor"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_elim_info",
+        "core_rec_names"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctx",
+        "header_parameter_end"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "motive_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "local_base",
+        "reuse_base"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "reuse_base",
+        "reuse_end"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctx",
+        "reuse_end"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/681"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_constructors",
+        "core_motives"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctx",
+        "temporary/21"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_minors",
+        "core_motives"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "rec_type_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/684"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "core_minors"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "core_rec_types"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/operand.value"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_rec_types",
+        "header_seen",
+        "typing_active"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_flags",
+        "core_rules"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "asm_names_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "asm_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "publish_rec_remaining"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.tag",
+        "stage_parameter_count"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "depth"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "local_base",
+        "lookup_index"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_rec_levels",
+        "core_rec_parameters",
+        "core_rec_signatures"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "published_declarations",
+        "temporary/21"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "level_map_head"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "count",
+        "temporary/23"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "parameter",
+        "read/node.a"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "active_kind"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "active_value"
+      ],
+      "forwards": 2
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "read/node.a",
+        "read/node.c"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "ctor_families_remaining"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "recname_length",
+        "temporary/21"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.a",
+        "temporary/21"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/node.b"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "read/node.tag",
+        "recname_part_tag"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "vector_expected_role"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "core_names_remaining"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "ctor_names"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "GUARD3",
+      "words": [
+        "core_ctor_declared",
+        "header_seen"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "free",
+        "temporary/22"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "temporary/22"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "elim_large"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "header_parameter_end"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "count",
+        "elim_cursor"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "reuse_end",
+        "reuse_index"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "temporary/685"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "apply_end",
+        "temporary/21"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "asm_expected",
+        "asm_group_count"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "publish_family_remaining"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "publish_rec_index",
+        "stage_original_count"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "publish_check_kind"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "EQ_BRANCH",
+      "words": [
+        "count",
+        "published_claim_arity"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "count",
+        "temporary/21"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "active_value"
+      ],
+      "forwards": 1
+    },
+    {
+      "action": "LT_BRANCH",
+      "words": [
+        "read/frame.second"
+      ],
+      "forwards": 1
+    }
+  ]
+}

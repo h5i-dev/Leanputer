@@ -119,7 +119,7 @@ class StockDatapath:
         return StaticCache(config=config,max_cache_len=1)
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False,bounds_schema=()):
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False,bounds_schema=(),reuse_transient_features=False):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
@@ -146,7 +146,8 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     if not compact_attention and logical_count>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
     builder=NativeBuilder(intermediate=intermediate,reset_layers=module_start);g=builder.graph;g.target.value_heads=4 if grouped_memory else 1;fixed=FixedSlots(hidden//64+1);features={};physical={}
     def feature(name,width):
-        slots=fixed.add(name,width);values=[builder.feature(f'{name}/{i}')for i in range(width)]
+        slots=[]if reuse_transient_features and name in('record','record_valid','A','B','row')else fixed.add(name,width)
+        values=[builder.feature(f'{name}/{i}')for i in range(width)]
         for value,slot in zip(values,slots):physical[next(iter(value.terms))]=slot
         features[name]=values;return values
     # Only the finite kernel outcome/reason enums are narrowed. All semantic
@@ -487,8 +488,17 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     allocation=allocate(g,None,set(physical),intermediate)
     scratch=fixed.next;feature_count=len(physical)
     mapping={d:slot-fixed.prefix for d,slot in physical.items()}
-    for d,slot in allocation.slots.items():
-        if d not in mapping:mapping[d]=scratch+slot-feature_count-fixed.prefix
+    if reuse_transient_features:
+        # Pinned transport/state columns can occur between temporary IR IDs.
+        # Map allocator COLORS to physical columns, then preserve every alias.
+        colors={allocation.slots[d]:slot-fixed.prefix for d,slot in physical.items()}
+        cursor=fixed.next-fixed.prefix
+        for color in sorted(set(allocation.slots.values())):
+            if color not in colors:colors[color]=cursor;cursor+=1
+        for d,color in allocation.slots.items():mapping[d]=colors[color]
+    else:
+        for d,slot in allocation.slots.items():
+            if d not in mapping:mapping[d]=scratch+slot-feature_count-fixed.prefix
     high=max(mapping.values(),default=0)+fixed.prefix+1
     if high>hidden:raise ValueError(f'compact module exceeds H{hidden}: needs{high} channels')
     allocation.slots=mapping;layout=Layout(hidden=hidden,m=hidden//64,slots=mapping)
@@ -508,7 +518,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     value_heads=4 if grouped_memory else 1
     expected=sum(3*hidden*intermediate+((258+386*value_heads)*hidden+1152+514*value_heads if kind=='linear_attention'else 12*hidden+4)for kind in layer_types)+129*hidden
     if expected>100000000:raise ValueError('complete dense stock shape exceeds100M before allocation')
-    if plan_only:return dict(logical_dense_parameters=expected,hidden=hidden,intermediate=intermediate,layers=layers,graph_layers=g.n_layers(),rom_records=len(records),rom_layers=rom_layers,allocated_channels=high,active_gdn_layers=len(active_layers),guard_bundles=bundled,parallel_carry=parallel_carry,grouped_memory=grouped_memory,gdn_value_heads=value_heads,planning_only=True)
+    if plan_only:return dict(logical_dense_parameters=expected,hidden=hidden,intermediate=intermediate,layers=layers,graph_layers=g.n_layers(),rom_records=len(records),rom_layers=rom_layers,allocated_channels=high,active_gdn_layers=len(active_layers),guard_bundles=bundled,parallel_carry=parallel_carry,grouped_memory=grouped_memory,gdn_value_heads=value_heads,reuse_transient_features=reuse_transient_features,pinned_features=len(physical),planning_only=True)
     config=Qwen3_5TextConfig(hidden_size=hidden,intermediate_size=intermediate,num_hidden_layers=layers,layer_types=layer_types,vocab_size=64,linear_key_head_dim=128,linear_value_head_dim=128,linear_num_key_heads=1,linear_num_value_heads=value_heads,linear_conv_kernel_dim=4,num_attention_heads=1,num_key_value_heads=1,head_dim=2,hidden_act='silu',tie_word_embeddings=False,rope_parameters=dict(rope_type='default',rope_theta=10000000,partial_rotary_factor=1.,mrope_section=[1,0,0],mrope_interleaved=True))
     prior=torch.get_default_dtype()
     try:
@@ -538,12 +548,12 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                 row(condition,layout,mlp.gate_proj.weight[unit],128.)
                 row(one,layout,mlp.up_proj.weight[unit],1/128.)
                 for bit,value in enumerate(bits):
-                    if value:mlp.down_proj.weight[fixed.groups['record'][bit],unit]=1.
-                mlp.down_proj.weight[fixed.groups['record_valid'][0],unit]=1.
+                    if value:mlp.down_proj.weight[layout.dim(next(iter(features['record'][bit].terms))),unit]=1.
+                mlp.down_proj.weight[layout.dim(next(iter(features['record_valid'][0].terms))),unit]=1.
         else:
             # The low-row decoder temporarily occupies FUTURE RF read lanes.
             # Separate pending-write lanes remain intact for every RF copy.
-            low_slots=fixed.groups['A']+fixed.groups['B']+fixed.groups['row'][:96]
+            low_slots=[layout.dim(next(iter(value.terms)))for value in A+B+D[:96]]
             mlp,units=spare(0,128)
             for value,unit in enumerate(units):
                 row(sum(matches(pc[:7],value),Expr())-6*one,layout,mlp.gate_proj.weight[unit],128.)
@@ -557,7 +567,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                         index=128*page+low
                         value=(1 if column==14 else sum(encoded[index][8*column+bit]<<bit for bit in range(8)))if index<len(encoded)else 0
                         mlp.up_proj.weight[unit,slot]=value/(128*layout.scale)
-                    target=fixed.groups['record_valid'][0]if column==14 else fixed.groups['record'][8*column]
+                    target=layout.dim(next(iter(features['record_valid'][0].terms)))if column==14 else layout.dim(next(iter(features['record'][8*column].terms)))
                     mlp.down_proj.weight[target,unit]=1.
             for stage_index,bit in enumerate(range(7,0,-1)):
                 layer=1+rom_layers+stage_index;mlp,units=spare(layer,28+(128 if stage_index==0 else 0))
@@ -567,7 +577,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
                         unit=units[2*byte+which]
                         row(remainder-threshold*one,layout,mlp.gate_proj.weight[unit],128.)
                         row(one,layout,mlp.up_proj.weight[unit],1/128.)
-                        mlp.down_proj.weight[fixed.groups['record'][8*byte+bit],unit]=1. if which==0 else-1.
+                        mlp.down_proj.weight[layout.dim(next(iter(features['record'][8*byte+bit].terms))),unit]=1. if which==0 else-1.
                 if stage_index==0:
                     for slot,unit in zip(low_slots,units[28:]):
                         row(one,layout,mlp.gate_proj.weight[unit],128.)
@@ -585,5 +595,5 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
     report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=3 if grouped_memory else 12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(source_affine_addresses=affine_present,sparse_switch_tables=len(sparse_tables),incremental_bounds=incremental,bounds_fields=len(bounds_schema),grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
+    report.update(reuse_transient_features=reuse_transient_features,pinned_features=len(physical),source_affine_addresses=affine_present,sparse_switch_tables=len(sparse_tables),incremental_bounds=incremental,bounds_fields=len(bounds_schema),grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
     return StockDatapath(model,fixed,layout,report)

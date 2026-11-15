@@ -297,3 +297,23 @@ cacheTENSORS/logits and55nativePC boundaries/item;382.3301FW/s,107.45s capture.
 Current longer-case projection359.68s remains minutes; practical seconds-scale
 latency NOT delivered. No full-source rerun. Body57414, validation39058 and
 commit26163 native forwards now dominate. Semantic/larger-domain gaps remain.
+
+Further fixed-control/layout checkpoint: no-op-first private continuation
+dispatch preserves every matched source state OFFLINE at124842/128127 forwards
+(48,912ROM records). Both data edges remain. The current stock word/call/return
+operations already implement this control; no new interpreter was introduced.
+
+Global continuation sharing reduces the OFFLINE count to109466/112537, but
+104,208records exceedPC16. Fixed regional table budgets fit64,272records at
+120817/124208 forwards:15K extra records for4K saved forwards versus the simpler
+layout. Preserved/unselected, no GPU emission. Profiled frame.phase comparisons
+cost17994 LT +6580 bundled forwards in the previous longer case.
+
+Transient feature reuse keeps233 transport/state bits pinned instead of504,
+and colors decoded-record/operand slots after their last read. Targeted STOCK
+ROM/affine/full-word/row/untouched-field test PASS6.86s. Whole H960/I512 plan
+83,271,580DENSE/49layers/904channels, not whole-source STOCK evidence or a speed
+result. H896 fails at903channels. Experimental actual-producer birth allocation
+only saved2channels and failed a ROM-unit collision test; its code/logs remain
+in scratch and it is not selected. No repeated full source run; practical
+seconds-scale latency and the existing semantic/larger-domain gaps remain open.

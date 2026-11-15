@@ -137,12 +137,17 @@ class WordCode:
 
 
 class ControlStore:
-    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False,incremental_bounds=False):
+    def __init__(self,compiler,phase_dispatch=False,contract_dispatch=False,family_dispatch=False,role_dispatch=False,mode_dispatch=False,indexed_phases=False,incremental_bounds=False,fast_default_dispatch=False,continuation_dispatch=False,dispatch_table_budget=None):
         role_dispatch=role_dispatch or mode_dispatch
         family_dispatch=family_dispatch or role_dispatch
         self.mode_dispatch=mode_dispatch
         self.indexed_phases=indexed_phases
         self.incremental_bounds=incremental_bounds
+        self.fast_default_dispatch=fast_default_dispatch
+        self.continuation_dispatch=continuation_dispatch
+        limits=dispatch_table_budget.values()if isinstance(dispatch_table_budget,dict)else([dispatch_table_budget]if dispatch_table_budget is not None else[])
+        if any(value<0 for value in limits):raise ValueError('negative dispatch table budget')
+        self.dispatch_table_budget=dispatch_table_budget;self.dispatch_entries_allocated=0;self.dispatch_entries_by_region=Counter()
         self.role_dispatch=role_dispatch
         self.capture_statistics=compiler.g.statistics()
         self.phase_plan=None;self.contract_plan=None;self.control_priority=contract_dispatch;self.family_dispatch=family_dispatch
@@ -224,7 +229,10 @@ class ControlStore:
                         self.contract_plan.control_order=order
                         effects=self.specialized_effects(self.contract_plan.body,mode,low,high)
                         variable=next(i for i,name in self.contract_plan.variables.items()if name==owner)
-                        target=self.route_effects(effects,variable,self.terminal.label)
+                        if continuation_dispatch and low==high==int(Mode.RETURN):
+                            phase=next(i for i,name in self.contract_plan.variables.items()if name=='read/frame/phase')
+                            target=self.route_effects(effects,phase,self.terminal.label,lambda group,tail:self.route_effects(group,variable,tail))
+                        else:target=self.route_effects(effects,variable,self.terminal.label)
                         if mode_dispatch and parts and parts[-1][2]==target:parts[-1]=(parts[-1][0],high,target)
                         else:parts.append((low,high,target))
                     body=self.control_cases(mode,parts)
@@ -275,7 +283,7 @@ class ControlStore:
                 caller=self.block();caller.emit('CALL_HANDLER',callee=entry,yes=following);following=caller.label
         return following
 
-    def route_effects(self,effects,variable,following):
+    def route_effects(self,effects,variable,following,lower=None):
         # Resolve the internal owner once; common effects share a continuation.
         # Main state is immutable until commit, so OR-shadow writes commute.
         common=[];private=[];values=set();plan=self.contract_plan
@@ -283,17 +291,30 @@ class ControlStore:
             tests=plan.tests(item[1].guard).get(variable)
             if tests:private.append(item);values.update(tests)
             else:common.append(item)
-        tail=self.family_effects(common,following)
+        lower=lower or self.family_effects
+        tail=lower(common,following)
         if not private:return tail
         minimum,maximum=plan.contract_domains[variable];breaks={minimum,maximum+1}
         for value in values:
             if minimum<=value<=maximum:breaks.update((value,value+1))
         breaks=sorted(breaks);parts=[]
         for low,end in zip(breaks,breaks[1:]):
-            body=self.family_effects(self.specialized_effects(private,variable,low,end-1),tail)
+            body=lower(self.specialized_effects(private,variable,low,end-1),tail)
             if parts and parts[-1][2]==body:parts[-1]=(parts[-1][0],end-1,body)
             else:parts.append((low,end-1,body))
         return self.control_cases(variable,parts)
+
+    def reserve_dispatch_table(self,size):
+        region=getattr(self,'region','body');budget=getattr(self,'dispatch_table_budget',None)
+        by_region=getattr(self,'dispatch_entries_by_region',None)
+        used=getattr(self,'dispatch_entries_allocated',0)
+        if isinstance(budget,dict):
+            limit=budget.get(region,budget.get('default',0));consumed=by_region[region]if by_region is not None else 0
+        else:limit=budget;consumed=used
+        if limit is not None and consumed+size>limit:return False
+        self.dispatch_entries_allocated=used+size
+        if by_region is not None:by_region[region]+=size
+        return True
 
     def control_cases(self,variable,parts):
         if len(parts)==1:return parts[0][2]
@@ -303,7 +324,7 @@ class ControlStore:
             if interesting:
                 high=max(end for low,end,target in interesting)
                 size=16 if high<16 else 256 if high<256 else None
-                if size and size<=16*len(parts):
+                if size and size<=16*len(parts)and self.reserve_dispatch_table(size):
                     block=self.block();block.emit('SWITCH_WORD',a=self.inputs[self.contract_plan.variables[variable]],yes=default,cases=tuple(interesting),immediate=size,forwards=2)
                     return block.label
         split=len(parts)//2;left=self.control_cases(variable,parts[:split]);right=self.control_cases(variable,parts[split:])
@@ -344,7 +365,10 @@ class ControlStore:
                 else:ranges.append((low,high,target))
             def select(parts):
                 if len(parts)==1:return parts[0][2]
-                split=len(parts)//2;left=select(parts[:split]);right=select(parts[split:])
+                if self.fast_default_dispatch and parts[0][2]==following:
+                    left=parts[0][2];right=select(parts[1:]);split=1
+                else:
+                    split=len(parts)//2;left=select(parts[:split]);right=select(parts[split:])
                 block=self.block();code=WordCode(self,block);a=code.get(case['variable'])
                 code.block.emit('TEST_WORD_LT',a=a,b=Operand('literal',parts[split][0],a.width),yes=left,no=right,width=a.width)
                 return block.label
@@ -501,7 +525,7 @@ class ControlStore:
         if len(cases)>=4:
             maximum=max(value for value,target in cases);minimum=min(value for value,target in cases)
             size=16 if maximum<16 else 256 if maximum<256 else None
-            if minimum>=0 and size and size<=16*len(cases):
+            if minimum>=0 and size and size<=16*len(cases)and self.reserve_dispatch_table(size):
                 block=self.block();code=WordCode(self,block,memo,start);a=code.get(word)
                 code.block.emit('SWITCH_WORD',a=a,yes=following,cases=tuple((value,value,target)for value,target in cases),immediate=size,width=a.width,forwards=2)
                 return block.label
@@ -593,7 +617,7 @@ class ControlStore:
             phase_dispatch=self.phase_plan.report()if self.phase_plan else None,
             checked_contract_dispatch=bool(self.contract_plan),
             source_family_control_dispatch=self.contract_plan.report()if self.family_dispatch else None,
-            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,incremental_bounds=self.incremental_bounds,
+            source_control_role_dispatch=self.role_dispatch,source_global_mode_dispatch=self.mode_dispatch,indexed_phase_dispatch=self.indexed_phases,incremental_bounds=self.incremental_bounds,fast_default_dispatch=self.fast_default_dispatch,global_continuation_dispatch=self.continuation_dispatch,dispatch_table_budget=self.dispatch_table_budget,dispatch_entries_allocated=self.dispatch_entries_allocated,dispatch_entries_by_region=dict(self.dispatch_entries_by_region),
             note='All source rule effects are mapped to typed WORD/control records. This does not establish112bit encoding, a native operator schedule, complete semantic coverage, latency or source stock admission.')
 
     def serializable(self):
