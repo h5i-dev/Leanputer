@@ -83,6 +83,64 @@ def run(program,documents,device='cuda',max_forwards=512,progress=None,prefill_c
     return dict(chip=chip,cache=cache,state=state,outputs=output,completed=completed,forwards=step,inference_seconds=elapsed,build_seconds=built-started,prefill_seconds=loaded-built,execution=execution,compiled_stock_operations=bool(executor and compile_stock),immutable_weight_freezing=bool(executor and compile_stock and torch._inductor.config.freezing),capture_seconds=executor.setup_seconds if executor else 0)
 
 
+def execute_window(chip,config,document,execution='cuda_graph',max_total_forwards=5000,progress=None):
+    """Boot one source case and run tied slots until the stock model publishes.
+
+    Every model() call is counted, including boot and CUDA-graph setup. The host
+    only moves the original syntax, the identity residual, and the shared GDN
+    memory tensors. It does not decode an instruction or choose a branch.
+    """
+    lanes=chip.report.get('window_lanes',1)
+    if lanes<2:raise ValueError('windowed stock execution needs tied slots')
+    device=next(chip.model.parameters()).device
+    packets=syntax_packets(chip,config,[document])
+    # Boot is 692 tokens and the check is a few thousand more. Inactive KV
+    # rows are unused; the bound only keeps the static cache in range.
+    cache=chip.new_cache(max_cache_len=8192)
+    masks={'full_attention':None,'linear_attention':None}
+    started=time.perf_counter();boot_forwards=0
+    def step(embeddings,**extra):
+        return chip.model(inputs_embeds=embeddings,past_key_values=cache,use_cache=True,position_ids=torch.zeros(embeddings.shape[:2],dtype=torch.long,device=device),attention_mask=masks,**extra)
+    with torch.inference_mode():
+        for first in range(0,packets.shape[1],32):
+            out=step(chip.embeddings(packets[:,first:first+32]));cache=out.past_key_values;boot_forwards+=1
+            if boot_forwards==1:chip.share_memory(cache)
+            shared=cache.layers[chip.report['memory_layers'][0]].recurrent_states[0]
+            other=cache.layers[chip.report['memory_layers'][0]+chip.report['template_layers']].recurrent_states[0]
+            if other is not shared:raise RuntimeError('stock memory alias broke during boot')
+        booted=time.perf_counter()
+        state=chip.embeddings(torch.zeros(1,1,chip.slots.next-chip.slots.prefix))
+        setup_forwards=0;executor=None
+        if execution=='cuda_graph':
+            from .stock_execution import StockCudaGraph,snapshot,restore
+            saved=snapshot(cache,state)
+            step(state,output_hidden_states=True);setup_forwards+=1
+            restore(cache,state,saved)
+            executor=StockCudaGraph(chip.model,cache,state,progress=progress)
+            setup_forwards+=executor.model_calls
+        elif execution!='eager':raise ValueError('unknown stock execution schedule')
+        powers=2.**torch.arange(16,device=device)
+        check_forwards=0;completed=False;output=None
+        budget=max_total_forwards-boot_forwards-setup_forwards
+        if budget<1:raise RuntimeError('boot and setup already exhausted the stock forward budget')
+        decoding=time.perf_counter()
+        while check_forwards<budget:
+            if executor:executor.replay()
+            else:
+                out=step(state,output_hidden_states=True);cache=out.past_key_values;state=out.hidden_states[-2]
+            check_forwards+=1
+            logits=(executor.logits if executor else out.logits)[0,0].float()
+            if not bool(((logits==0)|(logits==1)).all()):raise RuntimeError('stock checker emitted nonbinary diagnostic bits')
+            fields=logits.reshape(4,16).matmul(powers).to(torch.int64).tolist()
+            output=[int(v) for v in fields]
+            completed=output[1]!=0
+            if progress and (check_forwards in (1,8) or check_forwards%32==0 or completed):
+                progress(dict(event='progress',check_forwards=check_forwards,total_forwards=boot_forwards+setup_forwards+check_forwards,seconds=time.perf_counter()-decoding,output=output,completed=completed))
+            if completed:break
+        elapsed=time.perf_counter()-decoding
+    return dict(cache=cache,state=state,output=output,completed=completed,boot_forwards=boot_forwards,setup_forwards=setup_forwards,check_forwards=check_forwards,total_forwards=boot_forwards+setup_forwards+check_forwards,boot_seconds=booted-started,setup_seconds=(decoding-booted),check_seconds=elapsed,execution=execution,logical_dense_parameters=chip.report['logical_dense_parameters'],window_lanes=lanes,layers=chip.report['layers'])
+
+
 def read_main_and_banks(chip,cache,batch_index):
     """Output diagnostics only; never used to feed the model or decide types."""
     from .traversal_machine import RegisterLayout,StateLayout,MachineConfig

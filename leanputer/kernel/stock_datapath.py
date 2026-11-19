@@ -107,19 +107,80 @@ class StockDatapath:
             result[[i-self.slots.prefix for i in indices]]=torch.tensor(values,dtype=result.dtype)
         return result
 
-    def new_cache(self):
+    def new_cache(self,max_cache_len=None):
         if not self.report.get('compact_inactive_attention'):return None
         from copy import deepcopy
         from transformers import StaticCache
-        # Only zero-output attention blocks use a one-token window. Active
-        # checker memories retain the unmodified stock GDN cache layers.
+        # Inactive attention is zeroed, so its KV cache never affects a result.
+        # A one-token sliding window is enough for a single slot. Tied slots keep
+        # a static cache: the sliding update allocates a CPU index, which CUDA
+        # graph capture rejects. The GDN memory tensors are unchanged.
         config=deepcopy(self.model.config)
-        config.layer_types=['linear_attention'if kind=='linear_attention'else'sliding_attention'for kind in config.layer_types]
-        config.sliding_window=1
-        return StaticCache(config=config,max_cache_len=1)
+        if max_cache_len is None:
+            config.layer_types=['linear_attention'if kind=='linear_attention'else'sliding_attention'for kind in config.layer_types]
+            config.sliding_window=1
+            max_cache_len=1
+        return StaticCache(config=config,max_cache_len=max_cache_len)
+
+    def share_memory(self,cache):
+        """Point later slots at slot 0's GDN memory tensors.
+
+        The stock forward still updates those tensors itself. Sharing is what
+        makes micro-step N see micro-step N-1's writes inside one model call.
+        Convolution state stays private: its kernel tap is the current token.
+        """
+        lanes=self.report.get('window_lanes',1)
+        if lanes<=1:return
+        stride=self.report['template_layers']
+        for local in self.report['memory_layers']:
+            shared=cache.layers[local].recurrent_states[0]
+            if shared is None:raise RuntimeError('stock memory cache is not initialized')
+            for slot in range(1,lanes):
+                cache.layers[local+slot*stride].recurrent_states[0]=shared
 
 
-def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False,bounds_schema=(),reuse_transient_features=False,preflight_plan=None):
+def tie_module_parameters(dst,src):
+    """Share Parameter objects. Buffers such as layer index stay per module."""
+    src_modules=dict(src.named_modules())
+    for name,module in dst.named_modules():
+        origin=src_modules[name]
+        for key,value in origin.named_parameters(recurse=False):
+            module._parameters[key]=value
+
+
+def stack_tied_slots(model,lanes):
+    """Repeat one checker slot `lanes` times. Unique dense parameters stay the slot's."""
+    if lanes<2:return model
+    import copy
+    from transformers import Qwen3_5ForCausalLM
+    from transformers.initialization import no_init_weights
+    config=copy.deepcopy(model.config)
+    stride=config.num_hidden_layers
+    config.num_hidden_layers=stride*lanes
+    config.layer_types=list(config.layer_types)*lanes
+    device=next(model.parameters()).device
+    dtype=next(model.parameters()).dtype
+    prior=torch.get_default_dtype()
+    try:
+        torch.set_default_dtype(dtype)
+        with torch.device('cpu'),no_init_weights():
+            stacked=Qwen3_5ForCausalLM(config)
+    finally:torch.set_default_dtype(prior)
+    missing,unexpected=stacked.load_state_dict(model.state_dict(),strict=False)
+    if unexpected:raise ValueError('slot template does not fit the stacked stock module')
+    stray=[key for key in missing if not(key.startswith('model.layers.') and int(key.split('.')[2])>=stride)]
+    if stray:raise ValueError('stacked slot is missing template weights')
+    for slot in range(1,lanes):
+        for index in range(stride):
+            tie_module_parameters(stacked.model.layers[slot*stride+index],stacked.model.layers[index])
+    stacked.requires_grad_(False);stacked.eval()
+    if config._attn_implementation if hasattr(config,'_attn_implementation') else None:pass
+    if getattr(model.config,'_attn_implementation',None)=='eager':stacked.set_attn_implementation('eager')
+    import gc;gc.collect()
+    return stacked.to(device)
+
+
+def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',datapath_layers=35,compact_attention=False,parallel_carry=False,plan_only=False,grouped_memory=False,bounds_schema=(),reuse_transient_features=False,preflight_plan=None,window_lanes=1):
     from transformers import Qwen3_5ForCausalLM,Qwen3_5TextConfig
     from transformers.initialization import no_init_weights
     torch.set_num_threads(1)
@@ -130,6 +191,7 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     incremental=preflight_present or any(getattr(r,'action',None)==WordAction.INVALID_BRANCH for r in records)
     if incremental!=bool(bounds_schema):raise ValueError('native invalid branch requires original predicate schema')
     if hidden not in(768,896,960,1024)or intermediate not in(256,512,1024):raise ValueError('physical domain H768/896/960/1024 and I256/512/1024')
+    if not isinstance(window_lanes,int) or window_lanes<1 or window_lanes>32:raise ValueError('window lanes must be an integer from 1 to 32')
     if not records or len(records)>65536:raise ValueError('16bit control PC domain')
     if rom_layout not in('flat','byte_pages'):raise ValueError('unknown weight-ROM layout')
     from .stock_source_ops import SparseSwitchRecord
@@ -240,9 +302,20 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
             z={i+2:K*one for i in range(126)};outs=[(i+2,128.)for i in range(126)];into=list(outputs)
         g.head(f'rf.{port}.{page}',q,k,values,0,z,outs,beta=write_flags[page],min_level=2*layer,into=into)
         rf_metadata.append(dict(port=port,page=page,layer=g.nodes[-1].level//2))
+    if preflight_present:
+        # A gathered preflight row is three words. Packing them into one RMSNorm
+        # head is not bit-exact, so the check rereads slot = stage on three
+        # forwards and keeps each word in the pending packet.
+        def force_check_slot(query,tag):
+            forced=[]
+            for i in range(3):
+                src=stage[i]if i<2 else Expr()
+                forced.append(g.ffn([(1,src,pfcheck),(1,query[i],one-pfcheck)],name=f'{tag}-check-slot/{i}'))
+            return forced+list(query[3:])
+        query_a=force_check_slot(query_a,'a')
     if grouped_memory:
         from .stock_memory import grouped_rf,grouped_arenas
-        grouped_rf(builder,0,query_a,A,write_flags,address,payload,run,literal_a,suppress_dest,module_start,rf_metadata,pfcheck if preflight_present else None)
+        grouped_rf(builder,0,query_a,A,write_flags,address,payload,run,literal_a,suppress_dest,module_start,rf_metadata)
     else:
         for page in range(4):head(0,page,query_a,A,literal_a)
     queued_main=A[:3]+[Expr()]+A[3:11];queued_shadow=A[:3]+[one]+A[3:11]
@@ -251,7 +324,8 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         query_b=[g.ffn([(1,queued_shadow[i],committing),(1,shadow_dest[i],merging),(1,code[28+i],guard),(1,code[30+i],one-committing-merging-guard)],name='flat-query-B')for i in range(12)]
     else:query_b=select(committing,queued_shadow,select(merging,shadow_dest,code[30:42],'source-B-field'),'query-B-address')
     literal_b=code[91]-g.ffn([(1,code[91],merging+committing+guard)],name='source-B-literal-mask')
-    if grouped_memory:grouped_rf(builder,1,query_b,B,write_flags,address,payload,run,literal_b,suppress_dest,module_start+1,rf_metadata,pfcheck if preflight_present else None)
+    if preflight_present:query_b=force_check_slot(query_b,'b')
+    if grouped_memory:grouped_rf(builder,1,query_b,B,write_flags,address,payload,run,literal_b,suppress_dest,module_start+1,rf_metadata)
     else:
         for page in range(4):head(1,page,query_b,B,literal_b)
     if bundled:
@@ -483,13 +557,20 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     target_dims={next(iter(v.terms))for v in targets}
     clear_tails={next(iter(v.terms))for v in payload[119:]}
     ordinary_clear=builder.gate('and',[ordinary,one-active_clear],'ordinary-clear')if preflight_present else one-active_clear
+    # A windowed forward chains slots on one residual. Boot must keep its
+    # packet through every slot, so later slots cannot commit while boot=1.
+    commit_ordinary=builder.gate('and',[ordinary,run],'window-ordinary')if window_lanes>1 else ordinary
+    commit_clear=builder.gate('and',[ordinary_clear,run],'window-clear')if window_lanes>1 else ordinary_clear
+    handler_call=builder.gate('and',[flags[WordAction.CALL_HANDLER],run],'window-call')if window_lanes>1 else flags[WordAction.CALL_HANDLER]
+    handler_capture=builder.gate('and',[capture_return,run],'window-capture')if window_lanes>1 else capture_return
+    handler_set=builder.gate('and',[setting_return,run],'window-return-set')if window_lanes>1 else setting_return
     for target,value in zip(targets,values):
         d=next(iter(target.terms))
         if (set(value.terms)&target_dims)-{d}:raise ValueError('prototype cross-column commit needs snapshot')
-        g.ffn([(1,ordinary_clear if d in clear_tails else ordinary,value),(-1,ordinary,target)],name='bit-commit',into=target,min_level=max(last[d],2*module_start))
+        g.ffn([(1,commit_clear if d in clear_tails else commit_ordinary,value),(-1,commit_ordinary,target)],name='bit-commit',into=target,min_level=max(last[d],2*module_start))
     for bit,target in enumerate(handler_return):
         d=next(iter(target.terms))
-        g.ffn([(1,code[74+bit],flags[WordAction.CALL_HANDLER]),(1,code[96+bit],capture_return),(-1,target,setting_return)],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
+        g.ffn([(1,code[74+bit],handler_call),(1,code[96+bit],handler_capture),(-1,target,handler_set)],name='handler-return-commit',into=target,min_level=max(last[d],2*module_start))
     if preflight_present:
         # All ordinary deltas have finished. Source data and instruction fields
         # remain live; the former ALU scratch can now hold the fixed predicate.
@@ -497,24 +578,38 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
         def placed(terms,name='ffn',into=None,min_level=0):
             return original_ffn(terms,name=name,into=into,min_level=max(start_level,min_level))
         g.ffn=placed
-        from ..control_packing import PackedBit
         from .stock_preflight_graph import PreflightCircuit
-        packed_words=[]
-        for raw in(A,B):
-            memo={};packed_words += [[PackedBit(value,bit,3).realize(builder,memo)for value in raw]for bit in range(3)]
-        packed_words += [D[16*i:16*i+16]for i in range(3)]
-        inputs=dict(zip(preflight_plan.inputs,packed_words))
-        circuit=PreflightCircuit(builder,preflight_plan,inputs,invalid_latch);words=circuit.outputs()
-        # Gather instructions use ordinary single-word RF outputs and a third
-        # selected word. No prefix checking answer is produced by the host.
+        # Gather writes three words. The check reads them back one slot at a
+        # time: stage 0 keeps slot 0, stage 1 reads slot 1, stage 2 reads slot
+        # 2 and only then runs the predicate. Boolean inputs stay exact.
         source_slots=[builder.gate('and',matches(code[6:9],slot),'preflight-third-slot')for slot in range(7)]
         third=[g.ffn([(1,D[16*slot+i],source_slots[slot])for slot in range(7)],name='preflight-third-word')for i in range(16)]
         gathered=a+b+third+[Expr()]*(126-48)
+        stage_is_1=builder.gate('and',[stage[0],one-stage[1]],'preflight-stage-1')
+        stage_is_2=builder.gate('and',[stage[1],one-stage[0]],'preflight-stage-2')
+        def saved(index):return payload[16*index:16*index+16]
+        # Stages 0 and 1 still evaluate the predicate, but the commit mux keeps
+        # their saved words. Inputs stay Boolean register bits, so the circuit
+        # does not need a second copy of every word.
+        circuit_inputs={
+            'arg_base':saved(0),'count':saved(2),'free':A,
+            'fuel':saved(1),'mode':saved(3),'read/node/tag':B,
+            'status':D[:16],'task':D[16:32],'x':D[32:48],
+        }
+        circuit=PreflightCircuit(builder,preflight_plan,circuit_inputs,invalid_latch);words=circuit.outputs()
         checked=sum(words,[])+[Expr()]*(126-16*len(words))
-        pf_payload=select(pfcheck,checked,gathered,'preflight-payload')
+        save0=A+B+[Expr()]*(126-32)
+        save1=payload[:32]+A+B+[Expr()]*(126-64)
+        staged=select(stage_is_2,checked,select(stage_is_1,save1,save0,'preflight-save-1'),'preflight-staged')
+        pf_payload=select(pfcheck,staged,gathered,'preflight-payload')
         active_pf=builder.gate('and',[run,valid,pfop],'active-preflight')
+        next_stage=[builder.gate('and',[one-stage[0],one-stage[1]],'preflight-next-stage0'),stage_is_1,Expr(),Expr()]
+        pf_pc=select(builder.gate('and',[pfcheck,one-stage_is_2],'preflight-hold'),pc,code[58:74],'preflight-pc')
+        pf_enable=builder.gate('or',[pfgather,builder.gate('and',[pfcheck,stage_is_2],'preflight-commit-enable')],'preflight-enable')
+        pf_address=select(builder.gate('and',[pfcheck,one-stage_is_2],'preflight-keep-address'),address,code[96:105],'preflight-address')
+        pf_stage=select(pfcheck,next_stage,[Expr()]*4,'preflight-stage')
         pf_targets=pc+payload+address+[enable]+kind+stage
-        pf_values=code[58:74]+pf_payload+code[96:105]+[one]+[Expr()]*3+[Expr()]*4
+        pf_values=pf_pc+pf_payload+pf_address+[pf_enable]+[Expr()]*3+pf_stage
         for target,value in zip(pf_targets,pf_values):
             g.ffn([(1,active_pf,value),(-1,active_pf,target)],name='preflight-commit',into=target)
         preflight_circuit_report=dict(source=preflight_plan.report,neural_nodes=len(circuit.nodes),control_selectors=len(circuit.selectors),first_layer=start_level//2,last_layer=g.n_layers()-1)
@@ -540,7 +635,9 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     body=module_start+datapath_layers
     if g.n_layers()>body:raise ValueError(f'datapath exceeds{datapath_layers} layers: graph{g.n_layers()} body{body}')
     budgeted_layers=layers
-    persistent=set(sum((fixed.groups[n]for n in('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')),[]))
+    kept=('pc','status','reason','result','stage','pending_payload','pending_row','pending_enable','pending_kind','queue_row','queue_slot','queue_read_row','queue_read_slot','dirty_count','handler_return')
+    if window_lanes>1:kept=kept+('boot',)
+    persistent=set(sum((fixed.groups[n]for n in kept),[]))
     clear=[slot for slot in range(layout.m,hidden)if slot not in persistent]
     if compact_attention:
         # Remove only the input-independent gap between the last scheduled
@@ -629,6 +726,14 @@ def build(records,device='cpu',hidden=768,intermediate=256,rom_layout='flat',dat
     if compact_attention:model.set_attn_implementation('eager')
     params=sum(p.numel()for p in model.parameters())
     if params!=expected:raise ValueError('stock dense parameter accounting changed')
-    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=3 if grouped_memory else 12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
-    report.update(fixed_preflight=preflight_circuit_report,reuse_transient_features=reuse_transient_features,pinned_features=len(physical),source_affine_addresses=affine_present,sparse_switch_tables=len(sparse_tables),incremental_bounds=incremental,bounds_fields=len(bounds_schema),grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=layers-1)
+    memory_layers=[index for index,kind in enumerate(layer_types)if kind=='linear_attention']
+    template_layers=layers
+    if window_lanes>1:
+        model=stack_tied_slots(model,window_lanes)
+        tied=sum(p.numel()for p in model.parameters())
+        if tied!=params:raise ValueError('tied window changed the unique dense parameter count')
+        if tied>=100000000:raise ValueError('complete dense stock shape exceeds100M')
+        layers=template_layers*window_lanes
+    report=dict(format='leanputer.stock-shared-module.v1',logical_dense_parameters=params,hidden=hidden,intermediate=intermediate,layers=layers,template_layers=template_layers,window_lanes=window_lanes,memory_layers=memory_layers,rom_records=len(records),rom_layers=rom_layers,rom_layout=rom_layout,rom_decode_layers=decode_layers,active_rf_heads=3 if grouped_memory else 12,rf_heads=rf_metadata,arena_heads=bank_metadata,rf_ports=3,rf_rows_per_copy=512,rf_payload_bits=126,allocated_channels=high,features=fixed.next-fixed.prefix,operator_scratch_channels=high-fixed.next,graph_layers=g.n_layers(),module_layer_budget=datapath_layers,parameter_storage='dense',stock_class=type(model).__module__+'.'+type(model).__name__,full_source_checker=False,native_actions=[a.name for a in WordAction],checker_commit_layout=dict(main_rows=136,shadow_rows=136,main_shadow_interleaved=True,dirty_queue_rows=136,queue_first_row=272,queue_entries_per_row=7,max_dirty_fields=951,temporary_first_row=408,temporary_last_row=508,temporary_words=707,reserved_arena_buffer_rows=[509,510,511],reserved_arena_buffers_implemented=False,merge_new_field_forwards=2,merge_existing_field_forwards=1,commit_forwards_per_dirty_field=2,commit_exit_forwards=1))
+    report.update(fixed_preflight=preflight_circuit_report,reuse_transient_features=reuse_transient_features,pinned_features=len(physical),source_affine_addresses=affine_present,sparse_switch_tables=len(sparse_tables),incremental_bounds=incremental,bounds_fields=len(bounds_schema),grouped_memory=grouped_memory,gdn_value_heads=value_heads,parallel_carry=parallel_carry,guard_bundles=bundled,ballast_channels=layout.m,feature_prefix=fixed.prefix,compact_inactive_attention=compact_attention,active_gdn_layers=sum(kind=='linear_attention'for kind in layer_types),inactive_attention_layers=sum(kind=='full_attention'for kind in layer_types),inactive_attention_head_dim=2,inactive_kv_window=1 if compact_attention else None,unused_budget_layers_removed=budgeted_layers-template_layers,scratch_clear_first_layer=body,scratch_clear_layers=math.ceil(len(clear)/intermediate),feedback_inert_final_layer=template_layers-1,tied_slot_parameters=window_lanes>1)
     return StockDatapath(model,fixed,layout,report)

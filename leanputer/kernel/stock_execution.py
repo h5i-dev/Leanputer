@@ -34,10 +34,13 @@ def restore(cache,state,saved):
 class StockCudaGraph:
     def __init__(self,model,cache,state,progress=None):
         if state.device.type!='cuda':raise ValueError('stock CUDA capture requires CUDA tensors')
-        started=time.perf_counter();self.state=state;self.cache=cache
+        started=time.perf_counter();self.state=state;self.cache=cache;self.model_calls=0
         self.positions=torch.zeros(state.shape[:2],dtype=torch.long,device=state.device)
         self.masks={'full_attention':None,'linear_attention':None}
         self.addresses=[value.data_ptr()for value in cache_tensors(cache)]
+        def counted(**extra):
+            self.model_calls+=1
+            return model(inputs_embeds=state,past_key_values=cache,use_cache=True,position_ids=self.positions,attention_mask=self.masks,output_hidden_states=True,**extra)
         with torch.inference_mode():
             saved=snapshot(cache,state)
             stream=torch.cuda.Stream(device=state.device);stream.wait_stream(torch.cuda.current_stream(state.device))
@@ -45,14 +48,14 @@ class StockCudaGraph:
                 for index in range(3):
                     restore(cache,state,saved)
                     if progress:progress(dict(event='warmup-start',index=index,seconds=time.perf_counter()-started))
-                    model(inputs_embeds=state,past_key_values=cache,use_cache=True,position_ids=self.positions,attention_mask=self.masks,output_hidden_states=True)
+                    counted()
                     if progress:progress(dict(event='warmup-returned',index=index,seconds=time.perf_counter()-started))
             torch.cuda.current_stream(state.device).wait_stream(stream);torch.cuda.synchronize(state.device)
             restore(cache,state,saved)
             self.graph=torch.cuda.CUDAGraph()
             if progress:progress(dict(event='capture-start',seconds=time.perf_counter()-started))
             with torch.cuda.graph(self.graph),torch.inference_mode():
-                output=model(inputs_embeds=state,past_key_values=cache,use_cache=True,position_ids=self.positions,attention_mask=self.masks,output_hidden_states=True)
+                output=counted()
                 state.copy_(output.hidden_states[-2])
             self.logits=output.logits
             torch.cuda.synchronize(state.device);restore(cache,state,saved)
