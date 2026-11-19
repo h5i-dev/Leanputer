@@ -212,3 +212,30 @@ commit schedule which is NOT implemented. Complete neural kernel-body lowering,
 control/descriptor binding, scratch allocation, atomic page commit and original
 source GPU validation remain required. No full candidate is emitted merely
 because these conditional counts fit. No new stock admission/speed is claimed.
+
+## Actual neural body lowering result, Nov19
+
+`operator_circuit.py` now lowers the typed source effects to fixed SwiGLU
+expressions, with compile-time common-expression sharing, finite-choice table
+fusion and exact conditional OR merges for registers and bank writes. There is
+no inference-time Boolean tape/interpreter. The generated library covers all
+6449body effect IDs across2406regions and73registered families; the original
+five prefix effects remain a separate required circuit.
+
+This first direct library DOES NOT FIT the small-model gate:147,402FFN units,
+including77,304before final operator/output selection, versus9,984physical
+MLP units in the78x128candidate. Its schedule is1419layers. At H1152 the generated
+units alone imply509,421,312dense MLP parameters, before memory or other weights.
+This is a lower bound for THIS unrolled lowering, not for Lean checking or other
+architectures. Finite-choice fusion changes147,883units to147,402and is not a
+solution. The experimental32word literal-parameter ABI also rejected an operator
+requiring more literals. Neither candidate was emitted or run on the GPU.
+
+A focused integer-neural-graph check passes full16bit arithmetic/wraparound,
+finite-choice defaults, overlapping conditional register writes and bank
+address/row OR merges against typed source evaluation. It is compiler evidence,
+not stock source checking. The relaxed4k target fixes the previous I/O accounting
+rejection but does NOT establish feasibility of the body circuit. The next
+required implementation is genuinely shared kernel-operator lowering and its
+integrated control/commit schedule; no runnable4kmodel exists yet. Old complete
+48.29M/230432forward GPU evidence stays separate and was not rerun.
