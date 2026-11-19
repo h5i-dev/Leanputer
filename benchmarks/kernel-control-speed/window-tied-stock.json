@@ -1,0 +1,122 @@
+{
+  "format": "leanputer.window-tied-stock-measurement.v1",
+  "code": "6cf31eaf254b1cfc7ce9fbed3541e149d9dee36e",
+  "measured_at": "2026-11-19T14:58:21Z",
+  "command": "cd /mnt/scratch/leanputer-runs/kernel-algorithms-tree && PYTHONPATH=. /mnt/scratch/leanputer-native-venv/bin/python -u tools/kernel_stock_window_run.py",
+  "device": "NVIDIA A10G",
+  "execution": "cuda_graph",
+  "stock_class": "transformers.models.qwen3_5.modeling_qwen3_5.Qwen3_5ForCausalLM",
+  "parameter_count": {
+    "logical_dense_parameters": 82235516,
+    "method": "sum of Parameter.numel() after weight tying; PyTorch parameters() counts each tied Parameter once; stack_tied_slots rejects a count that differs from the single slot",
+    "hard_limit": 100000000,
+    "ideal_limit": 50000000,
+    "hard_limit_met": true,
+    "ideal_limit_met": false,
+    "hidden": 1024,
+    "intermediate": 256,
+    "template_layers": 89,
+    "window_lanes": 22,
+    "stacked_layers": 1958,
+    "allocated_channels": 908
+  },
+  "program": {
+    "records": 44032,
+    "register_fields": 951,
+    "rule_families": 73,
+    "source_effects": 6454,
+    "prefix_effects": 5,
+    "bounds_schema": 24,
+    "domain": {
+      "word_bits": 16,
+      "heap": 512,
+      "stack": 32,
+      "context": 8,
+      "constants": 4,
+      "fuel": 8192
+    }
+  },
+  "compare": {
+    "when": "after each execute_window return; NativeControlReference is not an inference import",
+    "registers": 951,
+    "banks": {
+      "heap": 512,
+      "stack": 32,
+      "context": 8,
+      "constants": 4
+    },
+    "note": "Final registers and banks matched. The run does not assert every intermediate program counter against the reference. PREFLIGHT_CHECK is three GPU micro-steps and one reference forward; the final state still matched."
+  },
+  "forwards_limit": 5000,
+  "wall_seconds_both_cases_including_build_and_reference": 2616.10376984498,
+  "cases": [
+    {
+      "output": [
+        37955,
+        1,
+        0,
+        1
+      ],
+      "completed": true,
+      "boot_forwards": 22,
+      "setup_forwards": 5,
+      "check_forwards": 4663,
+      "total_forwards": 4690,
+      "boot_seconds": 72.2682087860303,
+      "setup_seconds": 21.59045773104299,
+      "check_seconds": 1192.7827623570338,
+      "execution": "cuda_graph",
+      "logical_dense_parameters": 82235516,
+      "window_lanes": 22,
+      "layers": 1958,
+      "document_id": "current-general-source-empty-claim-id",
+      "reference_status": 1,
+      "reference_reason": 0,
+      "reference_result": 1,
+      "reference_forwards": 99934,
+      "reference_semantic_steps": 1316,
+      "mismatches": 0,
+      "mismatch_preview": [],
+      "terminal_match": true
+    },
+    {
+      "output": [
+        37955,
+        2,
+        14,
+        0
+      ],
+      "completed": true,
+      "boot_forwards": 22,
+      "setup_forwards": 5,
+      "check_forwards": 4788,
+      "total_forwards": 4815,
+      "boot_seconds": 74.92379809601698,
+      "setup_seconds": 16.510532494983636,
+      "check_seconds": 1211.028771443991,
+      "execution": "cuda_graph",
+      "logical_dense_parameters": 82235516,
+      "window_lanes": 22,
+      "layers": 1958,
+      "document_id": "current-source-invalid-target",
+      "reference_status": 2,
+      "reference_reason": 14,
+      "reference_result": 0,
+      "reference_forwards": 102619,
+      "reference_semantic_steps": 1355,
+      "mismatches": 0,
+      "mismatch_preview": [],
+      "terminal_match": true
+    }
+  ],
+  "not_general_lean": true,
+  "semantic_gaps": [
+    "The two original documents are a minimum smoke pair: an empty inductive with an identity proof, and the same declarations with a wrong proof body. Acceptance and rejection of this pair are not general Lean compatibility.",
+    "Complete typed conversion is not finished as stock integration. String literal conversion still GAPs, and String literal projection preparation remains a primitive GAP.",
+    "Nested-source staging has Boolean IR and selected transition evidence. It is not stock admission on this model.",
+    "Quot, Nat literal, and Nat arithmetic controllers have source-IR evidence outside this stock run.",
+    "A partially replaced prior mutual group remains a metadata GAP. Some neutral non-Sort/non-Pi failures stay classified GAP.",
+    "No mathlib fraction and no complete multi-source native corpus rerun is claimed.",
+    "82,235,516 unique dense parameters are under 100,000,000 and over the 50,000,000 ideal. Tying does not reduce that unique count. The smallest allowed stock shape that holds this circuit is H1024 I256."
+  ]
+}
