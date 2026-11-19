@@ -1,3 +1,5 @@
+Immediate delivery milestone (explicit user instruction, 2026-11-19): approximately 4,000 TOTAL stock forwards per original source case is acceptable, with <=48,290,654 dense parameters and unchanged generic rules/input domain. This supersedes the previous ~2,300 hard forward gate. Delivery requires an emitted complete model and actual matched GPU accept/reject, with boot/check/total counts and measured latency separate. Offline estimates and standalone operators are not delivery.
+
 The current performance delivery gate is <=48,290,654 logical dense parameters and approximately <=2300 combined forwards on the matched original-source batch. The earlier100M exploratory allowance is superseded. Neither the baseline230432forwards nor the larger diagnostic candidates meet this joint gate. The [new execution-granularity proposal](joint-transition-architecture.md) has conditional budgets, not a delivered checker or proven full-rule schedule.
 
 # Current bounded stock result and open delivery gate

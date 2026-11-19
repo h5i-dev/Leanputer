@@ -1,3 +1,5 @@
+Immediate delivery milestone (explicit user instruction, 2026-11-19): approximately 4,000 TOTAL stock forwards per original source case is acceptable, with <=48,290,654 dense parameters and unchanged generic rules/input domain. This supersedes the previous ~2,300 hard forward gate. Delivery requires an emitted complete model and actual matched GPU accept/reject, with boot/check/total counts and measured latency separate. Offline estimates and standalone operators are not delivery.
+
 # Joint target and present conclusion
 
 The authoritative gate is <=48,290,654 logical dense parameters and approximately
@@ -185,3 +187,28 @@ reduce gather width, but its ROM controls, write coherence, layer/column peak
 and required extra forwards must be accounted together. Until that lowering
 exists, the full checker has NO established plan meeting both limits. No large
 model is emitted on the basis of the illustrative2077/2141allowances.
+
+## Nov19 resumption audit
+
+The complete source-operator IR retains all73rule families and6454effects. Its
+matched original-source runs check every951registers and every bank at each
+1316/1355semantic step. This is IR/word-reference correspondence, not stock
+inference. The source-derived28private control words share one16bit selector;
+explicit carry/update/clear/reload accounting needs no reload on these samples.
+
+The paged RF primitive writes112bits to one selected seven-word physical page,
+retains all four value-head pages and supports three/four independent read
+replicas. Four saved module/projection checks passed after the Nov19 interpreter
+repair (5.967s, CPU); Torch2.8.0+cu128/Transformers5.19.0 and the A10G are available.
+Python is now system3.12.15 because the previous3.12.16 interpreter vanished;
+the venv package set was preserved. The original failure and symlink/config
+backup are saved under architecture-budget/nov19-venv-before.json.
+
+The relaxed4k milestone favors three RF read ports: candidate dense shape
+H1152/I128/L78 with6active GDN layers =48,123,600parameters. Prior three-port
+conditional access accounts (2461/2525, or2365/2429 with the all-program16global
+layout) fit that numerical allowance. They assume a neural transition and page
+commit schedule which is NOT implemented. Complete neural kernel-body lowering,
+control/descriptor binding, scratch allocation, atomic page commit and original
+source GPU validation remain required. No full candidate is emitted merely
+because these conditional counts fit. No new stock admission/speed is claimed.

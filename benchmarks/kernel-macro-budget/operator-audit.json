@@ -1,0 +1,22 @@
+{
+  "format": "leanputer.source-operator-checkpoint-audit.v1",
+  "base_commit": "650243b",
+  "kernel_compiler_cache_sha256": "7654818d0d0a7a92c76d60d0e0480e236df6e6149a329ea07c0be5ac3956da32",
+  "source_inputs_sha256": "e838c5072d22e5fa05750fba2f4d996a59a2b664613ce039e16333be2d0d8991",
+  "source_config_sha256": "c81dbaace4c9ead34fa187adbb140f0e33b2865f75b1bdb2c9bcb74ff90f356f",
+  "operator_files_sha256": {
+    "leanputer/kernel/continuation_plan.py": "bdfe1e3bd3b5f9ee97f658bed467ef611575d30016d352daba4db8f4eaf68292",
+    "leanputer/kernel/control_alias.py": "c0f58987eb0d0fa7e3d3b969b5bab9612c74dfca9f3087a0e98f564846a0c852",
+    "leanputer/kernel/operator_budget.py": "82f7d482d3d8b4693f2d06ea36b3a1bb7198d9e85ccd3dffe786565b0d4e1d34",
+    "leanputer/kernel/operator_program.py": "23280d1849e68ac224b14a28bfa1f46533e4f2d0f03aad5d7839a6104f11ce9d",
+    "leanputer/kernel/operator_reference.py": "028f6f27cd07e384929eb98e0c31f2435de2561ad638e7b1f78ef5675b76beef",
+    "leanputer/kernel/semantic_phases.py": "538b323b37078900150737ab29af7a89ca67d04ea3b85f1100a7ff166deca798",
+    "leanputer/kernel/transition_layout.py": "d1f5b90f3c128e33022aedb3f05fb187ca8e06a3e6819cdc442c5f0f8269fc25",
+    "tools/kernel_operator_correspondence.py": "811374cd35212d501dd8ffc023039e066edb44f75e11e36c9ac26603c5a6186e",
+    "tools/kernel_operator_layout_budget.py": "adc53f9582b81d45eecea94182712653e494841ac48ad29bf9e8a0722fde04f8"
+  },
+  "source_correspondence_log_sha256": "62700025b0023e4d399ad0f0d7d4e0ff61edc04ec3049d588eab71ad105f86df",
+  "offline_access_trace_sha256": "34f92cb32ced126623dd99e5ece7590612ff0d08c95694b04b5b7eb8db3723bc",
+  "evidence_scope": "IR/reference plus standalone stock modules; not a new full checker or stock source speed",
+  "joint_delivery_gate": false
+}

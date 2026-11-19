@@ -1,0 +1,28 @@
+{
+  "format": "leanputer.checker-selective-gather-plans.v1",
+  "all_family_regions": 2406,
+  "independent_ports": 3,
+  "selected_words_per_port": 4,
+  "compile_time_operand_coverage_verified": true,
+  "read_forward_histogram": {
+    "0": 1039,
+    "1": 1252,
+    "2": 114,
+    "3": 1
+  },
+  "candidate_update_row_histogram": {
+    "0": 265,
+    "1": 1632,
+    "2": 446,
+    "3": 59,
+    "4": 3,
+    "5": 1
+  },
+  "max_read_forwards": 3,
+  "max_candidate_update_rows": 5,
+  "whole_transition_composition_verified": false,
+  "complete_descriptor_encoding_verified": false,
+  "bulk_write_schedule_verified": false,
+  "source_native_counts": null,
+  "joint_delivery_gate": false
+}

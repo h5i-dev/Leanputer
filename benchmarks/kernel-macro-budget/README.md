@@ -1,3 +1,5 @@
+Immediate delivery milestone (explicit user instruction, 2026-11-19): approximately 4,000 TOTAL stock forwards per original source case is acceptable, with <=48,290,654 dense parameters and unchanged generic rules/input domain. This supersedes the previous ~2,300 hard forward gate. Delivery requires an emitted complete model and actual matched GPU accept/reject, with boot/check/total counts and measured latency separate. Offline estimates and standalone operators are not delivery.
+
 This is joint architecture/step accounting, not a delivered checker.
 
 `joint-budget.json` counts the full dense stock shape at48,195,644parameters and

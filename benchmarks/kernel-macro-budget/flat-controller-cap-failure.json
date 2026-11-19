@@ -1,0 +1,8 @@
+{
+  "error": "RESOURCE: whole-transition region cap 4096; control path mode=1..1, $stack_empty=0..0, read/frame/task=91..91, read/frame/phase=133..133",
+  "regions_before_refusal": 4096,
+  "compiler_states": 4144,
+  "seconds": 3.942712226009462,
+  "stock_emitted": false,
+  "joint_delivery_gate": false
+}

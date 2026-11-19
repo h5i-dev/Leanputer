@@ -23,7 +23,7 @@ class RegisterRows:
         return tuple(sorted({locations[name][0] for name in fields if name in locations}))
 
 
-def pack_register_rows(compiler, contracts, architecture=TransitionArchitecture(),global_policy='boundary'):
+def pack_register_rows(compiler, contracts, architecture=TransitionArchitecture(),global_policy='boundary',global_fields=None):
     names = tuple(name for name, width in compiler.layout.fields)
     if any(width != 16 for name, width in compiler.layout.fields):
         raise ValueError('joint layout requires preserving every original 16bit word')
@@ -33,7 +33,8 @@ def pack_register_rows(compiler, contracts, architecture=TransitionArchitecture(
     # Fixed checker boundary state and raw prefix operands, not input names.
     global_names = ['status', 'reason', 'fuel', 'free', 'mode', 'task', 'sp', 'x',
                     'arg_base', 'count', 'r', 'ctx', 'local_base', 'decl']
-    if global_policy=='frequency':global_names=global_names[:10]
+    if global_fields is not None:global_names=list(global_fields)
+    elif global_policy=='frequency':global_names=global_names[:10]
     elif global_policy!='boundary':raise ValueError('unknown complete-program global policy')
     candidates = sorted(set(names)-set(global_names), key=lambda n: (-frequency[n], n))
     global_names.extend(candidates[:architecture.global_words-len(global_names)])
@@ -63,6 +64,20 @@ def pack_register_rows(compiler, contracts, architecture=TransitionArchitecture(
     if len(flattened) != len(names) or set(flattened) != set(names):
         raise AssertionError('layout loses/aliases logical state')
     return layout
+
+
+def pack_operator_rows(compiler,contracts,program,global_words=16):
+    """Whole-program read-frequency allocation; no source/proof is inspected."""
+    globals=['status','reason','fuel','free','mode','task','sp','x','arg_base','count']
+    private_controls=set(program.control.variables[v]for v in program.aliases.colors)if program.aliases else set()
+    frequency=Counter()
+    for guard,effects in program.groups:
+        fields=set().union(*(program.operand_fields[index]for index,effect in effects))
+        frequency.update(name for name in fields if not name.startswith('read/')and name not in private_controls)
+    candidates=sorted(set(name for name,width in compiler.layout.fields)-set(globals)-private_controls,
+                      key=lambda name:(-frequency[name],name))
+    globals.extend(candidates[:global_words-len(globals)])
+    return pack_register_rows(compiler,contracts,TransitionArchitecture(global_words=global_words),global_fields=globals)
 
 
 def account_layout(compiler, contracts, layout):

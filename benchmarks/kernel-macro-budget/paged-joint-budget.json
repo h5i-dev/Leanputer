@@ -1,0 +1,144 @@
+{
+  "format": "leanputer.paged-operator-joint-gate.v1",
+  "candidate_shape": {
+    "hidden": 1280,
+    "intermediate": 128,
+    "layers": 63,
+    "active_gdn_layers": 7,
+    "memory_roles": "Four selective RF reads, one RF page merge, heap, small banks",
+    "logical_dense_parameters": 48159640,
+    "baseline_dense_limit": 48290654,
+    "dense_shape_gate": true,
+    "ffn_units": 8064,
+    "ffn_units_after_24_handover_reserve": 6552,
+    "provisional_named_columns": {
+      "global_words": 256,
+      "rf_pending_page": 112,
+      "selected_rf_operands": 256,
+      "rf_merge_page": 112,
+      "heap_pending": 74,
+      "small_bank_pending_with_control_word": 120,
+      "controller_and_selector": 48,
+      "deferred_context": 20,
+      "rom_low_decoder": 128,
+      "rom_byte_accumulators": 32,
+      "ballast_tau": 21
+    },
+    "provisional_column_sum": 1179,
+    "remaining_columns_before_unallocated_intermediates": 101,
+    "complete_descriptor_encoding_bits": null,
+    "complete_neural_operator_units": null,
+    "full_program_lifetime_allocation_verified": false,
+    "full_model_emitted": false,
+    "stock_forwards": null,
+    "joint_delivery_gate": false
+  },
+  "conditional_source_account": {
+    "format": "leanputer.operator-layout-budget.v1",
+    "global_words": 16,
+    "globals": [
+      "status",
+      "reason",
+      "fuel",
+      "free",
+      "mode",
+      "task",
+      "sp",
+      "x",
+      "arg_base",
+      "count",
+      "r",
+      "string_name_base",
+      "quot_data_base",
+      "ctx",
+      "quot_build_base",
+      "env_head"
+    ],
+    "rf_rows": 34,
+    "all_951_logical_words_distinct": true,
+    "input_independent_layout": true,
+    "layout_inputs": "ALL source operator read dependencies; source traces used only after layout is fixed",
+    "source_rows": [
+      {
+        "name": "current-general-source-empty-claim-id",
+        "semantic_steps": 1316,
+        "selective_rf_ports": 4,
+        "gather_forward_histogram": {
+          "1": 942,
+          "2": 374
+        },
+        "dirty_seven_word_pages_histogram": {
+          "0": 481,
+          "1": 608,
+          "2": 185,
+          "3": 35,
+          "4": 4,
+          "5": 2,
+          "6": 1
+        },
+        "small_bank_conflicts": 8,
+        "selector_reload_forwards": 0,
+        "conditional_before_observation": 1978,
+        "conditional_check_forwards": 1984,
+        "syntax_boot_forwards": 22,
+        "setup_model_calls": 5,
+        "init_publish_allowance": 2,
+        "conditional_combined_forwards": 2013,
+        "target": 2300,
+        "conditional_count_gate": true,
+        "actual_native_forwards": null,
+        "assumptions": [
+          "4 independently addressed selective RF ports",
+          "Operand gathers, source operator, first dirty-page merge fit one stock forward",
+          "Every additional dirty seven-word page costs one merge/commit forward",
+          "All bounds-latch, prefix/body guards and source memory-address computation fit",
+          "Dirty page selection/value staging and atomic publication remain model-owned"
+        ],
+        "complete_schedule_verified": false,
+        "joint_delivery_gate": false
+      },
+      {
+        "name": "current-source-invalid-target",
+        "semantic_steps": 1355,
+        "selective_rf_ports": 4,
+        "gather_forward_histogram": {
+          "1": 975,
+          "2": 380
+        },
+        "dirty_seven_word_pages_histogram": {
+          "0": 482,
+          "1": 642,
+          "2": 189,
+          "3": 35,
+          "4": 4,
+          "5": 2,
+          "6": 1
+        },
+        "small_bank_conflicts": 7,
+        "selector_reload_forwards": 0,
+        "conditional_before_observation": 2026,
+        "conditional_check_forwards": 2048,
+        "syntax_boot_forwards": 22,
+        "setup_model_calls": 5,
+        "init_publish_allowance": 2,
+        "conditional_combined_forwards": 2077,
+        "target": 2300,
+        "conditional_count_gate": true,
+        "actual_native_forwards": null,
+        "assumptions": [
+          "4 independently addressed selective RF ports",
+          "Operand gathers, source operator, first dirty-page merge fit one stock forward",
+          "Every additional dirty seven-word page costs one merge/commit forward",
+          "All bounds-latch, prefix/body guards and source memory-address computation fit",
+          "Dirty page selection/value staging and atomic publication remain model-owned"
+        ],
+        "complete_schedule_verified": false,
+        "joint_delivery_gate": false
+      }
+    ],
+    "complete_neural_layout_verified": false,
+    "joint_delivery_gate": false
+  },
+  "evidence_scope": "Necessary dense shape/provisional named-buffer arithmetic and conditional OFFLINE costs, NOT complete neural allocation or stock execution",
+  "joint_delivery_gate": false
+}

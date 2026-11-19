@@ -1,0 +1,319 @@
+{
+  "format": "leanputer.original-source-operator-correspondence.v1",
+  "program": {
+    "format": "leanputer.complete-source-operator-ir.v1",
+    "rule_families": 73,
+    "source_effects": 6454,
+    "source_effects_represented": 6454,
+    "factored_control_groups": 2214,
+    "prefix_effects": 5,
+    "shared_control_predicate_nodes": 4523,
+    "control_aliases": {
+      "format": "leanputer.private-control-aliases.v1",
+      "private_control_words": 28,
+      "physical_selector_words": 1,
+      "selector_bits": 16,
+      "logical_words_erased": 0,
+      "owner_task_sets_derived_from_all_source_guards": true,
+      "owners": {
+        "stage_pc": [
+          92
+        ],
+        "copy_pc": [
+          94
+        ],
+        "rewrite_pc": [
+          93
+        ],
+        "restore_expr_pc": [
+          95
+        ],
+        "restore_cb_pc": [
+          96
+        ],
+        "publish_pc": [
+          97
+        ],
+        "family_info_pc": [
+          98
+        ],
+        "projection_pc": [
+          99
+        ],
+        "projection_reduce_pc": [
+          100
+        ],
+        "levels_eq_pc": [
+          103
+        ],
+        "convert_pc": [
+          102
+        ],
+        "structure_pc": [
+          104
+        ],
+        "quot_pc": [
+          105
+        ],
+        "quot_reduce_pc": [
+          106
+        ],
+        "nat_binding_pc": [
+          107
+        ],
+        "nat_literal_pc": [
+          108
+        ],
+        "bits_pc": [
+          109
+        ],
+        "high_pc": [
+          110
+        ],
+        "nat_name_pc": [
+          111
+        ],
+        "nat_bridge_pc": [
+          112
+        ],
+        "nat_reduce_pc": [
+          113
+        ],
+        "bool_pc": [
+          114
+        ],
+        "offset_pc": [
+          115
+        ],
+        "string_binding_pc": [
+          116
+        ],
+        "string_pc": [
+          117
+        ],
+        "string_whnf_pc": [
+          118
+        ],
+        "string_compare_pc": [
+          119
+        ],
+        "published_claim_pc": [
+          120
+        ]
+      },
+      "native_selector_maintenance_verified": false,
+      "joint_delivery_gate": false
+    },
+    "original_data_guards_preserved": true,
+    "immutable_old_state_or_merges_preserved": true,
+    "source_stack_write_sites": 679,
+    "input_independent": true,
+    "all_logical_words_retained": true,
+    "complete_descriptor_encoding_verified": false,
+    "stock_lowering_complete": false,
+    "native_forwards": null,
+    "joint_delivery_gate": false
+  },
+  "continuations": {
+    "format": "leanputer.source-continuation-sites.v1",
+    "source_stack_write_sites": 679,
+    "semantic_stack_words": 6,
+    "physical_stack_words": 7,
+    "stack_capacity": 32,
+    "metadata_bits": 16,
+    "source_supplies_metadata": false,
+    "phase_constant_sites": 635,
+    "owner_constant_sites": 664,
+    "sites_by_source": {
+      "abstract_scope_rules.py": 1,
+      "assemble_recursors_rules.py": 6,
+      "block_flags_rules.py": 2,
+      "bool_binding_rules.py": 10,
+      "constant_rules.py": 3,
+      "constructor_rules.py": 18,
+      "conversion_rules.py": 74,
+      "core_names_rules.py": 5,
+      "declare_constructors_rules.py": 3,
+      "elimination_rules.py": 3,
+      "expression_equal_rules.py": 3,
+      "family_application_rules.py": 5,
+      "family_occurrence_rules.py": 2,
+      "header_rules.py": 12,
+      "inference_rules.py": 16,
+      "level_constructor_rules.py": 12,
+      "level_geq_rules.py": 10,
+      "level_normalize_rules.py": 4,
+      "level_order_rules.py": 5,
+      "major_rules.py": 22,
+      "make_rec_name_rules.py": 7,
+      "minor_rules.py": 18,
+      "motive_rules.py": 10,
+      "name_intern_rules.py": 2,
+      "name_path_rules.py": 1,
+      "name_prefix_rules.py": 7,
+      "nat_bits_rules.py": 3,
+      "nat_bridge_rules.py": 1,
+      "nat_high_rules.py": 25,
+      "nat_literal_rules.py": 14,
+      "nat_name_rules.py": 1,
+      "nat_offset_rules.py": 7,
+      "nat_reduce_rules.py": 29,
+      "nested_application_rules.py": 9,
+      "nested_copy_rules.py": 23,
+      "nested_restore_rules.py": 10,
+      "nested_rewrite_rules.py": 3,
+      "nested_stage_rules.py": 11,
+      "nested_transaction_rules.py": 25,
+      "occurrence_rules.py": 1,
+      "open_prefix_rules.py": 8,
+      "pi_parameters_rules.py": 1,
+      "positivity_rules.py": 5,
+      "prior_block_rules.py": 2,
+      "projection_rules.py": 42,
+      "published_recursor_rules.py": 9,
+      "quotient_reduce_rules.py": 10,
+      "quotient_rules.py": 23,
+      "raw_prefix_rules.py": 3,
+      "recursive_argument_rules.py": 10,
+      "recursor_apply_rules.py": 4,
+      "recursor_claim_rules.py": 11,
+      "recursor_name_rules.py": 3,
+      "recursor_reduce_rules.py": 12,
+      "recursor_rule_rules.py": 17,
+      "recursor_type_rules.py": 6,
+      "source_rules.py": 26,
+      "string_bridge_rules.py": 6,
+      "string_rules.py": 33,
+      "structure_info_rules.py": 3,
+      "telescope_rules.py": 8,
+      "traversal_transition.py": 13,
+      "vector_splice_rules.py": 1
+    },
+    "metadata_id_zero": "Uninitialized; requires a proved invariant or full semantic fallback",
+    "all_source_stack_writes_covered": true,
+    "metadata_initialization_and_resume_invariant_verified": false,
+    "typed_successors_verified": false,
+    "physical_cache_layout_verified": false,
+    "source_native_forwards": null,
+    "joint_delivery_gate": false
+  },
+  "source_rows": [
+    {
+      "name": "current-general-source-empty-claim-id",
+      "ir_semantic_steps": 1316,
+      "status": 1,
+      "reason": 0,
+      "result": 1,
+      "all_951_registers_all_banks_match_each_step": true,
+      "max_selected_control_groups": 3,
+      "max_candidate_source_effects": 31,
+      "returns_with_uninitialized_control_metadata": 0,
+      "steps_with_multiple_stack_write_sites": 0,
+      "control_selector_actions": {
+        "zero": 1070,
+        "update": 223,
+        "carry": 23
+      },
+      "conditional_selector_reload_forwards": 0,
+      "conditional_page_schedule": {
+        "semantic_steps": 1316,
+        "gather_forward_histogram": {
+          "1": 633,
+          "2": 590,
+          "3": 93
+        },
+        "dirty_seven_word_pages_histogram": {
+          "0": 484,
+          "1": 566,
+          "2": 222,
+          "3": 36,
+          "4": 6,
+          "5": 1,
+          "8": 1
+        },
+        "small_bank_conflicts": 8,
+        "selector_reload_forwards": 0,
+        "conditional_before_observation": 2423,
+        "conditional_check_forwards": 2432,
+        "syntax_boot_forwards": 22,
+        "setup_model_calls": 5,
+        "init_publish_allowance": 2,
+        "conditional_combined_forwards": 2461,
+        "target": 2300,
+        "conditional_count_gate": false,
+        "actual_native_forwards": null,
+        "assumptions": [
+          "Three independently addressed selective RF ports",
+          "Operand gathers, source operator, first dirty-page merge fit one stock forward",
+          "Every additional dirty seven-word page costs one merge/commit forward",
+          "All bounds-latch, prefix/body guards and source memory-address computation fit",
+          "Dirty page selection/value staging and atomic publication remain model-owned"
+        ],
+        "complete_schedule_verified": false,
+        "joint_delivery_gate": false
+      },
+      "native_forwards": null,
+      "stock_executed": false
+    },
+    {
+      "name": "current-source-invalid-target",
+      "ir_semantic_steps": 1355,
+      "status": 2,
+      "reason": 14,
+      "result": 0,
+      "all_951_registers_all_banks_match_each_step": true,
+      "max_selected_control_groups": 3,
+      "max_candidate_source_effects": 31,
+      "returns_with_uninitialized_control_metadata": 0,
+      "steps_with_multiple_stack_write_sites": 0,
+      "control_selector_actions": {
+        "zero": 1070,
+        "update": 261,
+        "carry": 24
+      },
+      "conditional_selector_reload_forwards": 0,
+      "conditional_page_schedule": {
+        "semantic_steps": 1355,
+        "gather_forward_histogram": {
+          "1": 665,
+          "2": 594,
+          "3": 96
+        },
+        "dirty_seven_word_pages_histogram": {
+          "0": 485,
+          "1": 600,
+          "2": 226,
+          "3": 36,
+          "4": 6,
+          "5": 1,
+          "8": 1
+        },
+        "small_bank_conflicts": 7,
+        "selector_reload_forwards": 0,
+        "conditional_before_observation": 2475,
+        "conditional_check_forwards": 2496,
+        "syntax_boot_forwards": 22,
+        "setup_model_calls": 5,
+        "init_publish_allowance": 2,
+        "conditional_combined_forwards": 2525,
+        "target": 2300,
+        "conditional_count_gate": false,
+        "actual_native_forwards": null,
+        "assumptions": [
+          "Three independently addressed selective RF ports",
+          "Operand gathers, source operator, first dirty-page merge fit one stock forward",
+          "Every additional dirty seven-word page costs one merge/commit forward",
+          "All bounds-latch, prefix/body guards and source memory-address computation fit",
+          "Dirty page selection/value staging and atomic publication remain model-owned"
+        ],
+        "complete_schedule_verified": false,
+        "joint_delivery_gate": false
+      },
+      "native_forwards": null,
+      "stock_executed": false
+    }
+  ],
+  "seconds": 33.238263466977514,
+  "evidence_scope": "Complete original-source operator IR vs preserved word-control reference; NOT stock speed, lowering or external Lean differential evidence",
+  "joint_delivery_gate": false
+}
