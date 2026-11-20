@@ -32,9 +32,11 @@ from .semantic_step_circuit import (
     PredicateCircuit,
     _expr_dims,
     _ffn_units,
+    _free_or,
     _shape,
     live_peak,
 )
+from .source_capacity import IN_RANGE, INVALID_REFERENCE, NULL, AddressDomain
 from .traversal_machine import Outcome, Reason
 
 
@@ -223,7 +225,7 @@ def build_checked_index_add(width, samples, placement_cap=GATE_CAP):
     ))
 
 
-def _lower_walk(builder, width, samples, prefix, input_level=None):
+def _lower_walk(builder, width, samples, prefix, input_level=None, address_retained=None):
     if width <= 0 or width > 16:
         raise ValueError('expression walk width must be from 1 to 16')
     if max(Outcome) >= 1 << STATUS_WIDTH or max(Reason) >= 1 << REASON_WIDTH:
@@ -317,8 +319,14 @@ def _lower_walk(builder, width, samples, prefix, input_level=None):
         status=status,
         reason=reason,
     )
+    if address_retained is not None:
+        if width != 16:
+            raise ValueError('expression address is attached only to a 16-bit walk')
+        outputs['address'] = _address_from_pairs(circuit, child, address_retained)
     if samples:
         _check_walk(builder.graph, words, outputs, samples, width)
+        if address_retained is not None:
+            _check_walk_address(circuit, outputs['address'], samples, address_retained)
     return outputs
 
 
@@ -357,6 +365,43 @@ def _check_walk(graph, words, outputs, samples, width):
             raise AssertionError('expression walk reason disagrees with the outcome rule')
 
 
+def _check_walk_address(circuit, address, samples, retained):
+    """The page split reads the walk's child reference, not a second input."""
+    domain = AddressDomain(retained, 0)
+    for values in samples:
+        env = {}
+        for name, ids in circuit.bit_ids.items():
+            if name == 'ref':
+                continue
+            for bit, _ident in enumerate(ids):
+                env[(name, bit)] = (int(values[name]) >> bit) & 1
+        cache = {}
+
+        def bit_value(pairs):
+            total = 0
+            for index, pair in enumerate(pairs):
+                total |= circuit.net.value(pair[1], env, cache) << index
+            return total
+
+        direct = direct_expression_child(
+            values['tag'], values['child_index'], values['a'], values['b'], values['c'],
+        )
+        page = domain.expression_address(direct['ref'] if direct['in_range'] else 0)
+        null = circuit.net.value(address['null'][1], env, cache)
+        in_range = circuit.net.value(address['in_range'][1], env, cache)
+        if (null, in_range) != (
+            int(page['outcome'] == NULL), int(page['outcome'] == IN_RANGE),
+        ):
+            raise AssertionError('walk child address outcome disagrees with the page split')
+        if page['outcome'] == IN_RANGE:
+            if bit_value(address['row']) != page['row'] or bit_value(address['head']) != page['head']:
+                raise AssertionError('walk child page disagrees with the page split')
+            if bit_value(address['layer']) != page['layer']:
+                raise AssertionError('walk child layer disagrees with the page split')
+        elif bit_value(address['row']) or bit_value(address['head']) or bit_value(address['layer']):
+            raise AssertionError('walk child published a page slot for a null or invalid reference')
+
+
 def _output_dims(item, keep):
     if isinstance(item, Expr):
         keep |= _expr_dims(item)
@@ -364,11 +409,148 @@ def _output_dims(item, keep):
     if isinstance(item, tuple) and item and isinstance(item[0], Expr):
         keep |= _expr_dims(item[0])
         return
-    if isinstance(item, list):
-        for part in item:
+    if isinstance(item, (list, dict)):
+        parts = item.values() if isinstance(item, dict) else item
+        for part in parts:
             _output_dims(part, keep)
         return
     raise TypeError(f'walk output is {type(item).__name__}')
+
+
+def _inclusive_and_scan(circuit, bits):
+    """``scan[i]`` is the AND of ``bits[0..i]``.
+
+    One wide AND per output. A binary ladder is the same function, and on a
+    16-bit word it is four dependent FFNs. Each dependent FFN starts on the
+    next model layer, so the ladder spends the memory margin on depth.
+    """
+    if not bits:
+        return []
+    scan = [bits[0]]
+    for index in range(1, len(bits)):
+        scan.append(circuit._and(bits[:index + 1]))
+    return scan
+
+
+def _xor_pair(circuit, left, right):
+    if right[1] == circuit.net.ONE:
+        return circuit._not(*left)
+    if right[1] == circuit.net.ZERO:
+        return left
+    if left[1] == circuit.net.ONE:
+        return circuit._not(*right)
+    if left[1] == circuit.net.ZERO:
+        return right
+    return _free_or(circuit, [
+        circuit._and([left, circuit._not(*right)]),
+        circuit._and([circuit._not(*left), right]),
+    ])
+
+
+def _address_from_pairs(circuit, ref, retained):
+    """Page split of a 1-based reference already present as bit pairs."""
+    width = len(ref)
+    if width != 16:
+        raise ValueError('expression address width is the 16-bit reference')
+    if type(retained) is not int or retained < 0 or retained >= 1 << width:
+        raise ValueError('retained expression rows must fit the reference word')
+    # Alias the reference on copies. The caller's word dict is the sample
+    # schema, and these pairs may be gates rather than input features.
+    circuit.words = dict(circuit.words)
+    circuit.bit_ids = dict(circuit.bit_ids)
+    circuit.words['ref'] = [pair[0] for pair in ref]
+    circuit.bit_ids['ref'] = [pair[1] for pair in ref]
+    null = circuit._equal('ref', 0)
+    below_limit = circuit._less('ref', retained + 1)
+    in_range = circuit._and([circuit._not(*null), below_limit])
+    zeros = [circuit._not(*bit) for bit in ref]
+    present = _inclusive_and_scan(circuit, zeros)
+    # slot = ref - 1. Bit i flips iff every lower bit of ref is 0.
+    slot = [_xor_pair(circuit, ref[0], (circuit.one, circuit.net.ONE))]
+    slot.extend(_xor_pair(circuit, ref[index], present[index - 1]) for index in range(1, width))
+    masked = [circuit._and([in_range, bit]) for bit in slot]
+    row_bits = ROWS_PER_PAGE.bit_length() - 1
+    head_bits = VALUE_HEADS_PER_LAYER.bit_length() - 1
+    if 1 << row_bits != ROWS_PER_PAGE or 1 << head_bits != VALUE_HEADS_PER_LAYER:
+        raise ValueError('expression page geometry is not a power of two')
+    return dict(
+        null=null,
+        in_range=in_range,
+        row=masked[:row_bits],
+        head=masked[row_bits:row_bits + head_bits],
+        layer=masked[row_bits + head_bits:],
+    )
+
+
+def _lower_expression_address(builder, retained, width, samples, prefix, input_level=None):
+    """Split a 1-based expression reference into layer, head, and row.
+
+    Zero is null. A reference above ``retained`` is invalid even when its
+    slot still falls inside the physical page. The page geometry is the
+    shared GDN page: 128 rows, 4 heads, 512 rows per layer. This is the
+    address the expression gather reads. It does not read the page.
+    """
+    words = _features(builder, (('ref', width),), prefix, level=input_level)
+    circuit = PredicateCircuit(builder, words, {})
+    outputs = _address_from_pairs(circuit, _word_pairs(circuit, 'ref'), retained)
+    if samples is not None:
+        _check_expression_address(circuit, outputs, samples, retained)
+    return outputs
+
+
+def _check_expression_address(circuit, outputs, samples, retained):
+    domain = AddressDomain(retained, 0)
+    for values in samples:
+        env = {}
+        for bit, _ident in enumerate(circuit.bit_ids['ref']):
+            env[('ref', bit)] = (values['ref'] >> bit) & 1
+        cache = {}
+
+        def bit_value(pairs):
+            total = 0
+            for index, pair in enumerate(pairs):
+                total |= circuit.net.value(pair[1], env, cache) << index
+            return total
+
+        direct = domain.expression_address(values['ref'])
+        null = circuit.net.value(outputs['null'][1], env, cache)
+        in_range = circuit.net.value(outputs['in_range'][1], env, cache)
+        if direct['outcome'] == NULL:
+            if null != 1 or in_range != 0:
+                raise AssertionError('expression address did not classify null')
+        elif direct['outcome'] == INVALID_REFERENCE:
+            if null != 0 or in_range != 0:
+                raise AssertionError('expression address did not classify an invalid reference')
+        elif direct['outcome'] == IN_RANGE:
+            if null != 0 or in_range != 1:
+                raise AssertionError('expression address did not classify an in-range reference')
+            if bit_value(outputs['row']) != direct['row']:
+                raise AssertionError('expression address row disagrees with the page split')
+            if bit_value(outputs['head']) != direct['head']:
+                raise AssertionError('expression address head disagrees with the page split')
+            if bit_value(outputs['layer']) != direct['layer']:
+                raise AssertionError('expression address layer disagrees with the page split')
+        else:
+            raise AssertionError('expression address sample is outside the 16-bit domain')
+        if in_range == 0:
+            if bit_value(outputs['row']) or bit_value(outputs['head']) or bit_value(outputs['layer']):
+                raise AssertionError('an invalid expression reference published a page slot')
+
+
+def build_expression_address(retained, samples, placement_cap=GATE_CAP):
+    """Place the reference split. Not a page read and not a stock forward."""
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    builder.graph.target.value_heads = 4
+    outputs = _lower_expression_address(builder, retained, 16, samples, 'expr-addr')
+    flat = [outputs['null'], outputs['in_range'], *outputs['row'], *outputs['head'], *outputs['layer']]
+    return _place(builder, flat, samples, dict(
+        schedule='expression-address',
+        retained_rows=retained,
+        page_read=False,
+        memory_placed=False,
+        mathlib_theorems_checked=0,
+    ))
 
 
 def kept_output_dims(outputs):
@@ -411,17 +593,23 @@ def _place(builder, outputs, samples, extra):
     return report
 
 
-def build_shared_expression_walk(width, samples, placement_cap=GATE_CAP):
-    """Place one walk. ``samples`` carry tag, child index, row fields, and depth."""
+def build_shared_expression_walk(width, samples, placement_cap=GATE_CAP, address_retained=None):
+    """Place one walk. ``samples`` carry tag, child index, row fields, and depth.
+
+    ``address_retained`` splits the selected child into a page address. The
+    split still does not read the page.
+    """
     builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
     builder.graph.target.intermediate = placement_cap
     builder.graph.target.value_heads = 4
-    outputs = _lower_walk(builder, width, samples, 'walk')
+    outputs = _lower_walk(
+        builder, width, samples, 'walk', address_retained=address_retained,
+    )
     flat = [
         outputs['in_range'], outputs['depth_inc'], outputs['overflow'],
         *outputs['child'], *outputs['next_depth'], *outputs['status'], *outputs['reason'],
     ]
-    return _place(builder, flat, samples, dict(
+    extra = dict(
         schedule='shared-expression-walk',
         width=width,
         adder='byte-digit',
@@ -433,7 +621,14 @@ def build_shared_expression_walk(width, samples, placement_cap=GATE_CAP):
         handler_commit_included=False,
         gap_outcome_included=True,
         resource_outcome_included=True,
-    ))
+        page_read=False,
+        memory_placed=False,
+    )
+    if address_retained is not None:
+        address = outputs['address']
+        flat.extend([address['null'], address['in_range'], *address['row'], *address['head'], *address['layer']])
+        extra['address_retained'] = address_retained
+    return _place(builder, flat, samples, extra)
 
 
 def source_storage_report(expressions, declarations, stack, context, word_bits=16,

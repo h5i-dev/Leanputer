@@ -62,6 +62,7 @@ def main():
     def tail(builder):
         return kept_output_dims(_lower_walk(
             builder, 16, walk_samples, 'walk', input_level=builder.barrier,
+            address_retained=512,
         ))
 
     print('predicted_match_gates', ranged['predicted_match_gates'], 'samples', len(samples), flush=True)
@@ -97,6 +98,8 @@ def main():
         working_dense_limit=DENSE_LIMIT,
         working_call_limit=CALL_LIMIT,
         handler_identity='live control key',
+        expression_address_retained=512,
+        expression_page_read=False,
         predicted_match_gates=ranged['predicted_match_gates'],
         exclusive_keys=plan['exclusive_keys'],
         boolean_samples=len(samples),
@@ -105,11 +108,11 @@ def main():
         mathlib_bounding_memory_unplaced=mathlib_joint,
         note=(
             'One allocate of continuation-range hits, the 65 residual predicates, '
-            'and the shared expression walk. The handler identity is the live '
-            'control key. Match gates are fewer than one fused equality per key; '
-            'republish and the walk add units. Memory sums add unplaced '
-            'linear-attention layers beside this inert stack and are not allocate '
-            'results. No stock forward and no mathlib proof was checked.'
+            'the shared expression walk, and the page split of the walk child. '
+            'The handler identity is the live control key. The split does not '
+            'read a page. Memory sums add unplaced linear-attention layers beside '
+            'this inert stack and are not allocate results. No stock forward and '
+            'no mathlib proof was checked.'
         ),
     )
     OUTPUT.write_text(json.dumps(document, indent=2, sort_keys=True) + '\n')

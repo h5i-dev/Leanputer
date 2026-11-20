@@ -8,6 +8,7 @@ from leanputer.kernel.semantic_body import (
     ORIGINAL_EXPRESSIONS,
     _lower_walk,
     build_checked_index_add,
+    build_expression_address,
     build_shared_expression_walk,
     direct_expression_child,
     kept_output_dims,
@@ -124,6 +125,51 @@ class SharedExpressionWalkTest(unittest.TestCase):
         self.assertEqual(joint['memory_layers_included'], 0)
         self.assertTrue(joint['channel_gate'])
         self.assertTrue(joint['dense_gate'])
+
+    def test_expression_address_matches_the_page_split(self):
+        samples = [{'ref': ref} for ref in list(range(0, 600)) + [2048, 2557, 2558, 4096, 65535]]
+        report = build_expression_address(2557, samples, placement_cap=96)
+        self.assertGreater(len(samples), 600)
+        self.assertFalse(report['page_read'])
+        self.assertFalse(report['memory_placed'])
+        self.assertFalse(report['full_checker'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+        self.assertLessEqual(report['graph_layers'], 12)
+        original = build_expression_address(512, [{'ref': ref} for ref in range(0, 520)], placement_cap=96)
+        self.assertTrue(original['channel_gate'] and original['dense_gate'])
+        self.assertFalse(original['memory_placed'])
+        # Wide prefix ANDs are one layer deep. The binary ladder was 6 layers and 106 units.
+        self.assertEqual(report['graph_layers'], 3)
+        self.assertEqual(report['ffn_units'], 72)
+        attached = build_shared_expression_walk(
+            16,
+            [
+                dict(tag=int(Tag.APP), child_index=0, a=1, b=2, c=3, depth=0,
+                     require_child=1, service_gap=0, gap_reason=0),
+                dict(tag=int(Tag.APP), child_index=0, a=0, b=2, c=3, depth=0,
+                     require_child=1, service_gap=0, gap_reason=0),
+                dict(tag=int(Tag.APP), child_index=0, a=512, b=0, c=0, depth=1,
+                     require_child=0, service_gap=0, gap_reason=0),
+                dict(tag=int(Tag.APP), child_index=0, a=513, b=0, c=0, depth=1,
+                     require_child=1, service_gap=0, gap_reason=0),
+                dict(tag=int(Tag.PROJ), child_index=0, a=9, b=8, c=4, depth=0,
+                     require_child=0, service_gap=0, gap_reason=0),
+                dict(tag=0, child_index=0, a=1, b=1, c=1, depth=0,
+                     require_child=1, service_gap=0, gap_reason=0),
+            ],
+            placement_cap=96,
+            address_retained=512,
+        )
+        self.assertFalse(attached['page_read'])
+        self.assertFalse(attached['memory_placed'])
+        self.assertFalse(attached['heap_gather_included'])
+        self.assertEqual(attached['address_retained'], 512)
+        self.assertTrue(attached['channel_gate'] and attached['dense_gate'])
+        self.assertLessEqual(attached['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+        self.assertEqual(attached['graph_layers'], 9)
+        self.assertEqual(attached['ffn_units'], 230)
 
     def test_storage_pages_keep_every_row(self):
         original = source_storage_report(
