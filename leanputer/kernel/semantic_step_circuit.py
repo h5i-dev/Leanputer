@@ -23,7 +23,7 @@ from collections import Counter, defaultdict
 
 from ..native_machine import NativeBuilder
 from ..native_vendor.qwenputer.expr import ONE, Expr
-from ..native_vendor.qwenputer.ir import FFN
+from ..native_vendor.qwenputer.ir import FFN, Head
 from ..native_vendor.qwenputer.emit import allocate, reads
 from .semantic_dispatch import _cone, _input_names
 from .semantic_operators import CALL_LIMIT, DENSE_LIMIT, OPERATORS
@@ -1003,6 +1003,7 @@ def build_continuation_range_select(
     residual_only = sorted(residual_fields - equality_fields)
     builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
     builder.graph.target.intermediate = placement_cap
+    builder.graph.target.value_heads = 4
     words = _features(builder, sorted(equality_fields), widths)
     circuit = PredicateCircuit(
         builder, words, {field: (0, (1 << widths[field]) - 1) for field in equality_fields},
@@ -1171,6 +1172,19 @@ def build_continuation_range_select(
     allocation = allocate(graph, None, keep, GATE_CAP) if graph.nodes else None
     slots = 0 if allocation is None else allocation.n_slots
     shape, shapes = _shape(graph.n_layers(), max(peak, slots), kept_outputs=len(keep))
+    head_layers = sorted({node.level // 2 for node in graph.nodes if isinstance(node, Head)})
+    if head_layers:
+        # _shape prices every layer as full attention. A page head is linear attention.
+        for item in shapes:
+            priced = dense_parameters(
+                item['hidden'], MODEL_INTERMEDIATE, item['layers'], gdn_layers=len(head_layers),
+            )
+            item['logical_dense_parameters'] = priced
+            item['dense_gate'] = priced <= DENSE_LIMIT
+            item['memory_layers_included'] = len(head_layers)
+            item['gdn_layers'] = len(head_layers)
+        fitting = [item for item in shapes if item['channel_gate'] and item['dense_gate']]
+        shape = fitting[0] if fitting else shapes[-1]
     return dict(
         schedule=f'continuation-range-wave-{wave}',
         classes=len(classes),
@@ -1209,7 +1223,8 @@ def build_continuation_range_select(
         full_checker=False,
         operator_body_included=False,
         tail_attached=tail is not None,
-        memory_layers_included=0,
+        head_layers=head_layers,
+        memory_layers_included=len(head_layers),
         stock_emitted=False,
         joint_delivery_gate=False,
         mathlib_theorems_checked=0,

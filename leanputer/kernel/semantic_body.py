@@ -15,15 +15,19 @@ is the gate-side hazard, and this adder does not put the digit on that side.
 ``Outcome.GAP`` and the reason word already in that state. It does not ask the
 host whether a proof is admitted.
 
-This circuit does not gather the heap, apply handler commit records, or place
-private algorithms. It does not emit a torch model and it is not a source checker.
+The expression page reads and writes one linear-attention layer. A row is the
+tag and the three expression fields, addressed by the reference split. Handler
+commit and private algorithms are not in this circuit. It does not emit a torch
+model and it is not a source checker.
 """
 from __future__ import annotations
+
+import math
 
 from ..native_machine import NativeBuilder
 from ..native_vendor.qwenputer.emit import allocate
 from ..native_vendor.qwenputer.expr import Expr
-from ..native_vendor.qwenputer.ir import ExactnessError, evaluate
+from ..native_vendor.qwenputer.ir import A_BIT, A_REF, ExactnessError, Head, K, evaluate
 from .arena import Row, Tag, children
 from .semantic_operators import DENSE_LIMIT
 from .semantic_step_circuit import (
@@ -34,6 +38,7 @@ from .semantic_step_circuit import (
     _ffn_units,
     _free_or,
     _shape,
+    dense_parameters,
     live_peak,
 )
 from .source_capacity import IN_RANGE, INVALID_REFERENCE, NULL, AddressDomain
@@ -46,6 +51,11 @@ from .traversal_machine import Outcome, Reason
 ROWS_PER_PAGE = 128
 VALUE_HEADS_PER_LAYER = 4
 ROWS_PER_LAYER = ROWS_PER_PAGE * VALUE_HEADS_PER_LAYER
+TAG_BITS = 4
+PAGE_WORD_BITS = 16
+# tag, a, b, c. Columns 0 and 1 of a value head are the row ballast.
+PAYLOAD_BITS = TAG_BITS + 3 * PAGE_WORD_BITS
+DATA_COLUMN = 2
 ORIGINAL_EXPRESSIONS = 512
 ORIGINAL_DECLARATIONS = 4
 ORIGINAL_STACK = 32
@@ -318,6 +328,7 @@ def _lower_walk(builder, width, samples, prefix, input_level=None, address_retai
         next_depth=digits,
         status=status,
         reason=reason,
+        inputs=words,
     )
     if address_retained is not None:
         if width != 16:
@@ -447,8 +458,12 @@ def _xor_pair(circuit, left, right):
     ])
 
 
-def _address_from_pairs(circuit, ref, retained):
-    """Page split of a 1-based reference already present as bit pairs."""
+def _address_from_pairs(circuit, ref, retained, name='ref'):
+    """Page split of a 1-based reference already present as bit pairs.
+
+    ``name`` is the boolean alias. Two references on one circuit need two
+    names, because equality and less-than are memoized by variable name.
+    """
     width = len(ref)
     if width != 16:
         raise ValueError('expression address width is the 16-bit reference')
@@ -458,10 +473,10 @@ def _address_from_pairs(circuit, ref, retained):
     # schema, and these pairs may be gates rather than input features.
     circuit.words = dict(circuit.words)
     circuit.bit_ids = dict(circuit.bit_ids)
-    circuit.words['ref'] = [pair[0] for pair in ref]
-    circuit.bit_ids['ref'] = [pair[1] for pair in ref]
-    null = circuit._equal('ref', 0)
-    below_limit = circuit._less('ref', retained + 1)
+    circuit.words[name] = [pair[0] for pair in ref]
+    circuit.bit_ids[name] = [pair[1] for pair in ref]
+    null = circuit._equal(name, 0)
+    below_limit = circuit._less(name, retained + 1)
     in_range = circuit._and([circuit._not(*null), below_limit])
     zeros = [circuit._not(*bit) for bit in ref]
     present = _inclusive_and_scan(circuit, zeros)
@@ -553,10 +568,307 @@ def build_expression_address(retained, samples, placement_cap=GATE_CAP):
     ))
 
 
+def _hot_form(one, bits, value, enabled):
+    """Positive iff every literal matches. A miss is at most ``-K``.
+
+    The form is the GDN key and query preactivation. It is linear. It is not
+    a second copy of the row.
+    """
+    width = len(bits) + 1
+    total = enabled
+    for index, bit in enumerate(bits):
+        total = total + (bit if (value >> index) & 1 else one - bit)
+    return K * (2 * total - (2 * width - 1) * one)
+
+
+def _payload_exprs(words):
+    bits = []
+    for name, width in (
+        ('store_tag', TAG_BITS),
+        ('store_a', PAGE_WORD_BITS),
+        ('store_b', PAGE_WORD_BITS),
+        ('store_c', PAGE_WORD_BITS),
+    ):
+        bits.extend(words[name][:width])
+    if len(bits) != PAYLOAD_BITS:
+        raise ValueError('expression page payload width drifted')
+    return bits
+
+
+def _decode_payload(values):
+    if len(values) != PAYLOAD_BITS:
+        raise ValueError('expression page payload width drifted')
+    cursor = 0
+
+    def take(width):
+        nonlocal cursor
+        total = 0
+        for shift in range(width):
+            bit = values[cursor]
+            if bit not in (0, 1):
+                raise AssertionError(f'expression page bit is {bit}')
+            total |= bit << shift
+            cursor += 1
+        return total
+
+    return take(TAG_BITS), take(PAGE_WORD_BITS), take(PAGE_WORD_BITS), take(PAGE_WORD_BITS)
+
+
+def _page_read_ref(sample):
+    if 'read_ref' in sample:
+        return sample['read_ref']
+    direct = direct_expression_child(
+        sample['tag'], sample['child_index'], sample['a'], sample['b'], sample['c'],
+    )
+    return direct['ref'] if direct['in_range'] else 0
+
+
+def _check_expression_page(graph, words, selected, samples, retained, walk_words=None):
+    """Replay writes, then compare each read with the value head that holds it."""
+    domain = AddressDomain(retained, 0)
+    if walk_words is not None:
+        _bind_samples(graph, walk_words, samples)
+    matrix = _evaluate_samples(graph, words, samples)
+    page = {}
+    for index, sample in enumerate(samples):
+        if sample['write_enable']:
+            placed = domain.expression_address(sample['write_ref'])
+            if placed['outcome'] == IN_RANGE:
+                if placed['layer'] != 0:
+                    raise AssertionError('one expression page does not hold a second layer')
+                page[(placed['head'], placed['row'])] = (
+                    sample['store_tag'], sample['store_a'], sample['store_b'], sample['store_c'],
+                )
+        read = domain.expression_address(_page_read_ref(sample))
+        if read['outcome'] == IN_RANGE and read['layer'] == 0:
+            expect = page.get((read['head'], read['row']), (0, 0, 0, 0))
+        else:
+            expect = (0, 0, 0, 0)
+        got = _decode_payload([
+            _expr_value(bit, matrix[index]) for bit in selected
+        ])
+        if got != expect:
+            raise AssertionError(
+                f'expression page read {sample["read_ref"]} returned {got}, direct row is {expect}'
+            )
+
+
+def _lower_expression_page(builder, retained, samples):
+    """One write port and one read port on one 512-row expression page.
+
+    Value heads are the four blocks of 128 rows. The stored fields are the
+    expression tag and ``a``, ``b``, ``c``. The query is the read row. The
+    head select is the read head. A null or invalid reference does not write
+    and reads as zeros. State persists across the tokens of one evaluation,
+    which is the setup write followed by the check read.
+    """
+    if type(retained) is not int or retained <= 0 or retained > ROWS_PER_LAYER:
+        raise ValueError('this expression page is one linear-attention layer')
+    spec = (
+        ('write_enable', 1),
+        ('write_ref', 16),
+        ('read_ref', 16),
+        ('store_tag', TAG_BITS),
+        ('store_a', PAGE_WORD_BITS),
+        ('store_b', PAGE_WORD_BITS),
+        ('store_c', PAGE_WORD_BITS),
+    )
+    words = _features(builder, spec, 'page')
+    circuit = PredicateCircuit(builder, words, {})
+    read = _address_from_pairs(circuit, _word_pairs(circuit, 'read_ref'), retained, name='read_slot')
+    write = _address_from_pairs(circuit, _word_pairs(circuit, 'write_ref'), retained, name='write_slot')
+    selected = _emit_expression_head(builder, circuit, words, read, write)
+    if samples:
+        _check_expression_page(builder.graph, words, selected, samples, retained)
+    return words, selected, read
+
+
+def _match_gate(builder, bits, value):
+    """One AND of the head bits. Complements are free."""
+    one = builder.graph.one
+    parts = [bit if (value >> index) & 1 else one - bit for index, bit in enumerate(bits)]
+    if len(parts) == 1:
+        return parts[0]
+    return builder.gate('and', parts, 'expr-page/head')
+
+
+def _emit_expression_head(builder, circuit, words, read, write):
+    """Read ``read`` and write ``write`` through one expression page."""
+    one = builder.graph.one
+    write_open = circuit._and([_word_pairs(circuit, 'write_enable')[0], write['in_range']])
+    query = {
+        row: _hot_form(one, [_as_expr(bit) for bit in read['row']], row, _as_expr(read['in_range']))
+        for row in range(ROWS_PER_PAGE)
+    }
+    key = {
+        row: _hot_form(one, [_as_expr(bit) for bit in write['row']], row, _as_expr(write_open))
+        for row in range(ROWS_PER_PAGE)
+    }
+    payload = _payload_exprs(words)
+    values = {0: A_REF * one, 1: A_REF * one}
+    values.update({DATA_COLUMN + index: A_BIT * bit for index, bit in enumerate(payload)})
+    outs = [(DATA_COLUMN + index, 128.0) for index in range(PAYLOAD_BITS)]
+    write_head = [_as_expr(bit) for bit in write['head']]
+    read_head = [_as_expr(bit) for bit in read['head']]
+    write_matches = [_match_gate(builder, write_head, head) for head in range(VALUE_HEADS_PER_LAYER)]
+    read_matches = [_match_gate(builder, read_head, head) for head in range(VALUE_HEADS_PER_LAYER)]
+    # a = 0 keeps every stored row. The page is not a decaying scratch file.
+    # z passes only the selected value head, so the four heads sum into one row
+    # and no post-read mux is allocated.
+    betas = [
+        builder.gate('and', [_as_expr(write_open), write_matches[head]], 'expr-page/beta')
+        for head in range(VALUE_HEADS_PER_LAYER)
+    ]
+
+    def read_gate(match):
+        opened = K * (2 * match - one)
+        return {DATA_COLUMN + index: opened for index in range(PAYLOAD_BITS)}
+
+    vx = [
+        dict(
+            v=dict(values), a=0, z=read_gate(read_matches[head]), outs=list(outs),
+            beta=betas[head], into='main',
+        )
+        for head in range(1, VALUE_HEADS_PER_LAYER)
+    ]
+    raw = builder.graph.head(
+        'kernel.expression.page', query, key, values, 0, read_gate(read_matches[0]), outs,
+        beta=betas[0], vx=vx,
+    )
+    if len(raw) < PAYLOAD_BITS:
+        raise ValueError('expression page head did not publish every field')
+    return list(raw[:PAYLOAD_BITS])
+
+
+def _attach_expression_page(builder, read_address, retained, samples, walk_words, input_level):
+    """Write port plus a read of an address the walk already published.
+
+    The read reference is the walk's child. ``samples`` carry that child in
+    the walk fields and the stored row in ``store_tag`` / ``store_a`` /
+    ``store_b`` / ``store_c``. One linear-attention layer holds 512 rows.
+    """
+    if type(retained) is not int or retained <= 0 or retained > ROWS_PER_LAYER:
+        raise ValueError('this expression page is one linear-attention layer')
+    spec = (
+        ('write_enable', 1),
+        ('write_ref', 16),
+        ('store_tag', TAG_BITS),
+        ('store_a', PAGE_WORD_BITS),
+        ('store_b', PAGE_WORD_BITS),
+        ('store_c', PAGE_WORD_BITS),
+    )
+    words = _features(builder, spec, 'page', level=input_level)
+    circuit = PredicateCircuit(builder, words, {})
+    write = _address_from_pairs(
+        circuit, _word_pairs(circuit, 'write_ref'), retained, name='write_slot',
+    )
+    selected = _emit_expression_head(builder, circuit, words, read_address, write)
+    if samples:
+        _check_expression_page(
+            builder.graph, words, selected, samples, retained, walk_words=walk_words,
+        )
+    return selected
+
+
+def _price_head_graph(graph, peak_slots, kept_outputs):
+    """Price head layers as linear attention. An all-inert price undercounts them."""
+    hidden = 768
+    ballast = hidden // 64
+    graph_layers = graph.n_layers()
+    clear_layers = math.ceil(max(hidden - ballast - kept_outputs, 0) / MODEL_INTERMEDIATE)
+    layers = graph_layers + clear_layers + 1
+    head_layers = sorted({node.level // 2 for node in graph.nodes if isinstance(node, Head)})
+    dense = dense_parameters(hidden, MODEL_INTERMEDIATE, layers, gdn_layers=len(head_layers))
+    channels = ballast + 1 + peak_slots
+    return dict(
+        hidden=hidden,
+        ballast=ballast,
+        channels_needed=channels,
+        channel_gate=channels <= hidden,
+        graph_layers=graph_layers,
+        scratch_clear_layers=clear_layers,
+        feedback_layer=1,
+        layers=layers,
+        gdn_layers=len(head_layers),
+        head_layers=head_layers,
+        logical_dense_parameters=dense,
+        dense_gate=dense <= DENSE_LIMIT,
+        memory_layers_included=len(head_layers),
+        inert_price_undercounts_head=True,
+    )
+
+
+def build_expression_page(retained, samples, placement_cap=GATE_CAP):
+    """Place one expression page. Not a stock forward and not a source checker."""
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    builder.graph.target.value_heads = 4
+    _words, selected, read = _lower_expression_page(builder, retained, samples)
+    flat = [read['null'], read['in_range'], *selected]
+    report = _place(builder, flat, samples, dict(
+        schedule='expression-page',
+        retained_rows=retained,
+        payload_bits=PAYLOAD_BITS,
+        page_read=True,
+        expression_page_placed=True,
+        small_bank_placed=False,
+        memory_placed=False,
+        mathlib_theorems_checked=0,
+    ))
+    priced = _price_head_graph(
+        builder.graph, max(report['peak_live_dims'], report['allocated_slots']), report['outputs_kept'],
+    )
+    report['selected_shape'] = priced
+    report['candidate_shapes'] = [priced]
+    report['channel_gate'] = priced['channel_gate']
+    report['dense_gate'] = priced['dense_gate']
+    report['memory_layers_included'] = priced['memory_layers_included']
+    return report
+
+
+def build_child_page(samples, placement_cap=GATE_CAP):
+    """Place the walk, the child address, and one expression page together.
+
+    Not the dispatch graph and not a stock forward. ``samples`` are walk rows
+    whose child is the page read, plus one write port.
+    """
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    builder.graph.target.value_heads = 4
+    outputs = _lower_walk(builder, 16, samples, 'walk', address_retained=512)
+    selected = _attach_expression_page(
+        builder, outputs['address'], 512, samples, outputs['inputs'], input_level=0,
+    )
+    flat = [
+        outputs['in_range'], outputs['overflow'], *outputs['status'], *outputs['reason'], *selected,
+    ]
+    report = _place(builder, flat, samples, dict(
+        schedule='child-page',
+        retained_rows=512,
+        payload_bits=PAYLOAD_BITS,
+        page_read=True,
+        expression_page_placed=True,
+        small_bank_placed=False,
+        memory_placed=False,
+        mathlib_theorems_checked=0,
+    ))
+    priced = _price_head_graph(
+        builder.graph, max(report['peak_live_dims'], report['allocated_slots']), report['outputs_kept'],
+    )
+    report['selected_shape'] = priced
+    report['candidate_shapes'] = [priced]
+    report['channel_gate'] = priced['channel_gate']
+    report['dense_gate'] = priced['dense_gate']
+    report['memory_layers_included'] = priced['memory_layers_included']
+    return report
+
+
 def kept_output_dims(outputs):
     """Residual dims named by walk outputs. Digits may be bare linear forms."""
     keep = set()
-    for item in outputs.values():
+    for key, item in outputs.items():
+        if key == 'inputs':
+            continue
         _output_dims(item, keep)
     return keep
 

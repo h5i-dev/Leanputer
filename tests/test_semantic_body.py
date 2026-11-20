@@ -9,6 +9,8 @@ from leanputer.kernel.semantic_body import (
     _lower_walk,
     build_checked_index_add,
     build_expression_address,
+    build_child_page,
+    build_expression_page,
     build_shared_expression_walk,
     direct_expression_child,
     kept_output_dims,
@@ -170,6 +172,84 @@ class SharedExpressionWalkTest(unittest.TestCase):
         self.assertLessEqual(attached['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
         self.assertEqual(attached['graph_layers'], 9)
         self.assertEqual(attached['ffn_units'], 230)
+
+    def test_expression_page_reads_the_addressed_row(self):
+        def write(ref, tag, a, b, c):
+            return dict(
+                write_enable=1, write_ref=ref, read_ref=0,
+                store_tag=tag, store_a=a, store_b=b, store_c=c,
+            )
+
+        def read(ref):
+            return dict(
+                write_enable=0, write_ref=0, read_ref=ref,
+                store_tag=0, store_a=0, store_b=0, store_c=0,
+            )
+
+        samples = [
+            write(1, int(Tag.APP), 1, 2, 3),
+            write(2, int(Tag.LAM), 4, 5, 6),
+            write(128, int(Tag.PI), 7, 8, 9),
+            write(129, int(Tag.SORT), 10, 11, 12),
+            write(512, int(Tag.CONST), 13, 14, 15),
+            write(0, int(Tag.APP), 99, 99, 99),
+            write(513, int(Tag.APP), 98, 98, 98),
+            read(1),
+            read(2),
+            read(128),
+            read(129),
+            read(512),
+            read(0),
+            read(513),
+            read(3),
+            read(256),
+            write(1, int(Tag.LET), 20, 21, 22),
+            read(1),
+        ]
+        report = build_expression_page(512, samples, placement_cap=96)
+        self.assertTrue(report['page_read'])
+        self.assertTrue(report['expression_page_placed'])
+        self.assertFalse(report['small_bank_placed'])
+        self.assertFalse(report['memory_placed'])
+        self.assertFalse(report['full_checker'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertEqual(report['payload_bits'], 52)
+        self.assertEqual(report['memory_layers_included'], 1)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+        self.assertEqual(report['selected_shape']['gdn_layers'], 1)
+
+    def test_child_page_reads_the_walk_child(self):
+        def row(child, write_enable, write_ref, tag, a, b, c):
+            return dict(
+                tag=int(Tag.APP), child_index=0, a=child, b=0, c=0, depth=0,
+                require_child=0, service_gap=0, gap_reason=0,
+                write_enable=write_enable, write_ref=write_ref,
+                store_tag=tag, store_a=a, store_b=b, store_c=c,
+            )
+
+        samples = [
+            row(0, 1, 1, int(Tag.APP), 1, 2, 3),
+            row(1, 0, 0, 0, 0, 0, 0),
+            row(0, 1, 129, int(Tag.SORT), 4, 5, 6),
+            row(129, 0, 0, 0, 0, 0, 0),
+            row(0, 1, 512, int(Tag.CONST), 7, 8, 9),
+            row(512, 0, 0, 0, 0, 0, 0),
+            row(0, 1, 0, int(Tag.LAM), 9, 9, 9),
+            row(0, 1, 513, int(Tag.LAM), 8, 8, 8),
+            row(513, 0, 0, 0, 0, 0, 0),
+            row(3, 0, 0, 0, 0, 0, 0),
+            row(256, 0, 0, 0, 0, 0, 0),
+        ]
+        report = build_child_page(samples, placement_cap=96)
+        self.assertTrue(report['page_read'])
+        self.assertTrue(report['expression_page_placed'])
+        self.assertFalse(report['small_bank_placed'])
+        self.assertFalse(report['full_checker'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertEqual(report['memory_layers_included'], 1)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
 
     def test_storage_pages_keep_every_row(self):
         original = source_storage_report(
