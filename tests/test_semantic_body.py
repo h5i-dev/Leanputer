@@ -19,6 +19,10 @@ from leanputer.kernel.semantic_body import (
     build_expression_page,
     build_shared_expression_walk,
     build_small_bank,
+    FETCH_FIELDS,
+    _FETCH_SKIP_MODES,
+    _FETCH_SKIP_TASKS,
+    build_fetch_guard,
     build_step_front,
     commit_step_prologue,
     direct_expression_child,
@@ -27,6 +31,7 @@ from leanputer.kernel.semantic_body import (
     kept_output_dims,
     merge_constant_word,
     source_storage_report,
+    step_fetch_image,
     step_front_image,
     step_prologue_image,
     unpack_byte,
@@ -706,6 +711,139 @@ class StepFrontTest(unittest.TestCase):
         self.assertEqual(report['limits'], limits)
         self.assertEqual(report['mathlib_theorems_checked'], 0)
         self.assertFalse(report['full_checker'])
+
+
+def _fetch_frame(**overrides):
+    frame = _legal_frame()
+    frame.update(x=1, free=4)
+    frame.update(overrides)
+    return frame
+
+
+def _fetch_cases():
+    """Hand-read fetch outcomes. Fuel 10 decrements to 9. x=0 is a bad reference."""
+    run, inv, res = int(Outcome.RUNNING), int(Outcome.INVALID), int(Outcome.RESOURCE)
+    syntax, fuel, context = int(Reason.SYNTAX), int(Reason.FUEL), int(Reason.CONTEXT)
+    stay, bad = (run, 0, 9), (inv, syntax, 9)
+    rows = []
+
+    def add(prologue, front, fetch, bit, **overrides):
+        rows.append((overrides, prologue, front, fetch, bit))
+
+    add(stay, stay, stay, 1, x=1)
+    add(stay, stay, stay, 1, x=3)
+    add(stay, stay, bad, 1, x=0)
+    add(stay, stay, bad, 1, x=4)
+    add(stay, stay, bad, 1, x=5)
+    # free above the heap is prologue syntax. The compare runs only after that.
+    stopped = (inv, syntax, 9)
+    add(stopped, stopped, stopped, 0, x=32768, free=32768)
+    add(stopped, stopped, stopped, 0, x=32767, free=32768)
+    add(stopped, stopped, stopped, 0, x=1, free=65535)
+    add(stay, stay, bad, 1, x=32768, free=512)
+    add(stay, stay, bad, 1, x=65535, free=512)
+    add(stay, stay, stay, 1, x=511, free=512)
+    add(stay, stay, bad, 1, x=512, free=512)
+    # RETURN and a whole-task skip are both hot. The guard OR must stay Boolean.
+    add(stay, stay, stay, 0, task=int(Task.WORD_DECIMAL), mode=int(Mode.RETURN), x=0)
+    add((res, fuel, 0), (res, fuel, 0), (res, fuel, 0), 0, fuel=0, x=0)
+    add((inv, syntax, 4), (inv, syntax, 4), (inv, syntax, 4), 0, fuel=5, free=0, x=0)
+    add(stay, (res, context, 9), (res, context, 9), 0, task=int(Task.INSTANTIATE), arg_base=8, count=1, x=0)
+    add(stay, stay, stay, 0, mode=int(Mode.RETURN), x=0)
+    add(stay, stay, stay, 0, task=int(Task.WORD_DECIMAL), x=0)
+    add(stay, stay, stay, 0, task=int(Task.MAKE_RECURSOR_NAME), x=0)
+    add(stay, stay, stay, 0, task=int(Task.FORMAL_LEVELS), x=0)
+    add(stay, (res, context, 9), (res, context, 9), 0, task=int(Task.FORMAL_LEVELS), arg_base=8, count=1, x=0)
+    add(stay, stay, stay, 0, task=int(Task.SNAPSHOT_SCOPE), x=0)
+    add(stay, stay, stay, 0, task=int(Task.CHECK_PUBLISHED_RECURSOR), x=0)
+    add(stay, stay, stay, 0, task=int(Task.NESTED_STAGE), x=0)
+    add(stay, stay, stay, 0, task=int(Task.CHECK_SOURCE), mode=int(Mode.WALK), x=0)
+    add(stay, stay, bad, 1, task=int(Task.CHECK_SOURCE), mode=int(Mode.SOURCE_TYPE_SORT), x=0)
+    add(stay, stay, stay, 1, task=int(Task.CHECK_SOURCE), mode=int(Mode.SOURCE_TYPE_SORT), x=1)
+    add(stay, stay, stay, 0, task=int(Task.REVERSE_LIST), mode=int(Mode.WALK), x=0)
+    add(stay, stay, bad, 1, task=int(Task.REVERSE_LIST), mode=int(Mode.REVERSE_LIST), x=0)
+    add(stay, stay, stay, 1, task=int(Task.REVERSE_LIST), mode=int(Mode.REVERSE_LIST), x=1)
+    add(stay, stay, stay, 0, task=int(Task.SYMBOL_MEMBER), x=0)
+    add(stay, stay, stay, 1, task=int(Task.SYMBOL_MEMBER), x=1)
+    add(stay, stay, bad, 1, task=int(Task.SYMBOL_MEMBER), x=1, free=1)
+    add(stay, stay, stay, 0, task=int(Task.ENV_LOOKUP), mode=int(Mode.WALK), x=0)
+    add(stay, stay, bad, 1, task=int(Task.ENV_LOOKUP), mode=int(Mode.RESUME), x=0)
+    add(stay, stay, stay, 0, task=int(Task.OPEN_RAW_PREFIX), mode=int(Mode.WALK), x=0)
+    add(stay, stay, bad, 1, task=int(Task.OPEN_RAW_PREFIX), mode=int(Mode.RESUME), x=0)
+    add(stay, stay, stay, 0, task=int(Task.REPLACE_NAME_PREFIX), mode=int(Mode.WALK), x=0)
+    add(stay, stay, stay, 0, task=int(Task.PRIOR_BLOCK_LOOKUP), mode=int(Mode.WALK), x=0)
+    add(stay, stay, stay, 0, task=int(Task.OPEN_RECURSIVE_PREFIX), mode=int(Mode.PREFIX_STORE), x=0)
+    add(stay, stay, bad, 1, task=int(Task.OPEN_RECURSIVE_PREFIX), mode=int(Mode.WALK), x=0)
+    add(stay, stay, stay, 0, task=int(Task.BUILD_MINORS), mode=254, x=0)
+    add(stay, stay, bad, 1, task=int(Task.BUILD_MINORS), mode=int(Mode.RESUME), x=0)
+    add(stay, stay, stay, 0, task=int(Task.FRESH_LOCAL), mode=int(Mode.FRESH_LOCAL_RECORD), x=0)
+    add(stay, stay, bad, 1, task=int(Task.FRESH_LOCAL), mode=int(Mode.WALK), x=0)
+    add(stay, stay, stay, 0, task=int(Task.APPLY_SCOPE), mode=int(Mode.APPLY_SCOPE_SELECT), x=0)
+    add((1, 0, 5), (1, 0, 5), (1, 0, 5), 0, status=1, fuel=5, x=0)
+    add(stay, stay, bad, 1, mode=int(Mode.ELIM_PREPARE), x=0)
+    for task in _FETCH_SKIP_TASKS:
+        add(stay, stay, stay, 0, task=task, x=0)
+    for task, modes in _FETCH_SKIP_MODES:
+        for mode in modes:
+            add(stay, stay, stay, 0, task=task, mode=mode, x=0)
+    return rows
+
+
+def _fetch_samples(cases, limits):
+    samples = []
+    for overrides, prologue, front, fetch, bit in cases:
+        sample = _fetch_frame(**overrides)
+        if step_prologue_image(sample, limits) != prologue:
+            raise AssertionError(f'prologue image disagrees with {overrides}')
+        if step_front_image(sample, limits) != front:
+            raise AssertionError(f'front image disagrees with {overrides}')
+        image = step_fetch_image(sample, limits)
+        if image != fetch + (bit,):
+            raise AssertionError(f'fetch image {image} disagrees with {fetch + (bit,)} for {overrides}')
+        sample['expect_prologue'] = prologue
+        sample['expect_front'] = front
+        sample['expect_fetch'] = fetch
+        sample['expect_fetch_bit'] = bit
+        samples.append(sample)
+    return samples
+
+
+class FetchGuardTest(unittest.TestCase):
+    def test_fetch_skip_lists_follow_the_reference_step(self):
+        self.assertEqual(len(_FETCH_SKIP_TASKS), 33)
+        self.assertIn(int(Task.CHECK_PUBLISHED_RECURSOR), _FETCH_SKIP_TASKS)
+        self.assertNotIn(int(Task.LIFT), _FETCH_SKIP_TASKS)
+        self.assertIn(int(Task.OPEN_RECURSIVE_PREFIX), {task for task, _modes in _FETCH_SKIP_MODES})
+        self.assertIn(int(Mode.PREFIX_STORE), dict(_FETCH_SKIP_MODES)[int(Task.OPEN_RECURSIVE_PREFIX)])
+        self.assertEqual(set(_fetch_frame()), set(FETCH_FIELDS))
+
+    def test_fetch_image_matches_the_hand_read_cases(self):
+        samples = _fetch_samples(_fetch_cases(), _CONTRACT)
+        self.assertGreaterEqual(len(samples), 40)
+
+    def test_fetch_guard_stops_a_bad_reference_and_skips_the_no_node_tasks(self):
+        samples = _fetch_samples(_fetch_cases(), _CONTRACT)
+        report = build_fetch_guard(_CONTRACT, samples)
+        self.assertTrue(report['fetch_guard_included'])
+        self.assertTrue(report['step_prologue_included'])
+        self.assertTrue(report['argument_window_included'])
+        self.assertFalse(report['page_read_included'])
+        self.assertFalse(report['handler_bodies_included'])
+        self.assertFalse(report['handler_commit_included'])
+        self.assertFalse(report['continuation_range_attached'])
+        self.assertFalse(report['full_checker'])
+        self.assertFalse(report['stock_emitted'])
+        self.assertFalse(report['joint_delivery_gate'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertEqual(report['gdn_layers'], 0)
+        self.assertEqual(report['frame_bytes'], 58)
+        self.assertEqual(report['boolean_samples'], len(samples))
+        dense = report['selected_shape']['logical_dense_parameters']
+        self.assertEqual(report['within_working_dense_limit'], dense <= report['working_dense_limit'])
+        self.assertEqual(report['within_ideal_dense_limit'], dense <= report['ideal_dense_limit'])
+        self.assertEqual(report['within_absolute_dense_limit'], dense < report['absolute_dense_limit'])
+        self.assertLess(dense, report['absolute_dense_limit'])
+        self.assertLessEqual(report['selected_shape']['channels_needed'], report['selected_shape']['hidden'])
 
 
 if __name__ == '__main__':

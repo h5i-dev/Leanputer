@@ -23,8 +23,10 @@ context rows of one; a declaration cell is six words and is not a ``write_``
 effect. One token of a page writes one row. Published channels are bytes,
 because bf16 holds every integer in 0..255 and a bit per residual slot does
 not leave room for a second head. The step front is the shared fuel stop, the
-fuel decrement, the syntax bounds, and the argument-window check. Words arrive
-as packed bytes. Handler bodies and private algorithms are not in this circuit.
+fuel decrement, the syntax bounds, and the argument-window check. The fetch
+guard is the next shared decision: which continued steps read a node, and the
+reference bounds on that read. Words arrive as packed bytes. Handler bodies
+and private algorithms are not in this circuit.
 It does not emit a torch model and it is not a source checker.
 """
 from __future__ import annotations
@@ -49,6 +51,21 @@ from .semantic_step_circuit import (
     live_peak,
 )
 from .source_capacity import IN_RANGE, INVALID_REFERENCE, NULL, AddressDomain
+from .application_ops_rules import NO_NODE as _APPLICATION_NO_NODE
+from .assemble_recursors_rules import NO_NODE as _ASSEMBLE_NO_NODE
+from .block_flags_rules import NO_NODE as _FLAGS_NO_NODE
+from .elimination_rules import NO_NODE as _ELIMINATION_NO_NODE
+from .major_rules import NO_NODE as _MAJOR_NO_NODE
+from .minor_rules import NO_NODE as _MINOR_NO_NODE
+from .motive_rules import NO_NODE as _MOTIVE_NO_NODE
+from .name_intern_rules import NO_NODE as _INTERN_NO_NODE
+from .nested_application_rules import NO_NODE as _NESTED_APP_NO_NODE
+from .open_prefix_rules import NO_NODE as _OPEN_PREFIX_NO_NODE
+from .recursor_claim_rules import NO_NODE as _CLAIM_NO_NODE
+from .recursor_reduce_rules import NO_NODE as _GATHER_NO_NODE
+from .recursor_rule_rules import NO_NODE as _RULE_NO_NODE
+from .recursor_type_rules import NO_NODE as _REC_TYPE_NO_NODE
+from .vector_splice_rules import NO_NODE as _SPLICE_NO_NODE
 from .traversal_machine import Mode, Outcome, Reason, Task
 
 
@@ -1483,6 +1500,208 @@ def step_front_image(regs, limits):
     return status, reason, fuel
 
 
+# Tasks whose step never reads the generic node. Nested controllers are the
+# RuleCompiler list. The four named tasks return before the fetch in
+# SpecMachine.step, for every mode.
+_FETCH_SKIP_TASKS = (
+    int(Task.NESTED_STAGE),
+    int(Task.REPLACE_NESTED),
+    int(Task.REWRITE_NESTED),
+    int(Task.RESTORE_NESTED_EXPR),
+    int(Task.RESTORE_NESTED_CALLBACK),
+    int(Task.RESTORE_NESTED_BLOCK),
+    int(Task.FAMILY_INFO),
+    int(Task.PROJECTION_INFER),
+    int(Task.PROJECTION_REDUCE),
+    int(Task.PROJECTION_BRIDGE),
+    int(Task.CONVERT),
+    int(Task.LEVELS_EQUIVALENT),
+    int(Task.STRUCTURE_INFO),
+    int(Task.QUOT_INITIALIZE),
+    int(Task.QUOT_REDUCE),
+    int(Task.NAT_BINDINGS),
+    int(Task.NAT_LITERAL),
+    int(Task.NAT_BITS),
+    int(Task.NAT_HIGH),
+    int(Task.NAT_CLASSIFY),
+    int(Task.NAT_BRIDGE),
+    int(Task.NAT_REDUCE),
+    int(Task.BOOL_BINDINGS),
+    int(Task.NAT_OFFSET),
+    int(Task.STRING_BINDINGS),
+    int(Task.STRING_LITERAL),
+    int(Task.STRING_WHNF),
+    int(Task.STRING_COMPARE),
+    int(Task.CHECK_PUBLISHED_RECURSOR),
+    int(Task.MAKE_RECURSOR_NAME),
+    int(Task.WORD_DECIMAL),
+    int(Task.FORMAL_LEVELS),
+    int(Task.SNAPSHOT_SCOPE),
+)
+_CONSTRUCTOR_NO_NODE = (
+    int(Mode.WALK), int(Mode.CTOR_STORE_META), int(Mode.CTOR_STORE_PENDING), int(Mode.CTOR_LINK),
+)
+_DECLARE_NO_NODE = (
+    int(Mode.WALK), int(Mode.DECL_CTOR_STORE_INFO), int(Mode.DECL_CTOR_STORE_SCHEME),
+    int(Mode.DECL_CTOR_STORE_SIGNATURE), int(Mode.DECL_CTOR_LINK), int(Mode.DECL_CTOR_ORDER),
+)
+_CORE_NAME_NO_NODE = (int(Mode.WALK), int(Mode.CORE_NAME_STORE))
+_HEADER_STORE_NO_NODE = (
+    int(Mode.HEADER_STORE_FAMILY), int(Mode.HEADER_STORE_SCHEME),
+    int(Mode.HEADER_STORE_SIGNATURE), int(Mode.HEADER_LINK),
+)
+# (task, modes) pairs that skip the fetch. OPEN_RECURSIVE_PREFIX is here because
+# SpecMachine.step returns before the read. RuleCompiler binds that predicate to
+# the name prefix_no_node and then rebinds the name, so the lowered needs_node
+# expression loses it. The reference step is the behavior this guard follows.
+_FETCH_SKIP_MODES = (
+    (int(Task.CHECK_CONSTRUCTORS), _CONSTRUCTOR_NO_NODE),
+    (int(Task.CHECK_RECURSOR_NAME), (int(Mode.WALK),)),
+    (int(Task.CHECK_CORE_NAMES), _CORE_NAME_NO_NODE),
+    (int(Task.DECLARE_CONSTRUCTORS), _DECLARE_NO_NODE),
+    (int(Task.INIT_ELIMINATION), tuple(int(mode) for mode in _ELIMINATION_NO_NODE)),
+    (int(Task.BUILD_MOTIVES), tuple(int(mode) for mode in _MOTIVE_NO_NODE)),
+    (int(Task.BLOCK_FLAGS), tuple(int(mode) for mode in _FLAGS_NO_NODE)),
+    (int(Task.OPEN_RECURSIVE_PREFIX), tuple(int(mode) for mode in _OPEN_PREFIX_NO_NODE)),
+    (int(Task.BUILD_MINORS), tuple(int(mode) for mode in _MINOR_NO_NODE)),
+    (int(Task.BUILD_RECURSOR_TYPES), tuple(int(mode) for mode in _REC_TYPE_NO_NODE)),
+    (int(Task.BUILD_RECURSOR_RULES), tuple(int(mode) for mode in _RULE_NO_NODE)),
+    (int(Task.ASSEMBLE_RECURSORS), tuple(int(mode) for mode in _ASSEMBLE_NO_NODE)),
+    (int(Task.CHECK_RECURSOR_CLAIMS), tuple(int(mode) for mode in _CLAIM_NO_NODE)),
+    (int(Task.APPLICATION_SPINE), tuple(int(mode) for mode in _APPLICATION_NO_NODE)),
+    (int(Task.PREPARE_RECURSOR_MAJOR), tuple(int(mode) for mode in _MAJOR_NO_NODE)),
+    (int(Task.GATHER_RECURSOR_ARGUMENTS), tuple(int(mode) for mode in _GATHER_NO_NODE)),
+    (int(Task.INTERN_NAME_PATH), tuple(int(mode) for mode in _INTERN_NO_NODE)),
+    (int(Task.VECTOR_SPLICE), tuple(int(mode) for mode in _SPLICE_NO_NODE)),
+    (int(Task.IS_NESTED_APPLICATION), tuple(int(mode) for mode in _NESTED_APP_NO_NODE)),
+    (int(Task.PRIOR_BLOCK_LOOKUP), (int(Mode.WALK),)),
+    (int(Task.OPEN_RAW_PREFIX), (int(Mode.WALK),)),
+    (int(Task.REPLACE_NAME_PREFIX), (int(Mode.WALK),)),
+    (int(Task.ENV_LOOKUP), (int(Mode.WALK),)),
+    (int(Task.FRESH_LOCAL), (int(Mode.FRESH_LOCAL_RECORD),)),
+    (int(Task.APPLY_SCOPE), (int(Mode.APPLY_SCOPE_SELECT),)),
+    (int(Task.ANALYZE_HEADERS), _HEADER_STORE_NO_NODE),
+)
+FETCH_FIELDS = STEP_FRONT_FIELDS + ('x',)
+
+
+def _eq_any(circuit, variable, values):
+    values = tuple(dict.fromkeys(int(value) for value in values))
+    if not values:
+        return _const_pair(circuit, 0)
+    parts = [circuit._equal(variable, value) for value in values]
+    return parts[0] if len(parts) == 1 else circuit._or(parts)
+
+
+def _less_words(circuit, left, right):
+    """Unsigned ``left < right`` for two 16-bit words.
+
+    The deciding bit is the highest bit where the words differ. Each candidate
+    reads the input bits, so the compare is one gate deep after those equals.
+    """
+    if len(left) != len(right) or len(left) != PAGE_WORD_BITS:
+        raise ValueError('word compare needs two 16-bit words')
+    equal = [circuit._not(*_xor_pair(circuit, a, b)) for a, b in zip(left, right)]
+    terms = []
+    for index in range(PAGE_WORD_BITS):
+        parts = [circuit._not(*left[index]), right[index]]
+        parts.extend(equal[higher] for higher in range(index + 1, PAGE_WORD_BITS))
+        terms.append(circuit._and(parts) if len(parts) > 1 else parts[0])
+    return circuit._or(terms)
+
+
+def _fetch_skipped(circuit):
+    """True when SpecMachine.step returns before the generic node read."""
+    parts = [
+        circuit._equal('mode', int(Mode.RETURN)),
+        _eq_any(circuit, 'task', _FETCH_SKIP_TASKS),
+    ]
+    for task, modes in _FETCH_SKIP_MODES:
+        parts.append(circuit._and([
+            circuit._equal('task', task),
+            _eq_any(circuit, 'mode', modes),
+        ]))
+    parts.append(circuit._and([
+        circuit._equal('task', int(Task.CHECK_SOURCE)),
+        circuit._not(*circuit._equal('mode', int(Mode.SOURCE_TYPE_SORT))),
+    ]))
+    parts.append(circuit._and([
+        circuit._equal('task', int(Task.REVERSE_LIST)),
+        circuit._not(*circuit._equal('mode', int(Mode.REVERSE_LIST))),
+    ]))
+    parts.append(circuit._and([
+        circuit._equal('task', int(Task.SYMBOL_MEMBER)),
+        circuit._equal('x', 0),
+    ]))
+    return circuit._or(parts)
+
+
+def commit_fetch_guard(circuit, active, status, reason):
+    """Decide the generic node read after the argument window.
+
+    A continued step that still needs a node stops ``INVALID`` / ``SYNTAX``
+    when the reference is outside ``0 < x < free``. A skipped task leaves the
+    window result unchanged. This does not read the page and it does not run
+    the handler that the skip selects.
+    """
+    _require_frame(circuit, ('task', 'mode', 'x', 'free'))
+    if len(status) != PAGE_WORD_BITS or len(reason) != PAGE_WORD_BITS:
+        raise ValueError('fetch guard commits the 16-bit status and reason')
+    # The skip cone is born after the front. Same-level overlap kept every
+    # task and mode equality live beside the prologue and missed the H768
+    # channel gate (peak 762, slots 852, 865 channels).
+    circuit.builder.barrier = max(
+        circuit.builder.barrier, 2 * circuit.builder.graph.n_layers(),
+    )
+    skipped = _fetch_skipped(circuit)
+    needs = circuit._not(*skipped)
+    fetch = circuit._and([active, needs])
+    x_zero = circuit._equal('x', 0)
+    below = _less_words(circuit, _word_pairs(circuit, 'x'), _word_pairs(circuit, 'free'))
+    ref_bad = circuit._not(*circuit._and([circuit._not(*x_zero), below]))
+    stop = circuit._and([fetch, ref_bad])
+    return dict(
+        status=commit_register_word(circuit, [(stop, int(Outcome.INVALID))], status),
+        reason=commit_register_word(circuit, [(stop, int(Reason.SYNTAX))], reason),
+        fetch=fetch,
+        active=circuit._and([
+            active, circuit._not(*circuit._and([needs, ref_bad])),
+        ]),
+    )
+
+
+def _reference_outside(regs):
+    return not 0 < int(regs['x']) < int(regs['free'])
+
+
+def _fetch_skipped_image(regs):
+    task, mode, x = int(regs['task']), int(regs['mode']), int(regs['x'])
+    if mode == int(Mode.RETURN) or task in _FETCH_SKIP_TASKS:
+        return True
+    for skipped_task, modes in _FETCH_SKIP_MODES:
+        if task == skipped_task and mode in modes:
+            return True
+    if task == int(Task.CHECK_SOURCE) and mode != int(Mode.SOURCE_TYPE_SORT):
+        return True
+    if task == int(Task.REVERSE_LIST) and mode != int(Mode.REVERSE_LIST):
+        return True
+    if task == int(Task.SYMBOL_MEMBER) and x == 0:
+        return True
+    return False
+
+
+def step_fetch_image(regs, limits):
+    """Front result, then the fetch decision. The fourth value is the fetch bit."""
+    status, reason, fuel = step_front_image(regs, limits)
+    if status != int(Outcome.RUNNING):
+        return status, reason, fuel, 0
+    if _fetch_skipped_image(regs):
+        return status, reason, fuel, 0
+    if _reference_outside(regs):
+        return int(Outcome.INVALID), int(Reason.SYNTAX), fuel, 1
+    return status, reason, fuel, 1
+
+
 def _bind_packed_frame(graph, features, samples):
     for name, parts in features.items():
         for part, expr in enumerate(parts):
@@ -1527,6 +1746,45 @@ def _check_step_front(graph, features, samples, outputs):
             active = _bits_value(outputs[active_key], row)
             if active != int(got[0] == int(Outcome.RUNNING)):
                 raise AssertionError(f'{active_key} {active} does not match status {got[0]}')
+
+
+def _check_fetch_guard(graph, features, samples, outputs):
+    if not samples:
+        raise ValueError('fetch guard needs samples')
+    for sample in samples:
+        for name in FETCH_FIELDS:
+            if type(sample[name]) is not int or not 0 <= sample[name] < 1 << PAGE_WORD_BITS:
+                raise AssertionError(f'{name} sample is not a 16-bit word')
+        fuel = tuple(sample['expect_prologue'])[2]
+        if tuple(sample['expect_front'])[2] != fuel or tuple(sample['expect_fetch'])[2] != fuel:
+            raise AssertionError('fetch guard must not change fuel')
+    _bind_packed_frame(graph, features, samples)
+    try:
+        matrix = evaluate(graph, list(range(len(samples))), check=True)
+    except ExactnessError as exc:
+        raise AssertionError(f'fetch guard is not bf16-exact: {exc}') from exc
+    stages = (
+        ('expect_prologue', 'prologue_status', 'prologue_reason', 'prologue_fuel', 'prologue_active'),
+        ('expect_front', 'front_status', 'front_reason', 'front_fuel', 'front_active'),
+        ('expect_fetch', 'status', 'reason', 'fuel', 'active'),
+    )
+    for index, sample in enumerate(samples):
+        row = matrix[index]
+        for expect_key, status_key, reason_key, fuel_key, active_key in stages:
+            got = (
+                _bits_value(outputs[status_key], row),
+                _bits_value(outputs[reason_key], row),
+                _bits_value(outputs[fuel_key], row),
+            )
+            expect = tuple(sample[expect_key])
+            if got != expect:
+                raise AssertionError(f'{expect_key} {got} != {expect} for {sample}')
+            active = _bits_value(outputs[active_key], row)
+            if active != int(got[0] == int(Outcome.RUNNING)):
+                raise AssertionError(f'{active_key} {active} does not match status {got[0]}')
+        fetch = _bits_value(outputs['fetch'], row)
+        if fetch != sample['expect_fetch_bit']:
+            raise AssertionError(f'fetch bit {fetch} != {sample["expect_fetch_bit"]} for {sample}')
 
 
 def _guard_bits(circuit, guard, bits):
@@ -1943,6 +2201,69 @@ def build_step_front(limits, samples, placement_cap=GATE_CAP):
         prologue_frame_fields=len(PROLOGUE_FRAME_FIELDS),
         prologue_frame_bytes=len(PROLOGUE_FRAME_FIELDS) * (PAGE_WORD_BITS // BYTE_BITS),
         frame_bytes=len(STEP_FRONT_FIELDS) * (PAGE_WORD_BITS // BYTE_BITS),
+        gdn_layers=0,
+    ))
+    dense = report['selected_shape']['logical_dense_parameters']
+    report['working_dense_limit'] = DENSE_LIMIT
+    report['ideal_dense_limit'] = 50_000_000
+    report['absolute_dense_limit'] = 100_000_000
+    report['within_working_dense_limit'] = dense <= DENSE_LIMIT
+    report['within_ideal_dense_limit'] = dense <= 50_000_000
+    report['within_absolute_dense_limit'] = dense < 100_000_000
+    return report
+
+
+def build_fetch_guard(limits, samples, placement_cap=GATE_CAP):
+    """Place the step front and the generic fetch decision. Not a source checker.
+
+    The page is not read. A skipped task does not publish a node request, and
+    a request whose reference is outside ``0 < x < free`` commits syntax.
+    Handler bodies stay outside this graph. It is not the continuation-range
+    candidate.
+    """
+    checked = _capacity_limits(limits)
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    features, circuit = _bind_packed_words(builder, FETCH_FIELDS)
+    prologue = commit_step_prologue(circuit, checked)
+    front = commit_argument_window(
+        circuit, checked, prologue['active'], prologue['status'], prologue['reason'],
+    )
+    fetched = commit_fetch_guard(circuit, front['active'], front['status'], front['reason'])
+    outputs = dict(
+        prologue_status=prologue['status'],
+        prologue_reason=prologue['reason'],
+        prologue_fuel=prologue['fuel'],
+        prologue_active=prologue['active'],
+        front_status=front['status'],
+        front_reason=front['reason'],
+        front_fuel=prologue['fuel'],
+        front_active=front['active'],
+        status=fetched['status'],
+        reason=fetched['reason'],
+        fuel=prologue['fuel'],
+        active=fetched['active'],
+        fetch=fetched['fetch'],
+    )
+    if any(isinstance(node, Head) for node in builder.graph.nodes):
+        raise ValueError('fetch guard has no page head; reprice a head as linear attention')
+    _check_fetch_guard(builder.graph, features, samples, outputs)
+    report = _place(builder, [
+        *outputs['status'], *outputs['reason'], *outputs['fuel'], outputs['fetch'],
+    ], samples, dict(
+        schedule='fetch-guard',
+        step_prologue_included=True,
+        argument_window_included=True,
+        fetch_guard_included=True,
+        page_read_included=False,
+        handler_bodies_included=False,
+        handler_commit_included=False,
+        continuation_range_attached=False,
+        mathlib_theorems_checked=0,
+        limits=dict(checked),
+        word_bits=PAGE_WORD_BITS,
+        constants_bound_checked=False,
+        frame_bytes=len(FETCH_FIELDS) * (PAGE_WORD_BITS // BYTE_BITS),
         gdn_layers=0,
     ))
     dense = report['selected_shape']['logical_dense_parameters']
