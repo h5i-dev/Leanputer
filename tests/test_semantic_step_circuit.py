@@ -1,14 +1,19 @@
 """Predicate lowering agrees with the direct control reading. No torch model."""
 import unittest
 
+from leanputer.kernel.control_capture import Effect
 from leanputer.kernel.semantic_step_circuit import (
     DENSE_LIMIT,
     PredicateCircuit,
     build_continuation_select,
+    build_equality_key_select,
     build_predicate_graph,
+    build_source_lane,
     continuation_field_map,
     equality_pairs,
     holds,
+    partition_equality_keys,
+    update_descriptor_account,
 )
 from leanputer.native_machine import NativeBuilder
 
@@ -123,6 +128,84 @@ class PredicateLoweringTest(unittest.TestCase):
         ], named)
         self.assertEqual(addressed['_mapping'], {1: 2})
         self.assertEqual(addressed['conflict_tasks'], 1)
+
+    def test_equality_key_select_follows_exclusive_classes(self):
+        names = {1: 'task', 2: 'mode', 3: 'quot_pc'}
+        widths = {1: 4, 2: 3, 3: 4}
+        predicates = [
+            ('and', (('range', 1, 1, 1), ('range', 2, 0, 0))),
+            ('and', (('range', 1, 2, 2), ('range', 2, 0, 0))),
+            ('and', (('range', 1, 1, 1), ('range', 2, 1, 1), ('range', 3, 4, 4))),
+            ('and', (('range', 1, 1, 1), ('range', 2, 1, 1), ('range', 3, 5, 5))),
+            ('range', 1, 1, 1),
+            ('range', 1, 1, 1),
+            ('range', 2, 1, 6),
+        ]
+        plan = partition_equality_keys(predicates)
+        self.assertEqual(plan['field_set_classes'], 3)
+        self.assertEqual(plan['collisions'], 1)
+        self.assertEqual(plan['equality_handlers'], 6)
+        self.assertEqual(plan['residual'], [6])
+        samples = []
+        for task, mode, quot in (
+            (1, 0, 0), (2, 0, 9), (1, 1, 4), (1, 1, 5), (1, 0, 4),
+            (0, 0, 0), (7, 7, 7), (1, 2, 0),
+        ):
+            samples.append({1: task, 2: mode, 3: quot})
+        report = build_equality_key_select(names, widths, plan, samples, wave=2, placement_cap=80)
+        self.assertEqual(report['exclusive_keys'], 5)
+        self.assertEqual(report['collisions'], 1)
+        self.assertEqual(report['residual_predicates'], 1)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+        self.assertFalse(report['full_checker'])
+        self.assertFalse(report['operator_body_included'])
+        self.assertEqual(report['residual_lowered'], 0)
+        combined = build_equality_key_select(
+            names, widths, plan, samples, wave=2, placement_cap=80,
+            residual_predicates=[predicates[6]],
+        )
+        self.assertEqual(combined['residual_lowered'], 1)
+        self.assertTrue(combined['channel_gate'] and combined['dense_gate'])
+        self.assertFalse(combined['full_checker'])
+
+    def test_source_lane_follows_the_one_hot(self):
+        samples = []
+        for chosen in range(3):
+            for word in (0, 1, 7, 15):
+                words = [word, word ^ 0xA, word ^ 0x5]
+                samples.append(dict(select=[1 if index == chosen else 0 for index in range(3)], words=words))
+        report = build_source_lane(3, 4, samples, wave=2, placement_cap=80)
+        self.assertEqual(report['boolean_samples'], len(samples))
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertTrue(report['one_slot_only'])
+        self.assertFalse(report['full_checker'])
+
+    def test_update_descriptor_counts_commit_slots(self):
+        class Node:
+            def __init__(self, op, data=None, args=()):
+                self.op = op
+                self.data = data
+                self.args = args
+                self.width = 16
+
+        nodes = [Node('const', 7), Node('input', 'free'), Node('add', None, (1, 0))]
+        effect = Effect(
+            'merge_fields', 0, (('dest', 0), ('other', 1), ('sum', 2)),
+            'source_rules.py', 1, 'source_rules',
+        )
+        bank = Effect('write_heap', 0, (1,), 'source_rules.py', 2, 'source_rules', 1)
+        account = update_descriptor_account(nodes, [dict(effects=(effect, bank))])
+        self.assertEqual(account['kind_counts']['const'], 1)
+        self.assertEqual(account['kind_counts']['copy'], 1)
+        self.assertEqual(account['kind_counts']['add'], 1)
+        self.assertEqual(account['kind_counts']['bank'], 1)
+        self.assertEqual(account['write_slots_max'], 4)
+        self.assertEqual(account['data_slots_max'], 3)
+        self.assertEqual(account['const_slots_max'], 1)
+        self.assertEqual(account['distinct_copy_sources'], 1)
+        self.assertGreater(account['max_descriptor_bits'], account['bits_per_slot'])
+        self.assertFalse(account['placed_graph'])
 
 
 if __name__ == '__main__':

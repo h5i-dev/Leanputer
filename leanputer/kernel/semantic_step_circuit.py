@@ -8,14 +8,16 @@ handler.
 
 A handler predicate selects guarded field updates. The reference merges
 simultaneously true updates with bitwise OR, and at most five handlers are true
-on one control state. This module lowers the predicates. It does not run at
-inference and it does not emit a torch model unless a caller asks.
+on one control state. Pure equality keys partition into exclusive field-set
+classes: the selector publishes one handler index per class. It does not run
+the operator body. This module does not run at inference and it does not emit
+a torch model unless a caller asks.
 """
 from __future__ import annotations
 
 import math
 import random
-from collections import Counter
+from collections import Counter, defaultdict
 
 from ..native_machine import NativeBuilder
 from ..native_vendor.qwenputer.expr import ONE, Expr
@@ -583,6 +585,416 @@ def _check_continuation(circuit, task_index, mapping, output_ids, samples):
                 got = circuit.net.value(ident, env, cache)
                 if got != ((expected >> bit) & 1):
                     raise AssertionError('continuation select disagrees with the task-to-field map')
+
+
+def partition_equality_keys(predicates):
+    """Group pure equality handlers into exclusive field-set classes.
+
+    Handlers that mention the same control fields and the same immediates are
+    one key. Distinct keys in one field set cannot be true together. A repeated
+    key stays one selector record and lists every handler, so the commit can
+    OR-merge them. Predicates that are not conjunctions of equalities stay in
+    ``residual`` and are not dropped.
+    """
+    grouped = defaultdict(list)
+    order = []
+    residual = []
+    for index, predicate in enumerate(predicates):
+        pairs = equality_pairs(predicate)
+        if pairs is None:
+            residual.append(index)
+            continue
+        mapping = dict(pairs)
+        signature = tuple(sorted(mapping))
+        if signature not in grouped:
+            order.append(signature)
+        grouped[signature].append((index, mapping))
+    classes = []
+    collisions = 0
+    equality_handlers = 0
+    for signature in order:
+        by_key = defaultdict(list)
+        for index, mapping in grouped[signature]:
+            key = tuple(mapping[field] for field in signature)
+            by_key[key].append(index)
+            equality_handlers += 1
+        members = []
+        for key, indexes in by_key.items():
+            if len(indexes) > 1:
+                collisions += len(indexes) - 1
+            members.append(dict(mapping=dict(zip(signature, key)), handlers=tuple(indexes)))
+        classes.append(dict(fields=signature, members=members))
+    return dict(
+        classes=classes,
+        residual=residual,
+        collisions=collisions,
+        equality_handlers=equality_handlers,
+        exclusive_keys=sum(len(item['members']) for item in classes),
+        field_set_classes=len(classes),
+    )
+
+
+def _expr_dims(expr):
+    return {dim for dim in expr.terms if dim != ONE}
+
+
+def _free_or(circuit, pairs):
+    """Linear sum of mutually exclusive bits, with an OR twin for the checker."""
+    if not pairs:
+        return Expr(), circuit.net.ZERO
+    if len(pairs) == 1:
+        return pairs[0]
+    expr = sum((item[0] for item in pairs), Expr())
+    ident = circuit.net.node('or', tuple(item[1] for item in pairs))
+    return expr, ident
+
+
+def _republish(circuit, expr, ident):
+    """One gate, so a wave's match wires die after the index bit is published."""
+    if ident == circuit.net.ZERO:
+        return expr, ident
+    return circuit.builder.gate('or', [expr], 'key-publish'), circuit.net.node('or', (ident,))
+
+
+def _merge_exclusive(circuit, previous, pairs):
+    fresh = _free_or(circuit, pairs)
+    if previous[1] == circuit.net.ZERO:
+        return _republish(circuit, fresh[0], fresh[1])
+    return circuit._or([previous, fresh])
+
+
+def _bit_literal(circuit, words, nots, variable, bit, want_one):
+    expr = words[variable][bit]
+    ident = circuit.bit_ids[variable][bit]
+    if want_one:
+        return expr, ident
+    found = nots.get(ident)
+    if found is None:
+        found = circuit._not(expr, ident)
+        nots[ident] = found
+    return found
+
+
+def _predicate_fields(predicate, found):
+    if isinstance(predicate, int):
+        return
+    if predicate[0] == 'range':
+        found.add(predicate[1])
+    elif predicate[0] in ('and', 'or'):
+        for child in predicate[1]:
+            _predicate_fields(child, found)
+
+
+def build_equality_key_select(names, widths, plan, samples, wave=64, placement_cap=160, residual_predicates=()):
+    """Fold each exclusive equality class into a hit bit and a handler index.
+
+    One fused equality gate matches a key. Matches in a class are exclusive, so
+    a wave's index bits are a free sum and one OR republishes them for the next
+    wave. Residual predicates, when passed, are lowered on the same graph after
+    the equality waves. The index chooses a handler record; it does not
+    evaluate the handler body.
+    """
+    classes = plan['classes']
+    if not classes:
+        raise ValueError('equality-key select has no class')
+    variables = {field for item in classes for field in item['fields']}
+    for predicate in residual_predicates:
+        _predicate_fields(predicate, variables)
+    variables = sorted(variables)
+    missing = [field for field in variables if field not in widths]
+    if missing:
+        raise ValueError('equality-key select is missing control widths')
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    words = _features(builder, variables, widths)
+    circuit = PredicateCircuit(builder, words, {field: (0, (1 << widths[field]) - 1) for field in variables})
+    nots = {}
+    states = []
+    for item in classes:
+        count = len(item['members'])
+        bits = (count - 1).bit_length() if count else 0
+        states.append(dict(
+            hit=(Expr(), circuit.net.ZERO),
+            bits=[(Expr(), circuit.net.ZERO) for _ in range(bits)],
+        ))
+    records = [
+        (class_index, local_id, member['mapping'])
+        for class_index, item in enumerate(classes)
+        for local_id, member in enumerate(item['members'])
+    ]
+    for start in range(0, len(records), wave):
+        grouped = defaultdict(list)
+        for class_index, local_id, mapping in records[start:start + wave]:
+            parts = [
+                _bit_literal(circuit, words, nots, variable, bit, bool((value >> bit) & 1))
+                for variable, value in mapping.items()
+                for bit in range(widths[variable])
+            ]
+            grouped[class_index].append((local_id, circuit._and(parts)))
+        for class_index, group in grouped.items():
+            state = states[class_index]
+            state['hit'] = _merge_exclusive(circuit, state['hit'], [match for _, match in group])
+            for bit in range(len(state['bits'])):
+                selected = [match for local_id, match in group if (local_id >> bit) & 1]
+                if not selected:
+                    continue
+                state['bits'][bit] = _merge_exclusive(circuit, state['bits'][bit], selected)
+        builder.barrier = 2 * builder.graph.n_layers()
+    if samples:
+        _check_equality_select(circuit, classes, states, samples)
+    residual_compiled = []
+    if residual_predicates:
+        residual_compiled = circuit.compile_all(residual_predicates)
+        if samples:
+            circuit.agrees(residual_predicates, residual_compiled, samples)
+        builder.barrier = 2 * builder.graph.n_layers()
+    graph = builder.graph
+    keep = set()
+    for state in states:
+        keep |= _expr_dims(state['hit'][0])
+        for expr, _ident in state['bits']:
+            keep |= _expr_dims(expr)
+    for expr, _ident in residual_compiled:
+        keep |= _expr_dims(expr)
+    units = _ffn_units(graph)
+    peak = live_peak(graph, keep=keep)
+    allocation = allocate(graph, None, keep, GATE_CAP) if graph.nodes else None
+    slots = 0 if allocation is None else allocation.n_slots
+    index_bits = sum(len(state['bits']) for state in states)
+    shape, shapes = _shape(graph.n_layers(), max(peak, slots), kept_outputs=len(keep))
+    return dict(
+        schedule=f'equality-key-select-wave-{wave}',
+        classes=len(classes),
+        exclusive_keys=plan['exclusive_keys'],
+        equality_handlers=plan['equality_handlers'],
+        collisions=plan['collisions'],
+        residual_predicates=len(plan['residual']),
+        residual_lowered=len(residual_compiled),
+        index_bits=index_bits,
+        hit_bits=len(classes),
+        output_bits=index_bits + len(classes),
+        field_names=sorted({names[field] for field in variables}),
+        class_sizes=[len(item['members']) for item in classes],
+        class_fields=[[names[field] for field in item['fields']] for item in classes],
+        ffn_units=units,
+        graph_layers=graph.n_layers(),
+        peak_live_dims=peak,
+        allocated_slots=slots,
+        selected_shape=shape,
+        candidate_shapes=shapes,
+        channel_gate=shape['channel_gate'],
+        dense_gate=shape['dense_gate'],
+        boolean_samples=len(samples),
+        outputs_kept=len(keep),
+        full_checker=False,
+        operator_body_included=False,
+        memory_layers_included=0,
+    )
+
+
+def _check_equality_select(circuit, classes, states, samples):
+    for values in samples:
+        env = {}
+        for variable, ids in circuit.bit_ids.items():
+            if variable not in values:
+                raise ValueError('equality-key sample is missing a control field')
+            for bit, _ident in enumerate(ids):
+                env[(variable, bit)] = (values[variable] >> bit) & 1
+        cache = {}
+        for class_index, item in enumerate(classes):
+            expected = None
+            for local_id, member in enumerate(item['members']):
+                mapping = member['mapping']
+                if all(values[variable] == value for variable, value in mapping.items()):
+                    if expected is not None:
+                        raise AssertionError('exclusive equality class matched two keys')
+                    expected = local_id
+            hit = circuit.net.value(states[class_index]['hit'][1], env, cache)
+            index = 0
+            for bit, (_expr, ident) in enumerate(states[class_index]['bits']):
+                index |= circuit.net.value(ident, env, cache) << bit
+            if expected is None:
+                if hit or index:
+                    raise AssertionError('equality-key select hit a class with no matching key')
+            elif hit != 1 or index != expected:
+                raise AssertionError('equality-key select disagrees with the exclusive class table')
+
+
+def build_source_lane(source_count, width, samples, wave=8, placement_cap=160):
+    """Select one gathered source word with an exclusive one-hot.
+
+    This is one update slot of the shared operator body. The one-hot is the
+    matched handler's source choice, not a word opcode. Waves republish the
+    word so source compares can reuse channels.
+    """
+    if source_count <= 0 or width <= 0:
+        raise ValueError('source lane needs a source and a width')
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    selects = [builder.feature(f'select/{index}') for index in range(source_count)]
+    sources = [
+        [builder.feature(f'source/{index}/{bit}') for bit in range(width)]
+        for index in range(source_count)
+    ]
+    circuit = PredicateCircuit(builder, {}, {})
+    select_ids = [circuit.net.node('input', ('select', index)) for index in range(source_count)]
+    source_ids = [
+        [circuit.net.node('input', ('source', index, bit)) for bit in range(width)]
+        for index in range(source_count)
+    ]
+    output = [(Expr(), circuit.net.ZERO) for _ in range(width)]
+    for start in range(0, source_count, wave):
+        for bit in range(width):
+            terms = []
+            for index in range(start, min(source_count, start + wave)):
+                terms.append(circuit._and([
+                    (selects[index], select_ids[index]),
+                    (sources[index][bit], source_ids[index][bit]),
+                ]))
+            output[bit] = circuit._or([output[bit], _free_or(circuit, terms)])
+        builder.barrier = 2 * builder.graph.n_layers()
+    if samples:
+        _check_source_lane(circuit, output, samples, source_count, width)
+    graph = builder.graph
+    keep = set()
+    for expr, _ident in output:
+        keep |= _expr_dims(expr)
+    units = _ffn_units(graph)
+    peak = live_peak(graph, keep=keep)
+    allocation = allocate(graph, None, keep, GATE_CAP) if graph.nodes else None
+    slots = 0 if allocation is None else allocation.n_slots
+    shape, shapes = _shape(graph.n_layers(), max(peak, slots), kept_outputs=len(keep))
+    return dict(
+        schedule=f'source-lane-wave-{wave}',
+        sources=source_count,
+        width=width,
+        ffn_units=units,
+        graph_layers=graph.n_layers(),
+        peak_live_dims=peak,
+        allocated_slots=slots,
+        selected_shape=shape,
+        candidate_shapes=shapes,
+        channel_gate=shape['channel_gate'],
+        dense_gate=shape['dense_gate'],
+        boolean_samples=len(samples),
+        full_checker=False,
+        one_slot_only=True,
+    )
+
+
+def _check_source_lane(circuit, output, samples, source_count, width):
+    for sample in samples:
+        select = sample['select']
+        words = sample['words']
+        if len(select) != source_count or sum(select) != 1 or any(bit not in (0, 1) for bit in select):
+            raise ValueError('source-lane sample select must be one-hot')
+        chosen = select.index(1)
+        env = {}
+        for index, bit_value in enumerate(select):
+            env[('select', index)] = bit_value
+        for index, word in enumerate(words):
+            for bit in range(width):
+                env[('source', index, bit)] = (word >> bit) & 1
+        cache = {}
+        got = 0
+        for bit, (_expr, ident) in enumerate(output):
+            got |= circuit.net.value(ident, env, cache) << bit
+        if got != (words[chosen] & ((1 << width) - 1)):
+            raise AssertionError('source lane disagrees with the one-hot source')
+
+
+def _update_kind(nodes, index):
+    node = nodes[index]
+    if node.op == 'const':
+        return 'const', None
+    if node.op == 'input':
+        return 'copy', node.data
+    if node.op in ('add', 'sub') and len(node.args) == 2:
+        left, right = nodes[node.args[0]], nodes[node.args[1]]
+        if left.op == 'input' and right.op == 'const':
+            return node.op, left.data
+        if right.op == 'input' and left.op == 'const':
+            return node.op, right.data
+    if node.op == 'choose':
+        return 'choose', None
+    return 'other', None
+
+
+def update_descriptor_account(nodes, handlers):
+    """Bit width of the per-handler commit record. Not a placed ROM and not dense parameters."""
+    field_ids = {}
+    source_ids = {}
+    kinds = Counter()
+    per_handler = []
+    data_slots = []
+    const_slots = []
+    bank_writes = 0
+    for handler in handlers:
+        slots = data = consts = 0
+        for effect in handler['effects']:
+            if effect.kind != 'merge_fields':
+                bank_writes += 1
+                slots += 1
+                data += 1
+                kinds['bank'] += 1
+                continue
+            for field, value in effect.values:
+                slots += 1
+                kind, source = _update_kind(nodes, value)
+                kinds[kind] += 1
+                field_ids.setdefault(field, len(field_ids))
+                if kind == 'const':
+                    consts += 1
+                else:
+                    data += 1
+                if source is not None:
+                    source_ids.setdefault(source, len(source_ids))
+        per_handler.append(slots)
+        data_slots.append(data)
+        const_slots.append(consts)
+    per_handler.sort()
+    dest_count = max(len(field_ids), 1)
+    source_count = max(len(source_ids), 1)
+    op_count = 7
+    dest_bits = (dest_count - 1).bit_length() or 1
+    source_bits = (source_count - 1).bit_length() or 1
+    op_bits = (op_count - 1).bit_length()
+    immediate_bits = 16
+    bits_per_slot = dest_bits + op_bits + source_bits + immediate_bits
+    maximum = per_handler[-1] if per_handler else 0
+    data_slots.sort()
+    const_slots.sort()
+    max_data = data_slots[-1] if data_slots else 0
+
+    def quantile(values, fraction):
+        if not values:
+            return 0
+        return values[min(len(values) - 1, int(fraction * (len(values) - 1)))]
+
+    return dict(
+        handlers=len(handlers),
+        write_slots_p50=quantile(per_handler, 0.5),
+        write_slots_p90=quantile(per_handler, 0.9),
+        write_slots_p99=quantile(per_handler, 0.99),
+        write_slots_max=maximum,
+        const_slots_max=const_slots[-1] if const_slots else 0,
+        data_slots_p50=quantile(data_slots, 0.5),
+        data_slots_p99=quantile(data_slots, 0.99),
+        data_slots_max=max_data,
+        distinct_dest_fields=len(field_ids),
+        distinct_copy_sources=len(source_ids),
+        kind_counts=dict(kinds),
+        dest_bits=dest_bits,
+        source_bits=source_bits,
+        op_bits=op_bits,
+        immediate_bits=immediate_bits,
+        bits_per_slot=bits_per_slot,
+        max_descriptor_bits=maximum * bits_per_slot,
+        total_write_slots=sum(per_handler),
+        bank_writes=bank_writes,
+        placed_graph=False,
+        note='Descriptor bits are the handler commit record. They are not dense Transformer parameters.',
+    )
 
 
 def estimate_data_circuits(compiler, handlers, control_names):

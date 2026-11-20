@@ -1,0 +1,578 @@
+{
+  "call_projection_if_one_forward_per_transition": {
+    "boot": 22,
+    "current-general-source-empty-claim-id": 1343,
+    "current-source-invalid-target": 1382,
+    "setup": 5
+  },
+  "equality_key_select": {
+    "allocated_slots": 635,
+    "boolean_samples": 76,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 658,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 46,
+        "hidden": 768,
+        "layers": 50,
+        "logical_dense_parameters": 30051272,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 660,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 46,
+        "hidden": 896,
+        "layers": 50,
+        "logical_dense_parameters": 35059784,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 662,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 46,
+        "hidden": 1024,
+        "layers": 51,
+        "logical_dense_parameters": 40867020,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      }
+    ],
+    "channel_gate": true,
+    "class_fields": [
+      [
+        "mode"
+      ],
+      [
+        "mode",
+        "read/frame/phase"
+      ],
+      [
+        "mode",
+        "task"
+      ],
+      [
+        "mode",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "stage_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "copy_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "rewrite_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_expr_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_cb_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "publish_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "family_info_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "levels_eq_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "convert_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "structure_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_literal_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bits_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "high_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_name_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_bridge_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bool_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "offset_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "string_compare_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "published_claim_pc"
+      ]
+    ],
+    "class_sizes": [
+      82,
+      205,
+      388,
+      52,
+      2,
+      28,
+      41,
+      63,
+      3,
+      4,
+      21,
+      103,
+      10,
+      53,
+      13,
+      5,
+      128,
+      25,
+      283,
+      15,
+      97,
+      16,
+      26,
+      52,
+      11,
+      4,
+      49,
+      78,
+      14,
+      229,
+      19,
+      4,
+      1,
+      10,
+      13
+    ],
+    "classes": 35,
+    "collisions": 0,
+    "dense_gate": true,
+    "equality_handlers": 2147,
+    "exclusive_keys": 2147,
+    "ffn_units": 2487,
+    "field_names": [
+      "bits_pc",
+      "bool_pc",
+      "convert_pc",
+      "copy_pc",
+      "family_info_pc",
+      "high_pc",
+      "levels_eq_pc",
+      "mode",
+      "nat_binding_pc",
+      "nat_bridge_pc",
+      "nat_literal_pc",
+      "nat_name_pc",
+      "nat_reduce_pc",
+      "offset_pc",
+      "projection_pc",
+      "projection_reduce_pc",
+      "publish_pc",
+      "published_claim_pc",
+      "quot_pc",
+      "quot_reduce_pc",
+      "read/frame/phase",
+      "read/frame/task",
+      "restore_cb_pc",
+      "restore_expr_pc",
+      "rewrite_pc",
+      "stage_pc",
+      "string_binding_pc",
+      "string_compare_pc",
+      "string_pc",
+      "string_whnf_pc",
+      "structure_pc",
+      "task"
+    ],
+    "full_checker": false,
+    "graph_layers": 46,
+    "hit_bits": 35,
+    "index_bits": 174,
+    "memory_layers_included": 0,
+    "operator_body_included": false,
+    "output_bits": 209,
+    "outputs_kept": 209,
+    "peak_live_dims": 645,
+    "residual_lowered": 0,
+    "residual_predicates": 65,
+    "schedule": "equality-key-select-wave-96",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 658,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 46,
+      "hidden": 768,
+      "layers": 50,
+      "logical_dense_parameters": 30051272,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 3
+    }
+  },
+  "equality_key_select_with_residual": {
+    "allocated_slots": 655,
+    "boolean_samples": 76,
+    "channel_gate": true,
+    "dense_gate": true,
+    "ffn_units": 4495,
+    "full_checker": false,
+    "graph_layers": 69,
+    "operator_body_included": false,
+    "outputs_kept": 274,
+    "peak_live_dims": 751,
+    "residual_lowered": 65,
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 764,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 69,
+      "hidden": 768,
+      "layers": 72,
+      "logical_dense_parameters": 43230240,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 2
+    }
+  },
+  "extrapolated_schedule": {
+    "channels_needed": 658,
+    "five_handler_serial_no_memory": {
+      "dense_gate": false,
+      "feedback_layer": 1,
+      "graph_layers": 369,
+      "hidden": 768,
+      "layers": 373,
+      "logical_dense_parameters": 223542484,
+      "memory_layers": 0,
+      "placed_graph": false,
+      "scratch_clear_layers": 3
+    },
+    "hidden": 768,
+    "note": "Selector, residual predicates, and one 8-source lane were placed separately. Slot replay counts are arithmetic on those measurements, not one allocated graph.",
+    "one_handler_serial_illustrative_8_memory_layers": {
+      "dense_gate": false,
+      "feedback_layer": 1,
+      "graph_layers": 129,
+      "hidden": 768,
+      "layers": 141,
+      "logical_dense_parameters": 95587668,
+      "memory_layers": 8,
+      "placed_graph": false,
+      "scratch_clear_layers": 3
+    },
+    "one_handler_serial_no_memory": {
+      "dense_gate": false,
+      "feedback_layer": 1,
+      "graph_layers": 129,
+      "hidden": 768,
+      "layers": 133,
+      "logical_dense_parameters": 79771924,
+      "memory_layers": 0,
+      "placed_graph": false,
+      "scratch_clear_layers": 3
+    },
+    "placed_graph": false,
+    "widest_shared_handler_slots": 20
+  },
+  "format": "leanputer.equality-key-select.v1",
+  "full_checker": false,
+  "historical_limits_are_not_success": true,
+  "historical_tui_call_limit": 5000,
+  "historical_tui_dense_limit": 100000000,
+  "joint_delivery_gate": false,
+  "memory_placed": false,
+  "operator_body_included": false,
+  "private_algorithms": {
+    "by_operator": {
+      "commit_outcome": 7,
+      "fetch_node": 11,
+      "judge_step": 1,
+      "level_step": 2,
+      "reduce_step": 7
+    },
+    "data_depth_max": 33,
+    "handlers": 28,
+    "placed_graph": false,
+    "private_circuit_units_with_cse": 2780,
+    "private_residual_nodes": 1180
+  },
+  "private_algorithms_placed": false,
+  "private_commit_descriptor": {
+    "bank_writes": 43,
+    "bits_per_slot": 32,
+    "const_slots_max": 216,
+    "data_slots_max": 106,
+    "data_slots_p50": 8,
+    "data_slots_p99": 28,
+    "dest_bits": 7,
+    "distinct_copy_sources": 48,
+    "distinct_dest_fields": 105,
+    "handlers": 28,
+    "immediate_bits": 16,
+    "kind_counts": {
+      "add": 62,
+      "bank": 43,
+      "choose": 23,
+      "const": 487,
+      "copy": 158,
+      "other": 11,
+      "sub": 67
+    },
+    "max_descriptor_bits": 10304,
+    "note": "Descriptor bits are the handler commit record. They are not dense Transformer parameters.",
+    "op_bits": 3,
+    "placed_graph": false,
+    "source_bits": 6,
+    "total_write_slots": 851,
+    "write_slots_max": 322,
+    "write_slots_p50": 12,
+    "write_slots_p90": 45,
+    "write_slots_p99": 70
+  },
+  "residual_control": {
+    "allocated_slots": 446,
+    "boolean_samples": 6,
+    "channel_gate": true,
+    "dense_gate": true,
+    "ffn_units": 2008,
+    "full_checker": false,
+    "graph_layers": 23,
+    "peak_live_dims": 540,
+    "predicates": 65,
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 553,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 23,
+      "hidden": 768,
+      "layers": 27,
+      "logical_dense_parameters": 16273260,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 3
+    }
+  },
+  "shared_commit_descriptor": {
+    "bank_writes": 1366,
+    "bits_per_slot": 39,
+    "const_slots_max": 29,
+    "data_slots_max": 20,
+    "data_slots_p50": 2,
+    "data_slots_p99": 8,
+    "dest_bits": 10,
+    "distinct_copy_sources": 536,
+    "distinct_dest_fields": 898,
+    "handlers": 2184,
+    "immediate_bits": 16,
+    "kind_counts": {
+      "add": 1027,
+      "bank": 1366,
+      "choose": 121,
+      "const": 7997,
+      "copy": 2947,
+      "other": 42,
+      "sub": 292
+    },
+    "max_descriptor_bits": 1521,
+    "note": "Descriptor bits are the handler commit record. They are not dense Transformer parameters.",
+    "op_bits": 3,
+    "placed_graph": false,
+    "source_bits": 10,
+    "total_write_slots": 13792,
+    "write_slots_max": 39,
+    "write_slots_p50": 5,
+    "write_slots_p90": 11,
+    "write_slots_p99": 16
+  },
+  "source_lane": {
+    "allocated_slots": 136,
+    "boolean_samples": 8,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 213,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 3,
+        "hidden": 768,
+        "layers": 7,
+        "logical_dense_parameters": 4292380,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 215,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 3,
+        "hidden": 896,
+        "layers": 8,
+        "logical_dense_parameters": 5706656,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 217,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 3,
+        "hidden": 1024,
+        "layers": 8,
+        "logical_dense_parameters": 6521888,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      }
+    ],
+    "channel_gate": true,
+    "dense_gate": true,
+    "ffn_units": 144,
+    "full_checker": false,
+    "graph_layers": 3,
+    "one_slot_only": true,
+    "peak_live_dims": 200,
+    "schedule": "source-lane-wave-4",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 213,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 3,
+      "hidden": 768,
+      "layers": 7,
+      "logical_dense_parameters": 4292380,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 3
+    },
+    "sources": 8,
+    "width": 16
+  },
+  "stock_emitted": false,
+  "working_call_limit": 4000,
+  "working_dense_limit": 48290654
+}
