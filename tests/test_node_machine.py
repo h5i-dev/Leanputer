@@ -3,7 +3,8 @@ import unittest
 
 from leanputer.kernel.node_transition import (
     CAUSE_FUEL, CAUSE_HEAP, CAUSE_STACK, DECL_AXIOM, DECL_DEF, DECL_OPAQUE,
-    FRAME_UPD, PC_EVAL, PC_RET, STATUS_DONE, STATUS_INVALID, STATUS_RESOURCE,
+    FRAME_APP, FRAME_CHECK, FRAME_HALT, FRAME_UPD, PC_EVAL, PC_RET,
+    STATUS_DONE, STATUS_INVALID, STATUS_RESOURCE,
     TAG_BVAR, TAG_ENV, TAG_NAPP, Cell, Phase, Port, Row, StaticRejection, Table,
     UnsupportedInput, fixture_cost, load_whnf, readback, run, step, validate_table,
     whnf_table,
@@ -335,6 +336,37 @@ class NodeTransitionTests(unittest.TestCase):
             Row('EVAL', 'memo', (('tag', 'n', TAG_ENV), ('not_memo', 'n')),
                 heap=('memo', 'n', ('reg', 'V'))),
         ], reads=(Port('n', 'heap_a', 1, ('reg', 'C')),))
+        # Four distinct word pairs need four comparator bits even though each row uses one.
+        with self.assertRaises(StaticRejection) as caught:
+            check([
+                Row('EVAL', 'p0', (('kind', 'k', FRAME_HALT), ('eq', ('reg', 'C'), 0))),
+                Row('EVAL', 'p1', (('kind', 'k', FRAME_APP), ('eq', ('reg', 'C'), 1))),
+                Row('EVAL', 'p2', (('kind', 'k', FRAME_UPD), ('eq', ('reg', 'E'), 0))),
+                Row('EVAL', 'p3', (('kind', 'k', FRAME_CHECK), ('eq', ('reg', 'E'), 1))),
+            ], reads=(Port('k', 'stk', 1, ('reg', 'K')),))
+        self.assertEqual(caught.exception.check, 'bounds')
+        # lt/ge and eq/ne of one word pair are complements, so each pair takes one bit.
+        check([
+            Row('EVAL', 'below', (('lt', ('reg', 'C'), ('reg', 'E')),)),
+            Row('EVAL', 'above', (('ge', ('reg', 'C'), ('reg', 'E')),)),
+        ])
+        check([
+            Row('EVAL', 'eqw', (('eq', ('reg', 'C'), ('reg', 'E')),)),
+            Row('EVAL', 'new', (('ne', ('reg', 'C'), ('reg', 'E')),)),
+        ])
+        compared = Phase('EVAL', PC_EVAL, (), (), (
+            Row('EVAL', 'same', (('eq', ('reg', 'C'), ('reg', 'E')),),
+                (('status', ('imm', STATUS_DONE)),), done=True),
+            Row('EVAL', 'else', (), (('status', ('imm', STATUS_INVALID)),), fallback=True),
+        ))
+        machine = load_whnf(S0, fuel=2)
+        machine.regs.C = 3
+        machine.regs.E = 3
+        self.assertEqual(step(machine, Table((compared,)))['row'], 'same')
+        machine = load_whnf(S0, fuel=2)
+        machine.regs.C = 3
+        machine.regs.E = 4
+        self.assertEqual(step(machine, Table((compared,)))['row'], 'else')
 
 
 if __name__ == '__main__':

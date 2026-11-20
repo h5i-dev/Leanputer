@@ -62,6 +62,37 @@ FRAME_NONE = 0
 FRAME_HALT = 1
 FRAME_APP = 2
 FRAME_UPD = 3
+# Ground checking continuations. Each kind is one return action.
+FRAME_CHECK = 4
+FRAME_BIND_LAM = 5
+FRAME_BIND_PI = 6
+FRAME_WHNF_DOM = 7
+FRAME_BODY_LAM = 8
+FRAME_BODY_PI = 9
+FRAME_CONV_L = 10
+FRAME_CONV_R = 11
+# Ground continuations. CHK_* is the top-level judgment. The rest are
+# one return action each: compare, application, eta, or proof irrelevance.
+FRAME_CHK_WHNF = 12
+FRAME_CHK_TERM = 13
+FRAME_CHK_WAIT = 14
+FRAME_CMP = 15
+FRAME_APP_FN = 16
+FRAME_APP_WHNF = 17
+FRAME_APP_ARG = 18
+FRAME_APP_AFTER = 19
+FRAME_WHNF_BODY = 20
+FRAME_PI_BODY = 21
+FRAME_NAPP_FN = 22
+FRAME_JOIN = 23
+FRAME_ETA_TY = 24
+FRAME_ETA_DOM = 25
+FRAME_ETA_BODY = 26
+FRAME_PRF_TY = 27
+FRAME_PRF_CLS = 28
+FRAME_LET_ANN = 29
+FRAME_LET_VAL = 30
+FRAME_LET_BODY = 31
 
 DECL_NONE = 0
 DECL_AXIOM = 1
@@ -71,7 +102,49 @@ DECL_OPAQUE = 3
 PC_EVAL = 1
 PC_LOOKUP = 2
 PC_RET = 3
-PC_NAME = {PC_EVAL: 'EVAL', PC_LOOKUP: 'LOOKUP', PC_RET: 'RET'}
+PC_INFER = 4
+PC_IRET = 5
+PC_TLOOK = 6
+PC_CONV = 7
+PC_ENTER, PC_BUILD0, PC_BUILD1 = 8, 9, 10
+PC_PUSH_CHK, PC_CMP, PC_CMP_TERM, PC_CMP_NEU = 11, 12, 13, 14
+PC_START_ARG, PC_APP_DOM0, PC_APP_DOM1, PC_APP_PUSH = 15, 16, 17, 18
+PC_APP_INST0, PC_APP_INST1, PC_APP_INST2, PC_POP_APP = 19, 20, 21, 22
+PC_PUSH_PAIR, PC_NAPP_ARGS = 23, 24
+PC_PI_L0, PC_PI_L1, PC_PI_L2, PC_PI_R0, PC_PI_R1 = 25, 26, 27, 28, 29
+PC_PI_B0, PC_PI_B1, PC_PI_B2, PC_PI_B3, PC_PI_B4, PC_PI_B5 = 30, 31, 32, 33, 34, 35
+PC_PI_B6, PC_PI_PUSH = 36, 37
+PC_ETA_CLO, PC_ETA_TYPE = 38, 39
+PC_ETA_D0, PC_ETA_D1, PC_ETA_D2, PC_ETA_D3, PC_ETA_DPUSH = 40, 41, 42, 43, 44
+PC_ETA_B0, PC_ETA_B1, PC_ETA_B2, PC_ETA_B3, PC_ETA_B4 = 45, 46, 47, 48, 49
+PC_PRF0, PC_PRF1, PC_PRF_CLS0, PC_PRF_R0, PC_PRF_R1, PC_PRF_PUSH = 50, 51, 52, 53, 54, 55
+PC_LET_VAL0, PC_LET_PREP, PC_LET_PUSH = 56, 57, 58
+PC_LET_EXT1, PC_LET_EXT2 = 59, 60
+PC_ETA_HEAD, PC_PRF_NEU, PC_PRF_CLS1, PC_PRF_R2 = 61, 62, 63, 64
+PC_NAME = {
+    PC_EVAL: 'EVAL', PC_LOOKUP: 'LOOKUP', PC_RET: 'RET',
+    PC_INFER: 'INFER', PC_IRET: 'IRET', PC_TLOOK: 'TLOOK', PC_CONV: 'CONV',
+    PC_ENTER: 'ENTER', PC_BUILD0: 'BUILD0', PC_BUILD1: 'BUILD1',
+    PC_PUSH_CHK: 'PUSH_CHK', PC_CMP: 'CMP', PC_CMP_TERM: 'CMP_TERM', PC_CMP_NEU: 'CMP_NEU',
+    PC_START_ARG: 'START_ARG', PC_APP_DOM0: 'APP_DOM0', PC_APP_DOM1: 'APP_DOM1',
+    PC_APP_PUSH: 'APP_PUSH', PC_APP_INST0: 'APP_INST0', PC_APP_INST1: 'APP_INST1',
+    PC_APP_INST2: 'APP_INST2', PC_POP_APP: 'POP_APP',
+    PC_PUSH_PAIR: 'PUSH_PAIR', PC_NAPP_ARGS: 'NAPP_ARGS',
+    PC_PI_L0: 'PI_L0', PC_PI_L1: 'PI_L1', PC_PI_L2: 'PI_L2', PC_PI_R0: 'PI_R0', PC_PI_R1: 'PI_R1',
+    PC_PI_B0: 'PI_B0', PC_PI_B1: 'PI_B1', PC_PI_B2: 'PI_B2', PC_PI_B3: 'PI_B3',
+    PC_PI_B4: 'PI_B4', PC_PI_B5: 'PI_B5', PC_PI_B6: 'PI_B6', PC_PI_PUSH: 'PI_PUSH',
+    PC_ETA_CLO: 'ETA_CLO', PC_ETA_TYPE: 'ETA_TYPE',
+    PC_ETA_D0: 'ETA_D0', PC_ETA_D1: 'ETA_D1', PC_ETA_D2: 'ETA_D2', PC_ETA_D3: 'ETA_D3',
+    PC_ETA_DPUSH: 'ETA_DPUSH',
+    PC_ETA_B0: 'ETA_B0', PC_ETA_B1: 'ETA_B1', PC_ETA_B2: 'ETA_B2', PC_ETA_B3: 'ETA_B3',
+    PC_ETA_B4: 'ETA_B4',
+    PC_PRF0: 'PRF0', PC_PRF1: 'PRF1', PC_PRF_CLS0: 'PRF_CLS0',
+    PC_PRF_R0: 'PRF_R0', PC_PRF_R1: 'PRF_R1', PC_PRF_PUSH: 'PRF_PUSH',
+    PC_LET_VAL0: 'LET_VAL0', PC_LET_PREP: 'LET_PREP', PC_LET_PUSH: 'LET_PUSH',
+    PC_LET_EXT1: 'LET_EXT1', PC_LET_EXT2: 'LET_EXT2',
+    PC_ETA_HEAD: 'ETA_HEAD', PC_PRF_NEU: 'PRF_NEU', PC_PRF_CLS1: 'PRF_CLS1',
+    PC_PRF_R2: 'PRF_R2',
+}
 PC_OF = {name: pc for pc, name in PC_NAME.items()}
 
 REGISTERS = (
@@ -87,6 +160,7 @@ REG_WIDTH = {
 CAUSE_FUEL = 'FUEL'
 CAUSE_HEAP = 'HEAP'
 CAUSE_STACK = 'STACK'
+CAUSE_UNIVERSE = 'UNIVERSE'
 
 
 class StaticRejection(ValueError):
@@ -207,6 +281,7 @@ class Machine:
     names: tuple = ()
     heap_cap: int = 512
     stack_cap: int = 32
+    universe_cap: int = 4
 
 
 def _null():
@@ -246,6 +321,35 @@ _FRAME_FIELDS = {
     FRAME_APP: {'a': HEAP, 'b': HEAP_OR_NULL},
     FRAME_UPD: {'a': HEAP, 'b': NULL},
     FRAME_HALT: {},
+    FRAME_CHECK: {'a': HEAP, 'b': HEAP},
+    FRAME_BIND_LAM: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_BIND_PI: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_WHNF_DOM: {'a': HEAP, 'b': HEAP_OR_NULL},
+    # Lam keeps the term environment. Pi keeps the domain universe level.
+    FRAME_BODY_LAM: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_BODY_PI: {'a': HEAP, 'b': NAT},
+    FRAME_CONV_L: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_CONV_R: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_CHK_WHNF: {'a': HEAP, 'b': HEAP},
+    FRAME_CHK_TERM: {'a': HEAP, 'b': NULL},
+    FRAME_CHK_WAIT: {'a': HEAP, 'b': NULL},
+    FRAME_CMP: {'a': HEAP, 'b': HEAP},
+    FRAME_APP_FN: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_APP_WHNF: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_APP_ARG: {'a': HEAP, 'b': HEAP},
+    FRAME_APP_AFTER: {'a': HEAP, 'b': HEAP},
+    FRAME_WHNF_BODY: {'a': HEAP, 'b': NAT},
+    FRAME_PI_BODY: {'a': HEAP, 'b': HEAP},
+    FRAME_NAPP_FN: {'a': HEAP, 'b': HEAP},
+    FRAME_JOIN: {},
+    FRAME_ETA_TY: {'a': HEAP, 'b': HEAP},
+    FRAME_ETA_DOM: {'a': HEAP, 'b': HEAP},
+    FRAME_ETA_BODY: {'a': HEAP, 'b': HEAP},
+    FRAME_PRF_TY: {'a': HEAP, 'b': HEAP},
+    FRAME_PRF_CLS: {'a': HEAP, 'b': NULL},
+    FRAME_LET_ANN: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_LET_VAL: {'a': HEAP, 'b': HEAP_OR_NULL},
+    FRAME_LET_BODY: {'a': HEAP, 'b': HEAP_OR_NULL},
 }
 _DECL_FIELDS = {
     DECL_DEF: {'a': HEAP, 'b': HEAP},
@@ -268,6 +372,26 @@ def _compatible(have, need):
 
 def _predicate_atoms(guard):
     return tuple(atom for atom in guard if atom[0] in ('eq', 'ne', 'lt', 'ge', 'not_kind'))
+
+
+def _comparator_key(atom):
+    """One predicate bit. eq/ne share a bit, and lt/ge of the same pair share a bit."""
+    op, left, right = atom[0], atom[1], atom[2]
+    if op == 'not_kind':
+        return ('not_kind', left, right)
+    if op == 'ne':
+        op = 'eq'
+    elif op == 'lt':
+        op = 'ge'
+    return (op, left, right)
+
+
+def _phase_predicate_keys(phase):
+    keys = set()
+    for row in phase.rows:
+        for atom in _predicate_atoms(row.guard):
+            keys.add(_comparator_key(atom))
+    return keys
 
 
 def _source_key(source):
@@ -294,6 +418,18 @@ def _eval_source(source, regs, cells, alu_values):
     raise StaticRejection('menu', f'unknown source {source}')
 
 
+def _compare_values(kind, left, right):
+    if kind == 'eq':
+        return left == right
+    if kind == 'ne':
+        return left != right
+    if kind == 'lt':
+        return left < right
+    if kind == 'ge':
+        return left >= right
+    raise StaticRejection('guard', f'unknown compare {kind}')
+
+
 def _atom_holds(atom, regs, cells):
     kind = atom[0]
     if kind == 'tag':
@@ -308,16 +444,11 @@ def _atom_holds(atom, regs, cells):
         return cells[atom[1]].kind != atom[2]
     if kind == 'decl':
         return cells[atom[1]].kind == atom[2]
-    value = _eval_source(atom[1], regs, cells, ())
-    if kind == 'eq':
-        return value == atom[2]
-    if kind == 'ne':
-        return value != atom[2]
-    if kind == 'lt':
-        return value < atom[2]
-    if kind == 'ge':
-        return value >= atom[2]
-    raise StaticRejection('guard', f'unknown atom {atom}')
+    left = _eval_source(atom[1], regs, cells, ())
+    right = atom[2]
+    if isinstance(right, tuple):
+        right = _eval_source(right, regs, cells, ())
+    return _compare_values(kind, left, right)
 
 
 def _guard_holds(row, regs, cells):
@@ -381,7 +512,7 @@ def _assigned_sources(row):
     sources = [source for _, source in row.assign]
     if row.heap is not None and row.heap[0] == 'alloc':
         sources.extend(row.heap[2:])
-    if row.stk is not None and row.stk[0] == 'push':
+    if row.stk is not None and row.stk[0] in ('push', 'replace'):
         sources.extend(row.stk[2:])
     return sources
 
@@ -490,6 +621,27 @@ def step(machine, table):
             return event
         new_k = regs.K - 1
         event['stk'] = 'pop'
+    elif row.stk is not None and row.stk[0] == 'replace':
+        if regs.K <= 0:
+            regs.status = STATUS_INVALID
+            regs.fuel = _clip(regs.fuel - 1)
+            event['cause'] = 'EMPTY_STACK'
+            event['fuel_delta'] = -1
+            return event
+        _, kind, a_src, b_src = row.stk
+        stk_addr = regs.K
+        stk_cell = Cell(
+            kind=kind,
+            a=_eval_source(a_src, regs, cells, alu_values),
+            b=_eval_source(b_src, regs, cells, alu_values),
+        )
+        event['stk'] = 'replace'
+    if 'lvl' in updates and updates['lvl'] > machine.universe_cap:
+        regs.fuel = _clip(regs.fuel - 1)
+        regs.status = STATUS_RESOURCE
+        event['cause'] = CAUSE_UNIVERSE
+        event['fuel_delta'] = -1
+        return event
     if heap_cell is not None:
         machine.heap[heap_cell[0]] = heap_cell[1]
     if memo_plan is not None:
@@ -550,7 +702,15 @@ _HEAP_TAGS = (
     TAG_NULL, TAG_BVAR, TAG_SORT, TAG_CONST, TAG_APP, TAG_LAM, TAG_PI, TAG_LET,
     TAG_ENV, TAG_CLO, TAG_NEU, TAG_NAPP, TAG_INVALID,
 )
-_FRAME_KINDS = (FRAME_NONE, FRAME_HALT, FRAME_APP, FRAME_UPD)
+_FRAME_KINDS = (
+    FRAME_NONE, FRAME_HALT, FRAME_APP, FRAME_UPD, FRAME_CHECK, FRAME_BIND_LAM,
+    FRAME_BIND_PI, FRAME_WHNF_DOM, FRAME_BODY_LAM, FRAME_BODY_PI, FRAME_CONV_L,
+    FRAME_CONV_R, FRAME_CHK_WHNF, FRAME_CHK_TERM, FRAME_CHK_WAIT, FRAME_CMP,
+    FRAME_APP_FN, FRAME_APP_WHNF, FRAME_APP_ARG, FRAME_APP_AFTER, FRAME_WHNF_BODY,
+    FRAME_PI_BODY, FRAME_NAPP_FN, FRAME_JOIN, FRAME_ETA_TY, FRAME_ETA_DOM,
+    FRAME_ETA_BODY, FRAME_PRF_TY, FRAME_PRF_CLS, FRAME_LET_ANN, FRAME_LET_VAL,
+    FRAME_LET_BODY,
+)
 _DECL_KINDS = (DECL_NONE, DECL_AXIOM, DECL_DEF, DECL_OPAQUE)
 PC_SORT = 'PC'
 STATUS_SORT = 'STATUS'
@@ -559,7 +719,9 @@ STACK_SORT = 'STACK'
 REG_SORT = {
     'pc': PC_SORT, 'status': STATUS_SORT, 'flags': FLAGS_SORT,
     'C': HEAP, 'E': HEAP_OR_NULL, 'K': STACK_SORT, 'V': HEAP,
-    'A0': NAT, 'A1': HEAP_OR_NULL, 'A2': NAT, 'U': NAT, 'lvl': NAT,
+    # A2 and U are addresses in the ground checker: A2 is a returned
+    # environment and U is the type-context chain. WHNF never assigns them.
+    'A0': NAT, 'A1': HEAP_OR_NULL, 'A2': HEAP_OR_NULL, 'U': HEAP_OR_NULL, 'lvl': NAT,
     'hp': HEAP, 'fuel': NAT,
 }
 
@@ -617,9 +779,12 @@ def _check_guard_shape(phase, row):
         if len(atom) != 3:
             raise StaticRejection('guard', f'{row.name} compare {atom}')
         width = _source_width(atom[1], ports)
-        imm = atom[2]
-        if type(imm) is not int or imm < 0 or imm >= (1 << width):
-            raise StaticRejection('width', f'{row.name} compare immediate {imm}')
+        other = atom[2]
+        if isinstance(other, tuple):
+            _source_width(other, ports)
+            continue
+        if type(other) is not int or other < 0 or other >= (1 << width):
+            raise StaticRejection('width', f'{row.name} compare immediate {other}')
 
 
 def _known_source(source):
@@ -707,7 +872,7 @@ def _check_op_shape(row):
     if row.heap is not None and row.heap[0] == 'memo':
         if len(row.heap) != 3 or not _known_source(row.heap[2]):
             raise StaticRejection('write', f'{row.name} memo shape')
-    if row.stk is not None and row.stk[0] == 'push':
+    if row.stk is not None and row.stk[0] in ('push', 'replace'):
         if len(row.stk) != 4 or row.stk[1] not in _FRAME_KINDS:
             raise StaticRejection('sort', f'{row.name} frame kind')
         for source in row.stk[2:]:
@@ -758,7 +923,7 @@ def _check_profile(table):
                 raise StaticRejection('bounds', f'{row.name} heap writes')
             if row.heap is not None and (row.heap[0] not in ('alloc', 'memo') or 1 > profile.heap_writes):
                 raise StaticRejection('bounds', f'{row.name} heap op')
-            if row.stk is not None and (row.stk[0] not in ('push', 'pop') or 1 > profile.stk_writes):
+            if row.stk is not None and (row.stk[0] not in ('push', 'pop', 'replace') or 1 > profile.stk_writes):
                 raise StaticRejection('bounds', f'{row.name} stk writes')
             if row.goto and row.goto not in PC_OF:
                 raise StaticRejection('bounds', f'{row.name} goto {row.goto}')
@@ -770,12 +935,16 @@ def _check_profile(table):
                 if source[0] == 'alu' and (len(source) != 2 or type(source[1]) is not int or not 0 <= source[1] < len(phase.alus)):
                     raise StaticRejection('bounds', f'{row.name} ALU index')
             _check_op_shape(row)
+        used = _phase_predicate_keys(phase)
+        if len(used) > profile.predicate_bits:
+            raise StaticRejection('bounds', f'{phase.name} uses {len(used)} predicate bits')
 
 
 class _Cube:
     def __init__(self):
         self.tag, self.memo, self.kind = {}, {}, {}
         self.not_kind, self.nums = {}, {}
+        self.rels = []
 
 
 def _domain_hi(source):
@@ -811,6 +980,107 @@ def _nums_sat(cube):
     return True
 
 
+def _interval(constraints, source):
+    """Inclusive range after immediate constraints. None means empty."""
+    lo, hi = 0, _domain_hi(source)
+    eqs, banned = [], set()
+    for op, imm in constraints:
+        if op == 'eq':
+            eqs.append(imm)
+        elif op == 'ne':
+            banned.add(imm)
+        elif op == 'lt':
+            hi = min(hi, imm - 1)
+        elif op == 'ge':
+            lo = max(lo, imm)
+    if eqs:
+        value = eqs[0]
+        if any(item != value for item in eqs) or not lo <= value <= hi or value in banned:
+            return None
+        return value, value
+    if lo > hi:
+        return None
+    if hi - lo <= 64 and not any(value not in banned for value in range(lo, hi + 1)):
+        return None
+    return lo, hi
+
+
+def _rels_sat(cube):
+    """Word-versus-word EQ/NE/LT/GE. Intervals stay independent unless equated."""
+    if not cube.rels:
+        return True
+    ranges = {}
+    for source, constraints in cube.nums.items():
+        interval = _interval(constraints, source)
+        if interval is None:
+            return False
+        ranges[source] = interval
+    parent = {}
+
+    def find(source):
+        parent.setdefault(source, source)
+        ranges.setdefault(source, (0, _domain_hi(source)))
+        if parent[source] != source:
+            parent[source] = find(parent[source])
+        return parent[source]
+
+    def union(left, right):
+        root_l, root_r = find(left), find(right)
+        if root_l == root_r:
+            return True
+        lo = max(ranges[root_l][0], ranges[root_r][0])
+        hi = min(ranges[root_l][1], ranges[root_r][1])
+        if lo > hi:
+            return False
+        parent[root_r] = root_l
+        ranges[root_l] = (lo, hi)
+        return True
+
+    orders = []
+    diseq = []
+    for op, left, right in cube.rels:
+        find(left)
+        find(right)
+        if op == 'eq':
+            if not union(left, right):
+                return False
+        elif op == 'ne':
+            diseq.append((left, right))
+        else:
+            orders.append((op, left, right))
+    for left, right in diseq:
+        if find(left) == find(right):
+            return False
+        left_lo, left_hi = ranges[find(left)]
+        right_lo, right_hi = ranges[find(right)]
+        if left_lo == left_hi == right_lo == right_hi:
+            return False
+    seen = {}
+    for op, left, right in orders:
+        root_l, root_r = find(left), find(right)
+        if root_l == root_r:
+            if op == 'lt':
+                return False
+            continue
+        lo_l, hi_l = ranges[root_l]
+        lo_r, hi_r = ranges[root_r]
+        if op == 'lt' and lo_l >= hi_r:
+            return False
+        if op == 'ge' and hi_l < lo_r:
+            return False
+        key = (op, root_l, root_r)
+        seen[key] = True
+    for op, left, right in orders:
+        root_l, root_r = find(left), find(right)
+        if op == 'lt' and seen.get(('lt', root_r, root_l)):
+            return False
+        if op == 'ge' and seen.get(('lt', root_l, root_r)):
+            return False
+        if op == 'lt' and seen.get(('ge', root_l, root_r)):
+            return False
+    return True
+
+
 def _cube_from_guard(guard):
     cube = _Cube()
     for atom in guard:
@@ -835,9 +1105,13 @@ def _cube_from_guard(guard):
             if cube.memo.get(port) is True:
                 return None
             cube.memo[port] = False
+        elif isinstance(atom[2], tuple):
+            cube.rels.append((kind, atom[1], atom[2]))
         else:
             cube.nums.setdefault(atom[1], []).append((kind, atom[2]))
-    return cube if _nums_sat(cube) else None
+    if not _nums_sat(cube) or not _rels_sat(cube):
+        return None
+    return cube
 
 
 def _merge(left, right):
@@ -845,6 +1119,7 @@ def _merge(left, right):
     cube.tag, cube.memo, cube.kind = dict(left.tag), dict(left.memo), dict(left.kind)
     cube.not_kind = {name: set(values) for name, values in left.not_kind.items()}
     cube.nums = {key: list(values) for key, values in left.nums.items()}
+    cube.rels = list(left.rels)
     for port, tag in right.tag.items():
         if cube.tag.get(port, tag) != tag:
             return None
@@ -863,7 +1138,10 @@ def _merge(left, right):
         cube.not_kind.setdefault(port, set()).update(banned)
     for source, constraints in right.nums.items():
         cube.nums.setdefault(source, []).extend(constraints)
-    return cube if _nums_sat(cube) else None
+    cube.rels.extend(right.rels)
+    if not _nums_sat(cube) or not _rels_sat(cube):
+        return None
+    return cube
 
 
 def _check_exclusive(table):
@@ -1012,7 +1290,7 @@ def _check_typed_row(phase, row):
         for field_name, source in zip(('a', 'b', 'c'), row.heap[2:]):
             need = _TERM_FIELDS.get(row.heap[1], {}).get(field_name, ZERO)
             _fits(_source_sort(source, phase, row, dest_sorts, alu_sorts), need, row, source)
-    if row.stk is not None and row.stk[0] == 'push':
+    if row.stk is not None and row.stk[0] in ('push', 'replace'):
         for field_name, source in zip(('a', 'b'), row.stk[2:]):
             need = _FRAME_FIELDS.get(row.stk[1], {}).get(field_name, ZERO)
             _fits(_source_sort(source, phase, row, dest_sorts, alu_sorts), need, row, source)
@@ -1036,10 +1314,12 @@ def _check_typed_row(phase, row):
         if _implied_address(port, row) is None:
             raise StaticRejection('sort', f'{row.name} reads {port.name} without one typed address plan')
     for atom in row.guard:
-        if atom[0] in ('eq', 'ne', 'lt', 'ge') and atom[1][0] == 'field':
-            have = _source_sort(atom[1], phase, row, dest_sorts, alu_sorts)
-            if have == ZERO:
-                raise StaticRejection('sort', f'{row.name} compares untyped {atom[1]}')
+        if atom[0] in ('eq', 'ne', 'lt', 'ge'):
+            for side in (atom[1], atom[2]):
+                if isinstance(side, tuple) and side[0] == 'field':
+                    have = _source_sort(side, phase, row, dest_sorts, alu_sorts)
+                    if have == ZERO:
+                        raise StaticRejection('sort', f'{row.name} compares untyped {side}')
 
 
 def _check_sorts(table):
@@ -1110,7 +1390,7 @@ def _menus(table):
                 packet['m'].add(('imm', 0))
             if row.heap is not None and row.heap[0] == 'memo':
                 packet['m'].add(row.heap[2])
-            if row.stk is not None and row.stk[0] == 'push':
+            if row.stk is not None and row.stk[0] in ('push', 'replace'):
                 _, kind, a_src, b_src = row.stk
                 stk['kind'].add(('imm', kind))
                 stk['a'].add(a_src)
@@ -1306,6 +1586,10 @@ def _alloc(tag, a, b, c):
 
 def _push(kind, a, b=('null',)):
     return ('push', kind, a, b)
+
+
+def _replace(kind, a=('null',), b=('null',)):
+    return ('replace', kind, a, b)
 
 
 def whnf_table():
