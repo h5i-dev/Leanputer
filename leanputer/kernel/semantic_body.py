@@ -1111,6 +1111,80 @@ def _small_page_address(circuit, bank_name, index_name, stack, context, declarat
     )
 
 
+def unpack_byte(builder, byte, name):
+    """Split one page byte into eight bits, low bit first.
+
+    A page channel holds an integer in 0..255. Bit ``k`` is the threshold
+    ``remainder >= 2**k``, and the remainder loses that place. This is the
+    read of a stored byte. It does not commit a handler and it does not
+    decide a proof.
+    """
+    one = builder.graph.one
+    remainder = _as_expr(byte)
+    if not remainder.terms:
+        return [Expr() for _ in range(BYTE_BITS)]
+    bits = [None] * BYTE_BITS
+    for bit in range(BYTE_BITS - 1, 0, -1):
+        threshold = 1 << bit
+        bits[bit] = builder.graph.ffn(
+            [
+                (1, one, remainder - (threshold - 1) * one),
+                (-1, one, remainder - threshold * one),
+            ],
+            name=f'{name}/{bit}',
+        )
+        remainder = remainder - bits[bit] * threshold
+    bits[0] = remainder
+    return bits
+
+
+def merge_constant_word(circuit, writers, width=PAGE_WORD_BITS):
+    """OR-merge one constant field.
+
+    ``writers`` is ``(hit, constant)`` pairs. A cold hit adds nothing.
+    Overlapping hits OR their constants, which is the reference field merge.
+    The hits are the live handler keys. This does not lower a handler body.
+    """
+    if width <= 0 or width > PAGE_WORD_BITS:
+        raise ValueError('constant field width is 1 to 16 bits')
+    columns = []
+    for bit in range(width):
+        parts = [hit for hit, value in writers if (int(value) >> bit) & 1]
+        if not parts:
+            columns.append(_const_pair(circuit, 0))
+        elif len(parts) == 1:
+            columns.append(parts[0])
+        else:
+            columns.append(circuit._or(parts))
+    return columns
+
+
+def commit_register_word(circuit, writers, old, width=PAGE_WORD_BITS):
+    """Publish one register from constant handler writes.
+
+    A hot writer replaces the word with the OR of the hot constants, including
+    a hot zero, which clears it. No hot writer leaves ``old`` unchanged. This
+    is the reference register update, not a handler body and not a bank write.
+    """
+    if width <= 0 or width > PAGE_WORD_BITS:
+        raise ValueError('constant field width is 1 to 16 bits')
+    if len(old) != width:
+        raise ValueError('old register width does not match the commit')
+    if not writers:
+        return list(old)
+    merged = merge_constant_word(circuit, writers, width)
+    hits = [hit for hit, _value in writers]
+    written = hits[0] if len(hits) == 1 else circuit._or(hits)
+    quiet = circuit._not(*written)
+    columns = []
+    for new_bit, old_bit in zip(merged, old):
+        columns.append(circuit._or([
+            circuit._and([written, new_bit]),
+            circuit._and([quiet, old_bit]),
+        ]))
+    return columns
+
+
 def _guard_bits(circuit, guard, bits):
     return [circuit._and([guard, bit]) for bit in bits]
 
@@ -1221,7 +1295,21 @@ def _sample_merge(sample, writers, zero_extend_context):
     return enable, bank, index, tuple(words)
 
 
-def _check_small_bank(graph, words, selected, samples, stack, context, declarations, writers, zero_extend_context):
+def _check_unpacked_words(unpacked, expect, row):
+    cursor = 0
+    for word, expected in enumerate(expect):
+        value = 0
+        for bit in range(PAGE_WORD_BITS):
+            bit_value = _expr_value(unpacked[cursor], row)
+            cursor += 1
+            if bit_value not in (0, 1):
+                raise AssertionError(f'unpacked bit {bit_value} is not boolean')
+            value |= bit_value << bit
+        if value != expected:
+            raise AssertionError(f'unpacked word {word} is {value}, stored word is {expected}')
+
+
+def _check_small_bank(graph, words, selected, samples, stack, context, declarations, writers, zero_extend_context, unpacked=None):
     domain = AddressDomain(0, declarations, stack=stack, context=context)
     matrix = _evaluate_bound(graph, words, samples)
     page = {}
@@ -1251,10 +1339,12 @@ def _check_small_bank(graph, words, selected, samples, stack, context, declarati
                 f'small bank read bank {read_bank} index {sample["read_index"]} '
                 f'returned {got}, direct row is {expect}'
             )
+        if unpacked is not None:
+            _check_unpacked_words(unpacked, expect, matrix[index])
 
 
 def _lower_small_bank(builder, stack, context, declarations, samples, writers=1,
-                      zero_extend_context=False, input_level=None, payload_bits=None):
+                      zero_extend_context=False, input_level=None, payload_bits=None, unpack=False):
     """One write port and one read port on the small-bank page.
 
     Retained keys are ``stack + context + declarations``. Physical padding
@@ -1328,10 +1418,17 @@ def _lower_small_bank(builder, stack, context, declarations, samples, writers=1,
         builder, 'kernel.small.page', query, key, payload, _as_expr(write_open),
         write_matches, read_matches,
     )
+    unpacked = None
+    if unpack:
+        # The bits are checked and then die. Keeping ninety-six of them would
+        # be a second copy of the row the page already stores as twelve bytes.
+        unpacked = []
+        for index, channel in enumerate(selected):
+            unpacked.extend(unpack_byte(builder, channel, f'kernel.small.page/byte{index}'))
     if samples:
         _check_small_bank(
             builder.graph, feature_words, selected, samples, stack, context, declarations,
-            writers, zero_extend_context,
+            writers, zero_extend_context, unpacked=unpacked,
         )
     return selected
 
@@ -1419,7 +1516,7 @@ def build_child_page(samples, placement_cap=GATE_CAP):
 
 
 def build_small_bank(stack, context, declarations, samples, placement_cap=GATE_CAP, writers=1,
-                     zero_extend_context=False):
+                     zero_extend_context=False, unpack=False):
     """Place one small-bank page. Not a stock forward and not a source checker.
 
     ``writers`` 2 is the guarded OR-merge of one bank. The joint page uses one
@@ -1430,7 +1527,7 @@ def build_small_bank(stack, context, declarations, samples, placement_cap=GATE_C
     builder.graph.target.value_heads = 4
     selected = _lower_small_bank(
         builder, stack, context, declarations, samples,
-        writers=writers, zero_extend_context=zero_extend_context,
+        writers=writers, zero_extend_context=zero_extend_context, unpack=unpack,
     )
     payload_bits = SMALL_WORDS * PAGE_WORD_BITS
     report = _place(builder, list(selected), samples, dict(
@@ -1447,6 +1544,7 @@ def build_small_bank(stack, context, declarations, samples, placement_cap=GATE_C
         zero_extend_context=zero_extend_context,
         guarded_merge_included=writers > 1,
         handler_commit_included=False,
+        page_bytes_unpacked=unpack,
     ))
     priced = _price_head_graph(
         builder.graph, max(report['peak_live_dims'], report['allocated_slots']), report['outputs_kept'],

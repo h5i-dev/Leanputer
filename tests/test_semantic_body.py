@@ -3,9 +3,12 @@ import random
 import unittest
 
 from leanputer.kernel.arena import Tag
+from leanputer.native_vendor.qwenputer.ir import evaluate
 from leanputer.kernel.semantic_body import (
     ORIGINAL_DECLARATIONS,
     ORIGINAL_EXPRESSIONS,
+    _evaluate_samples,
+    _features,
     _lower_walk,
     build_checked_index_add,
     build_expression_address,
@@ -14,9 +17,15 @@ from leanputer.kernel.semantic_body import (
     build_shared_expression_walk,
     build_small_bank,
     direct_expression_child,
+    _expr_value,
+    commit_register_word,
     kept_output_dims,
+    merge_constant_word,
     source_storage_report,
+    unpack_byte,
 )
+from leanputer.kernel.semantic_step_circuit import PredicateCircuit
+from leanputer.native_machine import NativeBuilder
 from leanputer.kernel.semantic_step_circuit import build_equality_key_select, partition_equality_keys
 from leanputer.kernel.semantic_operators import DENSE_LIMIT
 from leanputer.kernel.traversal_machine import Outcome, Reason
@@ -378,6 +387,105 @@ class SharedExpressionWalkTest(unittest.TestCase):
             sample[f'b_w{bit}'] = 0
         with self.assertRaises(AssertionError):
             build_small_bank(32, 8, 4, [sample], placement_cap=96, writers=2)
+
+    def test_constant_field_merge_ors_overlapping_hits(self):
+        samples = [
+            dict(h0=1, h1=0, h2=0),
+            dict(h0=0, h1=1, h2=0),
+            dict(h0=1, h1=1, h2=0),
+            dict(h0=0, h1=0, h2=0),
+            dict(h0=1, h1=1, h2=1),
+            dict(h0=0, h1=0, h2=1),
+        ]
+        builder = NativeBuilder(intermediate=256, reset_layers=0, layout_policy='compact')
+        words = _features(builder, (('h0', 1), ('h1', 1), ('h2', 1)), 'hit')
+        circuit = PredicateCircuit(builder, words, {})
+        hit_pairs = [
+            (list(zip(circuit.words[name], circuit.bit_ids[name]))[0], value)
+            for name, value in (('h0', 0b0001), ('h1', 0b0010), ('h2', 0b0100))
+        ]
+        merged = merge_constant_word(circuit, hit_pairs, width=4)
+        matrix = _evaluate_samples(builder.graph, words, samples)
+        expect = (0b0001, 0b0010, 0b0011, 0b0000, 0b0111, 0b0100)
+        for index, sample in enumerate(samples):
+            got = 0
+            for bit, column in enumerate(merged):
+                value = _expr_value(column, matrix[index])
+                self.assertIn(value, (0, 1))
+                got |= value << bit
+            self.assertEqual(got, expect[index], sample)
+
+    def test_constant_commit_replaces_the_old_word_or_keeps_it(self):
+        # Hot constants replace the word. A hot zero clears it. A cold writer
+        # leaves the previous word. Two hot writers OR, including a shared bit.
+        samples = [
+            dict(h0=1, h1=0, h2=0, old=0b1111),
+            dict(h0=0, h1=0, h2=0, old=0b1111),
+            dict(h0=0, h1=0, h2=1, old=0b1111),
+            dict(h0=1, h1=1, h2=0, old=0b1000),
+            dict(h0=0, h1=1, h2=0, old=0b0001),
+        ]
+        builder = NativeBuilder(intermediate=256, reset_layers=0, layout_policy='compact')
+        words = _features(builder, (('h0', 1), ('h1', 1), ('h2', 1), ('old', 4)), 'hit')
+        circuit = PredicateCircuit(builder, words, {})
+        writers = [
+            (list(zip(circuit.words[name], circuit.bit_ids[name]))[0], value)
+            for name, value in (('h0', 0b0011), ('h1', 0b0101), ('h2', 0))
+        ]
+        old = list(zip(circuit.words['old'], circuit.bit_ids['old']))
+        merged = commit_register_word(circuit, writers, old, width=4)
+        matrix = _evaluate_samples(builder.graph, words, samples)
+        expect = (0b0011, 0b1111, 0b0000, 0b0111, 0b0101)
+        for index, sample in enumerate(samples):
+            got = 0
+            for bit, column in enumerate(merged):
+                value = _expr_value(column, matrix[index])
+                self.assertIn(value, (0, 1))
+                got |= value << bit
+            self.assertEqual(got, expect[index], sample)
+        self.assertEqual(
+            commit_register_word(circuit, [], old, width=4),
+            old,
+        )
+
+    def test_page_byte_unpacks_every_value(self):
+        builder = NativeBuilder(intermediate=256, reset_layers=0, layout_policy='compact')
+        byte = builder.feature('page/byte')
+        bits = unpack_byte(builder, byte, 'page/byte')
+        (dim,) = byte.terms
+        values = list(range(256))
+        builder.graph.token_fns[dim] = lambda token, values=values: values[token]
+        matrix = evaluate(builder.graph, values, check=True)
+        self.assertEqual(len(bits), 8)
+        for index, value in enumerate(values):
+            got = 0
+            for bit, column in enumerate(bits):
+                bit_value = _expr_value(column, matrix[index])
+                self.assertIn(bit_value, (0, 1))
+                got |= bit_value << bit
+            self.assertEqual(got, value)
+
+    def test_small_bank_read_unpacks_to_the_stored_words(self):
+        samples = []
+        for bank, index, words, read_bank, read_index in (
+            (0, 0, (1, 2, 3, 4, 5, 6), 0, 0),
+            (0, 31, (255, 0, 0, 0, 0, 0), 0, 31),
+            (1, 7, (7, 0, 0, 0, 0, 0), 1, 7),
+            (2, 3, (9, 8, 7, 6, 5, 4), 2, 3),
+            (0, 1, (0, 0, 0, 0, 0, 0), 0, 1),
+        ):
+            row = dict(write_enable=1, bank=bank, index=index, read_bank=read_bank, read_index=read_index)
+            for bit, word in enumerate(words):
+                row[f'w{bit}'] = word
+            samples.append(row)
+        report = build_small_bank(32, 8, 4, samples, placement_cap=96, unpack=True)
+        self.assertTrue(report['page_bytes_unpacked'])
+        self.assertTrue(report['page_read'])
+        self.assertFalse(report['handler_commit_included'])
+        self.assertFalse(report['full_checker'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
 
     def test_storage_pages_keep_every_row(self):
         original = source_storage_report(
