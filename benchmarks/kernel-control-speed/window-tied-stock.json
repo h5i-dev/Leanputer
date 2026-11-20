@@ -118,5 +118,17 @@
     "A partially replaced prior mutual group remains a metadata GAP. Some neutral non-Sort/non-Pi failures stay classified GAP.",
     "No mathlib fraction and no complete multi-source native corpus rerun is claimed.",
     "82,235,516 unique dense parameters are under 100,000,000 and over the 50,000,000 ideal. Tying does not reduce that unique count. The smallest allowed stock shape that holds this circuit is H1024 I256."
-  ]
+  ],
+  "delivery_audit": {
+    "audited_at": "2026-11-20",
+    "authorized_dense_parameter_cap": 48290654,
+    "authorized_approximate_total_forwards_per_case": 4000,
+    "dense_parameter_cap_met": false,
+    "all_cases_within_4000_total_forwards": false,
+    "delivery_target_met": false,
+    "parameter_accounting": "The original logical_dense_parameters field counts unique Parameter elements after tying, not the expanded dense architecture.",
+    "original_thresholds_authorized": false,
+    "stock_cache_contract_verified": false,
+    "scope": "Original measurement fields and outcomes are preserved. Two source cases with post-inference reference correspondence are not general checker completion. Cross-layer cache aliasing and external control-artifact provenance require audit."
+  }
 }
