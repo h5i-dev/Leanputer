@@ -12,6 +12,7 @@ from leanputer.kernel.semantic_body import (
     build_child_page,
     build_expression_page,
     build_shared_expression_walk,
+    build_small_bank,
     direct_expression_child,
     kept_output_dims,
     source_storage_report,
@@ -214,6 +215,7 @@ class SharedExpressionWalkTest(unittest.TestCase):
         self.assertFalse(report['full_checker'])
         self.assertEqual(report['mathlib_theorems_checked'], 0)
         self.assertEqual(report['payload_bits'], 52)
+        self.assertEqual(report['payload_bytes'], 7)
         self.assertEqual(report['memory_layers_included'], 1)
         self.assertTrue(report['channel_gate'] and report['dense_gate'])
         self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
@@ -248,8 +250,134 @@ class SharedExpressionWalkTest(unittest.TestCase):
         self.assertFalse(report['full_checker'])
         self.assertEqual(report['mathlib_theorems_checked'], 0)
         self.assertEqual(report['memory_layers_included'], 1)
+        self.assertEqual(report['payload_bytes'], 7)
         self.assertTrue(report['channel_gate'] and report['dense_gate'])
         self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+
+    def test_small_bank_reads_stack_context_and_declarations(self):
+        def frame(enable, bank, index, words, read_bank, read_index):
+            row = dict(
+                write_enable=enable, bank=bank, index=index,
+                read_bank=read_bank, read_index=read_index,
+            )
+            for bit, word in enumerate(words):
+                row[f'w{bit}'] = word
+            return row
+
+        zero = (0, 0, 0, 0, 0, 0)
+        samples = [
+            frame(1, 0, 0, (1, 2, 3, 4, 5, 6), 0, 0),
+            frame(0, 0, 0, zero, 0, 0),
+            frame(1, 0, 31, (9, 0, 0, 0, 0, 0), 0, 31),
+            frame(0, 0, 0, zero, 0, 0),
+            frame(1, 1, 0, (8, 0, 0, 0, 0, 0), 1, 0),
+            frame(1, 1, 7, (3, 1, 0, 0, 0, 0), 1, 7),
+            frame(1, 2, 0, (4, 0, 0, 0, 0, 0), 2, 0),
+            frame(1, 2, 3, (5, 6, 7, 8, 9, 10), 2, 3),
+            frame(0, 0, 0, zero, 0, 1),
+            frame(1, 0, 32, (99, 0, 0, 0, 0, 0), 0, 32),
+            frame(1, 1, 8, (99, 0, 0, 0, 0, 0), 1, 8),
+            frame(1, 2, 4, (99, 0, 0, 0, 0, 0), 2, 4),
+            frame(1, 3, 0, (99, 0, 0, 0, 0, 0), 3, 0),
+            frame(0, 0, 0, zero, 0, 0),
+            frame(1, 0, 0, (7, 0, 0, 0, 0, 0), 0, 0),
+            frame(0, 0, 0, zero, 0, 31),
+            frame(0, 0, 0, zero, 1, 0),
+            frame(0, 0, 0, zero, 1, 7),
+            frame(0, 0, 0, zero, 2, 0),
+            frame(0, 0, 0, zero, 2, 3),
+        ]
+        report = build_small_bank(32, 8, 4, samples, placement_cap=96)
+        self.assertTrue(report['page_read'])
+        self.assertTrue(report['small_bank_placed'])
+        self.assertFalse(report['expression_page_placed'])
+        self.assertFalse(report['memory_placed'])
+        self.assertFalse(report['full_checker'])
+        self.assertFalse(report['handler_commit_included'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertEqual(report['payload_bits'], 96)
+        self.assertEqual(report['payload_bytes'], 12)
+        self.assertEqual(report['small_bank_keys'], 44)
+        self.assertEqual(report['memory_layers_included'], 1)
+        self.assertEqual(report['selected_shape']['gdn_layers'], 1)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+
+    def test_small_bank_unaligned_declarations_use_the_adder(self):
+        def frame(enable, bank, index, word, read_bank, read_index):
+            row = dict(
+                write_enable=enable, bank=bank, index=index,
+                read_bank=read_bank, read_index=read_index,
+            )
+            row['w0'] = word
+            for bit in range(1, 6):
+                row[f'w{bit}'] = 0
+            return row
+
+        samples = [
+            frame(1, 2, 0, 11, 2, 0),
+            frame(1, 2, 4, 12, 2, 4),
+            frame(0, 0, 0, 0, 2, 0),
+            frame(0, 0, 0, 0, 2, 4),
+            frame(1, 2, 5, 13, 2, 5),
+            frame(0, 0, 0, 0, 2, 0),
+            frame(1, 0, 0, 1, 0, 0),
+            frame(1, 1, 7, 2, 1, 7),
+            frame(0, 0, 0, 0, 0, 1),
+        ]
+        report = build_small_bank(32, 8, 5, samples, placement_cap=96)
+        self.assertTrue(report['small_bank_placed'])
+        self.assertEqual(report['small_bank_keys'], 45)
+        self.assertFalse(report['memory_placed'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+
+    def test_two_writers_or_merge_one_small_bank_row(self):
+        def frame(a, b, read_bank, read_index):
+            row = dict(read_bank=read_bank, read_index=read_index)
+            for prefix, item in (('a_', a), ('b_', b)):
+                enable, bank, index, words = item
+                row[f'{prefix}guard'] = enable
+                row[f'{prefix}bank'] = bank
+                row[f'{prefix}index'] = index
+                for bit, word in enumerate(words):
+                    row[f'{prefix}w{bit}'] = word
+            return row
+
+        zero = (0, 0, 0, 0, 0, 0)
+        cold = (0, 0, 0, zero)
+        samples = [
+            frame((1, 0, 1, (1, 0, 0, 0, 0, 0)), (1, 0, 1, (2, 4, 0, 0, 0, 0)), 0, 1),
+            frame((1, 0, 1, (0x00ff, 0, 0, 0, 0, 0)), (1, 0, 2, (0xff00, 0, 0, 0, 0, 0)), 0, 3),
+            frame(cold, cold, 0, 1),
+            frame(cold, cold, 0, 2),
+            frame((1, 0, 0, (5, 0, 0, 0, 0, 0)), (0, 0, 7, (0xffff, 1, 1, 1, 1, 1)), 0, 0),
+            frame(cold, cold, 0, 7),
+            frame((1, 1, 1, (7, 99, 99, 99, 99, 99)), cold, 1, 1),
+            frame((1, 1, 2, (1, 2, 0, 0, 0, 0)), (1, 1, 2, (4, 8, 0, 0, 0, 0)), 1, 2),
+            frame((1, 0, 4, (1, 2, 3, 4, 5, 6)), cold, 0, 4),
+        ]
+        report = build_small_bank(
+            32, 8, 4, samples, placement_cap=96, writers=2, zero_extend_context=True,
+        )
+        self.assertTrue(report['guarded_merge_included'])
+        self.assertFalse(report['handler_commit_included'])
+        self.assertFalse(report['full_checker'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+
+    def test_two_hot_banks_cannot_share_one_small_token(self):
+        zero = (0, 0, 0, 0, 0, 0)
+        sample = dict(read_bank=0, read_index=0)
+        sample.update(a_guard=1, a_bank=0, a_index=1)
+        sample.update(b_guard=1, b_bank=1, b_index=0)
+        for bit in range(6):
+            sample[f'a_w{bit}'] = 1
+            sample[f'b_w{bit}'] = 0
+        with self.assertRaises(AssertionError):
+            build_small_bank(32, 8, 4, [sample], placement_cap=96, writers=2)
 
     def test_storage_pages_keep_every_row(self):
         original = source_storage_report(

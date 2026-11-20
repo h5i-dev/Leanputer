@@ -16,9 +16,14 @@ is the gate-side hazard, and this adder does not put the digit on that side.
 host whether a proof is admitted.
 
 The expression page reads and writes one linear-attention layer. A row is the
-tag and the three expression fields, addressed by the reference split. Handler
-commit and private algorithms are not in this circuit. It does not emit a torch
-model and it is not a source checker.
+tag and the three expression fields, addressed by the reference split. The
+small bank is the stack, the context, and the declaration slots of the same
+address map. Oracle writes are stack rows of six words, heap rows of four, and
+context rows of one; a declaration cell is six words and is not a ``write_``
+effect. One token of a page writes one row. Published channels are bytes,
+because bf16 holds every integer in 0..255 and a bit per residual slot does
+not leave room for a second head. Private algorithms are not in this circuit.
+It does not emit a torch model and it is not a source checker.
 """
 from __future__ import annotations
 
@@ -27,7 +32,7 @@ import math
 from ..native_machine import NativeBuilder
 from ..native_vendor.qwenputer.emit import allocate
 from ..native_vendor.qwenputer.expr import Expr
-from ..native_vendor.qwenputer.ir import A_BIT, A_REF, ExactnessError, Head, K, evaluate
+from ..native_vendor.qwenputer.ir import A_BIT, A_REF, HD, ExactnessError, Head, K, evaluate
 from .arena import Row, Tag, children
 from .semantic_operators import DENSE_LIMIT
 from .semantic_step_circuit import (
@@ -56,6 +61,14 @@ PAGE_WORD_BITS = 16
 # tag, a, b, c. Columns 0 and 1 of a value head are the row ballast.
 PAYLOAD_BITS = TAG_BITS + 3 * PAGE_WORD_BITS
 DATA_COLUMN = 2
+BYTE_BITS = 8
+# Oracle ``write_`` rows: stack 6, context 1. The declaration read port is
+# 6 words and has no write effect. The physical small-bank row is 6 words.
+SMALL_WORDS = 6
+CONTEXT_WORDS = 1
+BANK_STACK = 0
+BANK_CONTEXT = 1
+BANK_DECLARATION = 2
 ORIGINAL_EXPRESSIONS = 512
 ORIGINAL_DECLARATIONS = 4
 ORIGINAL_STACK = 32
@@ -161,6 +174,22 @@ def _evaluate_samples(graph, words, samples):
         return evaluate(graph, list(range(len(samples))), check=True)
     except ExactnessError as exc:
         raise AssertionError(f'byte-digit circuit is not bf16-exact: {exc}') from exc
+
+
+def _evaluate_bound(graph, words, samples):
+    """Evaluate ``words`` with every other token feature forced to zero.
+
+    A later page is checked on a graph that already bound an earlier page.
+    Restoring the previous bindings keeps that page's own check intact.
+    """
+    saved = dict(graph.token_fns)
+    for dim in saved:
+        graph.token_fns[dim] = lambda token: 0
+    try:
+        return _evaluate_samples(graph, words, samples)
+    finally:
+        graph.token_fns.clear()
+        graph.token_fns.update(saved)
 
 
 def _expr_value(item, row):
@@ -595,23 +624,31 @@ def _payload_exprs(words):
     return bits
 
 
-def _decode_payload(values):
-    if len(values) != PAYLOAD_BITS:
-        raise ValueError('expression page payload width drifted')
+def _decode_packed(values, widths):
+    """Unpack page bytes into the field widths. The tail of the last byte is 0."""
+    bits = []
+    for value in values:
+        if type(value) is not int or value < 0 or value > 255:
+            raise AssertionError(f'page byte {value} is outside 0..255')
+        for shift in range(BYTE_BITS):
+            bits.append((value >> shift) & 1)
     cursor = 0
-
-    def take(width):
-        nonlocal cursor
+    fields = []
+    for width in widths:
         total = 0
         for shift in range(width):
-            bit = values[cursor]
-            if bit not in (0, 1):
-                raise AssertionError(f'expression page bit is {bit}')
-            total |= bit << shift
+            if cursor >= len(bits):
+                raise AssertionError('packed page is short')
+            total |= bits[cursor] << shift
             cursor += 1
-        return total
-
-    return take(TAG_BITS), take(PAGE_WORD_BITS), take(PAGE_WORD_BITS), take(PAGE_WORD_BITS)
+        fields.append(total)
+    while cursor % BYTE_BITS:
+        if bits[cursor]:
+            raise AssertionError('packed page tail bit is set')
+        cursor += 1
+    if cursor != len(bits):
+        raise AssertionError('packed page has an extra byte')
+    return tuple(fields)
 
 
 def _page_read_ref(sample):
@@ -644,9 +681,9 @@ def _check_expression_page(graph, words, selected, samples, retained, walk_words
             expect = page.get((read['head'], read['row']), (0, 0, 0, 0))
         else:
             expect = (0, 0, 0, 0)
-        got = _decode_payload([
-            _expr_value(bit, matrix[index]) for bit in selected
-        ])
+        got = _decode_packed([
+            _expr_value(byte, matrix[index]) for byte in selected
+        ], (TAG_BITS, PAGE_WORD_BITS, PAGE_WORD_BITS, PAGE_WORD_BITS))
         if got != expect:
             raise AssertionError(
                 f'expression page read {sample["read_ref"]} returned {got}, direct row is {expect}'
@@ -692,6 +729,106 @@ def _match_gate(builder, bits, value):
     return builder.gate('and', parts, 'expr-page/head')
 
 
+def _head_matches(builder, head_bits):
+    """Head select. A constant head does not add a gate.
+
+    Keys 0..127 are value head 0. The original small bank has 44 keys, so its
+    head bits are the constant 0 and only head 0 is open.
+    """
+    one = builder.graph.one
+    value = 0
+    for index, bit in enumerate(head_bits):
+        expr = _as_expr(bit)
+        if not expr.terms:
+            continue
+        if expr.terms == one.terms:
+            value |= 1 << index
+            continue
+        bits = [_as_expr(item) for item in head_bits]
+        return [_match_gate(builder, bits, head) for head in range(VALUE_HEADS_PER_LAYER)]
+    return [one if head == value else Expr() for head in range(VALUE_HEADS_PER_LAYER)]
+
+
+def _zero_channel(builder, name, min_level=None):
+    """One residual channel whose value is 0. Identical zeros must not CSE."""
+    one = builder.graph.one
+    memo = builder.graph.memoize_ffn
+    builder.graph.memoize_ffn = False
+    try:
+        return builder.graph.ffn(
+            [(1, one, one - one)], name=name,
+            min_level=builder.barrier if min_level is None else min_level,
+        )
+    finally:
+        builder.graph.memoize_ffn = memo
+
+
+def _emit_packed_page(builder, name, query, key, payload, write_open, write_matches, read_matches):
+    """Store one bit per value column and publish one byte channel per 8 bits.
+
+    The head adds bit weights 1, 2, 4, ..., 128 into channels that already
+    exist, so a 96-bit row does not allocate 96 residual slots. Those channels
+    are born on the even sublayer under the head. Unselected value heads add
+    zero. Columns 0 and 1 stay the row ballast.
+    """
+    if not payload or len(payload) > HD - DATA_COLUMN:
+        raise ValueError('page payload does not fit one value head')
+    one = builder.graph.one
+    payload_exprs = [_as_expr(bit) for bit in payload]
+    write_open = _as_expr(write_open)
+    dependencies = [
+        _as_expr(item)
+        for item in (
+            *query.values(), *key.values(), *payload_exprs, write_open,
+            *write_matches, *read_matches,
+        )
+    ]
+    dep_level = builder.graph.level(*dependencies) if dependencies else 0
+    # An even dependency level places the zero on that sublayer. An odd one
+    # places it on the next even sublayer, and the head is placed after that.
+    zero_floor = dep_level if dep_level % 2 == 1 else max(dep_level - 1, 0)
+    nbytes = (len(payload_exprs) + BYTE_BITS - 1) // BYTE_BITS
+    channels = [
+        _zero_channel(builder, f'{name}/byte{index}', zero_floor) for index in range(nbytes)
+    ]
+    placed = max(builder.graph.dims[dim].level for channel in channels for dim in channel.terms)
+    values = {0: A_REF * one, 1: A_REF * one}
+    for index, bit in enumerate(payload_exprs):
+        values[DATA_COLUMN + index] = A_BIT * bit
+    outs = []
+    into = []
+    for index in range(len(payload_exprs)):
+        outs.append((DATA_COLUMN + index, 128.0 * float(1 << (index % BYTE_BITS))))
+        into.append(channels[index // BYTE_BITS])
+
+    def read_gate(match):
+        opened = K * (2 * match - one)
+        return {DATA_COLUMN + index: opened for index in range(len(payload_exprs))}
+
+    # a = 0 keeps every stored row. The page is not a decaying scratch file.
+    # A constant head match must not add a gate on top of the address.
+    betas = []
+    for head, match in enumerate(write_matches):
+        if not match.terms:
+            betas.append(Expr())
+        elif match.terms == one.terms:
+            betas.append(write_open)
+        else:
+            betas.append(builder.gate('and', [write_open, match], f'{name}/beta'))
+    vx = [
+        dict(
+            v=dict(values), a=0, z=read_gate(read_matches[head]), outs=list(outs),
+            beta=betas[head], into='main',
+        )
+        for head in range(1, VALUE_HEADS_PER_LAYER)
+    ]
+    builder.graph.head(
+        name, query, key, values, 0, read_gate(read_matches[0]), outs,
+        beta=betas[0], min_level=placed, into=into, vx=vx,
+    )
+    return channels
+
+
 def _emit_expression_head(builder, circuit, words, read, write):
     """Read ``read`` and write ``write`` through one expression page."""
     one = builder.graph.one
@@ -705,59 +842,53 @@ def _emit_expression_head(builder, circuit, words, read, write):
         for row in range(ROWS_PER_PAGE)
     }
     payload = _payload_exprs(words)
-    values = {0: A_REF * one, 1: A_REF * one}
-    values.update({DATA_COLUMN + index: A_BIT * bit for index, bit in enumerate(payload)})
-    outs = [(DATA_COLUMN + index, 128.0) for index in range(PAYLOAD_BITS)]
     write_head = [_as_expr(bit) for bit in write['head']]
     read_head = [_as_expr(bit) for bit in read['head']]
     write_matches = [_match_gate(builder, write_head, head) for head in range(VALUE_HEADS_PER_LAYER)]
     read_matches = [_match_gate(builder, read_head, head) for head in range(VALUE_HEADS_PER_LAYER)]
-    # a = 0 keeps every stored row. The page is not a decaying scratch file.
-    # z passes only the selected value head, so the four heads sum into one row
-    # and no post-read mux is allocated.
-    betas = [
-        builder.gate('and', [_as_expr(write_open), write_matches[head]], 'expr-page/beta')
-        for head in range(VALUE_HEADS_PER_LAYER)
-    ]
-
-    def read_gate(match):
-        opened = K * (2 * match - one)
-        return {DATA_COLUMN + index: opened for index in range(PAYLOAD_BITS)}
-
-    vx = [
-        dict(
-            v=dict(values), a=0, z=read_gate(read_matches[head]), outs=list(outs),
-            beta=betas[head], into='main',
-        )
-        for head in range(1, VALUE_HEADS_PER_LAYER)
-    ]
-    raw = builder.graph.head(
-        'kernel.expression.page', query, key, values, 0, read_gate(read_matches[0]), outs,
-        beta=betas[0], vx=vx,
+    return _emit_packed_page(
+        builder, 'kernel.expression.page', query, key, payload, _as_expr(write_open),
+        write_matches, read_matches,
     )
-    if len(raw) < PAYLOAD_BITS:
-        raise ValueError('expression page head did not publish every field')
-    return list(raw[:PAYLOAD_BITS])
 
 
-def _attach_expression_page(builder, read_address, retained, samples, walk_words, input_level):
+def _attach_expression_page(builder, read_address, retained, samples, walk_words, input_level,
+                            store_bits=None):
     """Write port plus a read of an address the walk already published.
 
     The read reference is the walk's child. ``samples`` carry that child in
     the walk fields and the stored row in ``store_tag`` / ``store_a`` /
     ``store_b`` / ``store_c``. One linear-attention layer holds 512 rows.
+    ``store_bits`` is an existing bus of ``PAYLOAD_BITS`` expressions. The
+    joint uses one payload bus for this page and the small bank, because a
+    second 96-bit port does not fit the H768 feature floor.
     """
     if type(retained) is not int or retained <= 0 or retained > ROWS_PER_LAYER:
         raise ValueError('this expression page is one linear-attention layer')
     spec = (
         ('write_enable', 1),
         ('write_ref', 16),
-        ('store_tag', TAG_BITS),
-        ('store_a', PAGE_WORD_BITS),
-        ('store_b', PAGE_WORD_BITS),
-        ('store_c', PAGE_WORD_BITS),
     )
+    if store_bits is None:
+        spec = spec + (
+            ('store_tag', TAG_BITS),
+            ('store_a', PAGE_WORD_BITS),
+            ('store_b', PAGE_WORD_BITS),
+            ('store_c', PAGE_WORD_BITS),
+        )
     words = _features(builder, spec, 'page', level=input_level)
+    if store_bits is not None:
+        if len(store_bits) < PAYLOAD_BITS:
+            raise ValueError('expression store bus is shorter than tag, a, b, and c')
+        cursor = 0
+        for name, width in (
+            ('store_tag', TAG_BITS),
+            ('store_a', PAGE_WORD_BITS),
+            ('store_b', PAGE_WORD_BITS),
+            ('store_c', PAGE_WORD_BITS),
+        ):
+            words[name] = list(store_bits[cursor:cursor + width])
+            cursor += width
     circuit = PredicateCircuit(builder, words, {})
     write = _address_from_pairs(
         circuit, _word_pairs(circuit, 'write_ref'), retained, name='write_slot',
@@ -798,6 +929,428 @@ def _price_head_graph(graph, peak_slots, kept_outputs):
     )
 
 
+def _const_pair(circuit, bit):
+    if bit:
+        return circuit.one, circuit.net.ONE
+    return Expr(), circuit.net.ZERO
+
+
+def _xor_const(circuit, bit, const_bit):
+    if const_bit:
+        return _xor_pair(circuit, bit, _const_pair(circuit, 1))
+    return bit
+
+
+def _add_const_pairs(circuit, bits, const):
+    """Bit pairs of ``bits + const``.
+
+    Each carry is one parallel layer of ANDs and one OR. The sum bit is one
+    XOR after that. A constant whose set bits do not overlap a masked index
+    takes the wiring path instead, and this adder is not used.
+    """
+    width = len(bits)
+    if type(const) is not int or const < 0 or const >= 1 << width:
+        raise ValueError('page constant does not fit the index word')
+    carries = [(Expr(), circuit.net.ZERO)]
+    for dest in range(1, width):
+        terms = []
+        for origin in range(dest):
+            if (const >> origin) & 1 == 0:
+                continue
+            parts = [bits[origin]]
+            for between in range(origin + 1, dest):
+                if (const >> between) & 1 == 0:
+                    parts.append(bits[between])
+            terms.append(parts[0] if len(parts) == 1 else circuit._and(parts))
+        carries.append(circuit._or(terms) if terms else (Expr(), circuit.net.ZERO))
+    summed = []
+    for index, bit in enumerate(bits):
+        mixed = _xor_pair(circuit, bit, carries[index])
+        summed.append(_xor_const(circuit, mixed, (const >> index) & 1))
+    return summed
+
+
+def _aligned_base(base, limit):
+    """True when ``index < limit`` makes ``index + base`` a bit insert."""
+    return (
+        type(limit) is int and limit > 0 and limit & (limit - 1) == 0
+        and type(base) is int and base >= 0 and (base & (limit - 1)) == 0
+    )
+
+
+def _and_literals(circuit, literals):
+    if not literals:
+        return circuit.one, circuit.net.ONE
+    if len(literals) == 1:
+        return literals[0]
+    return circuit._and(literals)
+
+
+def _bank_limit_literals(circuit, bank_bits, index_bits, bank_id, limit, open_literal):
+    """Bank select and ``index < limit`` in one literal list.
+
+    The limit is a power of two, so the bound is the high index bits clear.
+    Folding the bound into the key AND keeps the address one gate deep.
+    """
+    b0, b1 = bank_bits
+    if bank_id == BANK_STACK:
+        bank = (circuit._not(*b0), circuit._not(*b1))
+    elif bank_id == BANK_CONTEXT:
+        bank = (b0, circuit._not(*b1))
+    elif bank_id == BANK_DECLARATION:
+        bank = (circuit._not(*b0), b1)
+    else:
+        raise ValueError('small-bank id is not a placed bank')
+    low = limit.bit_length() - 1
+    cleared = tuple(circuit._not(*index_bits[bit]) for bit in range(low, len(index_bits)))
+    opened = (open_literal,) if open_literal is not None else ()
+    return bank + cleared + opened
+
+
+def _aligned_small_key(circuit, bank_bits, index_bits, bases, limits, open_literal):
+    """Masked key and in-range bit. Every AND reads features, not other ANDs."""
+    banks = range(len(bases))
+    opens = [
+        _and_literals(
+            circuit,
+            _bank_limit_literals(circuit, bank_bits, index_bits, bank, limits[bank], open_literal),
+        )
+        for bank in banks
+    ]
+    in_range = opens[0] if len(opens) == 1 else _free_or(circuit, opens)
+    key = []
+    for bit_index in range(len(index_bits)):
+        parts = []
+        for bank, base, limit in zip(banks, bases, limits):
+            if not _aligned_base(base, limit):
+                raise RuntimeError('aligned key saw an unaligned bank')
+            low = limit.bit_length() - 1
+            if bit_index < low:
+                parts.append(_and_literals(circuit, [
+                    *_bank_limit_literals(
+                        circuit, bank_bits, index_bits, bank, limit, open_literal,
+                    ),
+                    index_bits[bit_index],
+                ]))
+            elif (base >> bit_index) & 1:
+                parts.append(opens[bank])
+        if not parts:
+            key.append(_const_pair(circuit, 0))
+        elif len(parts) == 1:
+            key.append(parts[0])
+        else:
+            key.append(_free_or(circuit, parts))
+    return in_range, key
+
+
+def _small_page_address(circuit, bank_name, index_name, stack, context, declarations, open_literal=None):
+    """Map a bank id and a 0-based index onto the small-bank page.
+
+    Keys follow ``AddressDomain.small_address``: stack, then context, then
+    declarations. Zero is a live stack slot. An index past that bank's limit
+    is not a spare key lane.
+    """
+    bank_bits = _word_pairs(circuit, bank_name)
+    if len(bank_bits) != 2:
+        raise ValueError('small-bank id is two bits')
+    index_bits = _word_pairs(circuit, index_name)
+    if len(index_bits) != 16:
+        raise ValueError('small-bank index width is the 16-bit word')
+    bases = (0, stack, stack + context)
+    limits = (stack, context, declarations)
+    aligned = all(_aligned_base(base, limit) for base, limit in zip(bases, limits))
+    if aligned:
+        in_range, key = _aligned_small_key(
+            circuit, bank_bits, index_bits, bases, limits, open_literal,
+        )
+        masked = key
+    else:
+        # One adder per bank. Used when a declaration count is not a power of
+        # two, as in a mathlib closure. The aligned page does not build this.
+        b0, b1 = bank_bits
+        matches = (
+            circuit._and([circuit._not(*b0), circuit._not(*b1)]),
+            circuit._and([b0, circuit._not(*b1)]),
+            circuit._and([circuit._not(*b0), b1]),
+        )
+        below = []
+        for name, limit in zip(
+            (f'{index_name}/stack', f'{index_name}/context', f'{index_name}/declaration'),
+            limits,
+        ):
+            circuit.words = dict(circuit.words)
+            circuit.bit_ids = dict(circuit.bit_ids)
+            circuit.words[name] = [pair[0] for pair in index_bits]
+            circuit.bit_ids[name] = [pair[1] for pair in index_bits]
+            below.append(circuit._less(name, limit))
+        in_parts = [circuit._and([match, limit]) for match, limit in zip(matches, below)]
+        in_range = in_parts[0] if len(in_parts) == 1 else _free_or(circuit, in_parts)
+        keys = []
+        for base, limit in zip(bases, limits):
+            if _aligned_base(base, limit):
+                low = limit.bit_length() - 1
+                bits = list(index_bits[:low])
+                for index in range(low, 16):
+                    bits.append(_const_pair(circuit, (base >> index) & 1))
+                keys.append(bits)
+            else:
+                keys.append(_add_const_pairs(circuit, index_bits, base))
+        key = []
+        for index in range(16):
+            parts = [circuit._and([match, bits[index]]) for match, bits in zip(matches, keys)]
+            key.append(_free_or(circuit, parts))
+        masked = [circuit._and([in_range, bit]) for bit in key]
+    row_width = ROWS_PER_PAGE.bit_length() - 1
+    head_width = VALUE_HEADS_PER_LAYER.bit_length() - 1
+    return dict(
+        in_range=in_range,
+        row=masked[:row_width],
+        head=masked[row_width:row_width + head_width],
+        layer=masked[row_width + head_width:],
+        open_included=aligned and open_literal is not None,
+    )
+
+
+def _guard_bits(circuit, guard, bits):
+    return [circuit._and([guard, bit]) for bit in bits]
+
+
+def _or_columns(circuit, columns):
+    if len(columns) == 1:
+        return columns[0]
+    return [
+        circuit._or([column[index] for column in columns])
+        for index in range(len(columns[0]))
+    ]
+
+
+def _commit_bus(circuit, writers, zero_extend_context):
+    """Present one small-bank row.
+
+    One writer is wired through. The page write gate is the guard, so a cold
+    guard does not store. Several writers of one bank OR their guards, their
+    indices, and their words, which is the reference merge. A context commit
+    keeps word 0 and clears the other five. Two banks in one token are not
+    this port: the head has one key.
+    """
+    if len(writers) == 1 and not zero_extend_context:
+        writer = writers[0]
+        enable = _word_pairs(circuit, writer['guard'])[0]
+        bank = _word_pairs(circuit, writer['bank'])
+        index = _word_pairs(circuit, writer['index'])
+        words = [_word_pairs(circuit, writer['word'](word)) for word in range(SMALL_WORDS)]
+        return enable, bank, index, words
+    guarded_banks = []
+    guarded_indices = []
+    guarded_words = [[] for _ in range(SMALL_WORDS)]
+    guards = []
+    for writer in writers:
+        guard = _word_pairs(circuit, writer['guard'])[0]
+        guards.append(guard)
+        guarded_banks.append(_guard_bits(circuit, guard, _word_pairs(circuit, writer['bank'])))
+        guarded_indices.append(_guard_bits(circuit, guard, _word_pairs(circuit, writer['index'])))
+        for word in range(SMALL_WORDS):
+            guarded_words[word].append(
+                _guard_bits(circuit, guard, _word_pairs(circuit, writer['word'](word))),
+            )
+    enable = guards[0] if len(guards) == 1 else circuit._or(guards)
+    bank = _or_columns(circuit, guarded_banks)
+    index = _or_columns(circuit, guarded_indices)
+    words = [_or_columns(circuit, guarded_words[word]) for word in range(SMALL_WORDS)]
+    if zero_extend_context:
+        context = circuit._and([bank[0], circuit._not(*bank[1])])
+        for word in range(1, SMALL_WORDS):
+            words[word] = [circuit._and([circuit._not(*context), bit]) for bit in words[word]]
+    return enable, bank, index, words
+
+
+def _alias_pairs(circuit, name, pairs):
+    circuit.words = dict(circuit.words)
+    circuit.bit_ids = dict(circuit.bit_ids)
+    circuit.words[name] = [pair[0] for pair in pairs]
+    circuit.bit_ids[name] = [pair[1] for pair in pairs]
+
+
+def _writer_schemas(count):
+    if count == 1:
+        return [dict(
+            guard='write_enable', bank='bank', index='index',
+            word=lambda index: f'w{index}',
+        )]
+    if count != 2:
+        raise ValueError('a small-bank token merges one or two writers of one bank')
+    schemas = []
+    for prefix in ('a', 'b'):
+        schemas.append(dict(
+            guard=f'{prefix}_guard', bank=f'{prefix}_bank', index=f'{prefix}_index',
+            word=lambda index, prefix=prefix: f'{prefix}_w{index}',
+        ))
+    return schemas
+
+
+_BANK_NAMES = {BANK_STACK: 'stack', BANK_CONTEXT: 'context', BANK_DECLARATION: 'declaration'}
+
+
+def _sample_merge(sample, writers, zero_extend_context):
+    """Python image of ``_commit_bus``. Different hot banks are rejected."""
+    prefixes = ('',) if writers == 1 else ('a_', 'b_')
+    enable = 0
+    bank = 0
+    index = 0
+    words = [0] * SMALL_WORDS
+    hot = []
+    for prefix in prefixes:
+        guard_name = 'write_enable' if prefix == '' else f'{prefix}guard'
+        if not sample[guard_name]:
+            continue
+        enable = 1
+        writer_bank = sample['bank' if prefix == '' else f'{prefix}bank']
+        writer_index = sample['index' if prefix == '' else f'{prefix}index']
+        writer_words = [
+            sample[f'w{word}' if prefix == '' else f'{prefix}w{word}']
+            for word in range(SMALL_WORDS)
+        ]
+        hot.append(writer_bank)
+        bank |= writer_bank
+        index |= writer_index
+        words = [left | right for left, right in zip(words, writer_words)]
+    if len(set(hot)) > 1:
+        raise AssertionError('one small-bank token cannot merge two banks')
+    if zero_extend_context and enable and bank == BANK_CONTEXT:
+        words = [words[0], 0, 0, 0, 0, 0]
+    return enable, bank, index, tuple(words)
+
+
+def _check_small_bank(graph, words, selected, samples, stack, context, declarations, writers, zero_extend_context):
+    domain = AddressDomain(0, declarations, stack=stack, context=context)
+    matrix = _evaluate_bound(graph, words, samples)
+    page = {}
+    widths = (PAGE_WORD_BITS,) * SMALL_WORDS
+    for index, sample in enumerate(samples):
+        enable, bank, slot, stored = _sample_merge(sample, writers, zero_extend_context)
+        if enable and bank in _BANK_NAMES:
+            placed = domain.small_address(_BANK_NAMES[bank], slot)
+            if placed['outcome'] == IN_RANGE:
+                if placed['layer'] != 0:
+                    raise AssertionError('one small-bank page does not hold a second layer')
+                page[(placed['head'], placed['row'])] = stored
+        read_bank = sample['read_bank']
+        if read_bank in _BANK_NAMES:
+            read = domain.small_address(_BANK_NAMES[read_bank], sample['read_index'])
+        else:
+            read = dict(outcome=INVALID_REFERENCE)
+        if read['outcome'] == IN_RANGE and read['layer'] == 0:
+            expect = page.get((read['head'], read['row']), (0,) * SMALL_WORDS)
+        else:
+            expect = (0,) * SMALL_WORDS
+        got = _decode_packed([
+            _expr_value(byte, matrix[index]) for byte in selected
+        ], widths)
+        if got != expect:
+            raise AssertionError(
+                f'small bank read bank {read_bank} index {sample["read_index"]} '
+                f'returned {got}, direct row is {expect}'
+            )
+
+
+def _lower_small_bank(builder, stack, context, declarations, samples, writers=1,
+                      zero_extend_context=False, input_level=None, payload_bits=None):
+    """One write port and one read port on the small-bank page.
+
+    Retained keys are ``stack + context + declarations``. Physical padding
+    past that sum is not a live key. The stored row is six words. Context
+    effects are one word; ``zero_extend_context`` clears the other five at
+    the commit, and the one-writer page stores the row it is given.
+    ``payload_bits`` supplies the six words from an existing bus. One writer
+    can share that bus with the expression page. Two writers always own
+    their words, because the merge is the test of the commit.
+    """
+    retained = stack + context + declarations
+    limits = (stack, context, declarations, retained)
+    if any(type(value) is not int for value in limits) or min(stack, context, declarations) < 0:
+        raise ValueError('small-bank limits are nonnegative integers')
+    if retained <= 0 or retained > ROWS_PER_LAYER:
+        raise ValueError('this small bank is one linear-attention layer')
+    if payload_bits is not None and (
+        writers != 1 or len(payload_bits) != SMALL_WORDS * PAGE_WORD_BITS
+    ):
+        raise ValueError('shared payload is one writer and six words')
+    if input_level is not None:
+        builder.barrier = input_level
+    schemas = _writer_schemas(writers)
+    spec = []
+    for writer in schemas:
+        spec.append((writer['guard'], 1))
+        spec.append((writer['bank'], 2))
+        spec.append((writer['index'], 16))
+        if payload_bits is None:
+            for word in range(SMALL_WORDS):
+                spec.append((writer['word'](word), PAGE_WORD_BITS))
+    spec.extend((('read_bank', 2), ('read_index', 16)))
+    feature_words = _features(builder, spec, 'small', level=input_level)
+    circuit = PredicateCircuit(builder, feature_words, {})
+    if payload_bits is not None:
+        for word in range(SMALL_WORDS):
+            bits = list(payload_bits[word * PAGE_WORD_BITS:(word + 1) * PAGE_WORD_BITS])
+            name = schemas[0]['word'](word)
+            pairs = [
+                (bit, circuit.net.node('input', (name, index))) for index, bit in enumerate(bits)
+            ]
+            _alias_pairs(circuit, name, pairs)
+            feature_words[name] = bits
+    enable, bank, index, stored = _commit_bus(circuit, schemas, zero_extend_context)
+    _alias_pairs(circuit, 'commit_bank', bank)
+    _alias_pairs(circuit, 'commit_index', index)
+    write = _small_page_address(
+        circuit, 'commit_bank', 'commit_index', stack, context, declarations,
+        open_literal=enable,
+    )
+    read = _small_page_address(
+        circuit, 'read_bank', 'read_index', stack, context, declarations,
+    )
+    one = builder.graph.one
+    if write['open_included']:
+        write_open = write['in_range']
+    else:
+        write_open = circuit._and([enable, write['in_range']])
+    query = {
+        row: _hot_form(one, [_as_expr(bit) for bit in read['row']], row, _as_expr(read['in_range']))
+        for row in range(ROWS_PER_PAGE)
+    }
+    key = {
+        row: _hot_form(one, [_as_expr(bit) for bit in write['row']], row, _as_expr(write_open))
+        for row in range(ROWS_PER_PAGE)
+    }
+    payload = [_as_expr(bit) for word in stored for bit in word]
+    write_matches = _head_matches(builder, write['head'])
+    read_matches = _head_matches(builder, read['head'])
+    selected = _emit_packed_page(
+        builder, 'kernel.small.page', query, key, payload, _as_expr(write_open),
+        write_matches, read_matches,
+    )
+    if samples:
+        _check_small_bank(
+            builder.graph, feature_words, selected, samples, stack, context, declarations,
+            writers, zero_extend_context,
+        )
+    return selected
+
+
+def _continue_after_head(builder):
+    """Put the next page's gates on the even sublayer after the latest head."""
+    heads = [node.level for node in builder.graph.nodes if isinstance(node, Head)]
+    builder.barrier = max(heads) if heads else 2 * builder.graph.n_layers()
+
+
+def _attach_small_bank(builder, stack, context, declarations, samples, input_level, payload_bits=None):
+    """Attach the small bank after the caller has set the barrier."""
+    return _lower_small_bank(
+        builder, stack, context, declarations, samples,
+        writers=1, zero_extend_context=False, input_level=input_level,
+        payload_bits=payload_bits,
+    )
+
+
 def build_expression_page(retained, samples, placement_cap=GATE_CAP):
     """Place one expression page. Not a stock forward and not a source checker."""
     builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
@@ -809,6 +1362,7 @@ def build_expression_page(retained, samples, placement_cap=GATE_CAP):
         schedule='expression-page',
         retained_rows=retained,
         payload_bits=PAYLOAD_BITS,
+        payload_bytes=(PAYLOAD_BITS + BYTE_BITS - 1) // BYTE_BITS,
         page_read=True,
         expression_page_placed=True,
         small_bank_placed=False,
@@ -846,11 +1400,53 @@ def build_child_page(samples, placement_cap=GATE_CAP):
         schedule='child-page',
         retained_rows=512,
         payload_bits=PAYLOAD_BITS,
+        payload_bytes=(PAYLOAD_BITS + BYTE_BITS - 1) // BYTE_BITS,
         page_read=True,
         expression_page_placed=True,
         small_bank_placed=False,
         memory_placed=False,
         mathlib_theorems_checked=0,
+    ))
+    priced = _price_head_graph(
+        builder.graph, max(report['peak_live_dims'], report['allocated_slots']), report['outputs_kept'],
+    )
+    report['selected_shape'] = priced
+    report['candidate_shapes'] = [priced]
+    report['channel_gate'] = priced['channel_gate']
+    report['dense_gate'] = priced['dense_gate']
+    report['memory_layers_included'] = priced['memory_layers_included']
+    return report
+
+
+def build_small_bank(stack, context, declarations, samples, placement_cap=GATE_CAP, writers=1,
+                     zero_extend_context=False):
+    """Place one small-bank page. Not a stock forward and not a source checker.
+
+    ``writers`` 2 is the guarded OR-merge of one bank. The joint page uses one
+    writer. A declaration count that is not a power of two takes the adder.
+    """
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    builder.graph.target.value_heads = 4
+    selected = _lower_small_bank(
+        builder, stack, context, declarations, samples,
+        writers=writers, zero_extend_context=zero_extend_context,
+    )
+    payload_bits = SMALL_WORDS * PAGE_WORD_BITS
+    report = _place(builder, list(selected), samples, dict(
+        schedule='small-bank',
+        payload_bits=payload_bits,
+        payload_bytes=(payload_bits + BYTE_BITS - 1) // BYTE_BITS,
+        small_bank_keys=stack + context + declarations,
+        page_read=True,
+        expression_page_placed=False,
+        small_bank_placed=True,
+        memory_placed=False,
+        mathlib_theorems_checked=0,
+        writers=writers,
+        zero_extend_context=zero_extend_context,
+        guarded_merge_included=writers > 1,
+        handler_commit_included=False,
     ))
     priced = _price_head_graph(
         builder.graph, max(report['peak_live_dims'], report['allocated_slots']), report['outputs_kept'],
