@@ -1,0 +1,27 @@
+{
+  "format": "leanputer.mathlib-pin.v1",
+  "mathlib_commit": "fabf563a7c95a166b8d7b6efca11c8b4dc9d911f",
+  "mathlib_checkout": "/mnt/scratch/leanputer-mathlib",
+  "lean_toolchain": "leanprover/lean4:v4.31.0",
+  "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+  "exporter": "tools/lean/ExportKernel.lean",
+  "export_format": "leanputer.kernel-source.v1",
+  "ground_levels_accepted": false,
+  "modules": [
+    "Mathlib.Logic.Basic",
+    "Mathlib.Data.Nat.Basic"
+  ],
+  "preparation": "original-scheme syntax only; metadata inert; no admission answers",
+  "role": "transport of raw core syntax; not a checker and not an admission",
+  "theorems_in_sources": [
+    "Nat.succ_injective",
+    "not_iff_not",
+    "And.rotate",
+    "em"
+  ],
+  "withheld_from_addressable_file": {
+    "name": "Nat.dvd_sub_self_left",
+    "reason": "16-bit expression references cannot name the transported rows",
+    "dependencies_dropped": false
+  }
+}

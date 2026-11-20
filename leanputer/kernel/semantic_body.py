@@ -20,8 +20,6 @@ private algorithms. It does not emit a torch model and it is not a source checke
 """
 from __future__ import annotations
 
-import math
-
 from ..native_machine import NativeBuilder
 from ..native_vendor.qwenputer.emit import allocate
 from ..native_vendor.qwenputer.expr import Expr
@@ -438,61 +436,18 @@ def build_shared_expression_walk(width, samples, placement_cap=GATE_CAP):
     ))
 
 
-def source_storage_report(expressions, declarations, stack, context, word_bits=16):
+def source_storage_report(expressions, declarations, stack, context, word_bits=16,
+                          level_rows=0, vector_refs=0, vector_cells=0):
     """Page count for a source-sized arena. Rows are not dropped to fit a page.
 
     The original stock domain is 512 expression rows and 4 declaration cells.
-    One linear-attention layer with four value heads addresses 512 expression
-    rows. Declaration, stack, and context cells share one 128-key head today
-    (32 + 4 + 8). A larger declaration count needs a wider address map; spare
-    unused key lanes are not a compiled declaration slot.
+    The same address map retains whatever counts the caller measured. One
+    linear-attention layer with four value heads has 512 physical rows. A
+    reference past the retained table is not a live use of the padding, and a
+    key past the declaration slots is not a compiled declaration.
     """
-    if min(expressions, declarations, stack, context) < 0:
-        raise ValueError('storage sizes must be nonnegative')
-    if word_bits != 16:
-        raise ValueError('the current reference word is 16 bits')
-    expression_layers = math.ceil(expressions / ROWS_PER_LAYER) if expressions else 0
-    small_keys = stack + context + declarations
-    # The small banks are one key head. Keys past 128 need another head, and
-    # four heads fill one layer. The original compiler still fixes constants
-    # at 4, so any larger declaration count exceeds that compiled bound even
-    # when the key count is under 128.
-    small_pages = math.ceil(small_keys / ROWS_PER_PAGE) if small_keys else 0
-    small_layers = math.ceil(small_pages / VALUE_HEADS_PER_LAYER) if small_pages else 0
-    memory_layers = expression_layers + small_layers
-    reference_overflow = expressions > WORD_REFERENCE_LIMIT or declarations > WORD_REFERENCE_LIMIT
-    hidden = 768
-    dense = 0
-    if memory_layers:
-        from .semantic_step_circuit import dense_parameters
-        dense = dense_parameters(
-            hidden, MODEL_INTERMEDIATE, memory_layers, gdn_layers=memory_layers, value_heads=4,
-        )
-    return dict(
-        expressions=expressions,
-        declarations=declarations,
-        stack=stack,
-        context=context,
-        rows_per_page=ROWS_PER_PAGE,
-        rows_per_expression_layer=ROWS_PER_LAYER,
-        expression_layers=expression_layers,
-        small_bank_keys=small_keys,
-        small_bank_layers=small_layers,
-        memory_layers=memory_layers,
-        memory_only_logical_dense_parameters=dense,
-        exceeds_original_expression_bound=expressions > ORIGINAL_EXPRESSIONS,
-        exceeds_original_declaration_bound=declarations > ORIGINAL_DECLARATIONS,
-        exceeds_word_reference=reference_overflow,
-        original_domain=dict(
-            expressions=ORIGINAL_EXPRESSIONS,
-            declarations=ORIGINAL_DECLARATIONS,
-            stack=ORIGINAL_STACK,
-            context=ORIGINAL_CONTEXT,
-        ),
-        placed_graph=False,
-        note=(
-            'Page arithmetic from the 128-key head and four value heads. '
-            'Not a placed heap and not a stock forward. '
-            'constants4 remains the compiled declaration bound until the address map is general.'
-        ),
+    from .source_capacity import storage_layout
+    return storage_layout(
+        expressions, declarations, stack, context, word_bits=word_bits,
+        level_rows=level_rows, vector_refs=vector_refs, vector_cells=vector_cells,
     )
