@@ -5,11 +5,13 @@ from leanputer.kernel.control_capture import Effect
 from leanputer.kernel.semantic_step_circuit import (
     DENSE_LIMIT,
     PredicateCircuit,
+    build_continuation_range_select,
     build_continuation_select,
     build_equality_key_select,
     build_predicate_graph,
     build_source_lane,
     continuation_field_map,
+    continuation_range_plan,
     equality_pairs,
     holds,
     partition_equality_keys,
@@ -168,6 +170,70 @@ class PredicateLoweringTest(unittest.TestCase):
         self.assertEqual(combined['residual_lowered'], 1)
         self.assertTrue(combined['channel_gate'] and combined['dense_gate'])
         self.assertFalse(combined['full_checker'])
+
+    def test_continuation_range_keeps_every_handler_and_rejects_holes(self):
+        names = {1: 'mode', 2: 'task', 3: 'quot_pc'}
+        widths = {1: 4, 2: 4, 3: 4}
+        predicates = []
+        for pc in range(8):
+            predicates.append(('and', (
+                ('range', 1, 0, 0), ('range', 2, 5, 5), ('range', 3, pc, pc),
+            )))
+        # Same key as pc 0, so the class keeps both handler indexes.
+        predicates.append(('and', (
+            ('range', 1, 0, 0), ('range', 2, 5, 5), ('range', 3, 0, 0),
+        )))
+        predicates.append(('and', (
+            ('range', 1, 1, 1), ('range', 2, 1, 1), ('range', 3, 0, 0),
+        )))
+        predicates.append(('and', (
+            ('range', 1, 1, 1), ('range', 2, 1, 1), ('range', 3, 2, 2),
+        )))
+        for pc in range(4, 13):
+            predicates.append(('and', (
+                ('range', 1, 2, 2), ('range', 2, 4, 4), ('range', 3, pc, pc),
+            )))
+        predicates.append(('range', 3, 0, 3))
+        plan = partition_equality_keys(predicates)
+        self.assertEqual(plan['field_set_classes'], 1)
+        self.assertEqual(plan['equality_handlers'], 20)
+        self.assertEqual(plan['collisions'], 1)
+        self.assertEqual(plan['residual'], [20])
+        ranged = continuation_range_plan(plan['classes'], widths)
+        self.assertEqual(ranged['exclusive_keys'], 19)
+        item = ranged['classes'][0]
+        self.assertEqual(item['axis'], 3)
+        self.assertEqual(item['members'], 19)
+        self.assertLess(item['predicted_gates'], item['members'])
+        spans = {
+            group['fixed']: group['spans']
+            for group in item['groups'] if group['lowering'] == 'range'
+        }
+        self.assertEqual(spans[((1, 0), (2, 5))], ((0, 7),))
+        self.assertEqual(spans[((1, 2), (2, 4))], ((4, 12),))
+        fused = next(group for group in item['groups'] if group['lowering'] == 'fused')
+        self.assertEqual(sorted(member['mapping'][3] for member in fused['members']), [0, 2])
+        samples = [
+            {1: mode, 2: task, 3: pc}
+            for mode in range(16)
+            for task in range(16)
+            for pc in range(16)
+        ]
+        report = build_continuation_range_select(
+            names, widths, plan, samples, wave=3, placement_cap=80,
+            residual_predicates=[predicates[20]],
+        )
+        self.assertEqual(report['index_bits'], 0)
+        self.assertEqual(report['handler_identity'], 'live control key')
+        self.assertEqual(report['boolean_samples'], len(samples))
+        self.assertEqual(report['residual_lowered'], 1)
+        self.assertEqual(report['collisions'], 1)
+        self.assertTrue(report['channel_gate'] and report['dense_gate'])
+        self.assertLessEqual(report['selected_shape']['logical_dense_parameters'], DENSE_LIMIT)
+        self.assertFalse(report['full_checker'])
+        self.assertFalse(report['operator_body_included'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertLess(report['predicted_match_gates'], plan['exclusive_keys'])
 
     def test_source_lane_follows_the_one_hot(self):
         samples = []

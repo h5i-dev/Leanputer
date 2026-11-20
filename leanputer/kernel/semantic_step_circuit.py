@@ -9,9 +9,11 @@ handler.
 A handler predicate selects guarded field updates. The reference merges
 simultaneously true updates with bitwise OR, and at most five handlers are true
 on one control state. Pure equality keys partition into exclusive field-set
-classes: the selector publishes one handler index per class. It does not run
-the operator body. This module does not run at inference and it does not emit
-a torch model unless a caller asks.
+classes. The continuation-range selector publishes one hit per class and leaves
+the handler identity as the live control key, so a dense continuation span is a
+range test rather than one gate per key. It does not run the operator body.
+This module does not run at inference and it does not emit a torch model
+unless a caller asks.
 """
 from __future__ import annotations
 
@@ -853,6 +855,385 @@ def _check_equality_select(circuit, classes, states, samples):
                     raise AssertionError('equality-key select hit a class with no matching key')
             elif hit != 1 or index != expected:
                 raise AssertionError('equality-key select disagrees with the exclusive class table')
+
+
+def _spans(values):
+    """Inclusive runs of the exact values. Holes stay holes."""
+    ordered = sorted(set(values))
+    if not ordered:
+        return ()
+    spans = []
+    start = previous = ordered[0]
+    for value in ordered[1:]:
+        if value == previous + 1:
+            previous = value
+            continue
+        spans.append((start, previous))
+        start = previous = value
+    spans.append((start, previous))
+    return tuple(spans)
+
+
+def _less_gate_units(bound, width):
+    if bound <= 0 or bound >= 1 << width:
+        return 0
+    return bin(bound).count('1')
+
+
+def _range_gate_units(low, high, width):
+    """FFN units in ``PredicateCircuit._range`` before a fixed-field conjunction."""
+    if low == high:
+        return 1
+    if low <= 0:
+        return _less_gate_units(high + 1, width)
+    if high + 1 >= 1 << width:
+        return _less_gate_units(low, width)
+    return _less_gate_units(low, width) + _less_gate_units(high + 1, width) + 1
+
+
+def continuation_range_plan(classes, widths):
+    """Factor each exclusive class along the axis whose ranges beat per-key gates.
+
+    The handler identity is the live control key. No local index is assigned.
+    A class is factored only when the range form uses strictly fewer match
+    gates than one fused equality per key. Every handler index is kept.
+    """
+    planned = []
+    predicted = 0
+    factored_groups = 0
+    for item in classes:
+        fields = item['fields']
+        expected_handlers = [handler for member in item['members'] for handler in member['handlers']]
+        best = None
+        for axis in fields:
+            if axis not in widths:
+                raise ValueError('continuation range plan is missing a control width')
+            grouped = defaultdict(list)
+            order = []
+            for member in item['members']:
+                key = tuple((field, member['mapping'][field]) for field in fields if field != axis)
+                if key not in grouped:
+                    order.append(key)
+                grouped[key].append(member)
+            groups = []
+            cost = 0
+            for key in order:
+                members = tuple(grouped[key])
+                values = [member['mapping'][axis] for member in members]
+                if len(set(values)) != len(values):
+                    raise ValueError('continuation range group repeated an axis value')
+                spans = _spans(values)
+                covered = sum(high - low + 1 for low, high in spans)
+                if covered != len(values):
+                    raise ValueError('continuation range spans do not cover the class values')
+                range_cost = sum(_range_gate_units(low, high, widths[axis]) for low, high in spans)
+                piece = range_cost + (2 if key else 0)
+                if piece < len(members):
+                    cost += piece
+                    groups.append(dict(
+                        fixed=key, axis=axis, spans=spans, members=members, lowering='range',
+                    ))
+                else:
+                    cost += len(members)
+                    groups.append(dict(
+                        fixed=key, axis=axis, spans=None, members=members, lowering='fused',
+                    ))
+            if best is None or cost < best[0]:
+                best = (cost, axis, groups)
+        cost, axis, groups = best
+        if all(group['lowering'] == 'fused' for group in groups):
+            groups = [dict(
+                fixed=(), axis=None, spans=None, members=tuple(item['members']), lowering='fused',
+            )]
+            axis = None
+            cost = len(item['members'])
+        got = [handler for group in groups for member in group['members'] for handler in member['handlers']]
+        if sorted(got) != sorted(expected_handlers):
+            raise ValueError('continuation range plan dropped a handler')
+        factored_groups += sum(group['lowering'] == 'range' for group in groups)
+        predicted += cost
+        planned.append(dict(
+            fields=fields,
+            axis=axis,
+            predicted_gates=cost,
+            groups=groups,
+            members=len(item['members']),
+        ))
+    return dict(
+        classes=planned,
+        predicted_match_gates=predicted,
+        exclusive_keys=sum(item['members'] for item in planned),
+        factored_groups=factored_groups,
+        factored_classes=sum(item['axis'] is not None for item in planned),
+    )
+
+
+def _fused_key_match(circuit, words, nots, widths, mapping):
+    parts = [
+        _bit_literal(circuit, words, nots, variable, bit, bool((value >> bit) & 1))
+        for variable, value in mapping.items()
+        for bit in range(widths[variable])
+    ]
+    return circuit._and(parts)
+
+
+def build_continuation_range_select(
+    names, widths, plan, samples, wave=96, placement_cap=96, residual_predicates=(), tail=None,
+):
+    """Hit bit per exclusive class. The live key, not a decoded index, is the handler.
+
+    Dense continuation spans share one range test. A class that does not shrink
+    keeps one fused equality per key. Residual predicates, when passed, are
+    lowered on the same graph. This does not evaluate the operator body.
+    """
+    classes = plan['classes']
+    if not classes:
+        raise ValueError('continuation range select has no class')
+    if wave <= 0:
+        raise ValueError('continuation range select wave must be positive')
+    ranged = continuation_range_plan(classes, widths)
+    equality_fields = {field for item in classes for field in item['fields']}
+    residual_fields = set()
+    for predicate in residual_predicates:
+        _predicate_fields(predicate, residual_fields)
+    variables = sorted(equality_fields | residual_fields)
+    missing = [field for field in variables if field not in widths]
+    if missing:
+        raise ValueError('continuation range select is missing control widths')
+    residual_only = sorted(residual_fields - equality_fields)
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    words = _features(builder, sorted(equality_fields), widths)
+    circuit = PredicateCircuit(
+        builder, words, {field: (0, (1 << widths[field]) - 1) for field in equality_fields},
+    )
+    nots = {}
+    states = [dict(hit=(Expr(), circuit.net.ZERO)) for _ in classes]
+    meter = {'units': 0, 'last': 0, 'open': False, 'waves': 0, 'wave_units': 0}
+
+    def fixed_parts(fixed):
+        return [
+            _bit_literal(circuit, words, nots, variable, bit, bool((value >> bit) & 1))
+            for variable, value in fixed
+            for bit in range(widths[variable])
+        ]
+
+    def less_cases(variable, bound):
+        """Disjoint bit-cases of ``value < bound``. None means the comparison is constant."""
+        width = len(words[variable])
+        if bound <= 0:
+            return None, False
+        if bound >= 1 << width:
+            return None, True
+        cases = []
+        for index in range(width):
+            if (bound >> index) & 1 == 0:
+                continue
+            parts = [_bit_literal(circuit, words, nots, variable, index, False)]
+            for higher in range(index + 1, width):
+                parts.append(_bit_literal(
+                    circuit, words, nots, variable, higher, bool((bound >> higher) & 1),
+                ))
+            cases.append(parts)
+        return cases, None
+
+    def below(variable, bound, prefix):
+        """``prefix AND value < bound`` with the prefix folded into every case."""
+        cases, constant = less_cases(variable, bound)
+        if constant is False:
+            return Expr(), circuit.net.ZERO
+        if constant is True:
+            return circuit._and(prefix) if prefix else (circuit.one, circuit.net.ONE)
+        return _free_or(circuit, [circuit._and(prefix + case) for case in cases])
+
+    def emit_span(axis, fixed, low, high):
+        prefix = fixed_parts(fixed)
+        width = widths[axis]
+        if low == high:
+            parts = prefix + [
+                _bit_literal(circuit, words, nots, axis, bit, bool((low >> bit) & 1))
+                for bit in range(width)
+            ]
+            return circuit._and(parts)
+        if low <= 0:
+            return below(axis, high + 1, prefix)
+        if high + 1 >= 1 << width:
+            not_below = circuit._not(*below(axis, low, []))
+            if not prefix:
+                return not_below
+            return circuit._and([circuit._and(prefix), not_below])
+        not_below = circuit._not(*below(axis, low, []))
+        return circuit._and([not_below, below(axis, high + 1, prefix)])
+
+    def span_job(axis, fixed, low, high):
+        width = widths[axis]
+        if low == high:
+            return 1, 1
+        if low <= 0:
+            units = _less_gate_units(high + 1, width)
+            return 1, units if units else (1 if fixed else 0)
+        units = _range_gate_units(low, high, width)
+        return 2, units
+
+    jobs = {1: [], 2: []}
+    for class_index, item in enumerate(ranged['classes']):
+        for group in item['groups']:
+            if group['lowering'] == 'fused':
+                for member in group['members']:
+                    jobs[1].append((1, class_index, 'fused', member['mapping']))
+                continue
+            axis = group['axis']
+            for low, high in group['spans']:
+                depth, cost = span_job(axis, group['fixed'], low, high)
+                jobs[depth].append((cost, class_index, 'span', axis, group['fixed'], low, high))
+
+    def pack(items):
+        waves = []
+        current = []
+        cost = 0
+        for item in items:
+            item_cost = item[0]
+            if current and cost + item_cost > wave:
+                waves.append(current)
+                current = []
+                cost = 0
+            current.append(item)
+            cost += item_cost
+        if current:
+            waves.append(current)
+        return waves
+
+    def close_wave():
+        if not meter['open']:
+            return
+        meter['waves'] += 1
+        meter['wave_units'] += meter['units']
+        builder.barrier = 2 * builder.graph.n_layers()
+        meter['units'] = 0
+        meter['open'] = False
+
+    for depth in (1, 2):
+        for wave_jobs in pack(jobs[depth]):
+            produced = defaultdict(list)
+            for item in wave_jobs:
+                if item[2] == 'fused':
+                    _, class_index, _, mapping = item
+                    produced[class_index].append(
+                        _fused_key_match(circuit, words, nots, widths, mapping),
+                    )
+                else:
+                    _, class_index, _, axis, fixed, low, high = item
+                    produced[class_index].append(emit_span(axis, fixed, low, high))
+            for class_index, pairs in produced.items():
+                states[class_index]['hit'] = _merge_exclusive(
+                    circuit, states[class_index]['hit'], pairs,
+                )
+            now = _ffn_units(builder.graph)
+            delta = now - meter['last']
+            meter['last'] = now
+            if delta:
+                meter['units'] += delta
+                meter['open'] = True
+            close_wave()
+    equality_layers = builder.graph.n_layers()
+    if samples:
+        _check_range_select(circuit, classes, states, samples)
+    residual_compiled = []
+    if residual_predicates:
+        if residual_only:
+            late = _features(builder, residual_only, widths, level=builder.barrier)
+            words.update(late)
+            circuit.words.update(late)
+            for field, bits in late.items():
+                circuit.bit_ids[field] = [
+                    circuit.net.node('input', (field, bit)) for bit in range(len(bits))
+                ]
+                circuit.domains[field] = (0, (1 << widths[field]) - 1)
+        residual_compiled = circuit.compile_all(residual_predicates)
+        if samples:
+            circuit.agrees(residual_predicates, residual_compiled, samples)
+        builder.barrier = 2 * builder.graph.n_layers()
+    residual_layers = builder.graph.n_layers()
+    tail_kept = set()
+    if tail is not None:
+        builder.barrier = 2 * builder.graph.n_layers()
+        tail_kept = tail(builder)
+        if not isinstance(tail_kept, set):
+            raise ValueError('continuation range tail must return the dims it keeps')
+    graph = builder.graph
+    keep = set(tail_kept)
+    for state in states:
+        keep |= _expr_dims(state['hit'][0])
+    for expr, _ident in residual_compiled:
+        keep |= _expr_dims(expr)
+    units = _ffn_units(graph)
+    peak = live_peak(graph, keep=keep)
+    allocation = allocate(graph, None, keep, GATE_CAP) if graph.nodes else None
+    slots = 0 if allocation is None else allocation.n_slots
+    shape, shapes = _shape(graph.n_layers(), max(peak, slots), kept_outputs=len(keep))
+    return dict(
+        schedule=f'continuation-range-wave-{wave}',
+        classes=len(classes),
+        exclusive_keys=plan['exclusive_keys'],
+        equality_handlers=plan['equality_handlers'],
+        collisions=plan['collisions'],
+        predicted_match_gates=ranged['predicted_match_gates'],
+        factored_classes=ranged['factored_classes'],
+        factored_groups=ranged['factored_groups'],
+        handler_identity='live control key',
+        index_bits=0,
+        hit_bits=len(classes),
+        residual_predicates=len(plan['residual']),
+        residual_only_fields=len(residual_only),
+        residual_lowered=len(residual_compiled),
+        field_names=sorted({names[field] for field in variables}),
+        class_sizes=[len(item['members']) for item in classes],
+        class_axes=[
+            None if item['axis'] is None else names[item['axis']]
+            for item in ranged['classes']
+        ],
+        equality_graph_layers=equality_layers,
+        residual_graph_layers=residual_layers,
+        dispatch_waves=meter['waves'],
+        dispatch_wave_units=meter['wave_units'],
+        ffn_units=units,
+        graph_layers=graph.n_layers(),
+        peak_live_dims=peak,
+        allocated_slots=slots,
+        selected_shape=shape,
+        candidate_shapes=shapes,
+        channel_gate=shape['channel_gate'],
+        dense_gate=shape['dense_gate'],
+        boolean_samples=len(samples),
+        outputs_kept=len(keep),
+        full_checker=False,
+        operator_body_included=False,
+        tail_attached=tail is not None,
+        memory_layers_included=0,
+        stock_emitted=False,
+        joint_delivery_gate=False,
+        mathlib_theorems_checked=0,
+    )
+
+
+def _check_range_select(circuit, classes, states, samples):
+    for values in samples:
+        env = {}
+        for variable, ids in circuit.bit_ids.items():
+            if variable not in values:
+                raise ValueError('continuation range sample is missing a control field')
+            for bit, _ident in enumerate(ids):
+                env[(variable, bit)] = (values[variable] >> bit) & 1
+        cache = {}
+        for class_index, item in enumerate(classes):
+            expected = 0
+            for member in item['members']:
+                if all(values[variable] == value for variable, value in member['mapping'].items()):
+                    expected = 1
+                    break
+            hit = circuit.net.value(states[class_index]['hit'][1], env, cache)
+            if hit != expected:
+                raise AssertionError('continuation range select disagrees with the exclusive class table')
 
 
 def build_source_lane(source_count, width, samples, wave=8, placement_cap=160):
