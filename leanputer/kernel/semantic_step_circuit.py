@@ -257,11 +257,23 @@ class PredicateCircuit:
                     raise AssertionError('control predicate lowering disagrees with the direct reading')
 
 
-def _features(builder, variables, widths):
+def _features(builder, variables, widths, level=None):
+    """Birth control bits at ``level`` when a later section must not overlap earlier peaks.
+
+    The default birth is level 0. Passing the section barrier is a schedule
+    annotation. It does not drop a field and it does not change the predicate.
+    """
     words = {}
     for variable in variables:
         width = widths[variable]
-        words[variable] = [builder.feature(f'control/{variable}/{bit}') for bit in range(width)]
+        bits = []
+        for bit in range(width):
+            expr = builder.feature(f'control/{variable}/{bit}')
+            if level is not None:
+                (dim,) = expr.terms
+                builder.graph.dims[dim].level = level
+            bits.append(expr)
+        words[variable] = bits
     return words
 
 
@@ -685,7 +697,7 @@ def _predicate_fields(predicate, found):
             _predicate_fields(child, found)
 
 
-def build_equality_key_select(names, widths, plan, samples, wave=64, placement_cap=160, residual_predicates=()):
+def build_equality_key_select(names, widths, plan, samples, wave=64, placement_cap=160, residual_predicates=(), tail=None):
     """Fold each exclusive equality class into a hit bit and a handler index.
 
     One fused equality gate matches a key. Matches in a class are exclusive, so
@@ -697,17 +709,23 @@ def build_equality_key_select(names, widths, plan, samples, wave=64, placement_c
     classes = plan['classes']
     if not classes:
         raise ValueError('equality-key select has no class')
-    variables = {field for item in classes for field in item['fields']}
+    equality_fields = {field for item in classes for field in item['fields']}
+    residual_fields = set()
     for predicate in residual_predicates:
-        _predicate_fields(predicate, variables)
-    variables = sorted(variables)
+        _predicate_fields(predicate, residual_fields)
+    variables = sorted(equality_fields | residual_fields)
     missing = [field for field in variables if field not in widths]
     if missing:
         raise ValueError('equality-key select is missing control widths')
+    # Fields that only residual predicates read are born after the equality
+    # waves. Equality fields stay at level 0 because those waves read them.
+    residual_only = sorted(residual_fields - equality_fields)
     builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
     builder.graph.target.intermediate = placement_cap
-    words = _features(builder, variables, widths)
-    circuit = PredicateCircuit(builder, words, {field: (0, (1 << widths[field]) - 1) for field in variables})
+    words = _features(builder, sorted(equality_fields), widths)
+    circuit = PredicateCircuit(
+        builder, words, {field: (0, (1 << widths[field]) - 1) for field in equality_fields},
+    )
     nots = {}
     states = []
     for item in classes:
@@ -744,12 +762,27 @@ def build_equality_key_select(names, widths, plan, samples, wave=64, placement_c
         _check_equality_select(circuit, classes, states, samples)
     residual_compiled = []
     if residual_predicates:
+        if residual_only:
+            late = _features(builder, residual_only, widths, level=builder.barrier)
+            words.update(late)
+            circuit.words.update(late)
+            for field, bits in late.items():
+                circuit.bit_ids[field] = [
+                    circuit.net.node('input', (field, bit)) for bit in range(len(bits))
+                ]
+                circuit.domains[field] = (0, (1 << widths[field]) - 1)
         residual_compiled = circuit.compile_all(residual_predicates)
         if samples:
             circuit.agrees(residual_predicates, residual_compiled, samples)
         builder.barrier = 2 * builder.graph.n_layers()
+    tail_kept = set()
+    if tail is not None:
+        builder.barrier = 2 * builder.graph.n_layers()
+        tail_kept = tail(builder)
+        if not isinstance(tail_kept, set):
+            raise ValueError('equality-key tail must return the dims it keeps')
     graph = builder.graph
-    keep = set()
+    keep = set(tail_kept)
     for state in states:
         keep |= _expr_dims(state['hit'][0])
         for expr, _ident in state['bits']:
@@ -769,6 +802,7 @@ def build_equality_key_select(names, widths, plan, samples, wave=64, placement_c
         equality_handlers=plan['equality_handlers'],
         collisions=plan['collisions'],
         residual_predicates=len(plan['residual']),
+        residual_only_fields=len(residual_only),
         residual_lowered=len(residual_compiled),
         index_bits=index_bits,
         hit_bits=len(classes),
@@ -788,6 +822,7 @@ def build_equality_key_select(names, widths, plan, samples, wave=64, placement_c
         outputs_kept=len(keep),
         full_checker=False,
         operator_body_included=False,
+        tail_attached=tail is not None,
         memory_layers_included=0,
     )
 

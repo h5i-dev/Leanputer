@@ -1,0 +1,915 @@
+{
+  "call_projection_if_one_forward_per_transition": {
+    "boot": 22,
+    "current-general-source-empty-claim-id": 1343,
+    "current-source-invalid-target": 1382,
+    "setup": 5
+  },
+  "call_projection_is_not_a_stock_measurement": true,
+  "checked_index_add": {
+    "adder": "byte-digit",
+    "allocated_slots": 34,
+    "boolean_samples": 32,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 47,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 2,
+        "hidden": 768,
+        "layers": 6,
+        "logical_dense_parameters": 3693336,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 49,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 2,
+        "hidden": 896,
+        "layers": 7,
+        "logical_dense_parameters": 5007772,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 51,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 2,
+        "hidden": 1024,
+        "layers": 7,
+        "logical_dense_parameters": 5723164,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      }
+    ],
+    "channel_gate": true,
+    "dense_gate": true,
+    "digit_bits": 8,
+    "expression_walk_included": false,
+    "ffn_units": 4,
+    "full_checker": false,
+    "graph_layers": 2,
+    "handler_commit_included": false,
+    "heap_gather_included": false,
+    "joint_delivery_gate": false,
+    "memory_layers_included": 0,
+    "operator_body_included": false,
+    "outputs_kept": 34,
+    "packed_digit_is_linear_form": true,
+    "peak_live_dims": 34,
+    "private_algorithms_placed": false,
+    "schedule": "checked-index-add",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 47,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 2,
+      "hidden": 768,
+      "layers": 6,
+      "logical_dense_parameters": 3693336,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 3
+    },
+    "stock_emitted": false,
+    "width": 16
+  },
+  "equality_residual_and_walk": {
+    "allocated_slots": 733,
+    "boolean_samples": 76,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 764,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 76,
+        "hidden": 768,
+        "layers": 79,
+        "logical_dense_parameters": 47423548,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 2
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 766,
+        "dense_gate": false,
+        "feedback_layer": 1,
+        "graph_layers": 76,
+        "hidden": 896,
+        "layers": 80,
+        "logical_dense_parameters": 56026304,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 768,
+        "dense_gate": false,
+        "feedback_layer": 1,
+        "graph_layers": 76,
+        "hidden": 1024,
+        "layers": 80,
+        "logical_dense_parameters": 64030016,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      }
+    ],
+    "channel_gate": true,
+    "class_fields": [
+      [
+        "mode"
+      ],
+      [
+        "mode",
+        "read/frame/phase"
+      ],
+      [
+        "mode",
+        "task"
+      ],
+      [
+        "mode",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "stage_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "copy_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "rewrite_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_expr_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_cb_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "publish_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "family_info_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "levels_eq_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "convert_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "structure_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_literal_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bits_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "high_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_name_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_bridge_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bool_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "offset_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "string_compare_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "published_claim_pc"
+      ]
+    ],
+    "class_sizes": [
+      82,
+      205,
+      388,
+      52,
+      2,
+      28,
+      41,
+      63,
+      3,
+      4,
+      21,
+      103,
+      10,
+      53,
+      13,
+      5,
+      128,
+      25,
+      283,
+      15,
+      97,
+      16,
+      26,
+      52,
+      11,
+      4,
+      49,
+      78,
+      14,
+      229,
+      19,
+      4,
+      1,
+      10,
+      13
+    ],
+    "classes": 35,
+    "collisions": 0,
+    "dense_gate": true,
+    "equality_handlers": 2147,
+    "exclusive_keys": 2147,
+    "ffn_units": 4660,
+    "field_names": [
+      "bits_pc",
+      "bool_pc",
+      "convert_pc",
+      "copy_pc",
+      "family_info_pc",
+      "high_pc",
+      "levels_eq_pc",
+      "mode",
+      "nat_binding_pc",
+      "nat_bridge_pc",
+      "nat_literal_pc",
+      "nat_name_pc",
+      "nat_reduce_pc",
+      "offset_pc",
+      "projection_pc",
+      "projection_reduce_pc",
+      "publish_pc",
+      "published_claim_pc",
+      "quot_pc",
+      "quot_reduce_pc",
+      "read/frame/phase",
+      "read/frame/task",
+      "restore_cb_pc",
+      "restore_expr_pc",
+      "rewrite_pc",
+      "stage_pc",
+      "string_binding_pc",
+      "string_compare_pc",
+      "string_pc",
+      "string_whnf_pc",
+      "structure_pc",
+      "task"
+    ],
+    "full_checker": false,
+    "graph_layers": 76,
+    "hit_bits": 35,
+    "index_bits": 174,
+    "memory_layers_included": 0,
+    "one_allocate": true,
+    "operator_body_included": false,
+    "output_bits": 209,
+    "outputs_kept": 320,
+    "peak_live_dims": 751,
+    "residual_lowered": 65,
+    "residual_only_fields": 0,
+    "residual_predicates": 65,
+    "schedule": "equality-key-select-wave-96",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 764,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 76,
+      "hidden": 768,
+      "layers": 79,
+      "logical_dense_parameters": 47423548,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 2
+    },
+    "tail_attached": true
+  },
+  "equality_selector_plus_walk": {
+    "allocated_slots": 713,
+    "boolean_samples": 76,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 726,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 53,
+        "hidden": 768,
+        "layers": 56,
+        "logical_dense_parameters": 33645536,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 2
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 728,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 53,
+        "hidden": 896,
+        "layers": 57,
+        "logical_dense_parameters": 39951972,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 730,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 53,
+        "hidden": 1024,
+        "layers": 57,
+        "logical_dense_parameters": 45659364,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      }
+    ],
+    "channel_gate": true,
+    "class_fields": [
+      [
+        "mode"
+      ],
+      [
+        "mode",
+        "read/frame/phase"
+      ],
+      [
+        "mode",
+        "task"
+      ],
+      [
+        "mode",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "read/frame/phase",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "stage_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "copy_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "rewrite_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_expr_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "restore_cb_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "publish_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "family_info_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "projection_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "levels_eq_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "convert_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "structure_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "quot_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_literal_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bits_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "high_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_name_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_bridge_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "nat_reduce_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "bool_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "offset_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_binding_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "string_whnf_pc",
+        "read/frame/task"
+      ],
+      [
+        "mode",
+        "task",
+        "string_compare_pc"
+      ],
+      [
+        "mode",
+        "task",
+        "published_claim_pc"
+      ]
+    ],
+    "class_sizes": [
+      82,
+      205,
+      388,
+      52,
+      2,
+      28,
+      41,
+      63,
+      3,
+      4,
+      21,
+      103,
+      10,
+      53,
+      13,
+      5,
+      128,
+      25,
+      283,
+      15,
+      97,
+      16,
+      26,
+      52,
+      11,
+      4,
+      49,
+      78,
+      14,
+      229,
+      19,
+      4,
+      1,
+      10,
+      13
+    ],
+    "classes": 35,
+    "collisions": 0,
+    "dense_gate": true,
+    "equality_handlers": 2147,
+    "exclusive_keys": 2147,
+    "ffn_units": 2652,
+    "field_names": [
+      "bits_pc",
+      "bool_pc",
+      "convert_pc",
+      "copy_pc",
+      "family_info_pc",
+      "high_pc",
+      "levels_eq_pc",
+      "mode",
+      "nat_binding_pc",
+      "nat_bridge_pc",
+      "nat_literal_pc",
+      "nat_name_pc",
+      "nat_reduce_pc",
+      "offset_pc",
+      "projection_pc",
+      "projection_reduce_pc",
+      "publish_pc",
+      "published_claim_pc",
+      "quot_pc",
+      "quot_reduce_pc",
+      "read/frame/phase",
+      "read/frame/task",
+      "restore_cb_pc",
+      "restore_expr_pc",
+      "rewrite_pc",
+      "stage_pc",
+      "string_binding_pc",
+      "string_compare_pc",
+      "string_pc",
+      "string_whnf_pc",
+      "structure_pc",
+      "task"
+    ],
+    "full_checker": false,
+    "graph_layers": 53,
+    "hit_bits": 35,
+    "index_bits": 174,
+    "memory_layers_included": 0,
+    "one_allocate": true,
+    "operator_body_included": false,
+    "output_bits": 209,
+    "outputs_kept": 255,
+    "peak_live_dims": 645,
+    "residual_lowered": 0,
+    "residual_only_fields": 0,
+    "residual_predicates": 65,
+    "residual_predicates_not_in_this_graph": 65,
+    "schedule": "equality-key-select-wave-96",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 726,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 53,
+      "hidden": 768,
+      "layers": 56,
+      "logical_dense_parameters": 33645536,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 2
+    },
+    "tail_attached": true
+  },
+  "expression_walk": {
+    "adder": "byte-digit",
+    "allocated_slots": 98,
+    "boolean_samples": 169,
+    "candidate_shapes": [
+      {
+        "ballast": 12,
+        "channel_gate": true,
+        "channels_needed": 165,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 7,
+        "hidden": 768,
+        "layers": 11,
+        "logical_dense_parameters": 6688556,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 3
+      },
+      {
+        "ballast": 14,
+        "channel_gate": true,
+        "channels_needed": 167,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 7,
+        "hidden": 896,
+        "layers": 12,
+        "logical_dense_parameters": 8502192,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      },
+      {
+        "ballast": 16,
+        "channel_gate": true,
+        "channels_needed": 169,
+        "dense_gate": true,
+        "feedback_layer": 1,
+        "graph_layers": 7,
+        "hidden": 1024,
+        "layers": 12,
+        "logical_dense_parameters": 9716784,
+        "memory_layers_included": 0,
+        "scratch_clear_layers": 4
+      }
+    ],
+    "channel_gate": true,
+    "checked_add_included": true,
+    "dense_gate": true,
+    "digit_bits": 8,
+    "expression_walk_included": true,
+    "ffn_units": 165,
+    "full_checker": false,
+    "gap_outcome_included": true,
+    "graph_layers": 7,
+    "handler_commit_included": false,
+    "heap_gather_included": false,
+    "joint_delivery_gate": false,
+    "memory_layers_included": 0,
+    "operator_body_included": false,
+    "outputs_kept": 46,
+    "packed_digit_is_linear_form": true,
+    "peak_live_dims": 152,
+    "private_algorithms_placed": false,
+    "resource_outcome_included": true,
+    "schedule": "shared-expression-walk",
+    "selected_shape": {
+      "ballast": 12,
+      "channel_gate": true,
+      "channels_needed": 165,
+      "dense_gate": true,
+      "feedback_layer": 1,
+      "graph_layers": 7,
+      "hidden": 768,
+      "layers": 11,
+      "logical_dense_parameters": 6688556,
+      "memory_layers_included": 0,
+      "scratch_clear_layers": 3
+    },
+    "stock_emitted": false,
+    "width": 16
+  },
+  "format": "leanputer.semantic-body.v1",
+  "full_checker": false,
+  "historical_limits_are_not_success": true,
+  "historical_tui_call_limit": 5000,
+  "historical_tui_dense_limit": 100000000,
+  "joint_delivery_gate": false,
+  "mathlib_theorems_checked": 0,
+  "operator_body_included": false,
+  "proof_checking_not_proof_discovery": true,
+  "separate_from_equality_selector": {
+    "equality_graph_layers": 46,
+    "equality_logical_dense_parameters": 30051272,
+    "note": "Selector and walk were allocated as two graphs. The concatenated dense count includes embedding once and is not an allocate() result.",
+    "placed_together": false,
+    "stacked_dense_gate": true,
+    "stacked_dense_if_concatenated": 34244580,
+    "stacked_layers_if_concatenated": 57,
+    "walk_graph_layers": 7
+  },
+  "stock_emitted": false,
+  "storage": {
+    "one_extra_declaration": {
+      "context": 8,
+      "declarations": 5,
+      "exceeds_original_declaration_bound": true,
+      "exceeds_original_expression_bound": false,
+      "exceeds_word_reference": false,
+      "expression_layers": 1,
+      "expressions": 512,
+      "memory_layers": 2,
+      "memory_only_logical_dense_parameters": 4053008,
+      "note": "Page arithmetic from the 128-key head and four value heads. Not a placed heap and not a stock forward. constants4 remains the compiled declaration bound until the address map is general.",
+      "original_domain": {
+        "context": 8,
+        "declarations": 4,
+        "expressions": 512,
+        "stack": 32
+      },
+      "placed_graph": false,
+      "rows_per_expression_layer": 512,
+      "rows_per_page": 128,
+      "small_bank_keys": 45,
+      "small_bank_layers": 1,
+      "stack": 32
+    },
+    "one_extra_expression_row": {
+      "context": 8,
+      "declarations": 4,
+      "exceeds_original_declaration_bound": false,
+      "exceeds_original_expression_bound": true,
+      "exceeds_word_reference": false,
+      "expression_layers": 2,
+      "expressions": 513,
+      "memory_layers": 3,
+      "memory_only_logical_dense_parameters": 6029976,
+      "note": "Page arithmetic from the 128-key head and four value heads. Not a placed heap and not a stock forward. constants4 remains the compiled declaration bound until the address map is general.",
+      "original_domain": {
+        "context": 8,
+        "declarations": 4,
+        "expressions": 512,
+        "stack": 32
+      },
+      "placed_graph": false,
+      "rows_per_expression_layer": 512,
+      "rows_per_page": 128,
+      "small_bank_keys": 44,
+      "small_bank_layers": 1,
+      "stack": 32
+    },
+    "original": {
+      "context": 8,
+      "declarations": 4,
+      "exceeds_original_declaration_bound": false,
+      "exceeds_original_expression_bound": false,
+      "exceeds_word_reference": false,
+      "expression_layers": 1,
+      "expressions": 512,
+      "memory_layers": 2,
+      "memory_only_logical_dense_parameters": 4053008,
+      "note": "Page arithmetic from the 128-key head and four value heads. Not a placed heap and not a stock forward. constants4 remains the compiled declaration bound until the address map is general.",
+      "original_domain": {
+        "context": 8,
+        "declarations": 4,
+        "expressions": 512,
+        "stack": 32
+      },
+      "placed_graph": false,
+      "rows_per_expression_layer": 512,
+      "rows_per_page": 128,
+      "small_bank_keys": 44,
+      "small_bank_layers": 1,
+      "stack": 32
+    }
+  },
+  "working_call_limit": 4000,
+  "working_dense_limit": 48290654
+}
