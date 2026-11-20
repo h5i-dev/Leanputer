@@ -22,7 +22,9 @@ address map. Oracle writes are stack rows of six words, heap rows of four, and
 context rows of one; a declaration cell is six words and is not a ``write_``
 effect. One token of a page writes one row. Published channels are bytes,
 because bf16 holds every integer in 0..255 and a bit per residual slot does
-not leave room for a second head. Private algorithms are not in this circuit.
+not leave room for a second head. The step front is the shared fuel stop, the
+fuel decrement, the syntax bounds, and the argument-window check. Words arrive
+as packed bytes. Handler bodies and private algorithms are not in this circuit.
 It does not emit a torch model and it is not a source checker.
 """
 from __future__ import annotations
@@ -47,7 +49,7 @@ from .semantic_step_circuit import (
     live_peak,
 )
 from .source_capacity import IN_RANGE, INVALID_REFERENCE, NULL, AddressDomain
-from .traversal_machine import Outcome, Reason
+from .traversal_machine import Mode, Outcome, Reason, Task
 
 
 # Stock GatedDeltaNet pages. emit.py writes one key row per key-head lane, and
@@ -1185,6 +1187,348 @@ def commit_register_word(circuit, writers, old, width=PAGE_WORD_BITS):
     return columns
 
 
+# Flags compared with ``1 < flag`` at the RuleCompiler front door. Pending
+# compare and the local base are not in this list: compare allows 0..2, and
+# the local base is compared with the context limit.
+PROLOGUE_FLAG_FIELDS = (
+    'bounded',
+    'pending_open',
+    'pending_fold',
+    'typing_active',
+    'core_operation',
+    'occurrence_internal',
+    'occurrence_found',
+    'pending_reuse',
+    'reuse_whnf',
+    'pending_scope',
+    'env_ready',
+    'pending_infer',
+    'vec_changed',
+    'order_same_base',
+)
+PROLOGUE_FRAME_FIELDS = (
+    'status',
+    'reason',
+    'fuel',
+    'free',
+    'sp',
+    'count',
+    'ctx',
+    'mode',
+    'task',
+    'local_base',
+    'pending_compare',
+    'open_tag',
+    'fold_tag',
+    *PROLOGUE_FLAG_FIELDS,
+)
+# RuleCompiler uses_arguments. ABSTRACT_ONE, LEVEL_EQUAL, and INFER are not here.
+ARGUMENT_WINDOW_TASKS = (
+    int(Task.INSTANTIATE),
+    int(Task.ABSTRACT),
+    int(Task.OCCURS),
+    int(Task.HAS_CONSTANTS),
+    int(Task.FORMAL_LEVELS),
+    int(Task.LEVEL_SCOPE),
+    int(Task.LEVEL_SUBSTITUTE),
+    int(Task.EXPR_LEVEL_SUBSTITUTE),
+    int(Task.LEVEL_INSTANTIATE),
+    int(Task.EXPR_LEVEL_INSTANTIATE),
+    int(Task.EXPR_SCOPE),
+)
+STEP_FRONT_FIELDS = PROLOGUE_FRAME_FIELDS + ('arg_base',)
+
+
+def _capacity_limits(limits):
+    """Heap, stack, and context arguments. They are not a widened contract."""
+    if not isinstance(limits, dict):
+        raise ValueError('step limits are heap, stack, and context')
+    checked = {}
+    for name in ('heap', 'stack', 'context'):
+        if name not in limits:
+            raise ValueError(f'step front needs a {name} limit')
+        value = limits[name]
+        if type(value) is not int or value < 0 or value >= 1 << PAGE_WORD_BITS:
+            raise ValueError(f'{name} limit must be an integer from 0 through 65535')
+        checked[name] = value
+    return checked
+
+
+def _require_frame(circuit, names):
+    missing = [
+        name for name in names
+        if name not in circuit.words or len(circuit.words[name]) != PAGE_WORD_BITS
+    ]
+    if missing:
+        raise ValueError(f'step front needs 16-bit words {missing}')
+
+
+def _exceeds(circuit, name, bound):
+    """True when the 16-bit word is strictly greater than ``bound``.
+
+    ``bound`` 65535 is never exceeded. ``free > heap`` is this test, so a full
+    heap of 512 stays legal and 513 is syntax.
+    """
+    if type(bound) is not int or bound < 0:
+        raise ValueError('comparison bound must be a non-negative integer')
+    return circuit._not(*circuit._less(name, bound + 1))
+
+
+def _select_word(circuit, guard, taken, kept):
+    """Keep ``taken`` when ``guard`` is hot and ``kept`` otherwise."""
+    if len(taken) != len(kept) or not taken:
+        raise ValueError('select word needs two equal non-empty widths')
+    quiet = circuit._not(*guard)
+    selected = []
+    for new_bit, old_bit in zip(taken, kept):
+        selected.append(circuit._or([
+            circuit._and([guard, new_bit]),
+            circuit._and([quiet, old_bit]),
+        ]))
+    return selected
+
+
+def _decrement_word(circuit, bits):
+    """Subtract one. A zero word wraps; the fuel guard must not select it.
+
+    Borrow into bit ``i`` is the AND of the lower zeros. Those ANDs read the
+    input bits, not the previous borrow, so a 16-bit decrement is one gate
+    deep rather than a 16-layer ripple.
+    """
+    if len(bits) != PAGE_WORD_BITS:
+        raise ValueError('fuel decrement is one 16-bit word')
+    zeros = [circuit._not(*bit) for bit in bits]
+    borrows = [_const_pair(circuit, 1)]
+    borrows.append(zeros[0])
+    for index in range(2, len(bits)):
+        borrows.append(circuit._and(zeros[:index]))
+    return [_xor_pair(circuit, bit, borrow) for bit, borrow in zip(bits, borrows)]
+
+
+def _bind_packed_words(builder, names, prefix='frame'):
+    """Two packed bytes per word, low byte first. Circuit words are the bits.
+
+    The boolean-twin idents are fresh inputs. They do not track the byte
+    values, so the check is ``evaluate(check=True)``, not ``circuit.agrees``.
+    """
+    features = {}
+    words = {}
+    for name in names:
+        bits = []
+        parts = []
+        for part in range(PAGE_WORD_BITS // BYTE_BITS):
+            feature = builder.feature(f'{prefix}/{name}/{part}')
+            parts.append(feature)
+            bits.extend(unpack_byte(builder, feature, f'{prefix}/{name}/{part}'))
+        features[name] = parts
+        words[name] = bits
+    return features, PredicateCircuit(builder, words, {})
+
+
+def commit_step_prologue(circuit, limits):
+    """Shared front of one traversal step: fuel stop, fuel decrement, syntax bounds.
+
+    Matches ``RuleCompiler`` active/fuel/invalid and the same prefix of
+    ``SpecMachine.step``. A running step with fuel left decrements fuel even
+    when syntax also stops. Fuel zero stops ``RESOURCE`` / ``FUEL`` and does
+    not decrement. A non-running status changes nothing. The argument window
+    and the handler bodies are not this function.
+    """
+    checked = _capacity_limits(limits)
+    _require_frame(circuit, PROLOGUE_FRAME_FIELDS)
+    status = _word_pairs(circuit, 'status')
+    reason = _word_pairs(circuit, 'reason')
+    fuel = _word_pairs(circuit, 'fuel')
+    running = circuit._equal('status', int(Outcome.RUNNING))
+    fuel_zero = circuit._equal('fuel', 0)
+    fuel_left = circuit._not(*fuel_zero)
+    running_with_fuel = circuit._and([running, fuel_left])
+    fuel_stop = circuit._and([running, fuel_zero])
+    invalid_parts = [
+        circuit._equal('free', 0),
+        _exceeds(circuit, 'free', checked['heap']),
+        _exceeds(circuit, 'sp', checked['stack']),
+        _exceeds(circuit, 'count', checked['context']),
+        _exceeds(circuit, 'ctx', checked['context']),
+        _exceeds(circuit, 'mode', int(Mode.MINOR_LINK)),
+        _exceeds(circuit, 'task', int(Task.CHECK_PUBLISHED_RECURSOR)),
+        _exceeds(circuit, 'local_base', checked['context']),
+        _exceeds(circuit, 'pending_compare', 2),
+    ]
+    invalid_parts.extend(_exceeds(circuit, name, 1) for name in PROLOGUE_FLAG_FIELDS)
+    for name in ('open_tag', 'fold_tag'):
+        allowed = circuit._or([
+            circuit._equal(name, int(Tag.PI)),
+            circuit._equal(name, int(Tag.LAM)),
+        ])
+        invalid_parts.append(circuit._not(*allowed))
+    invalid = circuit._or(invalid_parts)
+    syntax_stop = circuit._and([running_with_fuel, invalid])
+    return dict(
+        status=commit_register_word(circuit, [
+            (fuel_stop, int(Outcome.RESOURCE)),
+            (syntax_stop, int(Outcome.INVALID)),
+        ], status),
+        reason=commit_register_word(circuit, [
+            (fuel_stop, int(Reason.FUEL)),
+            (syntax_stop, int(Reason.SYNTAX)),
+        ], reason),
+        fuel=_select_word(circuit, running_with_fuel, _decrement_word(circuit, fuel), fuel),
+        active=circuit._and([running_with_fuel, circuit._not(*invalid)]),
+    )
+
+
+def _add_words(circuit, left, right):
+    """Unsigned sum, one bit wider than the inputs.
+
+    Each carry is an OR of AND-chains of the input bits, matching the
+    zero-extended add in the argument window. The packed digit adder stays
+    off this path: that digit must not enter a silu gate.
+    """
+    if len(left) != len(right) or len(left) != PAGE_WORD_BITS:
+        raise ValueError('argument window adds two 16-bit words')
+    generate = [circuit._and([a, b]) for a, b in zip(left, right)]
+    propagate = [_xor_pair(circuit, a, b) for a, b in zip(left, right)]
+    carries = [_const_pair(circuit, 0)]
+    for index in range(1, PAGE_WORD_BITS + 1):
+        parts = []
+        for start in range(index):
+            chain = [generate[start]]
+            chain.extend(propagate[bit] for bit in range(start + 1, index))
+            parts.append(chain[0] if len(chain) == 1 else circuit._and(chain))
+        carries.append(parts[0] if len(parts) == 1 else circuit._or(parts))
+    body = [
+        _xor_pair(circuit, propagate[index], carries[index])
+        for index in range(PAGE_WORD_BITS)
+    ]
+    return body + [carries[PAGE_WORD_BITS]]
+
+
+def commit_argument_window(circuit, limits, active, status, reason):
+    """Argument tasks stop ``RESOURCE`` / ``CONTEXT`` when the window does not fit.
+
+    ``active`` is the prologue guard after the syntax stop. Fuel is already
+    the decremented word and is not written here. A task outside
+    ``ARGUMENT_WINDOW_TASKS`` does not take this stop. This is not a handler.
+    """
+    checked = _capacity_limits(limits)
+    _require_frame(circuit, ('arg_base', 'count'))
+    if len(status) != PAGE_WORD_BITS or len(reason) != PAGE_WORD_BITS:
+        raise ValueError('argument window commits the 16-bit status and reason')
+    total = _add_words(circuit, _word_pairs(circuit, 'arg_base'), _word_pairs(circuit, 'count'))
+    _alias_pairs(circuit, 'window_end', total)
+    overflows = circuit._not(*circuit._less('window_end', checked['context'] + 1))
+    uses_arguments = circuit._or([
+        circuit._equal('task', task) for task in ARGUMENT_WINDOW_TASKS
+    ])
+    window_bad = circuit._and([uses_arguments, overflows])
+    window_stop = circuit._and([active, window_bad])
+    return dict(
+        status=commit_register_word(circuit, [
+            (window_stop, int(Outcome.RESOURCE)),
+        ], status),
+        reason=commit_register_word(circuit, [
+            (window_stop, int(Reason.CONTEXT)),
+        ], reason),
+        active=circuit._and([active, circuit._not(*window_bad)]),
+    )
+
+
+def _frame_syntax_invalid(regs, limits):
+    """Python image of the RuleCompiler syntax OR. Not used by the gates."""
+    if int(regs['free']) == 0 or int(regs['free']) > limits['heap']:
+        return True
+    if int(regs['sp']) > limits['stack'] or int(regs['count']) > limits['context']:
+        return True
+    if int(regs['ctx']) > limits['context'] or int(regs['mode']) > int(Mode.MINOR_LINK):
+        return True
+    if int(regs['task']) > int(Task.CHECK_PUBLISHED_RECURSOR):
+        return True
+    if int(regs['local_base']) > limits['context'] or int(regs['pending_compare']) > 2:
+        return True
+    for name in PROLOGUE_FLAG_FIELDS:
+        if int(regs[name]) > 1:
+            return True
+    allowed = (int(Tag.PI), int(Tag.LAM))
+    if int(regs['open_tag']) not in allowed or int(regs['fold_tag']) not in allowed:
+        return True
+    return False
+
+
+def step_prologue_image(regs, limits):
+    """Register image of ``commit_step_prologue``. Not a checker."""
+    checked = _capacity_limits(limits)
+    status = int(regs['status'])
+    reason = int(regs['reason'])
+    fuel = int(regs['fuel'])
+    if status != int(Outcome.RUNNING):
+        return status, reason, fuel
+    if fuel == 0:
+        return int(Outcome.RESOURCE), int(Reason.FUEL), fuel
+    fuel = (fuel - 1) & ((1 << PAGE_WORD_BITS) - 1)
+    if _frame_syntax_invalid(regs, checked):
+        return int(Outcome.INVALID), int(Reason.SYNTAX), fuel
+    return int(Outcome.RUNNING), reason, fuel
+
+
+def step_front_image(regs, limits):
+    """Register image of the prologue followed by the argument window."""
+    checked = _capacity_limits(limits)
+    status, reason, fuel = step_prologue_image(regs, checked)
+    if status != int(Outcome.RUNNING):
+        return status, reason, fuel
+    window = int(regs['arg_base']) + int(regs['count'])
+    if int(regs['task']) in ARGUMENT_WINDOW_TASKS and window > checked['context']:
+        return int(Outcome.RESOURCE), int(Reason.CONTEXT), fuel
+    return status, reason, fuel
+
+
+def _bind_packed_frame(graph, features, samples):
+    for name, parts in features.items():
+        for part, expr in enumerate(parts):
+            (dim,) = expr.terms
+
+            def fn(token, name=name, part=part, samples=samples):
+                word = int(samples[token][name])
+                return (word >> (BYTE_BITS * part)) & ((1 << BYTE_BITS) - 1)
+
+            graph.token_fns[dim] = fn
+
+
+def _check_step_front(graph, features, samples, outputs):
+    if not samples:
+        raise ValueError('step front needs samples')
+    for sample in samples:
+        for name in STEP_FRONT_FIELDS:
+            if type(sample[name]) is not int or not 0 <= sample[name] < 1 << PAGE_WORD_BITS:
+                raise AssertionError(f'{name} sample is not a 16-bit word')
+        if tuple(sample['expect_prologue'])[2] != tuple(sample['expect_front'])[2]:
+            raise AssertionError('argument window must not change fuel')
+    _bind_packed_frame(graph, features, samples)
+    try:
+        matrix = evaluate(graph, list(range(len(samples))), check=True)
+    except ExactnessError as exc:
+        raise AssertionError(f'step front is not bf16-exact: {exc}') from exc
+    stages = (
+        ('expect_prologue', 'prologue_status', 'prologue_reason', 'prologue_fuel', 'prologue_active'),
+        ('expect_front', 'status', 'reason', 'fuel', 'active'),
+    )
+    for index, sample in enumerate(samples):
+        row = matrix[index]
+        for expect_key, status_key, reason_key, fuel_key, active_key in stages:
+            got = (
+                _bits_value(outputs[status_key], row),
+                _bits_value(outputs[reason_key], row),
+                _bits_value(outputs[fuel_key], row),
+            )
+            expect = tuple(sample[expect_key])
+            if got != expect:
+                raise AssertionError(f'{expect_key} {got} != {expect} for {sample}')
+            active = _bits_value(outputs[active_key], row)
+            if active != int(got[0] == int(Outcome.RUNNING)):
+                raise AssertionError(f'{active_key} {active} does not match status {got[0]}')
+
+
 def _guard_bits(circuit, guard, bits):
     return [circuit._and([guard, bit]) for bit in bits]
 
@@ -1554,6 +1898,60 @@ def build_small_bank(stack, context, declarations, samples, placement_cap=GATE_C
     report['channel_gate'] = priced['channel_gate']
     report['dense_gate'] = priced['dense_gate']
     report['memory_layers_included'] = priced['memory_layers_included']
+    return report
+
+
+def build_step_front(limits, samples, placement_cap=GATE_CAP):
+    """Place the fuel, syntax, and argument-window front. Not a source checker.
+
+    The frame is packed bytes, two per word. This graph has no page head, so
+    the inert layer price is the whole model. It is not attached to the
+    continuation-range candidate and it does not commit a handler body.
+    """
+    checked = _capacity_limits(limits)
+    builder = NativeBuilder(intermediate=MODEL_INTERMEDIATE, reset_layers=0, layout_policy='compact')
+    builder.graph.target.intermediate = placement_cap
+    features, circuit = _bind_packed_words(builder, STEP_FRONT_FIELDS)
+    prologue = commit_step_prologue(circuit, checked)
+    front = commit_argument_window(
+        circuit, checked, prologue['active'], prologue['status'], prologue['reason'],
+    )
+    outputs = dict(
+        prologue_status=prologue['status'],
+        prologue_reason=prologue['reason'],
+        prologue_fuel=prologue['fuel'],
+        prologue_active=prologue['active'],
+        status=front['status'],
+        reason=front['reason'],
+        fuel=prologue['fuel'],
+        active=front['active'],
+    )
+    if any(isinstance(node, Head) for node in builder.graph.nodes):
+        raise ValueError('step front has no page head; reprice a head as linear attention')
+    _check_step_front(builder.graph, features, samples, outputs)
+    report = _place(builder, [*outputs['status'], *outputs['reason'], *outputs['fuel']], samples, dict(
+        schedule='step-front',
+        step_prologue_included=True,
+        argument_window_included=True,
+        handler_bodies_included=False,
+        handler_commit_included=False,
+        continuation_range_attached=False,
+        mathlib_theorems_checked=0,
+        limits=dict(checked),
+        word_bits=PAGE_WORD_BITS,
+        constants_bound_checked=False,
+        prologue_frame_fields=len(PROLOGUE_FRAME_FIELDS),
+        prologue_frame_bytes=len(PROLOGUE_FRAME_FIELDS) * (PAGE_WORD_BITS // BYTE_BITS),
+        frame_bytes=len(STEP_FRONT_FIELDS) * (PAGE_WORD_BITS // BYTE_BITS),
+        gdn_layers=0,
+    ))
+    dense = report['selected_shape']['logical_dense_parameters']
+    report['working_dense_limit'] = DENSE_LIMIT
+    report['ideal_dense_limit'] = 50_000_000
+    report['absolute_dense_limit'] = 100_000_000
+    report['within_working_dense_limit'] = dense <= DENSE_LIMIT
+    report['within_ideal_dense_limit'] = dense <= 50_000_000
+    report['within_absolute_dense_limit'] = dense < 100_000_000
     return report
 
 

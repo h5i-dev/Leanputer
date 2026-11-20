@@ -5,8 +5,11 @@ import unittest
 from leanputer.kernel.arena import Tag
 from leanputer.native_vendor.qwenputer.ir import evaluate
 from leanputer.kernel.semantic_body import (
+    ARGUMENT_WINDOW_TASKS,
     ORIGINAL_DECLARATIONS,
     ORIGINAL_EXPRESSIONS,
+    PROLOGUE_FLAG_FIELDS,
+    STEP_FRONT_FIELDS,
     _evaluate_samples,
     _features,
     _lower_walk,
@@ -16,19 +19,23 @@ from leanputer.kernel.semantic_body import (
     build_expression_page,
     build_shared_expression_walk,
     build_small_bank,
+    build_step_front,
+    commit_step_prologue,
     direct_expression_child,
     _expr_value,
     commit_register_word,
     kept_output_dims,
     merge_constant_word,
     source_storage_report,
+    step_front_image,
+    step_prologue_image,
     unpack_byte,
 )
 from leanputer.kernel.semantic_step_circuit import PredicateCircuit
 from leanputer.native_machine import NativeBuilder
 from leanputer.kernel.semantic_step_circuit import build_equality_key_select, partition_equality_keys
 from leanputer.kernel.semantic_operators import DENSE_LIMIT
-from leanputer.kernel.traversal_machine import Outcome, Reason
+from leanputer.kernel.traversal_machine import Mode, Outcome, Reason, Task
 
 
 def _walk_samples(width):
@@ -504,6 +511,201 @@ class SharedExpressionWalkTest(unittest.TestCase):
         self.assertGreater(declared['memory_only_logical_dense_parameters'], 0)
         self.assertFalse(source_storage_report(65535, 4, 32, 8)['exceeds_word_reference'])
         self.assertTrue(source_storage_report(65536, 4, 32, 8)['exceeds_word_reference'])
+
+
+# Compiler contract checked by transition_contracts. Not a second page size.
+_CONTRACT = dict(heap=512, stack=32, context=8)
+_SOURCE_FLAGS = (
+    'bounded', 'pending_open', 'pending_fold', 'typing_active', 'core_operation',
+    'occurrence_internal', 'occurrence_found', 'pending_reuse', 'reuse_whnf',
+    'pending_scope', 'env_ready', 'pending_infer', 'vec_changed', 'order_same_base',
+)
+_SOURCE_ARGUMENT_TASKS = (
+    Task.INSTANTIATE, Task.ABSTRACT, Task.OCCURS, Task.HAS_CONSTANTS, Task.FORMAL_LEVELS,
+    Task.LEVEL_SCOPE, Task.LEVEL_SUBSTITUTE, Task.EXPR_LEVEL_SUBSTITUTE, Task.LEVEL_INSTANTIATE,
+    Task.EXPR_LEVEL_INSTANTIATE, Task.EXPR_SCOPE,
+)
+
+
+def _legal_frame(**overrides):
+    frame = dict(
+        status=int(Outcome.RUNNING), reason=0, fuel=10,
+        free=1, sp=0, count=0, ctx=0, mode=0, task=int(Task.LIFT),
+        local_base=0, pending_compare=0,
+        open_tag=int(Tag.PI), fold_tag=int(Tag.LAM), arg_base=0,
+        bounded=0, pending_open=0, pending_fold=0, typing_active=0, core_operation=0,
+        occurrence_internal=0, occurrence_found=0, pending_reuse=0, reuse_whnf=0,
+        pending_scope=0, env_ready=0, pending_infer=0, vec_changed=0, order_same_base=0,
+    )
+    frame.update(overrides)
+    return frame
+
+
+def _front_cases():
+    """Hand-read outcomes. Fuel 10 decrements to 9. The image is not consulted."""
+    run, inv, res = int(Outcome.RUNNING), int(Outcome.INVALID), int(Outcome.RESOURCE)
+    syntax, fuel, context = int(Reason.SYNTAX), int(Reason.FUEL), int(Reason.CONTEXT)
+    stay, bad, window = (run, 0, 9), (inv, syntax, 9), (res, context, 9)
+    rows = []
+
+    def add(prologue, front, **overrides):
+        rows.append((overrides, prologue, front))
+
+    add(stay, stay)
+    add((run, 6, 9), (run, 6, 9), reason=6)
+    add((1, 14, 0), (1, 14, 0), status=1, reason=14, fuel=0, free=0, open_tag=0, fold_tag=0)
+    add((3, 2, 4), (3, 2, 4), status=3, reason=2, fuel=4, free=0)
+    add((2, 1, 0), (2, 1, 0), status=2, reason=1, fuel=0, sp=99)
+    add((4, 11, 1), (4, 11, 1), status=4, reason=11, fuel=1, open_tag=0)
+    add((5, 0, 8), (5, 0, 8), status=5, fuel=8)
+    add((res, fuel, 0), (res, fuel, 0), fuel=0, free=0, open_tag=0, fold_tag=0)
+    add((res, fuel, 0), (res, fuel, 0), fuel=0)
+    add((res, fuel, 0), (res, fuel, 0), fuel=0, free=513)
+    add((run, 0, 0), (run, 0, 0), fuel=1)
+    add((run, 14, 0), (run, 14, 0), fuel=1, reason=14)
+    add((run, 0, 65534), (run, 0, 65534), fuel=65535)
+    add((run, 0, 255), (run, 0, 255), fuel=256)
+    add((run, 0, 4), (run, 0, 4), fuel=5, free=512)
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, free=513)
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, free=0, reason=7)
+    add((run, 0, 4), (run, 0, 4), fuel=5, sp=32)
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, sp=33)
+    add((run, 0, 4), (run, 0, 4), fuel=5, count=8)
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, count=9, task=int(Task.INSTANTIATE))
+    add((run, 0, 4), (run, 0, 4), fuel=5, ctx=8)
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, ctx=9)
+    add((run, 0, 4), (run, 0, 4), fuel=5, mode=int(Mode.MINOR_LINK))
+    add((inv, syntax, 4), (inv, syntax, 4), fuel=5, mode=int(Mode.MINOR_LINK) + 1)
+    add((run, 0, 5), (run, 0, 5), fuel=6, task=int(Task.CHECK_PUBLISHED_RECURSOR), arg_base=8, count=1)
+    add((inv, syntax, 5), (inv, syntax, 5), fuel=6, task=int(Task.CHECK_PUBLISHED_RECURSOR) + 1)
+    add(stay, stay, bounded=1)
+    add(bad, bad, bounded=2)
+    add(stay, stay, pending_compare=2)
+    add(bad, bad, pending_compare=3)
+    add(stay, stay, local_base=8)
+    add(bad, bad, local_base=9)
+    add(stay, stay, open_tag=int(Tag.LAM), fold_tag=int(Tag.LAM))
+    add(stay, stay, open_tag=int(Tag.PI), fold_tag=int(Tag.PI))
+    add((inv, syntax, 2), (inv, syntax, 2), fuel=3, open_tag=0)
+    add(bad, bad, fold_tag=0)
+    add(bad, bad, open_tag=int(Tag.APP))
+    add(bad, bad, open_tag=int(Tag.LET))
+    add(bad, bad, fold_tag=int(Tag.APP))
+    add((inv, syntax, 2), (inv, syntax, 2), fuel=3, free=0, sp=40)
+    add(stay, stay, task=int(Task.INSTANTIATE), arg_base=0, count=8)
+    add(stay, window, task=int(Task.INSTANTIATE), arg_base=1, count=8)
+    add(stay, stay, task=int(Task.INSTANTIATE), arg_base=7, count=1)
+    add(stay, window, task=int(Task.INSTANTIATE), arg_base=7, count=2)
+    add(stay, stay, task=int(Task.INSTANTIATE), arg_base=0, count=0)
+    add((res, fuel, 0), (res, fuel, 0), task=int(Task.INSTANTIATE), fuel=0, arg_base=10, count=10)
+    add((inv, syntax, 3), (inv, syntax, 3), task=int(Task.INSTANTIATE), fuel=4, free=0, arg_base=10, count=10)
+    add((1, 0, 5), (1, 0, 5), status=1, task=int(Task.INSTANTIATE), fuel=5, arg_base=10, count=10)
+    add(stay, window, task=int(Task.ABSTRACT), arg_base=65535, count=1)
+    add(stay, stay, task=int(Task.LIFT), arg_base=65535, count=8)
+    add(stay, stay, task=int(Task.ABSTRACT_ONE), arg_base=8, count=1)
+    add(stay, stay, task=int(Task.LEVEL_EQUAL), arg_base=8, count=1)
+    add(stay, stay, task=int(Task.INFER), arg_base=65535, count=0)
+    add(stay, stay, task=int(Task.HAS_FAMILIES), arg_base=8, count=1)
+    add(stay, stay, task=int(Task.BETA_ZETA), arg_base=8, count=1)
+    add((run, 6, 9), window, task=int(Task.INSTANTIATE), arg_base=8, count=1, reason=6)
+    for name in _SOURCE_FLAGS:
+        add(bad, bad, **{name: 2})
+    for task in _SOURCE_ARGUMENT_TASKS:
+        add(stay, window, task=int(task), arg_base=8, count=1)
+    return rows
+
+
+def _front_samples(cases, limits):
+    samples = []
+    for overrides, prologue, front in cases:
+        sample = _legal_frame(**overrides)
+        if step_prologue_image(sample, limits) != prologue or step_front_image(sample, limits) != front:
+            raise AssertionError(f'front image disagrees with the hand-read case {overrides}')
+        sample['expect_prologue'] = prologue
+        sample['expect_front'] = front
+        samples.append(sample)
+    return samples
+
+
+class StepFrontTest(unittest.TestCase):
+    def test_front_vocabulary_matches_the_source_lists(self):
+        self.assertEqual(PROLOGUE_FLAG_FIELDS, _SOURCE_FLAGS)
+        self.assertEqual(ARGUMENT_WINDOW_TASKS, tuple(int(task) for task in _SOURCE_ARGUMENT_TASKS))
+        self.assertEqual(set(_legal_frame()), set(STEP_FRONT_FIELDS))
+        self.assertEqual(len(PROLOGUE_FLAG_FIELDS), 14)
+        self.assertEqual(len(ARGUMENT_WINDOW_TASKS), 11)
+        self.assertEqual(int(Mode.MINOR_LINK), 254)
+        self.assertEqual(int(Task.CHECK_PUBLISHED_RECURSOR), 120)
+        self.assertEqual(int(Tag.PI), 6)
+        self.assertEqual(int(Tag.LAM), 7)
+
+    def test_front_image_matches_the_hand_read_cases(self):
+        cases = _front_cases()
+        samples = _front_samples(cases, _CONTRACT)
+        self.assertGreaterEqual(len(samples), 60)
+        self.assertEqual(step_front_image(samples[0], _CONTRACT), (int(Outcome.RUNNING), 0, 9))
+
+    def test_step_prologue_rejects_a_bad_limit_and_a_missing_word(self):
+        builder = NativeBuilder(intermediate=256, reset_layers=0, layout_policy='compact')
+        circuit = PredicateCircuit(builder, {}, {})
+        with self.assertRaises(ValueError):
+            commit_step_prologue(circuit, dict(heap=65536, stack=32, context=8))
+        with self.assertRaises(ValueError):
+            commit_step_prologue(circuit, dict(heap=True, stack=32, context=8))
+        with self.assertRaises(ValueError):
+            commit_step_prologue(circuit, dict(heap=512, stack=32, context=8))
+
+    def test_step_front_matches_fuel_syntax_and_argument_window(self):
+        samples = _front_samples(_front_cases(), _CONTRACT)
+        report = build_step_front(_CONTRACT, samples)
+        self.assertTrue(report['step_prologue_included'])
+        self.assertTrue(report['argument_window_included'])
+        self.assertFalse(report['handler_bodies_included'])
+        self.assertFalse(report['handler_commit_included'])
+        self.assertFalse(report['continuation_range_attached'])
+        self.assertFalse(report['full_checker'])
+        self.assertFalse(report['stock_emitted'])
+        self.assertFalse(report['joint_delivery_gate'])
+        self.assertFalse(report['private_algorithms_placed'])
+        self.assertFalse(report['constants_bound_checked'])
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertEqual(report['gdn_layers'], 0)
+        self.assertEqual(report['prologue_frame_bytes'], 54)
+        self.assertEqual(report['frame_bytes'], 56)
+        self.assertEqual(report['limits'], _CONTRACT)
+        self.assertEqual(report['boolean_samples'], len(samples))
+        dense = report['selected_shape']['logical_dense_parameters']
+        self.assertEqual(report['within_working_dense_limit'], dense <= report['working_dense_limit'])
+        self.assertEqual(report['within_ideal_dense_limit'], dense <= report['ideal_dense_limit'])
+        self.assertEqual(report['within_absolute_dense_limit'], dense < report['absolute_dense_limit'])
+        self.assertLessEqual(dense, report['working_dense_limit'])
+        self.assertLess(dense, report['absolute_dense_limit'])
+        self.assertLessEqual(report['selected_shape']['channels_needed'], report['selected_shape']['hidden'])
+
+    def test_step_front_uses_the_limit_arguments(self):
+        limits = dict(heap=9, stack=4, context=5)
+        run, inv, res = int(Outcome.RUNNING), int(Outcome.INVALID), int(Outcome.RESOURCE)
+        syntax, context = int(Reason.SYNTAX), int(Reason.CONTEXT)
+        stay, bad = (run, 0, 9), (inv, syntax, 9)
+        cases = []
+
+        def add(prologue, front, **overrides):
+            cases.append((overrides, prologue, front))
+
+        add(stay, stay, free=9, sp=4, count=5, ctx=5, local_base=5)
+        add(bad, bad, free=10)
+        add(bad, bad, sp=5)
+        add(bad, bad, count=6)
+        add(bad, bad, ctx=6)
+        add(bad, bad, local_base=6)
+        add(stay, stay, task=int(Task.INSTANTIATE), arg_base=2, count=3)
+        add(stay, (res, context, 9), task=int(Task.INSTANTIATE), arg_base=3, count=3)
+        add((res, int(Reason.FUEL), 0), (res, int(Reason.FUEL), 0), fuel=0, free=0)
+        samples = _front_samples(cases, limits)
+        report = build_step_front(limits, samples)
+        self.assertEqual(report['limits'], limits)
+        self.assertEqual(report['mathlib_theorems_checked'], 0)
+        self.assertFalse(report['full_checker'])
 
 
 if __name__ == '__main__':
